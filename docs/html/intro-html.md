@@ -3,19 +3,21 @@ id: intro-html
 title: Introduction of HTML
 sidebar_label: Introduction of HTML
 sidebar_position: 1
-tags: [html, introduction, web development, markup language, hyper text, web pages, career opportunities, personal growth, web-development, web design, web pages, websites, career opportunities, contribute to the web, stay relevant, express yourself, learn other technologies, have fun, how to use html, steps to start using html, set up your development environment, create your first html document, learn html syntax and structure, explore html elements and-attributes]
+tags: [html, introduction of html, what is html, why learn html, how to use html, html syntax, html structure, html elements, html attributes]
 description: In this tutorial, you will learn about HTML, its importance, what is HTML, why learn HTML, how to use HTML, steps to start using HTML, and more.
 ---
 
+HTML stands for **Hyper Text Markup Language**. HTML is the standard markup language for creating Web pages. HTML describes the structure of a Web page. HTML consists of a series of elements that you use to enclose, or wrap, different parts of the content to make it appear a certain way, or act a certain way. The enclosing tags can make a word or image hyperlink to somewhere else, can italicize words, can make the font bigger or smaller, and so on.
+
 <AdsComponent />
 
-HTML stands for Hyper Text Markup Language. HTML is the standard markup language for creating Web pages. HTML describes the structure of a Web page. HTML consists of a series of elements that you use to enclose, or wrap, different parts of the content to make it appear a certain way, or act a certain way. The enclosing tags can make a word or image hyperlink to somewhere else, can italicize words, can make the font bigger or smaller, and so on.
-
-> HTML is a markup language that defines the structure of your content. HTML consists of a series of elements that you use to enclose, or wrap, different parts of the content to make it appear a certain way, or act a certain way. The enclosing tags can make a word or image hyperlink to somewhere else, can italicize words, can make the font bigger or smaller, and so on.
+:::note
+HTML is a markup language that defines the structure of your content. HTML consists of a series of elements that you use to enclose, or wrap, different parts of the content to make it appear a certain way, or act a certain way. The enclosing tags can make a word or image hyperlink to somewhere else, can italicize words, can make the font bigger or smaller, and so on.
+:::
 
 ## What is HTML?
 
-HTML, which stands for Hyper Text Markup Language, is the standard markup language for creating Web pages and design documents on the World Wide Web. It is a system of tags and codes that define the structure and presentation of text and images in a document. HTML is a markup language, not a programming language, and is used to create static web pages that are displayed in web browsers. HTML is important because it provides a standardized way to define elements, making it easier for computers and software applications to interpret and display the content correctly.
+HTML, which stands for **Hyper Text Markup Language**, is the standard markup language for creating Web pages and design documents on the World Wide Web. It is a system of tags and codes that define the structure and presentation of text and images in a document. HTML is a markup language, not a programming language, and is used to create static web pages that are displayed in web browsers. HTML is important because it provides a standardized way to define elements, making it easier for computers and software applications to interpret and display the content correctly.
 
 :::info
 
@@ -50,7 +52,7 @@ HTML, which stands for Hyper Text Markup Language, is the standard markup langua
        ```
        </TabItem>
        <TabItem value="Output">
-       <BrowserWindow url="http://127.0.0.1:5500/index.html">
+       <BrowserWindow url="http://127.0.0.1:5500/index.html" bodyStyle={{backgroundColor: "#f5f5f5", color: "#333"}}>
        <div>
          <h1>This is a Heading</h1>
          <p>This is a paragraph.</p>

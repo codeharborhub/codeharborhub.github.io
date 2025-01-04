@@ -57,7 +57,8 @@ const config = {
           showReadingTime: true,
           editUrl:
             "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
-          remarkPlugins: [[npm2yarn, { converters: ["pnpm"] }]],
+          remarkPlugins: [[npm2yarn, { converters: ["pnpm"] }], remarkMath],
+          rehypePlugins: [rehypeKatex],
         },
         theme: {
           customCss: "./src/css/custom.css",
@@ -209,8 +210,8 @@ const config = {
             position: "left",
             items: [
               {
-                label: "🌍 Web Dev",
-                to: "/web-dev/",
+                label: "Projects",
+                to: "/projects/",
               },
               {
                 label: "📚 E-books",
@@ -263,13 +264,13 @@ const config = {
           //   className: "header-github-link",
           //   "aria-label": "GitHub repository",
           // },
-          {
-            href: "https://www.codeharborhub.live/register",
-            position: "right",
-            className: "header-signup-link",
-            "aria-label": "Auth",
-            label: "Auth",
-          },
+          // {
+          //   href: "https://www.codeharborhub.live/register",
+          //   position: "right",
+          //   className: "header-signup-link",
+          //   "aria-label": "Auth",
+          //   label: "Auth",
+          // },
         ],
         // hideOnScroll: true,
       },
@@ -410,16 +411,16 @@ const config = {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula,
         additionalLanguages: [
-          'java',
-          'latex',
-          'haskell',
-          'matlab',
-          'PHp',
-          'powershell',
-          'bash',
-          'diff',
-          'json',
-          'scss',
+          "java",
+          "latex",
+          "haskell",
+          "matlab",
+          "PHp",
+          "powershell",
+          "bash",
+          "diff",
+          "json",
+          "scss",
         ],
       },
       docs: {
@@ -551,21 +552,6 @@ const config = {
       "@docusaurus/plugin-content-docs",
       /** @type {import('@docusaurus/plugin-content-docs').Options} */
       {
-        id: "web-dev",
-        path: "web-dev",
-        routeBasePath: "web-dev",
-        // editUrl: "#",
-        sidebarPath: require.resolve("./sidebarsCommunity.js"),
-        remarkPlugins: [[npm2yarn, { sync: true }], remarkMath, rehypeKatex],
-        showLastUpdateAuthor: true,
-        showLastUpdateTime: true,
-      },
-    ],
-
-    [
-      "@docusaurus/plugin-content-docs",
-      /** @type {import('@docusaurus/plugin-content-docs').Options} */
-      {
         id: "courses",
         path: "courses",
         routeBasePath: "courses",
@@ -576,13 +562,27 @@ const config = {
         showLastUpdateTime: true,
       },
     ],
-    
     [
       path.join(__dirname, "/plugins/my-plugin"),
       {
         settings: "Some20settings",
         api: "Some-API",
         keys: "Some-keys",
+      },
+    ],
+    
+    [
+      "@docusaurus/plugin-content-docs",
+      /** @type {import('@docusaurus/plugin-content-docs').Options} */
+      {
+        id: "projects",
+        path: "projects",
+        routeBasePath: "projects",
+        // editUrl: "#",
+        sidebarPath: require.resolve("./sidebarsCommunity.js"),
+        remarkPlugins: [[npm2yarn, { sync: true }], remarkMath, rehypeKatex],
+        showLastUpdateAuthor: true,
+        showLastUpdateTime: true,
       },
     ],
   ],
