@@ -130,7 +130,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/web-dev/"
+                    to="#"
                     className="mb-3 inline-block text-base text-gray-300 hover:text-[--ifm-color-primary]"
                   >
                     Web Development
