@@ -56,14 +56,6 @@ const blogs: Blog[] = [
     slug: "git-best-practicies",
   },
   {
-    id: 7,
-    title: "Mastering Data Structures in Python",
-    image: "/img/svg/programming.svg",
-    description:
-      "Data structures are essential components in computer science, enabling efficient data storage, manipulation, and retrieval.",
-    slug: "Mastering Data Structures in Python",
-  },
-  {
     id: 8,
     title: "Automating Tasks with Python",
     image: "/img/svg/progress.svg",
@@ -71,14 +63,7 @@ const blogs: Blog[] = [
       "Automation is a powerful way to boost productivity and efficiency by minimizing manual intervention in repetitive tasks.",
     slug: "#",
   },
-  {
-    id: 9,
-    title: "A Beginner’s Guide to the Top 5 React Hooks",
-    image: "/img/svg/react.svg",
-    description:
-      "Since its inception, React has undergone significant evolution, with each new release introducing enhancements and improvements to the framework.",
-    slug: "Beginner’s Guide to the Top 5 React Hooks",
-  },
+ 
   {
     id: 10,
     title: "DOM manipulation in JavaScript",
