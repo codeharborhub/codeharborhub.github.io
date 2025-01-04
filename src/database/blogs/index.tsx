@@ -69,7 +69,7 @@ const blogs: Blog[] = [
     image: "/img/svg/progress.svg",
     description:
       "Automation is a powerful way to boost productivity and efficiency by minimizing manual intervention in repetitive tasks.",
-    slug: "automating-tasks-with-python",
+    slug: "#",
   },
   {
     id: 9,

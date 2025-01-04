@@ -7,11 +7,11 @@ tags: [html, web-development, front-end-development, web-design, web-browsers, w
 description: In this tutorial, you will learn about How HTML works with web browsers and how web browsers render HTML content.
 ---
 
-<AdsComponent />
-
 > *We have already learned HTML in the previous tutorial. In this tutorial, we will learn about how HTML works with web browsers and how web browsers render HTML content.*
 
-HTML, which stands for HyperText Markup Language, serves as the backbone of the World Wide Web. It is the standard language used to create web pages, providing the structure and content that browsers render for users to interact with. Understanding how HTML works with web browsers is fundamental for anyone diving into web development.
+HTML, which stands for **HyperText Markup Language**, serves as the backbone of the World Wide Web. It is the standard language used to create web pages, providing the structure and content that browsers render for users to interact with. Understanding how HTML works with web browsers is fundamental for anyone diving into web development.
+
+<AdsComponent />
 
 ## HTML: The Building Blocks of Web Pages
 
@@ -39,6 +39,9 @@ HTML is a markup language that uses tags to define the structure and content of 
         <h1>Hello, World!</h1>
         <p>This is my first web page.</p>
       </BrowserWindow>
+    </TabItem>
+    <TabItem value="how-html-works" label="How HTML Works">
+      ![alt text](./assets/image-1.png)
     </TabItem>
 </Tabs>
 
