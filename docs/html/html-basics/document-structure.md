@@ -1,5 +1,5 @@
 ---
-id: document-structure.md
+id: document-structure
 title: HTML Document Structure
 sidebar_label: Document Structure
 sidebar_position: 4
