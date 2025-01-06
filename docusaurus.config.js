@@ -148,7 +148,7 @@ const config = {
                   <a href="/docs/category/typescript/" class="nav__icons"> <img src="/icons/ts.svg" title="TypeScript" alt="TypeScript" /> </a>
                   <a href="/docs/category/python/" class="nav__icons"> <img src="/icons/py.svg" title="Python" alt="Python" /> </a>
                   <a href="/docs/category/tailwind/" class="nav__icons"> <img src="/icons/tailwind-css.svg" title="Tailwind CSS" alt="Tailwind" /> </a>
-                  <a href="/docs/category/NextJs/" class="nav__icons"> <img src="/icons/next-js.svg" title="NextJs" alt="Next" /> </a>
+                  <a href="/docs/category/next-js/" class="nav__icons"> <img src="/icons/next-js.svg" title="NextJs" alt="Next" /> </a>
                 </div>
               </div>`,
               },
