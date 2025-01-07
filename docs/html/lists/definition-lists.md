@@ -2,7 +2,7 @@
 id: definition-lists
 title: Mastering Definition Lists in HTML
 sidebar_label: Definition Lists
-sidebar_position: 3
+sidebar_position: 4
 tags: [html, web-development, definition-lists, lists]
 description: In this tutorial, you will learn the basics of definition lists in HTML. We will cover what they are, common use cases, examples and you'll also get to see what they look like in real code.
 ---
