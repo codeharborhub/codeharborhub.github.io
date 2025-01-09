@@ -4,269 +4,175 @@ title: Creating Tables in HTML
 sidebar_label: Creating Tables
 sidebar_position: 2
 tags: [html, web-development, tables]
-description: In this tutorial, you will learn how to create tables in HTML. Tables are used to display data in rows and columns, making it easier to organize and present information on web pages.
+description: "In this tutorial, you will learn how to create tables in HTML. Tables are used to display data in rows and columns, making it easier to organize and present information on web pages."
+keywords: [html tables, creating tables in html, html table tags, html table structure, html table example]
 ---
 
+Creating tables in HTML is a common task when building web pages. Tables are used to display data in rows and columns, making it easier to organize and present information. In this tutorial, you will learn how to create tables in HTML using the `<table>`, `<tr>`, and `<td>` tags.
 
-Tables in HTML are a powerful way to organize and display data in a structured format using rows and columns. This tutorial will guide you through the basic elements and steps needed to create tables in HTML.
+<AdsComponent />
 
-### 1. Basic Table Structure
+This guide will explore how to construct tables step by step and demonstrate using different elements and attributes.
 
-A basic HTML table is created using the `<table>` element. Inside the table, you use `<tr>` for table rows, `<th>` for table headers, and `<td>` for table data (cells).
+### Step 1: Start with the `<table>` Element
 
-### Example:
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML Table Example</title>
-</head>
-<body>
-    <h1>Simple HTML Table</h1>
-    <table border="1">
-        <tr>
-            <th>Header 1</th>
-            <th>Header 2</th>
-            <th>Header 3</th>
-        </tr>
-        <tr>
-            <td>Data 1</td>
-            <td>Data 2</td>
-            <td>Data 3</td>
-        </tr>
-        <tr>
-            <td>Data 4</td>
-            <td>Data 5</td>
-            <td>Data 6</td>
-        </tr>
-    </table>
-</body>
-</html>
+To create a table, you start with the `<table>` tag, which serves as the container for all table content. Inside this tag, you define rows and cells.
+
+Example:
+
+```html title="table-example.html"
+<table>
+  <!-- Table content goes here -->
+</table>
 ```
 
-### 2. Adding Table Borders
+### Step 2: Add Table Rows (`<tr>`) and Cells (`<td>`)
 
-You can add borders to your table for better visibility using the `border` attribute in the `<table>` tag.
+Inside the `<table>` element, you define rows using the `<tr>` tag. Each row contains one or more cells, which are created using the `<td>` tag. Cells are the individual data points within the table.
 
-### 3. Table Headers
+Example:
 
-Table headers are defined using the `<th>` element, which by default displays text in bold and centers it.
-
-### 4. Table Data
-
-Table data cells are defined using the `<td>` element.
-
-### 5. Spanning Rows and Columns
-
-You can make a cell span multiple rows or columns using the `rowspan` and `colspan` attributes.
-
-### Example:
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rowspan and Colspan Example</title>
-</head>
-<body>
-    <h1>Table with Rowspan and Colspan</h1>
-    <table border="1">
-        <tr>
-            <th>Header 1</th>
-            <th>Header 2</th>
-            <th>Header 3</th>
-        </tr>
-        <tr>
-            <td rowspan="2">Rowspan 2</td>
-            <td>Data 1</td>
-            <td>Data 2</td>
-        </tr>
-        <tr>
-            <td colspan="2">Colspan 2</td>
-        </tr>
-    </table>
-</body>
-</html>
+```html title="table-example.html"
+<table>
+  <tr>
+    <td>Row 1, Cell 1</td>
+    <td>Row 1, Cell 2</td>
+  </tr>
+  <tr>
+    <td>Row 2, Cell 1</td>
+    <td>Row 2, Cell 2</td>
+  </tr>
+</table>
 ```
 
-### 6. Adding Table Captions
+In the example above, we have a table with two rows, each containing two cells. The table structure is as follows:
 
-You can add a caption to your table using the `<caption>` element.
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+  <table>
+    <tr>
+      <td>Row 1, Cell 1</td>
+      <td>Row 1, Cell 2</td>
+    </tr>
+    <tr>
+      <td>Row 2, Cell 1</td>
+      <td>Row 2, Cell 2</td>
+    </tr>
+  </table>
+</BrowserWindow>
 
-### Example:
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Table Caption Example</title>
-</head>
-<body>
-    <h1>Table with Caption</h1>
-    <table border="1">
-        <caption>This is a table caption</caption>
-        <tr>
-            <th>Header 1</th>
-            <th>Header 2</th>
-            <th>Header 3</th>
-        </tr>
-        <tr>
-            <td>Data 1</td>
-            <td>Data 2</td>
-            <td>Data 3</td>
-        </tr>
-        <tr>
-            <td>Data 4</td>
-            <td>Data 5</td>
-            <td>Data 6</td>
-        </tr>
-    </table>
-</body>
-</html>
-```
+<AdsComponent />
 
-### 7. Styling Tables with CSS
+### Step 3: Add Table Headings (`<th>`)
 
-You can enhance the appearance of your tables using CSS.
+In addition to regular cells, you can use the `<th>` tag to define table headings. Headings are displayed in bold by default and are useful for labeling rows or columns.
 
-### Example:
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Styled Table Example</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-    </style>
-</head>
-<body>
-    <h1>Styled HTML Table</h1>
-    <table>
-        <tr>
-            <th>Header 1</th>
-            <th>Header 2</th>
-            <th>Header 3</th>
-        </tr>
-        <tr>
-            <td>Data 1</td>
-            <td>Data 2</td>
-            <td>Data 3</td>
-        </tr>
-        <tr>
-            <td>Data 4</td>
-            <td>Data 5</td>
-            <td>Data 6</td>
-        </tr>
-    </table>
-</body>
-</html>
-```
-## Important Points 
+Example:
 
-### 1. Basic Table Structure
-- **Elements:**
-  - `<table>`: Defines the table.
-  - `<tr>`: Defines a table row.
-  - `<th>`: Defines a table header (bold and centered by default).
-  - `<td>`: Defines a table cell (data).
-
-### 2. Adding Borders
-- Use the `border` attribute to add borders to the table for better visibility.
-  ```html
-  <table border="1">
-  ```
-
-### 3. Table Headers
-- **Usage:** Use `<th>` for headers to highlight important columns.
-  ```html
+```html title="table-example.html"
+<table>
   <tr>
     <th>Header 1</th>
     <th>Header 2</th>
-    <th>Header 3</th>
   </tr>
-  ```
-
-### 4. Spanning Rows and Columns
-- **Rowspan:** Use the `rowspan` attribute to make a cell span multiple rows.
-  ```html
-  <td rowspan="2">Rowspan 2</td>
-  ```
-- **Colspan:** Use the `colspan` attribute to make a cell span multiple columns.
-  ```html
-  <td colspan="2">Colspan 2</td>
-  ```
-
-### 5. Adding Captions
-- Use the `<caption>` element to add a caption or title to your table.
-  ```html
-  <caption>This is a table caption</caption>
-  ```
-
-### 6. Input Data into Table
-- **Data Cells:** Use `<td>` to input data into table cells.
-  ```html
   <tr>
-    <td>Data 1</td>
-    <td>Data 2</td>
-    <td>Data 3</td>
+    <td>Row 1, Cell 1</td>
+    <td>Row 1, Cell 2</td>
   </tr>
-  ```
+  <tr>
+    <td>Row 2, Cell 1</td>
+    <td>Row 2, Cell 2</td>
+  </tr>
+</table>
+```
 
-### 7. Styling Tables with CSS
-- **CSS Styling:**
-  - Use CSS to improve the table's appearance, like padding, text alignment, border styles, and hover effects.
-  ```html
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    tr:hover {
-      background-color: #f5f5f5;
-    }
-  </style>
-  ```
+In the example above, we have added table headings to the first row of the table. The headings are displayed in bold:
 
-### 8. Accessibility
-- **Headers and Scope:**
-  - Use the `scope` attribute to specify header scope for better accessibility.
-  ```html
-  <th scope="col">Header 1</th>
-  <th scope="row">Row Header</th>
-  ```
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+  <table>
+    <tr>
+      <th>Header 1</th>
+      <th>Header 2</th>
+    </tr>
+    <tr>
+      <td>Row 1, Cell 1</td>
+      <td>Row 1, Cell 2</td>
+    </tr>
+    <tr>
+      <td>Row 2, Cell 1</td>
+      <td>Row 2, Cell 2</td>
+    </tr>
+  </table>
+</BrowserWindow>
 
-### 9. Responsive Tables
-- **Responsive Design:** Ensure tables are responsive for better viewing on mobile devices.
-  - Example techniques include using CSS media queries and wrapping tables in a div with overflow styling.
+### Step 4: Add Table Captions (`<caption>`)
+
+You can include a caption for the table using the `<caption>` tag. The caption appears above or below the table and provides a brief description or title for the table content.
+
+Example:
+
+```html title="table-example.html"
+<table>
+  <caption>Sample Table</caption>
+  <tr>
+    <th>Header 1</th>
+    <th>Header 2</th>
+  </tr>
+  <tr>
+    <td>Row 1, Cell 1</td>
+    <td>Row 1, Cell 2</td>
+  </tr>
+  <tr>
+    <td>Row 2, Cell 1</td>
+    <td>Row 2, Cell 2</td>
+  </tr>
+</table>
+```
+
+In the example above, we have added a caption to the table:
+
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+  <table>
+    <caption>Sample Table</caption>
+    <tr>
+      <th>Header 1</th>
+      <th>Header 2</th>
+    </tr>
+    <tr>
+      <td>Row 1, Cell 1</td>
+      <td>Row 1, Cell 2</td>
+    </tr>
+    <tr>
+      <td>Row 2, Cell 1</td>
+      <td>Row 2, Cell 2</td>
+    </tr>
+  </table>
+</BrowserWindow>
+
+<AdsComponent />
+
+### Step 5: Styling the Table
+
+You can style the table using CSS to change its appearance, such as the background color, text color, border, padding, and spacing. Here is an example of styling the table using CSS:
+
+```css title="styles.css"
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+```
+
+In this CSS code snippet, we set the table width to 100%, collapse the borders, add padding to cells, align text to the left, and style the table headings with a light gray background.
 
 ### Conclusion
 
-Creating tables in HTML is straightforward and allows you to effectively organize and present data on web pages. By understanding the basic elements and techniques for adding borders, spanning rows and columns, adding captions, and applying CSS styles, you can create attractive and functional tables to display your information.
+In this tutorial, you learned how to create tables in HTML using the `<table>`, `<tr>`, `<td>`, `<th>`, and `<caption>` tags. Tables are essential for displaying data in a structured format on web pages. You can further enhance the appearance of tables by applying CSS styles to customize their look and feel.

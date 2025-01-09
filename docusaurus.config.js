@@ -81,13 +81,13 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       image: "img/codeharborhub-social-card.jpg",
-      announcementBar: {
-        id: "announcementBar",
-        content:
-          '📢 Join our <a target="_blank" href="https://www.whatsapp.com/channel/0029Vah6hro8F2pGUhuAcR0B">WhatsApp Channel</a> for the latest updates and collaboration on exciting projects!',
-        isCloseable: true,
-        backgroundColor: "#4d5061",
-      },
+      // announcementBar: {
+      //   id: "announcementBar",
+      //   content:
+      //     '📢 Join our <a target="_blank" href="https://www.whatsapp.com/channel/0029Vah6hro8F2pGUhuAcR0B">WhatsApp Channel</a> for the latest updates and collaboration on exciting projects!',
+      //   isCloseable: true,
+      //   backgroundColor: "#4d5061",
+      // },
 
       metadata: [
         {
