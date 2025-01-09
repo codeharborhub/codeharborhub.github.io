@@ -5,65 +5,147 @@ sidebar_label: Image Attributes
 sidebar_position: 2
 tags: [html, web-development, image-attributes, images]
 description: In this tutorial, you will learn about image attributes in HTML. Image attributes define the appearance, behavior, and alignment of images on web pages.
+keywords:
+  [
+    HTML image attributes,
+    HTML img tag,
+    image attributes in HTML,
+    image alignment,
+    image behavior,
+    image appearance,
+    web development,
+    HTML tutorial,
+  ]
 ---
 
-In HTML, images are inserted using the `<img>` tag, which is a self-closing tag. The `<img>` tag has several attributes that control the display and behavior of the image. Here's a theoretical overview, along with an example and its potential output:
+Images are an essential part of web development and are used to enhance the visual appeal of web pages. In HTML, images are inserted using the `<img>` (image) tag, which specifies the location of the image file and other attributes that control its appearance and behavior.
 
-### Attributes of `<img>` Tag:
+<AdsComponent />
 
-1. **`src` (required)**:
-   - Specifies the URL or path to the image file.
-   
-2. **`alt` (recommended)**:
-   - Provides alternative text for the image, useful for accessibility and if the image fails to load.
+## Image Attributes
 
-3. **`width` and `height`**:
-   - Defines the dimensions of the image in pixels. Optional but recommended to improve page layout performance.
+When inserting an image in HTML, you can use various attributes to control the appearance, behavior, and alignment of the image. Here are some common image attributes that you can use with the `<img>` tag:
 
-4. **`title`**:
-   - Adds a tooltip when the mouse hovers over the image.
+### The `src` Attribute
 
-5. **`loading`**:
-   - Specifies how the image should be loaded. Options include `auto` (default), `lazy` (loads when it comes into view), and `eager` (loads immediately).
+The `src` attribute is the most important attribute of the `<img>` tag and specifies the URL of the image file to be displayed. It can be a relative or absolute URL pointing to the location of the image file on the web server or the internet.
 
-6. **`srcset`**:
-   - Provides multiple sources for different resolutions or sizes of the same image.
+Here's an example of using the `src` attribute to insert an image into a web page:
 
-7. **`sizes`**:
-   - Specifies the sizes of the image, relative to the viewport width.
-
-### Example 
-
-```html
+```html title="index.html"
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Attribute Example</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Example</title>
 </head>
 <body>
-    <h2>Example Image</h2>
-    <img src="example.jpg" alt="Example Image" width="300" height="200" title="This is an example image">
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" />
 </body>
 </html>
 ```
-- The HTML above will display an image (`example.jpg`) with a width of 300 pixels and a height of 200 pixels. If the mouse hovers over the image, a tooltip saying "This is an example image" will appear. The `alt` attribute ensures that if the image fails to load, or for users relying on screen readers, the text "Example Image" will be displayed instead.
 
-This example demonstrates how to use the `<img>` tag and its attributes effectively to integrate images into HTML documents while enhancing accessibility and user experience.
+In this example, the `src` attribute specifies the URL of the image file, and the `alt` attribute provides alternative text for the image, which is displayed if the image cannot be loaded or accessed by the user.
 
-### Important Note
-When working with images in HTML, it's crucial to consider accessibility, performance, and user experience:
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+<>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" />
+</>
+</BrowserWindow>
 
-1. **Accessibility**: Always include the `alt` attribute with descriptive text for each image. This helps visually impaired users who rely on screen readers understand the content of the image.
+### The `alt` Attribute
 
-2. **Performance**: Optimize images by resizing them to the required dimensions and compressing them appropriately. This reduces file sizes and improves page load times.
+The `alt` attribute provides alternative text for the image, which is displayed if the image cannot be loaded or accessed by the user. It is also used by screen readers to describe the content of the image to visually impaired users.
 
-3. **Responsive Design**: Use the `srcset` attribute to provide different image sources for different screen resolutions, ensuring that users receive appropriately sized images for their devices.
+Here's an example of using the `alt` attribute with an image:
 
-4. **SEO**: Use descriptive filenames and utilize the `alt` attribute effectively to improve search engine optimization by providing context about your images.
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Example</title>
+</head>
+<body>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" />
+</body>
+</html>
+```
 
-By adhering to these principles, you can ensure that images enhance rather than hinder your website's accessibility, performance, and overall user experience.
+In this example, the `alt` attribute provides a description of the image content, which is useful for accessibility and SEO purposes.
 
-### Conclusion
-In HTML, the `img` element is crucial for embedding images into web pages, utilizing attributes like `src` to specify the image file location, `alt` to provide alternative text for accessibility and SEO, `width` and `height` for defining dimensions, and `srcset` for responsive design with multiple image sources. These attributes collectively enhance webpage accessibility, performance, and user experience by ensuring images load efficiently, are accessible to all users, and adapt to various screen sizes and device capabilities.
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+<>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" />
+</>
+</BrowserWindow>
+
+### The `width` and `height` Attributes
+
+The `width` and `height` attributes specify the dimensions of the image in pixels. These attributes can be used to control the size of the image displayed on the web page.
+
+Here's an example of using the `width` and `height` attributes with an image:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Example</title>
+</head>
+<body>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" width="400" height="300" />
+</body>
+</html>
+```
+
+In this example, the `width` and `height` attributes are used to set the dimensions of the image to 400 pixels in width and 300 pixels in height.
+
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+<>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" width="400" height="300" />
+</>
+</BrowserWindow>
+
+### The `title` Attribute
+
+The `title` attribute adds a title or tooltip to the image that is displayed when the user hovers over it with the mouse cursor. It provides additional information about the image content.
+
+Here's an example of using the `title` attribute with an image:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Example</title>
+</head>
+<body>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" title="My Pet" />
+</body>
+</html>
+```
+
+In this example, the `title` attribute is used to provide a title for the image, which is displayed as a tooltip when the user hovers over the image.
+
+<BrowserWindow url="http://.../index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+<>
+  <h1>My Pet</h1>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dog_Breeds.jpg/800px-Dog_Breeds.jpg" alt="A cute dog" title="My Pet" />
+</>
+</BrowserWindow>
+
+## Conclusion
+
+By using image attributes in HTML, you can control the appearance, behavior, and alignment of images on web pages. These attributes help make your web content more accessible, visually appealing, and informative to users.
