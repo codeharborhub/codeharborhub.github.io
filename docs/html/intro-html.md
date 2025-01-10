@@ -3,7 +3,18 @@ id: intro-html
 title: Introduction of HTML
 sidebar_label: Introduction of HTML
 sidebar_position: 1
-tags: [html, introduction of html, what is html, why learn html, how to use html, html syntax, html structure, html elements, html attributes]
+tags:
+  [
+    html,
+    introduction of html,
+    what is html,
+    why learn html,
+    how to use html,
+    html syntax,
+    html structure,
+    html elements,
+    html attributes,
+  ]
 description: In this tutorial, you will learn about HTML, its importance, what is HTML, why learn HTML, how to use HTML, steps to start using HTML, and more.
 ---
 
@@ -117,7 +128,7 @@ HTML is used to create structured documents for the web. To start using HTML, yo
        <div>
         <h1>Hello, World!</h1>
         <p>This is my first HTML document.</p>
-       </div>    
+       </div>
       </BrowserWindow>
 
 **3. Learn HTML syntax and structure**: HTML consists of a series of elements that you use to enclose, or wrap, different parts of the content to make it appear a certain way, or act a certain way. Each element is enclosed in angle brackets `< >` and consists of a start tag, content, and an end tag. For example, the `<h1>` element is used to define a heading, and the `<p>` element is used to define a paragraph.

@@ -5,94 +5,140 @@ sidebar_label: Geolocation API
 sidebar_position: 1
 tags: [html, web-development, geolocation-api]
 description: In this tutorial, you will learn how to use the Geolocation API to get the user's current location in a web page.
+keywords:
+  [
+    html geolocation api,
+    geolocation api,
+    html geolocation,
+    geolocation api in html,
+    html5 geolocation api,
+  ]
 ---
 
-# Geolocation API in HTML
+import GeolocationExample from './\_scripts/GeolocationExample';
 
-## Introduction
-In this tutorial, you will learn how to use the Geolocation API to get the user's current location in a web page. The HTML Geolocation API is crucial for creating location-aware web applications. It allows you to locate a user's position and use this information to provide a more personalized user experience.
+In `HTML`, you can use the Geolocation API to get the user's current location. The Geolocation API provides a simple method to get the user's current location (latitude and longitude) using JavaScript.
 
-## Locating the User's Position
-The HTML Geolocation API is used to get the geographical position of a user. Since accessing a user's location can compromise privacy, the API only works if the user grants permission.
+In this tutorial, you will learn how to use the Geolocation API to get the user's current location in a web page.
 
-### Using HTML Geolocation
-The `getCurrentPosition()` method is used to return the user's position. Here's a basic example that displays the latitude and longitude:
+<AdsComponent />
 
-```html
+## Getting User's Current Location
+
+To get the user's current location, you can use the `navigator.geolocation` object in JavaScript. The `navigator.geolocation` object provides methods to retrieve the user's current position.
+
+Here's an example of how to get the user's current location using the Geolocation API:
+
+```html title="index.html"
 <!DOCTYPE html>
-<html>
-<body>
-<h1>HTML Geolocation</h1>
-<p>Click the button to get your coordinates.</p>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Geolocation API Example</title>
+  </head>
+  <body>
+    <h1>Geolocation API Example</h1>
+    <p>Click the button to get your current location.</p>
+    <button onclick="getLocation()">Get Location</button>
+    <p id="demo"></p>
+    <script>
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(showPosition);
+        } else {
+          document.getElementById("demo").innerHTML =
+            "Geolocation is not supported by this browser.";
+        }
+      }
 
-<button onclick="getLocation()">Try It</button>
-
-<p id="demo"></p>
-
-<script>
-const x = document.getElementById("demo");
-
-function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(showPosition);
-  } else { 
-    x.innerHTML = "Geolocation is not supported by this browser.";
-  }
-}
-
-function showPosition(position) {
-  x.innerHTML = "Latitude: " + position.coords.latitude + 
-  "<br>Longitude: " + position.coords.longitude;
-}
-</script>
-</body>
+      function showPosition(position) {
+        document.getElementById("demo").innerHTML =
+          "Latitude: " +
+          position.coords.latitude +
+          "<br>Longitude: " +
+          position.coords.longitude;
+      }
+    </script>
+  </body>
 </html>
 ```
 
-### Example Explained
-- Checks if Geolocation is supported by the browser.
-- If supported, runs the `getCurrentPosition()` method. If not, displays a message to the user.
-- If `getCurrentPosition()` is successful, it returns a coordinates object to the `showPosition` function.
-- The `showPosition()` function outputs the Latitude and Longitude.
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+  <GeolocationExample />
+</BrowserWindow>
 
-### Handling Errors and Rejections
-Errors are handled by passing a second function to `getCurrentPosition()`, which deals with potential errors:
+In the above example:
+
+- We have an HTML button that calls the `getLocation()` function when clicked.
+- The `getLocation()` function checks if the browser supports geolocation. If supported, it calls the `navigator.geolocation.getCurrentPosition()` method with the `showPosition()` function as a callback.
+- The `showPosition()` function displays the latitude and longitude of the user's current location.
+
+When you click the "Get Location" button, the browser will prompt you to allow or deny access to your location. If you allow access, the browser will display your current latitude and longitude.
+
+<AdsComponent />
+
+## Geolocation API Methods
+
+The Geolocation API provides the following methods:
+
+| Method                 | Description                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `getCurrentPosition()` | Retrieves the device's current position.                                                      |
+| `watchPosition()`      | Continuously monitors the device's position and triggers a callback function when it changes. |
+| `clearWatch()`         | Stops the `watchPosition()` method from monitoring the device's position.                     |
+
+### `getCurrentPosition()` Method
+
+The `getCurrentPosition()` method is used to retrieve the device's current position. It takes the following parameters:
+
+- `successCallback`: A callback function that is called when the position is successfully retrieved.
+- `errorCallback`: A callback function that is called when an error occurs.
+- `options`: An optional parameter that specifies the options for retrieving the position.
+- `options.enableHighAccuracy`: A boolean value that indicates whether the device should provide a high-accuracy position.
+- `options.timeout`: A timeout value in milliseconds after which the error callback is called.
+- `options.maximumAge`: The maximum age of a cached position that is acceptable.
+- `options.maximumAge`: The maximum age of a cached position that is acceptable.
+- `options.maximumAge`: The maximum age of a cached position that is acceptable.
+
+Here's an example of using the `getCurrentPosition()` method:
 
 ```javascript
-function showError(error) {
-  switch(error.code) {
-    case error.PERMISSION_DENIED:
-      x.innerHTML = "User denied the request for Geolocation."
-      break;
-    case error.POSITION_UNAVAILABLE:
-      x.innerHTML = "Location information is unavailable."
-      break;
-    case error.TIMEOUT:
-      x.innerHTML = "The request to get user location timed out."
-      break;
-    case error.UNKNOWN_ERROR:
-      x.innerHTML = "An unknown error occurred."
-      break;
-  }
-}
+navigator.geolocation.getCurrentPosition(
+  successCallback,
+  errorCallback,
+  options
+);
 ```
 
-## Location-specific Information
-Geolocation can enhance user experience by providing location-specific information, such as up-to-date local information, points-of-interest near the user, and turn-by-turn navigation.
+### `watchPosition()` Method
 
-## The `getCurrentPosition()` Method - Return Data
-The method returns an object with various properties, such as latitude, longitude, accuracy, and more, depending on availability.
+The `watchPosition()` method is used to continuously monitor the device's position. It takes the following parameters:
 
-| Property                  | Returns                                           |
-|---------------------------|---------------------------------------------------|
-| coords.latitude           | The latitude as a decimal number (always returned)|
-| coords.longitude          | The longitude as a decimal number (always returned)|
-| coords.accuracy           | The accuracy of position (always returned)        |
-| coords.altitude           | The altitude in meters above the mean sea level (if available)|
-| coords.altitudeAccuracy   | The altitude accuracy of position (if available)  |
-| coords.heading            | The heading as degrees clockwise from North (if available)|
-| coords.speed              | The speed in meters per second (if available)     |
-| timestamp                 | The date/time of the response (if available)      |
+- `successCallback`: A callback function that is called when the position is successfully retrieved.
+- `errorCallback`: A callback function that is called when an error occurs.
+- `options`: An optional parameter that specifies the options for retrieving the position.
+
+Here's an example of using the `watchPosition()` method:
+
+```javascript
+let watchId = navigator.geolocation.watchPosition(
+  successCallback,
+  errorCallback,
+  options
+);
+```
+
+### `clearWatch()` Method
+
+The `clearWatch()` method is used to stop the `watchPosition()` method from monitoring the device's position. It takes the `watchId` returned by the `watchPosition()` method as a parameter.
+
+Here's an example of using the `clearWatch()` method:
+
+```javascript
+navigator.geolocation.clearWatch(watchId);
+```
 
 ## Conclusion
-The HTML Geolocation API is a powerful tool for web developers looking to create location-aware web applications. By understanding how to request and handle a user's location, developers can significantly enhance the user experience by providing personalized content and services based on the user's geographical location. Remember to always respect user privacy and handle location data responsibly.
+
+In this tutorial, you learned how to use the Geolocation API to get the user's current location in a web page. You can use the Geolocation API to build location-aware web applications that provide personalized experiences based on the user's location.
