@@ -4,60 +4,74 @@ title: Adding Audio and Video in HTML
 sidebar_label: Adding Audio and Video
 sidebar_position: 1
 tags: [html, web-development, multimedia, audio, video]
-description: In this tutorial, you will learn how to add audio and video to your HTML documents.
+description: In this tutorial, you will learn how to add audio and video to your HTML documents
+keywords: [html audio, html video, html multimedia, html audio tag, html video tag, html audio element, html video element]
 ---
-Multimedia elements like audio and video are crucial for creating engaging web experiences. HTML5 simplified the embedding of media directly into web pages with the introduction of the `<audio>` and `<video>` elements, eliminating the need for external plugins.
 
-## Audio
+In this tutorial, you will learn how to add audio and video to your HTML documents. HTML provides built-in elements such as `<audio>` and `<video>` to embed multimedia content in web pages. These elements allow you to play audio and video files directly in the browser without the need for third-party plugins like Flash.
 
-To add audio to your web page, use the `<audio>` element. This tag supports various audio formats, such as MP3, WAV, and OGG, allowing for broad compatibility across different browsers and devices.
+<AdsComponent />
 
-    ```html
-    <audio>
-      <source src="path/to/your-audio.mp3" type="audio/mp3">  
-    </audio>
-    ```
+## Adding Audio in HTML
 
-## Video
+To add audio to your HTML document, you can use the `<audio>` element. The `<audio>` element allows you to embed audio files in various formats such as MP3, WAV, or OGG. Here's an example of how you can add audio to your HTML document:
 
-Embedding video content is similarly straightforward with the `<video>` element. This tag supports several video formats, including MP4, WebM, and OGG, to ensure your content is accessible on a wide range of platforms.
+```html title="index.html"
+<audio controls>
+  <source src="audio.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+```
 
-    ```html
-    <video>
-      <source src="path/to/your-video.mp4" type="video/mp4">
-    </video>
-    ```
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+  <audio controls>
+    <source src="/audio/audio.mp3" type="audio/mpeg" />
+    Your browser does not support the audio element.
+  </audio>
+</BrowserWindow>
 
+In the example above, we have used the `<audio>` element with the `controls` attribute, which adds audio controls (play, pause, volume, etc.) to the audio player. The `<source>` element is used to specify the audio file's source and its MIME type.
 
-## Browser Support
-The numbers in the table specify the first browser version that fully supports the element.
-<table class="browserref notranslate">
-  <tbody><tr>
-    <th>Element</th>
-    <th>Chrome</th>
-    <th>Edge</th>
-    <th>Firefox</th>
-    <th>Safari</th>
-    <th>Opera</th>
-  </tr>
-    <tr>
-    <td>&lt;audio&gt;</td>
-    <td>4.0</td>
-    <td>9.0</td>
-    <td>3.5</td>
-    <td>4.0</td>
-    <td>11.5</td>
-  </tr>
-  <tr>
-    <td>&lt;video&gt;</td>
-    <td>4.0</td>
-    <td>9.0</td>
-    <td>3.5</td>
-    <td>3.1</td>
-    <td>11.5</td>
-  </tr>
-  </tbody></table>
+## Adding Video in HTML
+
+To add video to your HTML document, you can use the `<video>` element. The `<video>` element allows you to embed video files in various formats such as MP4, WebM, or OGG. Here's an example of how you can add video to your HTML document:
+
+```html title="index.html"
+<video controls width="640" height="360">
+  <source src="video.mp4" type="video/mp4">
+  Your browser does not support the video element.
+</video>
+```
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+  <video controls width="640" height="360">
+    <source src="/video/video.mp4" type="video/mp4" />
+    Your browser does not support the video element.
+  </video>
+</BrowserWindow>
+
+In the example above, we have used the `<video>` element with the `controls` attribute, which adds video controls (play, pause, volume, etc.) to the video player. The `<source>` element is used to specify the video file's source and its MIME type.
+
+## Adding Audio and Video with Multiple Sources
+
+You can provide multiple sources for audio and video files using the `<source>` element. This allows the browser to choose the best source based on its compatibility. Here's an example of how you can provide multiple sources for audio and video files:
+
+```html title="index.html"
+<audio controls>
+  <source src="audio.mp3" type="audio/mpeg">
+  <source src="audio.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+
+<video controls width="640" height="360">
+  <source src="video.mp4" type="video/mp4">
+  <source src="video.webm" type="video/webm">
+  Your browser does not support the video element.
+</video>
+```
+
+In the example above, we have provided two sources for both audio and video files. The browser will choose the first compatible source based on the file format and codec support.
 
 ## Conclusion
 
-Incorporating audio and video into web pages significantly enhances user engagement by providing a richer multimedia experience. The `<audio>` and `<video>` elements facilitate the embedding of media content directly into your sites, making it more dynamic and interactive. Always ensure your media files are optimized for the web to improve loading times and overall user experience.
+In this tutorial, you learned how to add audio and video to your HTML documents using the `<audio>` and `<video>` elements. These elements provide a simple and effective way to embed multimedia content in web pages without the need for third-party plugins. You can customize the appearance and behavior of the audio and video players using CSS and JavaScript to create a rich multimedia experience for your users.
