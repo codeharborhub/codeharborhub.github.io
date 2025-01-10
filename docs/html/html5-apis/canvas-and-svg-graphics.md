@@ -5,91 +5,89 @@ sidebar_label: Canvas and SVG Graphics
 sidebar_position: 3
 tags: [html, web-development, canvas, svg, graphics]
 description: In this tutorial, you will learn how to use the Canvas and SVG graphics APIs in HTML to draw shapes, images, and animations on a web page.
+keywords:
+  [
+    html canvas,
+    html svg,
+    canvas in html,
+    svg in html,
+    html5 canvas,
+    html5 svg,
+    graphics in html,
+  ]
 ---
 
-# Canvas and SVG Graphics in HTML
+import SVGExample from './_scripts/SVGExample';
+import CanvasExample from './_scripts/CanvasExample';
 
-## Introduction
-In this tutorial, you will learn how to use the Canvas and SVG graphics APIs in HTML to draw shapes, images, and animations on a web page. Both Canvas and SVG offer powerful tools for creating rich web graphics, but they serve slightly different purposes. Canvas is ideal for dynamic, pixel-based graphics, while SVG is best suited for static or interactive vector graphics.
+In `HTML`, you can use the Canvas and SVG graphics APIs to draw shapes, images, and animations on a web page. The Canvas and SVG graphics APIs provide a powerful way to create interactive graphics and visualizations in the browser.
 
-## Using Canvas
-The HTML `<canvas>` element is used to draw graphics on a web page. The actual drawing is done with JavaScript. Here's a basic example that draws a rectangle:
-```html
-<html>
-    <body>
-        <canvas id="myCanvas" width="200" height="100">
-        </canvas>
-        <script>
-            var c = document.getElementById("myCanvas");
-            var ctx = c.getContext("2d");
-            ctx.fillStyle = "#FF0000";
-            ctx.fillRect(0, 0, 150, 75);
-        </script>
-     </body>
+In this tutorial, you will learn how to use the Canvas and SVG graphics APIs in HTML to draw shapes, images, and animations on a web page.
+
+<AdsComponent />
+
+## Canvas Graphics
+
+The Canvas API in HTML provides a way to draw graphics on a web page using JavaScript. The Canvas API allows you to draw shapes, images, and text on a canvas element.
+
+Here's an example of how to use the Canvas API to draw a rectangle on a canvas element:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Example</title>
+  </head>
+  <body>
+    <h1>Canvas Example</h1>
+    <canvas id="myCanvas" width="200" height="100" style="border:1px solid black;"></canvas>
+    <script>
+      var canvas = document.getElementById("myCanvas");
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "red";
+      ctx.fillRect(10, 10, 150, 80);
+    </script>
+  </body>
 </html>
 ```
 
-### Example Explained
-- The `<canvas>` element creates a drawing surface.
-- JavaScript is used to access the drawing context and perform the drawing.
-- The `getContext("2d")` method gets the 2D drawing context.
-- Various methods are used to draw on the canvas.
+<BrowserWindow url="http://127.0.0.1:5500/index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+  <CanvasExample />
+</BrowserWindow>
 
-## Using SVG
-SVG (Scalable Vector Graphics) is used to define vector-based graphics for the Web. Here's a basic example that draws a circle:
+In the above example, we create a canvas element with an id of `myCanvas` and a width of `200` pixels and a height of `100` pixels. We then get the canvas context (`2d`) and draw a red rectangle on the canvas using the `fillRect` method.
 
-```html
-<html>
-<body>
-    <svg width="100" height="100">
-        <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
+## SVG Graphics
+
+SVG (Scalable Vector Graphics) is an XML-based language for describing two-dimensional vector graphics. SVG graphics can be created and manipulated using HTML and CSS.
+
+Here's an example of how to use SVG graphics in HTML:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVG Example</title>
+  </head>
+  <body>
+    <h1>SVG Example</h1>
+    <svg width="200" height="100">
+      <rect x="10" y="10" width="150" height="80" fill="blue" />
     </svg>
-</body>
+  </body>
 </html>
 ```
 
-### Example Explained
-- The `<svg>` element defines a container for SVG graphics.
-- The `<circle>` element is used to draw a circle.
-- Attributes of the `<circle>` element define the shape's properties.
+<BrowserWindow url="http://127.0.0.1:5500/index.html" bodyStyle={{backgroundColor: "#fff", color: "#333"}}>
+   <SVGExample />
+</BrowserWindow>
 
-## Differences Between Canvas and SVG
-- **Canvas** is pixel-based, whereas **SVG** is vector-based.
-- Canvas is better for dynamic graphics and intense computational tasks.
-- SVG is better for high-quality static graphics, and it supports interactivity and animation.
-
-## Comparison of SVG and Canvas
-The table below shows some important differences between Canvas and SVG:
-<table>
-    <tbody>
-        <tr>
-            <th>SVG</th>
-            <th>Canvas</th>
-        </tr>
-        <tr>
-            <td>
-                <ul>
-                    <li>Resolution independent</li>
-                    <li>Support for event handlers</li>
-                    <li>Good text rendering capabilities</li>
-                    <li>Slow rendering if complex</li>
-                    <li>Not suited for game applications</li>
-                </ul>
-            </td>
-            <td>
-                <ul>
-                    <li>Resolution dependent</li>
-                    <li>No support for event handlers</li>
-                    <li>Poor text rendering capabilities</li>
-                    <li>You can save the resulting image as .png or .jpg</li>
-                    <li>Well suited for graphic-intensive games</li>
-                </ul>
-            </td>
-        </tr>
-    </tbody>
-</table>
+In the above example, we create an SVG element with a width of `200` pixels and a height of `100` pixels. We then draw a blue rectangle on the SVG element using the `rect` element.
 
 ## Conclusion
-Both Canvas and SVG graphics play important roles in modern web development. Choosing between them depends on the specific needs of your project. Canvas offers a flexible pixel-based approach for dynamic graphics, while SVG provides a scalable, interactive solution for vector graphics. Understanding how to use both technologies allows you to take full advantage of their capabilities to create engaging and visually appealing web pages.
 
-Remember to consider the performance implications of each approach and test across different browsers to ensure compatibility and optimal user experience.
+In this tutorial, you learned how to use the Canvas and SVG graphics APIs in HTML to draw shapes, images, and animations on a web page. The Canvas and SVG graphics APIs provide a powerful way to create interactive graphics and visualizations in the browser. Experiment with different shapes, colors, and animations to create stunning visual effects on your web pages.
