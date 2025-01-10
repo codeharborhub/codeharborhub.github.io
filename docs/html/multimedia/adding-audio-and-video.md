@@ -44,7 +44,7 @@ To add video to your HTML document, you can use the `<video>` element. The `<vid
 ```
 
 <BrowserWindow url="http://127.0.0.1:5500/index.html">
-  <video controls width="640" height="360">
+  <video controls className="w-full h-auto">
     <source src="/video/video.mp4" type="video/mp4" />
     Your browser does not support the video element.
   </video>

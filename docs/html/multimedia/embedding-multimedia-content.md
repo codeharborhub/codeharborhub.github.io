@@ -20,9 +20,9 @@ To embed images in your HTML document, you can use the `<img>` element. The `<im
 <img src="image.jpg" alt="Image Description">
 ```
 
-<!-- <BrowserWindow url="http://.../index.html">
-  <img src="/images/image.jpg" alt="Image Description" />
-</BrowserWindow> -->
+<BrowserWindow url="http://.../index.html">
+  ![Image Description](../images/assets/jpeg-image.jpg)
+</BrowserWindow>
 
 In the example above, we have used the `<img>` element with the `src` attribute to specify the image file's URL and the `alt` attribute to provide a text description of the image. The `alt` attribute is used for accessibility purposes and is displayed if the image fails to load.
 
@@ -58,7 +58,7 @@ To add video to your HTML document, you can use the `<video>` element. The `<vid
 ```
 
 <BrowserWindow url="http://127.0.0.1:5500/index.html">
-  <video controls width="640" height="360">
+  <video controls className="w-full h-auto">
     <source src="/video/video.mp4" type="video/mp4" />
     Your browser does not support the video element.
   </video>
