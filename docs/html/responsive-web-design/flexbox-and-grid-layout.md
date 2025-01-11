@@ -5,255 +5,124 @@ sidebar_label: Flexbox and Grid Layout
 sidebar_position: 3
 tags: [html, web-development, flexbox, grid-layout]
 description: In this tutorial, you will learn how to use Flexbox and Grid Layout to create responsive web designs and build complex layouts in HTML and CSS.
+keywords:
+  [
+    flexbox,
+    grid layout,
+    css flexbox,
+    css grid,
+    responsive web design,
+    web layout,
+    web design,
+  ]
 ---
 
 In this tutorial, you will learn how to use Flexbox and Grid Layout to create responsive web designs and build complex layouts in HTML and CSS.
-<br></br>
 
-![Local Image](https://ishadeed.com/assets/grid-flex/grid-vs-flexbox.png)
+<AdsComponent />
 
 ## What is Flexbox?
-Flexbox, or the Flexible Box Layout, is a layout model that allows items within a container to be automatically arranged depending on the available space.
 
-### Basic Syntax
-Here is the basic syntax of a Flexbox container:
+Flexbox, or the Flexible Box Layout, is a layout model in CSS that allows you to design complex layouts more easily and efficiently. Flexbox provides a way to distribute space and align items in a container, even when their size is unknown or dynamic. With Flexbox, you can create responsive layouts that adapt to different screen sizes and devices.
 
-```css
+Flexbox is based on the concept of flex containers and flex items. A flex container is an element that contains flex items, which are the children of the flex container. By applying Flexbox properties to the flex container and flex items, you can control the layout, alignment, and distribution of items within the container.
+
+Here's an example of how to create a simple Flexbox layout:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flexbox Example</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="item">Item 1</div>
+      <div class="item">Item
+      2</div>
+      <div class="item">Item 3</div>
+    </div>
+  </body>
+</html>
+```
+
+```css title="styles.css"
 .container {
   display: flex;
-  flex-direction: row; /* or column */
+  justify-content: space-between;
+}
+
+.item {
+  padding: 10px;
+  border: 1px solid #333;
 }
 ```
 
-### Example
-Let's look at a simple example where we create a flexible layout:
+In the above example, we create a flex container with three flex items. We use the `display: flex` property on the container to enable Flexbox layout. We also use the `justify-content: space-between` property to distribute the items evenly within the container.
 
-<Tabs>
-    <TabItem value="Code">
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flexbox Example</title>
-  <style>
-    .container {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      height: 100vh;
-    }
-    .box {
-      width: 100px;
-      height: 100px;
-      background-color: lightblue;
-      text-align: center;
-      line-height: 100px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="box">Box 1</div>
-    <div class="box">Box 2</div>
-    <div class="box">Box 3</div>
-  </div>
-</body>
-</html>
-```
-    </TabItem>
-    <TabItem value="Output">
-        <BrowserWindow>
-            ![banner](flexbox.png)
-        </BrowserWindow>
-    </TabItem>
-</Tabs>
-
+<AdsComponent />
 
 ## What is Grid Layout?
-Grid is a blueprint for making websites.
 
-The Grid model allows you to layout the content of your website. Not only that, it helps you create the structures you need for building responsive websites for multiple devices. This means your site will look good on desktop, mobile, and tablet.
+Grid Layout is a layout model in CSS that allows you to create two-dimensional grid-based layouts. With Grid Layout, you can define rows and columns to create complex layouts that align and position items in a grid-like structure. Grid Layout is ideal for creating responsive designs that adapt to different screen sizes and devices.
 
-Grid Layout is a two-dimensional layout system for the web. It allows you to create complex layouts using rows and columns.
+Grid Layout is based on the concept of grid containers and grid items. A grid container is an element that contains grid items, which are the children of the grid container. By applying Grid Layout properties to the grid container and grid items, you can define the layout, alignment, and spacing of items within the grid.
 
-### Basic Syntax
-Here is the basic syntax of a Grid container:
+Here's an example of how to create a simple Grid Layout:
 
-```css
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grid Layout Example</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="item">Item 1</div>
+      <div class="item">Item 2</div>
+      <div class="item">Item 3</div>
+    </div>
+  </body>
+</html>
+```
+
+```css title="styles.css"
 .container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
+  gap: 10px;
+}
+
+.item {
+  padding: 10px;
+  border: 1px solid #333;
 }
 ```
 
-### Example
-Let's look at a simple example where we create a grid layout:
-<Tabs>
-    <TabItem value="Code">
-```html
-<!DOCTYPE html>
-<html lang="en">
+In the above example, we create a grid container with three grid items. We use the `display: grid` property on the container to enable Grid Layout. We also use the `grid-template-columns: repeat(3, 1fr)` property to define a three-column grid with equal widths. The `gap: 10px` property adds spacing between the grid items.
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grid Layout Example</title>
-    <style>
-        .container {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-        }
-        .box {
-          background-color: lightgreen;
-          text-align: center;
-          padding: 20px;
-        }
-    </style>
-</head>
+<AdsComponent />
 
-<body>
-    <div class="container">
-        <div class="box">Box 1</div>
-        <div class="box">Box 2</div>
-        <div class="box">Box 3</div>
-        <div class="box">Box 4</div>
-        <div class="box">Box 5</div>
-        <div class="box">Box 6</div>
-    </div>
-</body>
+## Flexbox vs. Grid Layout
 
-</html>
-```
-    </TabItem>
-    <TabItem value="Output">
-        <BrowserWindow>
-            ![banner](grid.png)
-        </BrowserWindow>
-    </TabItem>
-</Tabs>
+Flexbox and Grid Layout are two powerful layout models in CSS that offer different capabilities and use cases. Here are some key differences between Flexbox and Grid Layout:
 
-## Practical Example
-Let's create a practical example where we use both Flexbox and Grid Layout to adjust the layout of a simple webpage based on different screen sizes:
+| Feature          | Flexbox                                      | Grid Layout                                  |
+|------------------|----------------------------------------------|----------------------------------------------|
+| Layout Model     | One-dimensional layout                       | Two-dimensional layout                       |
+| Main Use Case    | Aligning and distributing items in a row or column | Creating grid-based layouts with rows and columns |
+| Alignment        | Aligning items along the main and cross axes | Aligning items in rows and columns           |
+| Spacing          | Limited spacing options                      | Advanced spacing options with gaps           |
+| Responsive Design| Ideal for simple layouts and alignment       | Ideal for complex grid-based layouts         |
 
-<Tabs>
-    <TabItem value="Flexbox">
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Responsive Flexbox Layout</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    .box {
-      width: 100%;
-      padding: 20px;
-      margin: 10px 0;
-      background-color: lightgray;
-      text-align: center;
-    }
-    @media (min-width: 600px) {
-      .container {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: space-around;
-      }
-      .box {
-        width: 45%;
-      }
-    }
-    @media (min-width: 900px) {
-      .box {
-        width: 30%;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="box">Box 1</div>
-    <div class="box">Box 2</div>
-    <div class="box">Box 3</div>
-  </div>
-</body>
-</html>
-```
-    </TabItem>
-    <TabItem value="Grid">
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Responsive Grid Layout</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      padding: 20px;
-    }
-    .box {
-      background-color: lightgray;
-      text-align: center;
-      padding: 20px;
-    }
-    @media (min-width: 600px) {
-      .container {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    @media (min-width: 900px) {
-      .container {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="box">Box 1</div>
-    <div class="box">Box 2</div>
-    <div class="box">Box 3</div>
-    <div class="box">Box 4</div>
-    <div class="box">Box 5</div>
-    <div class="box">Box 6</div>
-  </div>
-</body>
-</html>
-```
-    </TabItem>
-    <TabItem value="Output">
-    <BrowserWindow>
-    ![banner](output.png)
-    </BrowserWindow>
-    </TabItem>
-</Tabs>
-
-# Resources
- - [Fkexbox cheatsheet](https://css-tricks.com/wp-content/uploads/2022/02/css-flexbox-poster.png)
- - [Grid cheatsheet](https://css-tricks.com/wp-content/uploads/2022/02/css-grid-poster.png)
+In general, Flexbox is best suited for creating one-dimensional layouts, such as aligning items in a row or column. Grid Layout, on the other hand, is ideal for creating two-dimensional grid-based layouts with rows and columns. By combining Flexbox and Grid Layout, you can create sophisticated and responsive web designs that adapt to different screen sizes and devices.
 
 ## Conclusion
-Flexbox and Grid Layout are essential tools in creating responsive web designs. By understanding and utilizing these techniques, you can ensure that your web pages provide an optimal viewing experience across a wide range of devices and screen sizes. Experiment with different layout properties and combinations to see what works best for your specific design needs.
+
+Flexbox and Grid Layout are powerful tools in CSS that allow you to create responsive web designs and build complex layouts with ease. By mastering Flexbox and Grid Layout, you can create modern and user-friendly websites that provide an optimal user experience on all devices. Experiment with Flexbox and Grid Layout to discover the full potential of these layout models in your web development projects.

@@ -5,230 +5,96 @@ sidebar_label: Media Queries and Breakpoints
 sidebar_position: 2
 tags: [html, web-development, responsive-web-design, media-queries, breakpoints]
 description: In this tutorial, you will learn how to use media queries and breakpoints to create responsive web designs that adapt to different screen sizes and devices.
+keywords:
+  [
+    media queries,
+    breakpoints,
+    responsive web design,
+    responsive design,
+    css media queries,
+    responsive breakpoints,
+  ]
 ---
 
-Media queries allow you to apply CSS styles depending on a device's media type (such as print vs. screen) or other features or characteristics such as screen resolution or orientation, aspect ratio, browser viewport width or height, user preferences such as preferring reduced motion, data usage, or transparenc
+In responsive web design, media queries and breakpoints are essential tools for creating websites that adapt to different screen sizes and devices. Media queries allow you to apply specific styles based on the device's characteristics, such as screen width, height, and orientation. Breakpoints define the points at which the layout of a website changes to accommodate different screen sizes.
 
-## Designing For The Best Experience For All Users
-Web pages can be viewed using many different devices: desktops, tablets, and phones. Your web page should look good, and be easy to use, regardless of the device.
+In this tutorial, you will learn how to use media queries and breakpoints to create responsive web designs that work well on desktops, laptops, tablets, and mobile phones.
 
-Web pages should not leave out information to fit smaller devices, but rather adapt its content to fit any device:
+<AdsComponent />
 
-<Tabs>
-    <TabItem value="Desktop">
-        <BrowserWindow>
-            <html>
-            <center>
-            <img src="https://www.w3schools.com/css/rwd_desktop.png"></img>
-            </center>
-            </html>
-        </BrowserWindow>
-    </TabItem>
-    <TabItem value="Tablet">
-        <BrowserWindow>
-            <html>
-            <center>
-            <img src="https://www.w3schools.com/css/rwd_tablet.png"></img>
-            </center>
-            </html>
-        </BrowserWindow>
-    </TabItem>
-    <TabItem value="Mobile">
-        <BrowserWindow>
-            <html>
-            <center>
-            <img src="https://www.w3schools.com/css/rwd_phone.png"></img>
-            </center>
-            </html>
-        </BrowserWindow>
-    </TabItem>
-</Tabs>
+## What are Media Queries?
 
+Media queries are a feature of CSS that allow you to apply styles based on the characteristics of the device that is rendering the web page. Media queries use the `@media` rule to specify a set of CSS rules that should be applied when certain conditions are met. These conditions can include the device's screen width, height, orientation, and resolution.
 
-## What Are Media Queries?
-Media queries are a fundamental part of responsive web design. They allow you to apply CSS rules based on the characteristics of the device rendering the content, such as its width, height, orientation, and resolution.
+Here's an example of a media query that changes the background color of a web page when the screen width is less than `600px`:
 
-### Basic Syntax
-Here is the basic syntax of a media query:
-
-```css
-@media (condition) {
-  /* CSS rules */
-}
-```
-
-### Example
-Let's look at a simple example where we change the background color based on the screen width:
-
-<Tabs>
-    <TabItem value="Code">
-```css 
-/* Default styles */
+```css title="styles.css"
 body {
-  background-color: white;
+  background-color: lightblue;
 }
-/* Styles for screens wider than 600px */
-@media (min-width: 600px) {
+
+@media screen and (max-width: 600px) {
   body {
-    background-color: lightblue;
-  }
-}
-/* Styles for screens wider than 900px */
-@media (min-width: 900px) {
-  body {
-    background-color: lightgreen;
+    background-color: lightcoral;
   }
 }
 ```
-    </TabItem>
-    <TabItem value="Desktop">
-        <BrowserWindow>
-            ![banner](green.png)
-        </BrowserWindow>
-    </TabItem>
-        <TabItem value="Tablet">
-        <BrowserWindow>
-            ![banner](blue.png)
-        </BrowserWindow>
-    </TabItem>
-        <TabItem value="Mobile">
-        <BrowserWindow>
-            ![banner](white.png)
-        </BrowserWindow>
-    </TabItem>
-</Tabs>
 
-## Common Breakpoints
-Breakpoints are the points at which your website content will adapt to provide the best possible layout for the user. Here are some common breakpoints:
+In the above example, the background color of the `body` element changes to `lightcoral` when the screen width is less than `600px`.
 
-- **Small devices (phones, 600px and down):**
-  ```css
-  @media (max-width: 600px) {
-    /* CSS rules for small devices */
-  }
-  ```
+## Using Media Queries for Responsive Web Design
 
-- **Medium devices (tablets, 600px to 900px):**
-  ```css
-  @media (min-width: 600px) and (max-width: 900px) {
-    /* CSS rules for medium devices */
-  }
-  ```
+Media queries are commonly used in responsive web design to create layouts that adapt to different screen sizes and devices. By using media queries, you can define specific styles for different screen widths, heights, and orientations, allowing your website to provide an optimal user experience on a variety of devices.
 
-- **Large devices (desktops, 900px and up):**
-  ```css
-  @media (min-width: 900px) {
-    /* CSS rules for large devices */
-  }
-  ```
+Here's an example of how to use media queries to create a responsive layout that changes based on the screen width:
 
-## Advanced Media Queries
-Media queries can also be combined to create more complex conditions. For example, you can target devices with a specific orientation or resolution:
-
-### Orientation
-```css
-/* Styles for landscape orientation */
-@media (orientation: landscape) {
-  /* CSS rules for landscape orientation */
+```css title="styles.css"
+.container {
+  width: 100%;
 }
 
-/* Styles for portrait orientation */
-@media (orientation: portrait) {
-  /* CSS rules for portrait orientation */
+@media screen and (min-width: 600px) {
+  .container {
+    width: 50%;
+  }
 }
 ```
 
-### Resolution
-```css
-/* Styles for high-resolution screens */
-@media (min-resolution: 2dppx) {
-  /* CSS rules for high-resolution screens */
+In the above example, the `.container` element has a width of `100%` by default. When the screen width is greater than or equal to `600px`, the width of the `.container` element changes to `50%`.
+
+## What are Breakpoints?
+
+Breakpoints are specific points in a website's layout where the design changes to accommodate different screen sizes. Breakpoints are defined using media queries and are typically based on common device sizes, such as desktops, laptops, tablets, and mobile phones.
+
+Breakpoints are used to create a responsive design that adapts to different screen sizes and provides an optimal user experience on all devices. By defining breakpoints in your CSS, you can ensure that your website looks good and works well on a variety of devices.
+
+Here's an example of how to define breakpoints in CSS using media queries:
+
+```css title="styles.css"
+/* Default styles for desktop */
+.container {
+  width: 100%;
+}
+
+/* Styles for tablets */
+
+@media screen and (min-width: 768px) {
+  .container {
+    width: 75%;
+  }
+}
+
+/* Styles for mobile phones */
+
+@media screen and (max-width: 480px) {
+  .container {
+    width: 100%;
+  }
 }
 ```
 
-## Practical Example of Orientation
-Let's create a practical example where we adjust the layout of a simple webpage based on different screen sizes:
-
-<Tabs>
-    <TabItem value="Desktop">
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Responsive Web Design</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .box {
-      width: 100%;
-      padding: 20px;
-      margin: 10px 0;
-      background-color: lightgray;
-      text-align: center;
-    }
-
-    @media (min-width: 600px) {
-      .container {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: space-around;
-      }
-
-      .box {
-        width: 45%;
-      }
-    }
-
-    @media (min-width: 900px) {
-      .box {
-        width: 30%;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="box">Box 1</div>
-    <div class="box">Box 2</div>
-    <div class="box">Box 3</div>
-  </div>
-</body>
-</html>
-```
-    </TabItem>
-    <TabItem value="Landscape">
-        <BrowserWindow>
-            <html>
-            <center>
-            <img src="https://global.discourse-cdn.com/freecodecamp/original/3X/2/d/2d7736d5fbbdaa12214c6ea3675d99a604abbf33.png"></img>
-            </center>
-            </html>
-        </BrowserWindow>
-    </TabItem>
-    <TabItem value="Potrait">
-        <BrowserWindow>
-            <html>
-            <center>
-            <img src="https://global.discourse-cdn.com/freecodecamp/original/3X/3/6/3634f275e75991d22fc1e8ca0701f79c3bb5737b.png"></img>
-            </center>
-            </html>
-        </BrowserWindow>
-    </TabItem>
-</Tabs>
-## Conclusion
-Media queries and breakpoints are essential tools in creating responsive web designs. By understanding and utilizing these techniques, you can ensure that your web pages provide an optimal viewing experience across a wide range of devices and screen sizes. Experiment with different breakpoints and media query conditions to see what works best for your specific design needs.
+In the above example, we define three sets of styles for different screen sizes: desktops, tablets, and mobile phones. The `.container` element has a width of `100%` by default, `75%` for tablets with a minimum width of `768px`, and `100%` for mobile phones with a maximum width of `480px`.
 
 ## Conclusion
+
+Media queries and breakpoints are essential tools for creating responsive web designs that adapt to different screen sizes and devices. By using media queries, you can define specific styles for different screen characteristics, such as width, height, and orientation. Breakpoints allow you to define specific points in your layout where the design changes to accommodate different screen sizes.

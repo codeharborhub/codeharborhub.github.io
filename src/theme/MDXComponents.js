@@ -25,6 +25,7 @@ import TabItem from "@theme/TabItem";
 import Tabs from "@theme/Tabs";
 import { FaReact } from "react-icons/fa";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
+import Comming from "@site/src/components/Comming";
 
 export default {
   // Re-use the default mapping
@@ -54,4 +55,5 @@ export default {
   Author,
   LinearSearchVisualizer,
   AdsComponent,
+  Comming,
 };
