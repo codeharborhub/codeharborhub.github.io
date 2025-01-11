@@ -48,50 +48,78 @@ const FAQs: React.FC = () => {
   };
 
   return (
-    <div className="faq-container transition duration-500">
-      <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {faqData.map((faq, index) => (
-          <motion.div
-            key={index}
-            className="faq-item border-b border-gray-200 dark:border-gray-700 py-4"
-            whileHover={{ scale: 1.02 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div
-              className="faq-question flex justify-between items-center cursor-pointer bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-md shadow-md hover:shadow-lg transition-all duration-300"
-              onClick={() => toggleAccordion(index)}
-            >
-              <h3 className="text-lg md:text-xl font-semibold dark:text-gray-100 text-gray-900">
-                {faq.question}
-              </h3>
-              <motion.span
-                className="transition-transform"
-                animate={{ rotate: activeIndex === index ? 180 : 0 }}
-              >
-                <FiChevronDown
-                  size={24}
-                  className="dark:text-gray-100 text-gray-900"
-                />
-              </motion.span>
+    <section className="py-8 bg-gray-50 dark:bg-gray-900">
+      <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6">
+        <div className="flex flex-col justify-center items-center gap-x-8 gap-y-12 xl:gap-28 lg:flex-row lg:justify-between">
+          {/* Left: Image Section */}
+          <div className="w-full lg:w-1/2">
+            <img
+              src="/img/ajay-dhangar.jpg"
+              alt="FAQ Section"
+              className="w-full rounded-xl object-cover shadow-lg"
+            />
+          </div>
+
+          {/* Right: FAQ Section */}
+          <div className="w-full lg:w-1/2">
+            <div className="lg:max-w-xl">
+              <div className="mb-8 lg:mb-16">
+                <h6 className="text-lg text-center lg:text-left font-medium text-indigo-600 mb-2">
+                  FAQs
+                </h6>
+                <h2 className="text-4xl text-center lg:text-left font-bold text-gray-900 dark:text-gray-100 leading-snug">
+                  Looking for answers?
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 text-center lg:text-left">
+                  Find answers to the most common questions about CodeHarborHub.
+                </p>
+              </div>
+
+              {/* Accordion */}
+              <div>
+                {faqData.map((faq, index) => (
+                  <motion.div
+                    key={index}
+                    className="accordion border-b border-gray-200 dark:border-gray-700 pb-4 mb-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <button
+                      className="accordion-toggle group flex justify-between items-center text-lg font-medium text-gray-700 dark:text-gray-200 w-full transition-all duration-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg focus:outline-none"
+                      onClick={() => toggleAccordion(index)}
+                    >
+                      {faq.question}
+                      <motion.span
+                        className="transform transition-transform duration-300"
+                        animate={{
+                          rotate: activeIndex === index ? 180 : 0,
+                        }}
+                      >
+                        <FiChevronDown size={22} />
+                      </motion.span>
+                    </button>
+                    <motion.div
+                      className="accordion-content overflow-hidden"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{
+                        height: activeIndex === index ? "auto" : 0,
+                        opacity: activeIndex === index ? 1 : 0,
+                      }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <p className="mt-2 text-gray-600 dark:text-gray-400 text-base">
+                        {faq.answer}
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-            <motion.div
-              className="faq-answer mt-2 text-sm md:text-base dark:text-gray-200 text-gray-800"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{
-                height: activeIndex === index ? "auto" : 0,
-                opacity: activeIndex === index ? 1 : 0,
-              }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              style={{ overflow: "hidden" }}
-            >
-              <p className="p-4">{faq.answer}</p>
-            </motion.div>
-          </motion.div>
-        ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

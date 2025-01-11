@@ -5,69 +5,110 @@ sidebar_label: Advanced HTML Topics
 sidebar_position: 2
 tags: [html, web-development, advanced]
 description: In this tutorial, we will explore advanced HTML topics such as web components, microdata, and more.
+keywords:
+  [
+    advanced html,
+    web components,
+    microdata,
+    semantic html,
+    html5,
+    html best practices,
+  ]
 ---
 
-Welcome to a simplified exploration of advanced HTML topics! This guide is designed to make complex concepts more accessible, helping you enhance your web development skills with practical examples.
+In this tutorial, we will explore advanced HTML topics such as web components, microdata, semantic HTML, and more.
 
-### Web Components
+<AdsComponent />
 
-Web components allow you to create custom, reusable web elements. Think of them as LEGO blocks for web pages, where each block can be used across different projects.
+## Web Components
 
-**Custom Elements**
+Web components are a set of web platform APIs that allow you to create custom, reusable, and encapsulated HTML elements. Web components consist of four main technologies:
 
-Imagine creating a `<user-profile>` tag that displays user information. Custom elements let you define such new HTML tags, making your code more semantic and easier to read.
+- **Custom Elements**: Custom elements allow you to define your own HTML elements with custom behavior and styling.
+- **Shadow DOM**: Shadow DOM provides encapsulation for custom elements by hiding their implementation details from the rest of the page.
+- **HTML Templates**: HTML templates allow you to define reusable chunks of HTML that can be cloned and inserted into the document.
+- **HTML Imports**: HTML imports allow you to include and reuse HTML documents in other HTML documents.
+- **ES Modules**: ES modules provide a way to define and load JavaScript modules in the browser.
+- **Web Components**: Web components are a set of web platform APIs that allow you to create custom, reusable, and encapsulated HTML elements.
+- **Custom Elements**: Custom elements allow you to define your own HTML elements with custom behavior and styling.
 
-**Example:**
-```html
-<user-profile name="Jane Doe"></user-profile>
+Here's an example of how to create a custom element using the Custom Elements API:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Element Example</title>
+  </head>
+  <body>
+    <my-element></my-element>
+    <script>
+      class MyElement extends HTMLElement {
+        constructor() {
+          super();
+          this.textContent = "Hello, World!";
+        }
+      }
+
+      customElements.define("my-element", MyElement);
+    </script>
+  </body>
+</html>
 ```
 
-**Shadow DOM**
+In the above example, we define a custom element called `my-element` that displays the text "Hello, World!" when inserted into the document.
 
-The Shadow DOM is like a secret room for your web component, where its styles and scripts are hidden away from the rest of the page. This ensures your component doesn't accidentally change because of other CSS or JavaScript.
+<AdsComponent />
 
-**Templates**
+## Microdata
 
-Templates are blueprints for parts of your webpage. You can define a chunk of HTML that doesn't get displayed until you need it, making it perfect for repeating structures like comment threads or product listings.
+Microdata is a specification that allows you to add machine-readable metadata to your HTML content. Microdata provides a way to annotate HTML elements with additional information that can be used by search engines, web crawlers, and other applications.
 
-**Example:**
-```html
-<template id="product-card">
-  <div class="product">
-    <p class="name">Name</p>
-    <p class="price">Price</p>
-  </div>
-</template>
+Here's an example of how to use microdata to mark up a recipe on a web page:
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recipe</title>
+  </head>
+  <body>
+    <div itemscope itemtype="http://schema.org/Recipe">
+      <h1 itemprop="name">Classic Chocolate Chip Cookies</h1>
+      <img itemprop="image" src="cookie.jpg" alt="Chocolate Chip Cookies" />
+      <p itemprop="description">A classic recipe for delicious chocolate chip cookies.</p>
+      <ul>
+        <li itemprop="recipeIngredient">2 1/4 cups all-purpose flour</li>
+        <li itemprop="recipeIngredient">1 tsp baking soda</li>
+        <li itemprop="recipeIngredient">1/2 tsp salt</li>
+      </ul>
+    </div>
+  </body>
+</html>
 ```
 
-### Microdata
+In the above example, we use microdata to mark up a recipe for classic chocolate chip cookies. We use the `itemscope` attribute to define the scope of the microdata, and the `itemtype` attribute to specify the type of the item (in this case, a recipe). We then use the `itemprop` attribute to define properties of the recipe, such as the name, image, description, and ingredients.
 
-Microdata adds extra information to your HTML, making it easier for search engines to understand the content of your pages. It's like adding labels to your website's elements so that search engines know exactly what they're looking at.
+## Semantic HTML
 
-**Example:**
-```html
-<div itemscope itemtype="http://schema.org/Person">
-  <span itemprop="name">John Doe</span>
-  <a href="mailto:johndoe@example.com" itemprop="email">johndoe@example.com</a>
-</div>
-```
+Semantic HTML is the practice of using HTML elements to convey the meaning and structure of the content on a web page. By using semantic HTML elements, you can improve the accessibility, search engine optimization (SEO), and maintainability of your web pages.
 
-### Other Advanced HTML Topics
+Here are some examples of semantic HTML elements and their uses:
 
-**ARIA Attributes**
+- `<header>`: Defines a header for a section or page.
+- `<nav>`: Defines a navigation menu.
+- `<main>`: Defines the main content of a page.
+- `<article>`: Defines an article or blog post.
+- `<section>`: Defines a section of content.
+- `<aside>`: Defines content that is tangentially related to the main content.
+- `<footer>`: Defines a footer for a section or page.
 
-ARIA attributes make your web pages more accessible to people with disabilities. For example, `role="button"` tells screen readers that an element is a button, even if it's not a `<button>` tag.
+By using semantic HTML elements, you can create well-structured and accessible web pages that are easier to understand and navigate for users and search engines.
 
-**HTML5 Server-Sent Events (SSE)**
+## Conclusion
 
-SSE enables a web page to get updates from a server in real-time. It's like having a chat app where new messages appear automatically without needing to refresh the page.
-
-**Web Workers**
-
-Web workers allow you to run JavaScript in the background. This is great for tasks that take a long time to complete, as it won't freeze up the webpage while the task is running.
-
-**Progressive Web Apps (PWAs)**
-
-PWAs are web applications that feel like native apps. They can work offline, send push notifications, and be added to the home screen of a device, providing a seamless user experience.
-
-By understanding these advanced HTML concepts, you can create more dynamic, efficient, and accessible web applications. Remember, the best way to learn is by doing, so try incorporating these concepts into your projects to see them in action!
+In this tutorial, we explored advanced HTML topics such as web components, microdata, and semantic HTML. By mastering these advanced HTML concepts, you can create more interactive, accessible, and search engine-friendly web pages.

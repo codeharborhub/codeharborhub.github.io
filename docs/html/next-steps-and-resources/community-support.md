@@ -4,27 +4,38 @@ title: Community Support
 sidebar_label: Community Support
 sidebar_position: 3
 tags: [html, web-development, community, support]
-description: In this tutorial, we will explore community support for HTML and web development.
+description: In this tutorial, we will explore the community support available for HTML and web development.
 ---
 
-A vibrant and supportive community is crucial for any web developer, especially those working with HTML. Fortunately, there are numerous online communities and forums dedicated to HTML and web development, offering valuable resources and support.
+Now, If you are stuck with a problem or have a question, you can always ask for help from the community. keep in mind that the community is always there to help you.
 
-## Online Forums and Communities
+## Our Community
 
-* **Stack Overflow:** https://stackoverflow.com/questions/tagged/html
-* **Sitepoint HTML Forum:** https://www.sitepoint.com/community/c/html-css/25
-* **HTML Subreddit:** https://www.reddit.com/r/html5/
+We have a community of developers who are always ready to help you with your questions and problems. You can ask your questions and get help from other developers.
 
-## User Groups and Events
+<GiscusComponent />
 
-* [Meetup.com](https://www.meetup.com/topics/html-development/) - Find local meetups and events related to HTML and web development.
-* [HTML Discord Server](hhttps://discord.me/htmlcss) - Ask questions and doubts and connect with other developers.
+## Community Support
 
-## HTML and Web Development Resources
+There are many ways to get help from the community. Here are some of the most popular ways:
 
-* **Community Support:** https://www.reddit.com/r/webdev/
-* **Game Tutorial:** http://www-db.deis.unibo.it/courses/TW/DOCS/w3schools/games/default.asp.html#gsc.tab=0
-* **FreeCodeCamp HTML & CSS curriculum:** https://www.freecodecamp.org/learn/responsive-web-design/basic-html-and-html5/
-* **Learn HTML with games:** https://codepip.com/games/sourcery/
+### 1. Stack Overflow
 
-Engaging with the HTML and web development community can be immensely beneficial. By asking questions, sharing your knowledge, and learning from others, you can significantly improve your skills and stay updated on the latest trends and best practices. Remember, the web development community is a valuable resource for support, collaboration, and continuous learning.
+[Stack Overflow](https://stackoverflow.com/) is a question and answer site for professional and enthusiast programmers. It is a great place to ask questions and get help from other developers.
+
+### 2. GitHub
+
+[GitHub](#) is a code hosting platform for version control and collaboration. You can use GitHub to host your code, contribute to other projects, and ask for help from other developers.
+
+### 3. Reddit
+
+[Reddit](https://www.reddit.com/) is a social news aggregation, web content rating, and discussion website. There are many programming-related subreddits where you can ask questions and get help from other developers.
+
+### 4. Discord
+
+[Discord](https://discord.com/) is a communication platform for communities. There are many programming-related Discord servers where you can ask questions and get help from other developers.
+
+
+## Conclusion
+
+In this tutorial, we explored the community support available for HTML and web development. If you are stuck with a problem or have a question, you can always ask for help from the community. Keep in mind that the community is always there to help you.
