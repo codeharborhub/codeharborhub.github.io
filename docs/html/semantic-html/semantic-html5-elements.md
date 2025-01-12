@@ -42,8 +42,6 @@ Let's look at some examples of how semantic HTML5 elements can be used to struct
 
 Defines independent, self-contained content that could be distributed and reused (e.g., in syndication).
 
-<div className="flex flex-wrap items-center my-4 gap-4">
-
 ```html title="index.html"
 <article>
   <h2>Article Title</h2>
@@ -58,13 +56,9 @@ Defines independent, self-contained content that could be distributed and reused
   </article>
 </BrowserWindow>
 
-</div>
-
 ### `<aside>`
 
 Defines content aside from the content it is placed in (like a sidebar). The content should be related to the surrounding content.
-
-<div className="flex flex-wrap items-center my-4 gap-4">
 
 ```html title="index.html"
 <aside>
@@ -88,15 +82,11 @@ Defines content aside from the content it is placed in (like a sidebar). The con
   </aside>
 </BrowserWindow>
 
-</div>
-
 <AdsComponent />
 
 ### `<footer>`
 
 Defines a footer for a document or a section. It typically contains authorship information, copyright notices, and links to privacy policies.
-
-<div className="flex flex-wrap items-center my-4 gap-4">
 
 ```html title="index.html"
 <footer>
@@ -110,13 +100,9 @@ Defines a footer for a document or a section. It typically contains authorship i
   </footer>
 </BrowserWindow>
 
-</div>
-
 ### `<header>`
 
 Defines a header for a document or a section. It typically contains introductory content or navigation links.
-
-<div className="flex flex-wrap items-center my-4 gap-4">
 
 ```html title="index.html"
 <header>
@@ -144,15 +130,11 @@ Defines a header for a document or a section. It typically contains introductory
   </header>
 </BrowserWindow>
 
-</div>
-
 <AdsComponent />
 
 ### `<nav>`
 
 Defines navigation links, making it easier for users to navigate through the website. It is intended for major blocks of navigation links.
-
-<div className="flex flex-wrap items-center my-4 gap-4">
 
 ```html title="index.html"
 <nav>
@@ -174,13 +156,9 @@ Defines navigation links, making it easier for users to navigate through the web
   </nav>
 </BrowserWindow>
 
-</div>
-
 ### `<section>`
 
 Represents a generic section of a document or application. It is used to group related content together.
-
-<div className="flex flex-wrap items-center my-4 gap-4">
 
 ```html title="index.html"
 <section>
@@ -196,13 +174,9 @@ Represents a generic section of a document or application. It is used to group r
   </section>
 </BrowserWindow>
 
-</div>
-
 ### `<time>`
 
 Represents a specific time or date. It can be used to mark up dates, times, or durations.
-
-<div className="flex flex-wrap items-center my-4 gap-4">
 
 ```html title="index.html"
 <time datetime="2025-01-09T09:00">
@@ -215,8 +189,6 @@ Represents a specific time or date. It can be used to mark up dates, times, or d
       January 9, 2025 at 9:00 AM
     </time>
 </BrowserWindow>
-
-</div>
 
 <AdsComponent />
 
