@@ -24,9 +24,16 @@ Our courses are designed to help you learn new skills and advance your career. W
 
 Explore our courses to find the one that suits your interests and goals. Whether you are looking to learn a new programming language, build a web application, analyze data, or improve your project management skills, we have a course for you. Start your learning journey today!
 
-import courses from '@site/src/data/courses';
+<!-- import courses from '@site/src/data/courses'; -->
 
-<Courses courses={courses} />
+<!-- <Courses courses={courses} /> -->
+
+<!-- ====== OR ============= -->
+
+<!-- 
+import courses from '@site/src/database/courses';
+
+<Courses courses={courses} /> -->
 
 To get started, select a course from the list above or explore our recommended courses below. If you have any questions or need help, feel free to reach out to us.
 

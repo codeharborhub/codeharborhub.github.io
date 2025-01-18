@@ -10,6 +10,7 @@ description: WebSocket is a communication protocol that provides full-duplex com
 WebSocket is a communication protocol that provides full-duplex communication channels over a single TCP connection. It is designed to be a more efficient and real-time alternative to traditional HTTP polling mechanisms for web applications.
 
 ### Introduction:
+
 In WebSocket, web applications typically used HTTP for communication between the client (browser) and the server. HTTP, however, is a request-response protocol, which means the client sends a request to the server and the server responds with the requested data. This model is not suitable for scenarios where real-time, bidirectional communication is required because:
 
 1. **Polling:** Clients need to continuously poll the server for updates, which can be inefficient and result in latency.
@@ -19,6 +20,7 @@ In WebSocket, web applications typically used HTTP for communication between the
 WebSocket addresses these limitations by establishing a persistent connection between the client and the server, allowing both parties to initiate data exchange at any time, asynchronously. This connection is established through an initial handshake between the client and the server during which the protocol details are negotiated.
 
 ### Explanation:
+
 WebSocket operates on top of TCP and provides a full-duplex communication channel between a client (typically a web browser) and a server. Here's how it works:
 
 1. **Handshake:** The client and server establish a WebSocket connection through a handshake mechanism. The client sends an HTTP request with specific headers indicating its intent to upgrade to WebSocket. If the server supports WebSocket and agrees to the upgrade, it responds with an HTTP 101 status code (Switching Protocols) and WebSocket-specific headers.
@@ -32,6 +34,7 @@ WebSocket operates on top of TCP and provides a full-duplex communication channe
 5. **Compatibility:** WebSocket is supported by all modern web browsers and is widely used in web applications that require real-time communication.
 
 ### Use Cases:
+
 WebSocket is particularly useful in applications requiring real-time updates or interaction, such as:
 
 - **Chat applications:** Enables instant messaging and group chats.
