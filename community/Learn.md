@@ -1,15 +1,11 @@
-# CodeHarbourHub
-Visit our website [CodeHarbourHub](https://www.codeharborhub.live/)
+---
+id: learn
+title: Welcome to CodeHarbourHub
+sidebar_label: Learn
+sidebar_position: 6
+---
 
-## Table of Contents
-
-- [CodeHarbourHub](#codeharbourhub)
-  - [Table of Contents](#table-of-contents)
-  - [Introduction](#introduction)
-  - [Features](#features)
-  - [Contributing Guidelines](#contributing-guidelines)
-  - [Code of Conduct](#code-of-conduct)
-  - [Socials](#socials)
+Visit our website [CodeHarbourHub](https://codeharborhub.github.io/)
 
 ## Introduction
 
