@@ -133,7 +133,7 @@ Now, you can see the output of the above code in the Browser Window like this:
 
 <!-- <iframe src="https://carbon.now.sh/embed?bg=rgba%28255%2C255%2C255%2C1%29&t=seti&wt=none&l=css&ds=true&dsyoff=20px&dsblur=68px&wc=true&wa=true&pv=56px&ph=56px&ln=false&fl=1&fm=Hack&fs=14px&lh=152%25&si=false&es=2x&wm=false&code=button%253Ahover%2520%257B%250A%2520%2520background-color%253A%2520lightblue%253B%250A%257D" style={{transform: "scale(0.9)", width: "100%", height: "250px", border: "0", borderRadius: "4px", overflow:"hidden"}} title="Pseudo-Class Selectors"></iframe> -->
 
-<BrowserWindow url="http://127.0.0.1:5500/index.html" bodyStyle={{ backgroundColor: "#f9f9f9", color: "#000" }} minHeight="200px">
+<BrowserWindow url="http://127.0.0.1:5500/index.html" bodyStyle={{ backgroundColor: "#f9f9f9", color: "#000", minHeight: "200px" }}>
     <div>
       <button onMouseOver={(e) => e.target.style.backgroundColor = "lightblue"} onMouseOut={(e) => e.target.style.backgroundColor = ""}
       >Hover Over Me</button>
