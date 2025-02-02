@@ -98,7 +98,7 @@ Now, let's look at an example that demonstrates how the `margin` property can be
 <Tabs>
   <TabItem value="HTML" label="index.html">
 
-```html title="index.html"
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -122,7 +122,7 @@ Now, let's look at an example that demonstrates how the `margin` property can be
 
 <TabItem value="CSS" label="styles.css">
 
-```css title="styles.css"
+```css
 div {
   margin: 20px;
   padding: 10px;

@@ -2,7 +2,7 @@
 id: padding
 title: CSS Padding
 sidebar_label: Padding
-sidebar_position: 3
+sidebar_position: 4
 keywords:
   [
     css padding,
