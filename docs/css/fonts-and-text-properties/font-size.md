@@ -2,7 +2,7 @@
 id: font-size
 title: "CSS Font Size"
 sidebar_label: "Font Size"
-sidebar_position: 1
+sidebar_position: 2
 keywords:
   - css font size
   - font size css

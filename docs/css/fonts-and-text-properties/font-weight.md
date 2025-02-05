@@ -2,7 +2,7 @@
 id: font-weight
 title: "CSS Font Weight"
 sidebar_label: "Font Weight"
-sidebar_position: 2
+sidebar_position: 3
 keywords:
   - css font weight
   - font weight css
