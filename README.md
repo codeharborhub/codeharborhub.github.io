@@ -2,9 +2,10 @@
 
 Welcome to CodeHarborHub! Your gateway to top-notch tech education. **Tired of limitations?** CodeHarborHub shatters them. We're the exclusive platform offering a comprehensive tech curriculum, taught by industry masters, completely free. Join our vibrant community, master in-demand skills, and launch your dream tech career.
 
-<a href="https://github.com/Ajay-Dhangar"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=DEF72C&random=false&center=false &width=1000&lines=Hi%2C+there.+If+you+like+CodeHarborHub,+give+it+a+Star" alt="Typing SVG" /></a>
+<!--
+<a href="https://github.com/Ajay-Dhangar"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=DEF72C&random=false&center=false &width=1000&lines=Hi%2C+there.+If+you+like+CodeHarborHub,+give+it+a+Star" alt="Typing SVG" /></a> -->
 
-<a href="https://www.producthunt.com/posts/codeharborhub"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=464236&theme=light" alt="CodeHarborHub - Tired&#0032;of&#0032;limitations&#0063;&#0032;CodeHarborHub&#0032;shatters&#0032;them&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+<a href="https://www.producthunt.com/posts/codeharborhub"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=464236&theme=light" alt="CodeHarborHub - Tired&#0032;of&#0032;limitations&#0063;&#0032;CodeHarborHub&#0032;shatters&#0032;them&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a> <a href="https://codeharborhub.github.io/" target="_blank"><img src="https://trendshift.io/api/badge/repositories/12132" alt="Codeharborhub | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fcodeharborhub.github.io%2F)](https://codeharborhub.github.io/)
 [![License](https://img.shields.io/github/license/CodeHarborHub/codeharborhub)](https://github.com/CodeHarborHub/codeharborhub/blob/main/LICENSE)
