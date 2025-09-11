@@ -229,7 +229,7 @@ const config = {
             html: '<span class="nav-emoji">💰</span> Donate',
           },
           {
-            to: "/blog",
+            to: "/blog/",
             html: '<span class="nav-emoji">📰</span> Blog',
           },
           {
@@ -393,7 +393,7 @@ const config = {
             items: [
               {
                 label: "Blog",
-                to: "/blog",
+                to: "/blog/",
               },
               {
                 label: "Community",
