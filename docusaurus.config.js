@@ -229,8 +229,8 @@ const config = {
             html: '<span class="nav-emoji">💰</span> Donate',
           },
           {
-            to: "/blogs",
-            html: '<span class="nav-emoji">📰</span> Blogs',
+            to: "/blog",
+            html: '<span class="nav-emoji">📰</span> Blog',
           },
           {
             type: "dropdown",
