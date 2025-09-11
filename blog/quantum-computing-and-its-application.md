@@ -1,8 +1,12 @@
 ---
-title: "Introduction to Quantum Computing and It's Applications"
+slug: quantum-computing-and-its-application
+title: Introduction to Quantum Computing
 sidebar_label: Quantum Computing
-authors: [pujan-sarkar]
-tags: [Quantum Computing, Applications]
+image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+authors: [ajay-dhangar]
+tags: [quantum, applications, computing]
+keywords: [quantum, applications, computing]
+description: An introductory blog post about quantum computing, its basic concepts, and potential applications in various fields.
 date: 2024-11-25
 ---
 

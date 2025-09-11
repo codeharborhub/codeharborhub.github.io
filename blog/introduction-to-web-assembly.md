@@ -1,8 +1,10 @@
 ---
-title: "Introduction to WebAssembly: Enhancing Web Performance"
+slug: introduction-to-web-assembly
+title: Introduction to WebAssembly
 sidebar_label: WebAssembly and Web Performance
-authors: [nayanika-mukherjee]
-tags: [webassembly, wasm, web performance, technology]
+image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+authors: [ajay-dhangar]
+tags: [webassembly, wasm, web-performance]
 date: 2024-07-21
 hide_table_of_contents: true
 ---

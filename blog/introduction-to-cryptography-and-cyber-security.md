@@ -1,8 +1,10 @@
 ---
-title: "Cryptography and Its Use in Cyber Security"
+slug: cryptography-and-cyber-security
+title: Cryptography and Its Use in Cyber Security
 sidebar_label: Cryptography and Cyber Security
-authors: [pujan-sarkar]
-tags: [cryptography, cyber security, encryption, technology]
+image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+authors: [ajay-dhangar]
+tags: [cryptography, cyber-security, encryption]
 date: 2024-06-24
 hide_table_of_contents: true
 ---
