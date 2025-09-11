@@ -1,10 +1,10 @@
 ---
-title: "SQL - Structured Query Language"
-sidebar_label: "SQL"
-authors: [ajay-dhangar, hitesh-gahanolia]
-tags: [sql, databases, data]
+title: SQL
+image: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTX6eSg-G0MWr9tVVTwAsVxWojlogGSx8pyBg&s
+authors: [ajay-dhangar]
+tags: [sql, database, mysql, nosql]
 date: 2024-06-12
-hide_table_of_contents: true
+slug: sql
 ---
 
 Structured query language (SQL) is a programming language for storing and processing information in a relational database. A relational database stores information in tabular form, with rows and columns representing different data attributes and the various relationships between the data values. You can use SQL statements to store, update, remove, search, and retrieve information from the database. You can also use SQL to maintain and optimize database performance.
@@ -31,7 +31,6 @@ Structured Query Language contains the following four components in its process:
 - SQL Query Engine, etc.
 
 A classic query engine allows data professionals and users to maintain non-SQL queries. The architecture of SQL is shown in the following diagram:
-![image](https://static.javatpoint.com/sqlpages/images/sql-process.png)
 
 ## What are the components of a SQL system?
 

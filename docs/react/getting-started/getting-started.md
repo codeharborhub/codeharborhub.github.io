@@ -186,7 +186,7 @@ The build output is minified, and the filenames include hashes for caching.
 Your app is now ready to be deployed! Check out our `Deployment` documentation to learn how to deploy your app to popular hosting providers.
 
 :::tip Vite for React Development
-For an alternative and more modern approach to setting up your React projects, consider using Vite, a blazing-fast build tool. Learn more about getting started with React and Vite in our dedicated guide: [Getting Started with React and Vite](/blog/getting-started-with-vite).
+For an alternative and more modern approach to setting up your React projects, consider using Vite, a blazing-fast build tool. Learn more about getting started with React and Vite in our dedicated guide: [Getting Started with React and Vite](#).
 :::
 
 ## Conclusion 

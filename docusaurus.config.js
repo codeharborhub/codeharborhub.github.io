@@ -53,12 +53,40 @@ const config = {
         pages: {
           remarkPlugins: [npm2yarn],
         },
+        // blog: {
+        //   showReadingTime: true,
+        //   editUrl:
+        //     "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
+        //   remarkPlugins: [[npm2yarn, { converters: ["pnpm"] }], remarkMath],
+        //   rehypePlugins: [rehypeKatex],
+        // },
+
         blog: {
+          // routeBasePath: "/",
           showReadingTime: true,
-          editUrl:
-            "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
-          remarkPlugins: [[npm2yarn, { converters: ["pnpm"] }], remarkMath],
-          rehypePlugins: [rehypeKatex],
+          blogTitle: "CodeHarborHub",
+          blogDescription:
+            "Welcome to CodeHarborHub blog, a place to learn and grow. We provide accessible and comprehensive educational resources to learners of all levels, from beginners to advanced professionals. Our mission is to empower individuals with the knowledge and skills they need to succeed in today's fast-paced world. Whether you're looking to learn a new skill, advance your career, or simply explore new ideas, CodeHarborHub has something for you.",
+          postsPerPage: 6,
+          truncateMarker: /<!--\s*(truncate)\s*-->/,
+          blogSidebarTitle: "List blog",
+          blogSidebarCount: "ALL",
+          include: ["**/*.md", "**/*.mdx"],
+          exclude: [
+            "**/_*.{js,jsx,ts,tsx,md,mdx}",
+            "**/_*/**",
+            "**/*.test.{js,jsx,ts,tsx}",
+            "**/__tests__/**"
+          ],
+          showReadingTime: true,
+          onUntruncatedBlogPosts: "ignore",
+          editUrl: "#",
+          remarkPlugins: [
+            [
+              require("@docusaurus/remark-plugin-npm2yarn"),
+              { sync: true }
+            ]
+          ],
         },
         theme: {
           customCss: "./src/css/custom.css",
@@ -201,8 +229,8 @@ const config = {
             html: '<span class="nav-emoji">💰</span> Donate',
           },
           {
-            to: "/blogs",
-            html: '<span class="nav-emoji">📰</span> Blogs',
+            to: "/blog/",
+            html: '<span class="nav-emoji">📰</span> Blog',
           },
           {
             type: "dropdown",
@@ -365,7 +393,7 @@ const config = {
             items: [
               {
                 label: "Blog",
-                to: "/blog",
+                to: "/blog/",
               },
               {
                 label: "Community",

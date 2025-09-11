@@ -1,8 +1,10 @@
 ---
-title: "Microservices Architecture: Design, Implementation, and Monitoring"
+slug: microservices-architecture
+title: "Microservices Architecture"
 sidebar_label: Microservices Basics
-authors: [nayanika-mukherjee]
-tags: [microservices, architecture, spring boot, docker, kubernetes, monitoring]
+image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+authors: [ajay-dhangar]
+tags: [microservices, architecture]
 date: 2024-07-29
 hide_table_of_contents: true
 ---

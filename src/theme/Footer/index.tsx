@@ -185,10 +185,10 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/blogs"
+                    to="/blog"
                     className="mb-3 inline-block text-base text-gray-300 hover:text-[--ifm-color-primary]"
                   >
-                    All Blogs
+                    All Blog
                   </Link>
                 </li>
               </ul>
@@ -248,7 +248,7 @@ const Footer: React.FC = () => {
               </h4>
               <div className="flex flex-col gap-8">
                 <Link
-                  to="/blog/getting-started-with-mern"
+                  to="#"
                   className="group flex items-center gap-[22px]"
                 >
                   <div className="overflow-hidden rounded">
@@ -259,7 +259,7 @@ const Footer: React.FC = () => {
                   </span>
                 </Link>
                 <Link
-                  to="/blog/getting-started-with-microservices"
+                  to="#"
                   className="group flex items-center gap-[22px]"
                 >
                   <div className="overflow-hidden rounded">
