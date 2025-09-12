@@ -2,7 +2,7 @@
 slug: quantum-computing-and-its-application
 title: Introduction to Quantum Computing
 sidebar_label: Quantum Computing
-image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+image: /img/codeharborhub-social-card.jpg
 authors: [ajay-dhangar]
 tags: [quantum, applications, computing]
 keywords: [quantum, applications, computing]

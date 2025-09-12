@@ -80,13 +80,23 @@ const config = {
           ],
           showReadingTime: true,
           onUntruncatedBlogPosts: "ignore",
-          editUrl: "#",
+          editUrl: "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
+          // remarkPlugins: [
+          //   [
+          //     require("@docusaurus/remark-plugin-npm2yarn"),
+          //     { sync: true }
+          //   ]
+          // ],
+
           remarkPlugins: [
             [
               require("@docusaurus/remark-plugin-npm2yarn"),
               { sync: true }
-            ]
+            ],
+            remarkMath
           ],
+
+          rehypePlugins: [rehypeKatex],
         },
         theme: {
           customCss: "./src/css/custom.css",

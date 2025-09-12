@@ -2,7 +2,7 @@
 slug: linux-development-and-cyber-security
 title: Comprehensive Documentation on Linux Development and Cybersecurity
 sidebar_label: Linux development and cyber security
-image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+image: /img/codeharborhub-social-card.jpg
 authors: [ajay-dhangar]
 tags: [cyber-security, linux, internet, technology]
 date: 2024-06-23
