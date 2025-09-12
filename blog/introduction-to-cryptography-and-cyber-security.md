@@ -2,11 +2,11 @@
 slug: cryptography-and-cyber-security
 title: Cryptography and Its Use in Cyber Security
 sidebar_label: Cryptography and Cyber Security
-image: https://codeharborhub.github.io/img/codeharborhub-social-card.jpg
+image: /img/codeharborhub-social-card.jpg
 authors: [ajay-dhangar]
 tags: [cryptography, cyber-security, encryption]
 date: 2024-06-24
-hide_table_of_contents: true
+# hide_table_of_contents: true
 ---
 
 In the realm of cyber security, cryptography stands as a critical tool for protecting information. As digital data exchange grows exponentially, the importance of cryptography in ensuring data security and privacy cannot be overstated. This blog explores the fundamental concepts of cryptography, its historical significance, and its contemporary applications in cyber security.

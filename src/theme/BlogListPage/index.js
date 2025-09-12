@@ -34,7 +34,7 @@ function BlogListPageMetadata(props) {
 function BlogHomepageBanner(props) {
   const blogMetadata = props.metadata;
   const imageDefault = {
-    urlBannerBg: "/img/banner-2.png",
+    urlBannerBg: "/img/blog-banner-4.jpg",
     urlAvatar: "/img/avatar.jpg",
   };
 
@@ -47,7 +47,8 @@ function BlogHomepageBanner(props) {
           className="w-full rounded-lg shadow-md object-cover h-48 md:h-64 lg:h-80"
           loading="lazy"
         />
-        <Image
+
+        {/* <Image
           img={useBaseUrl(imageDefault.urlAvatar)}
           alt="avatar blog"
           className="absolute rounded-full border-4 border-white bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 transform rounded-full bg-white p-1 shadow-lg"
@@ -55,7 +56,8 @@ function BlogHomepageBanner(props) {
           width={100}
           height={100}
           loading="lazy"
-        />
+        /> */}
+        
       </div>
       <div className="text-center mb-8 mt-12 px-4">
         <h2 className="mb-2 text-3xl font-extrabold leading-tight md:text-4xl lg:text-5xl">
