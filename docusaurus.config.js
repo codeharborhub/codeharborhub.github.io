@@ -243,6 +243,12 @@ const config = {
             html: '<span class="nav-emoji">📰</span> Blog',
           },
           {
+            to: "/feature-requests/",
+            html: '<span class="nav-emoji">💡</span> Feature Requests',
+          },
+
+
+          {
             type: "dropdown",
             html: '<span class="nav-emoji">🔗</span> More',
             position: "left",
@@ -608,7 +614,7 @@ const config = {
         keys: "Some-keys",
       },
     ],
-    
+
     [
       "@docusaurus/plugin-content-docs",
       /** @type {import('@docusaurus/plugin-content-docs').Options} */
@@ -623,6 +629,8 @@ const config = {
         showLastUpdateTime: true,
       },
     ],
+
+    './src/plugins/featureRequests/FeatureRequestsPlugin.js',
   ],
 };
 

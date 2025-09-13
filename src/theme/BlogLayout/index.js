@@ -9,7 +9,7 @@ export default function BlogLayout(props) {
 
   return (
     <Layout {...layoutProps}>
-      <div className='container max-w-7xl px-4 py-4 mx-auto'>
+      <div className='container max-w-7xl px-4 py-4 mx-auto mt-4'>
         <div className='row'>
           <BlogSidebar sidebar={sidebar} hideOnDesktop />
           <main
