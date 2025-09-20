@@ -1,0 +1,166 @@
+---
+slug: /versioning
+---
+
+# Versioning
+
+You can use the **versioning CLI** to create a new documentation version based on the latest content in the `docs` directory.  
+That specific set of documentation will then be preserved and accessible even as the documentation in the `docs` directory continues to evolve.
+
+Versioning is most useful for projects with **high traffic and frequent changes** between releases.
+If your docs rarely change, avoid versioning to keep things simple.
+
+---
+
+## Overview {#overview}
+
+A typical versioned documentation structure looks like this:
+
+```bash
+website
+├── sidebars.json        # sidebar for the current docs version
+├── docs                 # docs directory for the current docs version
+│   ├── foo
+│   │   └── bar.md       # https://mysite.com/docs/next/foo/bar
+│   └── hello.md         # https://mysite.com/docs/next/hello
+├── versions.json        # list of available versions
+├── versioned_docs
+│   ├── version-1.1.0
+│   │   └── hello.md     # https://mysite.com/docs/hello
+│   └── version-1.0.0
+│       └── hello.md     # https://mysite.com/docs/1.0.0/hello
+├── versioned_sidebars
+│   ├── version-1.1.0-sidebars.json
+│   └── version-1.0.0-sidebars.json
+└── docusaurus.config.js
+```
+
+| File Path                               | Version        | URL               |
+| --------------------------------------- | -------------- | ----------------- |
+| `versioned_docs/version-1.0.0/hello.md` | 1.0.0          | /docs/1.0.0/hello |
+| `versioned_docs/version-1.1.0/hello.md` | 1.1.0 (latest) | /docs/hello       |
+| `docs/hello.md`                         | current        | /docs/next/hello  |
+
+---
+
+### Terminology {#terminology}
+
+* **Current version** – The content stored in the `./docs` folder.
+* **Latest version** – The version served by default on `/docs`.
+  This is defined by navigation, not by file location.
+
+These may or may not be the same.
+
+---
+
+## Tutorials {#tutorials}
+
+### Tagging a new version
+
+1. Prepare the `./docs` folder for release.
+2. Run the versioning command:
+
+```bash npm2yarn
+npm run docusaurus docs:version 1.1.0
+```
+
+This will:
+
+* Copy the `docs/` folder into `versioned_docs/version-1.1.0/`.
+* Create a versioned sidebar file `versioned_sidebars/version-1.1.0-sidebars.json`.
+* Append `1.1.0` to `versions.json`.
+
+---
+
+### Creating new docs
+
+<Tabs>
+<TabItem value="Current version">
+
+```bash
+docs/new.md
+# Edit sidebar.js for the current version
+```
+
+</TabItem>
+<TabItem value="Older version">
+
+```bash
+versioned_docs/version-1.0.0/new.md
+# Edit versioned_sidebars/version-1.0.0-sidebars.json
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+### Updating an existing version
+
+Simply edit the files inside the appropriate `versioned_docs` directory
+and commit the changes—they will apply only to that version.
+
+---
+
+### Deleting a version
+
+1. Remove it from `versions.json`.
+2. Delete the corresponding `versioned_docs` and `versioned_sidebars` directories.
+
+---
+
+## Configuring behavior {#configuring-behavior}
+
+Key plugin options:
+
+* `disableVersioning` – Force-disable versioning.
+* `includeCurrentVersion` – Decide if the `./docs` folder should be published.
+* `lastVersion` – Control which version `/docs` points to.
+* `onlyIncludeVersions` – Deploy only a subset of versions.
+* `versions` – Customize labels, paths, banners, badges, etc.
+
+Example: treating `current` as a released version:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    '@docusaurus/preset-classic',
+    {
+      docs: {
+        lastVersion: 'current',
+        versions: {
+          current: {
+            label: '1.0.0',
+            path: '1.0.0',
+          },
+        },
+      },
+    },
+  ],
+};
+```
+
+---
+
+## Navbar Items {#navbar-items}
+
+Docusaurus provides built-in navbar types:
+
+* [`doc`](https://docusaurus.io/docs/api/themes/theme-configuration#navbar-doc-link) – Link to a doc.
+* [`docSidebar`](https://docusaurus.io/docs/api/themes/theme-configuration#navbar-doc-sidebar) – Link to the first item in a sidebar.
+* [`docsVersion`](https://docusaurus.io/docs/api/themes/theme-configuration#navbar-docs-version) – Link to the main doc of the current version.
+* [`docsVersionDropdown`](https://docusaurus.io/docs/api/themes/theme-configuration#navbar-docs-version-dropdown) – Dropdown of all versions.
+
+These automatically resolve the best version to display.
+
+---
+
+## Recommended Practices {#recommended-practices}
+
+* **Version only when necessary** – avoid cutting versions for small patch releases.
+* **Keep versions manageable** – aim for fewer than \~10 active versions.
+* **Use absolute imports** with `@site` alias to avoid broken paths across versions.
+* **Link docs by file paths** (`.md`), letting Docusaurus rewrite URLs correctly.
+* **Decide asset strategy** – store images/files either in versioned folders (for frozen snapshots) or in `/static` for shared use.
+
+By following these guidelines, you can maintain a clean and scalable documentation workflow while supporting multiple versions of your project.

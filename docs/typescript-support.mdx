@@ -1,0 +1,136 @@
+---
+title: TypeScript Support
+description: CodeHarborHub is built with Docusaurus, which is written in TypeScript and provides first-class TypeScript support.
+---
+
+CodeHarborHub runs on **Docusaurus**, which is written entirely in TypeScript and provides first-class TypeScript support.
+
+The minimum recommended version is **TypeScript 5.1**.
+
+---
+
+## Initialization {#initialization}
+
+You can start a new CodeHarborHub site with full TypeScript support right from the scaffolding step.  
+Use the `--typescript` flag when creating the project:
+
+```bash title="terminal"
+npx create-docusaurus@latest my-site classic --typescript
+````
+
+This automatically sets up `.ts` and `.tsx` support for theme components and pages.
+
+---
+
+## Setup for Existing Projects {#setup}
+
+If you’re migrating an existing CodeHarborHub site to TypeScript, install these packages:
+
+```bash npm2yarn title="terminal"
+npm install --save-dev typescript @docusaurus/module-type-aliases @docusaurus/tsconfig @docusaurus/types
+```
+
+Then create a `tsconfig.json` at your project root:
+
+```json title="tsconfig.json"
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "baseUrl": "."
+  }
+}
+```
+
+Docusaurus itself does not compile your TypeScript files.
+The `tsconfig.json` improves **editor IntelliSense**, and you can run `tsc` to type-check code locally or in CI.
+
+---
+
+## Typing the Config File {#typing-config}
+
+You can write your site configuration in TypeScript for better type safety.
+
+```ts title="docusaurus.config.ts"
+import type {Config} from '@docusaurus/types';
+import type * as Preset from '@docusaurus/preset-classic';
+
+const config: Config = {
+  title: 'CodeHarborHub',
+  favicon: 'img/favicon.ico',
+
+  presets: [
+    [
+      'classic',
+      {
+        /* Your preset config here */
+      } satisfies Preset.Options,
+    ],
+  ],
+
+  themeConfig: {
+    /* Your theme config here */
+  } satisfies Preset.ThemeConfig,
+};
+
+export default config;
+```
+
+<details>
+  <summary>Using JSDoc in a JavaScript config</summary>
+
+If you prefer to keep `docusaurus.config.js`, you can still get type checking
+by adding `// @ts-check` and JSDoc annotations:
+
+```js title="docusaurus.config.js"
+// @ts-check
+/** @type {import('@docusaurus/types').Config} */
+const config = {
+  title: 'CodeHarborHub',
+  favicon: 'img/favicon.ico',
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      /** @type {import('@docusaurus/preset-classic').Options} */
+      ({
+        /* preset options */
+      }),
+    ],
+  ],
+  themeConfig:
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+    ({
+      /* theme options */
+    }),
+};
+
+export default config;
+```
+
+</details>
+
+---
+
+## Swizzling TypeScript Theme Components {#swizzling-typescript-theme-components}
+
+When swizzling (overriding) components, add the `--typescript` flag
+to generate TypeScript files:
+
+```bash npm2yarn
+npm run swizzle @docusaurus/theme-classic Footer -- --typescript
+```
+
+This creates a `Footer/index.tsx` and a matching `styles.module.css` in `src/theme`.
+
+All official Docusaurus themes support TypeScript swizzling, including:
+
+* [`theme-classic`](https://docusaurus.io/docs/api/themes/@docusaurus/theme-classic)
+* [`theme-live-codeblock`](https://docusaurus.io/docs/api/themes/@docusaurus/theme-live-codeblock)
+* [`theme-search-algolia`](https://docusaurus.io/docs/api/themes/@docusaurus/theme-search-algolia)
+
+If you maintain a custom theme, see the
+[Lifecycle APIs guide](https://docusaurus.io/docs/api/plugin-methods/extend-infrastructure#getTypeScriptThemePath)
+to add TypeScript support.
+
+---
+
+✅ With TypeScript configured, **CodeHarborHub** gains **type safety, autocompletion, and better developer experience** across the entire documentation platform.

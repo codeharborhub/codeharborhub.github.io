@@ -1,0 +1,225 @@
+---
+title: Configuration
+description: "Configuring CodeHarborHub through docusaurus.config.js and customizing site behavior."
+---
+
+import TOCInline from '@theme/TOCInline';
+
+:::info
+Check the [**`docusaurus.config.js` API reference**](https://docusaurus.io/docs/api/docusaurus-config)  
+for a complete list of all available options.
+:::
+
+CodeHarborHub is powered by **[Docusaurus](https://docusaurus.io/)**. Its configuration is centralized in a single file: **`docusaurus.config.js`**. This file defines your site’s metadata, theme options, plugins, and deployment settings.
+
+Keeping a well-maintained config helps contributors focus on docs and code while still allowing full customization.
+
+---
+
+## Syntax to declare `docusaurus.config.js` {#syntax}
+
+The configuration file runs in **Node.js** and can export either:
+
+- a **config object**, or  
+- a **function** that returns a config object (sync or async).
+
+:::info
+
+The `docusaurus.config.js` file supports:
+
+- [**ES Modules**](https://flaviocopes.com/es-modules/)
+- [**CommonJS**](https://flaviocopes.com/commonjs/)
+- [**TypeScript**](./typescript-support.mdx#typing-config)
+
+Constraints:
+
+- **Required:** use `export default /* your config*/` (or `module.exports`) to export your Docusaurus config
+- **Optional:** use `import Lib from 'lib'` (or `require('lib')`) to import Node.js packages
+
+:::
+
+Examples:
+
+```js title="docusaurus.config.js"
+export default {
+  title: 'CodeHarborHub',
+  url: 'https://codeharborhub.github.io',
+  baseUrl: '/',
+};
+````
+
+```js title="docusaurus.config.js"
+module.exports = {
+  title: 'CodeHarborHub',
+  url: 'https://codeharborhub.github.io',
+  baseUrl: '/',
+};
+```
+
+```ts title="docusaurus.config.ts"
+import type {Config} from '@docusaurus/types';
+
+export default {
+  title: 'CodeHarborHub',
+  url: 'https://codeharborhub.github.io',
+  baseUrl: '/',
+} satisfies Config;
+```
+
+Async configs allow you to dynamically import ESM-only modules:
+
+```js title="docusaurus.config.js"
+export default async function createConfig() {
+  const somePlugin = await import('remark-plugin');
+  return {
+    title: 'CodeHarborHub',
+    url: 'https://codeharborhub.github.io',
+    baseUrl: '/',
+    plugins: [somePlugin.default],
+  };
+}
+```
+
+---
+
+## Key Configuration Sections {#key-sections}
+
+<TOCInline toc={toc} minHeadingLevel={3} maxHeadingLevel={3} />
+
+### Site metadata {#site-metadata}
+
+Define global site information:
+
+```js title="docusaurus.config.js"
+export default {
+  title: 'CodeHarborHub',
+  tagline: 'Learn. Build. Grow.',
+  url: 'https://codeharborhub.github.io',
+  baseUrl: '/',
+  favicon: 'img/favicon.ico',
+};
+```
+
+* **title** – Shown in the browser tab and search engines.
+* **tagline** – Used in meta tags and the homepage hero.
+* **url** & **baseUrl** – Base domain and subpath for deployment.
+* **favicon** – Path to your site’s icon.
+
+### Deployment configurations {#deployment}
+
+If you plan to deploy to GitHub Pages:
+
+```js
+export default {
+  organizationName: 'CodeHarborHub', // GitHub org/user
+  projectName: 'codeharborhub.github.io', // Repository name
+  deploymentBranch: 'gh-pages',
+};
+```
+
+See [Deployment](https://docusaurus.io/docs/deployment) for full instructions.
+
+### Theme, plugins, and presets {#theme-plugin-preset}
+
+List all themes, plugins, and presets to extend functionality:
+
+```js
+export default {
+  plugins: [
+    '@docusaurus/plugin-content-blog',
+    '@docusaurus/plugin-content-pages',
+  ],
+  themes: ['@docusaurus/theme-classic'],
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {sidebarPath: './sidebars.js'},
+        blog: {showReadingTime: true},
+        theme: {customCss: './src/css/custom.css'},
+      },
+    ],
+  ],
+};
+```
+
+💡 Use shorthands for convenience:
+
+```js
+plugins: ['content-blog', 'content-pages'],
+themes: ['classic'],
+```
+
+You can also load local plugins:
+
+```js
+import path from 'path';
+
+export default {
+  plugins: [path.resolve(__dirname, './plugins/customPlugin')],
+};
+```
+
+### Custom fields {#custom-fields}
+
+Add project-specific data under `customFields`:
+
+```js
+export default {
+  customFields: {
+    repoUrl: 'https://github.com/CodeHarborHub/codeharborhub.github.io',
+    discordLink: 'https://discord.gg/',
+  },
+};
+```
+
+These values can be accessed inside React components via `siteConfig`.
+
+---
+
+## Accessing Configuration in Components {#accessing}
+
+Use the `useDocusaurusContext` hook to read config values:
+
+```jsx
+import React from 'react';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+
+export default function FooterInfo() {
+  const {siteConfig} = useDocusaurusContext();
+  return <p>© {new Date().getFullYear()} {siteConfig.title}</p>;
+}
+```
+
+---
+
+## Customizing Babel {#babel}
+
+Docusaurus transpiles source code with **Babel**.
+To customize Babel, create a `babel.config.js` in your project root:
+
+```bash
+npm install --save @docusaurus/babel
+```
+
+```js title="babel.config.js"
+export default {
+  presets: ['@docusaurus/babel/preset'],
+};
+```
+
+Restart the dev server for changes to take effect.
+
+---
+
+## Tips for CodeHarborHub {#tips}
+
+* Keep **SEO** fields (title, description, keywords) updated for better visibility.
+* Use environment variables (`process.env`) for secrets like analytics keys.
+* Store commonly reused links (GitHub, Discord) in `customFields` to update them in one place.
+
+---
+
+🎯 With a well-structured `docusaurus.config.js`,
+you can manage **site-wide settings, themes, and plugins** easily,
+making CodeHarborHub scalable and contributor-friendly.

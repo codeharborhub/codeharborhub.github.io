@@ -1,0 +1,185 @@
+---
+title: Installation
+description: How to install CodeHarborHub locally, set up dependencies, and run the development server in minutes.
+---
+
+# Installation
+
+CodeHarborHub is built with **[Docusaurus](https://docusaurus.io/)** and a modern **React** ecosystem.
+This guide will help you **clone the repository, install dependencies, and start the local development server**.
+
+---
+
+## Requirements {#requirements}
+
+Before starting, ensure your system meets these prerequisites:
+
+* [Node.js](https://nodejs.org/en/download/) **v20.0** or later
+  (Check with `node -v`).
+  We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions.
+* [Git](https://git-scm.com/downloads) for cloning the repository.
+* A package manager:
+
+  * [npm](https://docs.npmjs.com/cli/v9/commands/npm) (comes with Node.js) **or**
+  * [yarn](https://classic.yarnpkg.com/lang/en/) if you prefer Yarn.
+
+---
+
+## Clone the Repository {#clone}
+
+Start by cloning the **CodeHarborHub** repository from GitHub:
+
+```bash title="terminal"
+git clone https://github.com/CodeHarborHub/codeharborhub.github.io.git
+cd codeharborhub.github.io
+```
+
+This will create a folder named `codeharborhub.github.io` with all source files.
+
+---
+
+## Install Dependencies {#install-dependencies}
+
+Install all required packages:
+
+<Tabs>
+<TabItem value="npm" label="npm (recommended)" default>
+
+```bash title="terminal"
+npm install
+```
+
+</TabItem>
+<TabItem value="yarn" label="Yarn">
+
+```bash title="terminal"
+yarn install
+```
+
+</TabItem>
+</Tabs>
+
+This may take a few minutes depending on your internet speed.
+
+---
+
+## Run the Development Server {#development-server}
+
+Start the local development server to preview the site:
+
+<Tabs>
+<TabItem value="npm" label="npm" default>
+
+```bash title="terminal"
+npm start
+```
+
+</TabItem>
+<TabItem value="yarn" label="Yarn">
+
+```bash title="terminal"
+yarn start
+```
+
+</TabItem>
+</Tabs>
+
+A browser window should automatically open at
+👉 **[`http://localhost:3000`](http://localhost:3000)**
+
+Any edits to docs or pages will refresh automatically—no manual reload needed.
+
+---
+
+## Build for Production {#build}
+
+To generate an optimized production build:
+
+<Tabs>
+<TabItem value="npm" label="npm" default>
+
+```bash title="terminal"
+npm run build
+```
+
+</TabItem>
+<TabItem value="yarn" label="Yarn">
+
+```bash title="terminal"
+yarn build
+```
+
+</TabItem>
+</Tabs>
+
+The static site will be generated inside the `/build` directory.
+You can deploy this folder to **GitHub Pages**, **Netlify**, **Vercel**, or any static hosting provider.
+
+For deployment guides, see our [Deployment Docs](https://docusaurus.io/docs/deployment).
+
+---
+
+## Project Structure {#project-structure}
+
+After installation, your folder will look like this:
+
+```bash title="Structure"
+codeharborhub.github.io
+├── blog            # Blog posts
+├── docs            # Documentation (this page!)
+├── src             # React components & custom pages
+│   ├── css
+│   └── pages
+├── static          # Static assets (images, icons)
+├── docusaurus.config.js # Site configuration
+├── sidebars.js     # Sidebar navigation config
+├── package.json
+└── README.md
+```
+
+* **/docs/** – Markdown/MDX documentation files.
+* **/src/** – React components, layouts, and custom pages.
+* **/static/** – Images, logos, and other static resources.
+* **docusaurus.config.js** – Main site configuration.
+
+---
+
+## Updating CodeHarborHub {#updating}
+
+To pull the latest updates from GitHub:
+
+```bash title="terminal"
+git pull origin main
+npm install    # or yarn install
+```
+
+Check the installed Docusaurus version:
+
+```bash title="terminal"
+npx docusaurus --version
+```
+
+---
+
+## Troubleshooting {#troubleshooting}
+
+Having issues? Try these:
+
+* Clear the cache:
+
+```bash title="terminal"
+rm -rf node_modules .docusaurus build
+npm install
+```
+
+* Ensure Node.js is updated to the latest LTS version.
+* Ask for help on:
+
+  * [GitHub Issues](https://github.com/CodeHarborHub/codeharborhub.github.io/issues)
+  * [Discord Community](https://discord.gg/rGCZYcaHk7)
+
+---
+
+🎉 **You’re ready!**
+Your local development environment for **CodeHarborHub** is now live.
+Start exploring, editing, and contributing to build the **world’s best free tech-learning platform**.

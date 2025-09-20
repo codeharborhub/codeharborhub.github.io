@@ -1,0 +1,149 @@
+---
+slug: /creating-pages
+sidebar_label: Pages
+title: Creating Pages
+---
+
+In this section, we will explore how to create **standalone pages** in a CodeHarborHub-powered Docusaurus site.
+
+The `@docusaurus/plugin-content-pages` plugin allows you to build **one-off pages** like a custom landing page, a showcase, or a support page.  
+Pages can be created using **React components** or **Markdown/MDX** files.
+
+:::note
+Unlike [Docs](/docs), **Pages do not have sidebars** by default.
+:::
+
+:::info
+Refer to the [Pages Plugin API Reference](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-pages) for an exhaustive list of configuration options.
+:::
+
+---
+
+## Add a React Page {#add-a-react-page}
+
+Pages in CodeHarborHub are React components.  
+You can leverage the power of React to create **interactive, dynamic** content.
+
+Create a file `/src/pages/helloReact.js`:
+
+```jsx title="/src/pages/helloReact.js"
+import React from 'react';
+import Layout from '@theme/Layout';
+
+export default function HelloReact() {
+  return (
+    <Layout title="Hello React" description="A simple React page">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '50vh',
+          fontSize: '20px',
+        }}
+      >
+        <p>
+          Edit <code>pages/helloReact.js</code> and save to reload.
+        </p>
+      </div>
+    </Layout>
+  );
+}
+````
+
+After saving the file, open
+[`http://localhost:3000/helloReact`](http://localhost:3000/helloReact) to view your new page.
+
+---
+
+## Add a Markdown Page {#add-a-markdown-page}
+
+You can also create static pages using Markdown or MDX.
+
+Create a file `/src/pages/helloMarkdown.md`:
+
+```md title="/src/pages/helloMarkdown.md"
+---
+title: Hello Markdown
+description: A simple Markdown page
+hide_table_of_contents: true
+---
+
+# Hello from Markdown
+
+This page was written entirely in Markdown.
+```
+
+Visit [`http://localhost:3000/helloMarkdown`](http://localhost:3000/helloMarkdown) to see the result.
+
+---
+
+## Routing {#routing}
+
+Routing in CodeHarborHub follows the **file system hierarchy** inside `/src/pages/`.
+Each file automatically maps to a URL:
+
+| File path                  | URL Route             |
+| -------------------------- | --------------------- |
+| `/src/pages/index.js`      | `[baseUrl]`           |
+| `/src/pages/about.js`      | `[baseUrl]/about`     |
+| `/src/pages/blog/index.js` | `[baseUrl]/blog/`     |
+| `/src/pages/blog/post.js`  | `[baseUrl]/blog/post` |
+
+You can also create nested directories for better organization.
+
+Example directory structure:
+
+```bash
+my-website
+└── src
+    └── pages
+        ├── index.js
+        ├── about.js
+        ├── support/
+        │   ├── index.js
+        │   └── styles.module.css
+        └── blog/
+            └── post.js
+```
+
+---
+
+## Recommended Structure {#recommended-structure}
+
+You can group page-related files (JSX/TSX, CSS modules, images)
+inside a dedicated folder for easier maintenance.
+
+Example:
+
+```bash
+src/pages/support/
+├── index.js
+└── styles.module.css
+```
+
+Then, import the CSS module inside `index.js`:
+
+```jsx
+import styles from './styles.module.css';
+```
+
+This keeps styles **scoped to the page**.
+
+---
+
+## Handling Duplicate Routes {#duplicate-routes}
+
+Creating two pages with the same route will trigger a warning during
+`npm run start` or `npm run build`.
+The **last-created page overrides the others**.
+
+To avoid conflicts:
+
+* Rename one of the files, **or**
+* Update the [onDuplicateRoutes](https://docusaurus.io/docs/api/docusaurus.config.js.mdx#onDuplicateRoutes) option to customize behavior.
+
+---
+
+With React and Markdown pages, **CodeHarborHub** lets you build
+everything from simple static pages to fully interactive app-like experiences.

@@ -177,16 +177,16 @@ const config = {
               {
                 type: "html",
                 value: `<div class="dropdown_grid">
-                <a class="dropbtn" href="/docs/">Tutorials</a>
+                <a class="dropbtn" href="/docs/">Docs</a>
                 <div class="dropdown-content">
-                  <a href="/docs/category/html/" class="nav__icons"> <img src="/icons/html-5.svg" title="HTML5" alt="HTML" /> </a>
-                  <a href="/docs/category/css/" class="nav__icons"> <img src="/icons/css.svg" title="CSS" alt="CSS" /> </a>
-                  <a href="/docs/category/javascript/" class="nav__icons" > <img src="/icons/js.svg" title="JavaScript" alt="JavaScript" /> </a>
-                  <a href="/docs/category/react/" class="nav__icons"> <img src="/icons/jsx.svg" title="React.Js" alt="React" /> </a>
-                  <a href="/docs/category/typescript/" class="nav__icons"> <img src="/icons/ts.svg" title="TypeScript" alt="TypeScript" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/html-5.svg" title="HTML5" alt="HTML" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/css.svg" title="CSS" alt="CSS" /> </a>
+                  <a href="#" class="nav__icons" > <img src="/icons/js.svg" title="JavaScript" alt="JavaScript" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/jsx.svg" title="React.Js" alt="React" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/ts.svg" title="TypeScript" alt="TypeScript" /> </a>
                   <a href="#" class="nav__icons"> <img src="/icons/py.svg" title="Python" alt="Python" /> </a>
-                  <a href="/docs/category/tailwind/" class="nav__icons"> <img src="/icons/tailwind-css.svg" title="Tailwind CSS" alt="Tailwind" /> </a>
-                  <a href="/docs/category/next-js/" class="nav__icons"> <img src="/icons/next-js.svg" title="NextJs" alt="Next" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/tailwind-css.svg" title="Tailwind CSS" alt="Tailwind" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/next-js.svg" title="NextJs" alt="Next" /> </a>
                 </div>
               </div>`,
               },
@@ -199,10 +199,10 @@ const config = {
               {
                 type: "html",
                 value: `<div class="dropdown_grid">
-                <a class="dropbtn" href="/courses/"> Courses </a>
+                <a class="dropbtn" href="#"> Courses </a>
                 <div class="dropdown-content">
-                  <a href="/courses/category/html" class="nav__icons"> <img src="/icons/html-5.svg" alt="HTML" /> </a>
-                  <a href="/courses/category/reactjs/" class="nav__icons"> <img src="/icons/jsx.svg" alt="React" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/html-5.svg" alt="HTML" /> </a>
+                  <a href="#" class="nav__icons"> <img src="/icons/jsx.svg" alt="React" /> </a>
                 </div>
               </div>`,
               },
