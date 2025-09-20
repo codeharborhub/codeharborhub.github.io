@@ -59,7 +59,19 @@ const sidebars = {
           ],
         },
       ],
-    }
+    },
+    'blog',
+    {
+          type: 'category',
+          label: 'Markdown Features',
+          link: {
+            type: 'doc',
+            id: 'guides/markdown-features/introduction',
+          },
+          items: [
+            'guides/markdown-features/react',
+          ],
+        },
   ],
 };
 
