@@ -1,0 +1,133 @@
+---
+id: browser-support
+description: Learn how CodeHarborHub manages browser compatibility while keeping bundle size small
+sidebar_label: Browser Support
+keywords:
+  - browserslist
+  - compatibility
+  - codeharborhub
+  - bundle size
+---
+
+# Browser Support
+
+CodeHarborHub uses the **[Browserslist](https://github.com/browserslist/browserslist)** configuration to define which browsers are supported during builds.  
+This ensures a balance between **backward compatibility** and **optimized bundle size**.
+
+<AdsComponent />
+
+## Purpose {#purpose}
+
+Older browsers often lack support for modern JavaScript syntax and APIs.  
+Supporting them requires extra code (polyfills, transpilation), which **increases the final JS bundle size** and slows down loading times.
+
+For example, CodeHarborHub uses the [optional chaining syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining):
+
+```js
+const value = user?.profile?.email;
+```
+
+Older browsers may not understand this syntax, so the production build will **transpile** it into a more verbose but compatible form:
+
+```js
+var _user, _user$profile;
+
+const value =
+  (_user = user) === null || _user === void 0
+    ? void 0
+    : (_user$profile = _user.profile) === null || _user$profile === void 0
+    ? void 0
+    : _user$profile.email;
+```
+
+This keeps the code running everywhere—but also makes the bundle larger.
+
+<AdsComponent />
+
+## Default Configuration {#default-configuration}
+
+The default CodeHarborHub template includes the following **browserslist** field in `package.json`:
+
+```json title="package.json"
+{
+  "name": "codeharborhub",
+  // ...
+  "browserslist": {
+    "production": [">0.5%", "not dead", "not op_mini all"],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+```
+
+### Meaning:
+
+* **Production**: Support browsers with
+
+  * > 0.5% global market share
+  * Still officially maintained (`not dead`)
+  * Excluding Opera Mini (extremely limited)
+* **Development**: Only the latest versions of Chrome, Firefox, and Safari for faster local builds.
+
+<AdsComponent />
+
+## Checking the Actual List {#checking-list}
+
+Run the Browserslist CLI to see which browsers match the configuration:
+
+```bash
+npx browserslist --env="production"
+```
+
+Example output (for 2025):
+
+```text
+chrome 124
+edge 124
+firefox 125
+ios_saf 17
+safari 17
+android 124
+```
+
+This represents the real browsers that your production build targets.
+
+<AdsComponent />
+
+## Adjusting Browser Targets {#adjusting-targets}
+
+You can customize browser support depending on your project needs.
+
+Examples:
+
+```json
+"browserslist": {
+  "production": [">1%", "last 2 versions"],
+  "development": ["last 1 chrome version"]
+}
+```
+
+* `>1%` – Only browsers with more than 1% market share.
+* `last 2 versions` – Support the last two major versions of each browser.
+
+<AdsComponent />
+
+## Best Practices {#best-practices}
+
+* Keep production targets **inclusive but reasonable** to avoid large polyfills.
+* Regularly check usage statistics for your audience (e.g., via [Can I Use](https://caniuse.com/)).
+* Test your site on the most critical browsers after changing the config.
+* Avoid supporting obsolete browsers like IE11 unless absolutely necessary.
+
+<AdsComponent />
+
+## Learn More {#learn-more}
+
+* [Browserslist README](https://github.com/browserslist/browserslist/blob/main/README.md)
+* [Query Examples](https://github.com/browserslist/browserslist#queries)
+* [Best Practices](https://github.com/browserslist/browserslist#best-practices)
+
+By carefully tuning browser support, CodeHarborHub ensures **fast loading times** while maintaining compatibility for the majority of users.

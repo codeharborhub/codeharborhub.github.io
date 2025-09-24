@@ -53,51 +53,41 @@ const config = {
         pages: {
           remarkPlugins: [npm2yarn],
         },
+        blog: false,
+
         // blog: {
         //   showReadingTime: true,
+        //   blogTitle: "CodeHarborHub",
+        //   blogDescription:
+        //     "Welcome to CodeHarborHub blog, a place to learn and grow. We provide accessible and comprehensive educational resources to learners of all levels, from beginners to advanced professionals. Our mission is to empower individuals with the knowledge and skills they need to succeed in today's fast-paced world. Whether you're looking to learn a new skill, advance your career, or simply explore new ideas, CodeHarborHub has something for you.",
+        //   postsPerPage: 6,
+        //   truncateMarker: /<!--\s*(truncate)\s*-->/,
+        //   blogSidebarTitle: "List blog",
+        //   blogSidebarCount: "ALL",
+        //   include: ["**/*.md", "**/*.mdx"],
+        //   exclude: [
+        //     "**/_*.{js,jsx,ts,tsx,md,mdx}",
+        //     "**/_*/**",
+        //     "**/*.test.{js,jsx,ts,tsx}",
+        //     "**/__tests__/**",
+        //   ],
+        //   showReadingTime: true,
+        //   onUntruncatedBlogPosts: "ignore",
         //   editUrl:
         //     "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
-        //   remarkPlugins: [[npm2yarn, { converters: ["pnpm"] }], remarkMath],
+
+        //   feedOptions: {
+        //     type: "all",
+        //     copyright: `© ${new Date().getFullYear()} CodeHarborHub`,
+        //   },
+
+        //   remarkPlugins: [
+        //     [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
+        //     remarkMath,
+        //   ],
+
         //   rehypePlugins: [rehypeKatex],
         // },
-
-        blog: {
-          // routeBasePath: "/",
-          showReadingTime: true,
-          blogTitle: "CodeHarborHub",
-          blogDescription:
-            "Welcome to CodeHarborHub blog, a place to learn and grow. We provide accessible and comprehensive educational resources to learners of all levels, from beginners to advanced professionals. Our mission is to empower individuals with the knowledge and skills they need to succeed in today's fast-paced world. Whether you're looking to learn a new skill, advance your career, or simply explore new ideas, CodeHarborHub has something for you.",
-          postsPerPage: 6,
-          truncateMarker: /<!--\s*(truncate)\s*-->/,
-          blogSidebarTitle: "List blog",
-          blogSidebarCount: "ALL",
-          include: ["**/*.md", "**/*.mdx"],
-          exclude: [
-            "**/_*.{js,jsx,ts,tsx,md,mdx}",
-            "**/_*/**",
-            "**/*.test.{js,jsx,ts,tsx}",
-            "**/__tests__/**"
-          ],
-          showReadingTime: true,
-          onUntruncatedBlogPosts: "ignore",
-          editUrl: "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
-          // remarkPlugins: [
-          //   [
-          //     require("@docusaurus/remark-plugin-npm2yarn"),
-          //     { sync: true }
-          //   ]
-          // ],
-
-          remarkPlugins: [
-            [
-              require("@docusaurus/remark-plugin-npm2yarn"),
-              { sync: true }
-            ],
-            remarkMath
-          ],
-
-          rehypePlugins: [rehypeKatex],
-        },
         theme: {
           customCss: "./src/css/custom.css",
         },
@@ -239,14 +229,13 @@ const config = {
             html: '<span class="nav-emoji">💰</span> Donate',
           },
           {
-            to: "/blog/",
+            to: "https://codeharborhub.github.io/blog/",
             html: '<span class="nav-emoji">📰</span> Blog',
           },
           {
             to: "/feature-requests/",
             html: '<span class="nav-emoji">💡</span> Feature Requests',
           },
-
 
           {
             type: "dropdown",
@@ -409,7 +398,7 @@ const config = {
             items: [
               {
                 label: "Blog",
-                to: "/blog/",
+                to: "https://codeharborhub.github.io/blog/",
               },
               {
                 label: "Community",
@@ -578,20 +567,6 @@ const config = {
         showLastUpdateTime: true,
       },
     ],
-    // [
-    //   "@docusaurus/plugin-content-docs",
-    //   /** @type {import('@docusaurus/plugin-content-docs').Options} */
-    //   {
-    //     id: "dsa",
-    //     path: "dsa",
-    //     routeBasePath: "dsa",
-    //     sidebarPath: require.resolve("./sidebarsDSA.js"),
-    //     remarkPlugins: [remarkMath],
-    //     rehypePlugins: [rehypeKatex],
-    //     showLastUpdateAuthor: true,
-    //     showLastUpdateTime: true,
-    //   },
-    // ],
     [
       "@docusaurus/plugin-content-docs",
       /** @type {import('@docusaurus/plugin-content-docs').Options} */
@@ -630,7 +605,7 @@ const config = {
       },
     ],
 
-    './src/plugins/featureRequests/FeatureRequestsPlugin.js',
+    "./src/plugins/featureRequests/FeatureRequestsPlugin.js",
   ],
 };
 

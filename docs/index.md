@@ -12,6 +12,8 @@ description: CodeHarborHub is your gateway to top-notch, completely free tech ed
 
 <!-- ![CodeHarborHub Banner]() -->
 
+<AdsComponent />
+
 ## Why CodeHarborHub? ✨
 
 - **No Paywalls, No Limits** – Gain unrestricted access to full-length courses, hands-on tutorials, and real-world project guides.  
@@ -47,6 +49,8 @@ Open **[`http://localhost:3000`](http://localhost:3000)** to explore the site in
 * 🧩 **Structured Courses** – Complete learning paths with practical exercises.
 * 🌐 **Engaging Community** – Join discussions on [Discord](https://discord.gg/) or [Slack](https://join.slack.com/t/codeharborhub/shared_invite/zt-2mana2uz5-oUQqFAnLqoywHjB9fXTGpA).
 * 🚀 **Career-Ready Skills** – Data structures, algorithms, and modern web tools.
+
+<AdsComponent />
 
 ## Join the Movement 💪
 

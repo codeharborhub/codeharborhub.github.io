@@ -1,0 +1,270 @@
+---
+description: "A Docusaurus site is a pre-rendered single-page React application. You can style it the way you style React apps"
+---
+
+import ColorGenerator from '@site/src/components/ColorGenerator';
+import IframeWindow from '@site/src/components/BrowserWindow/IframeWindow';
+
+# Styling and Layout
+
+:::tip
+This section focuses on styling through stylesheets.  
+For advanced customizations (DOM structure, React code…), refer to the [Swizzling Guide](https://docusaurus.io/docs/swizzling).
+:::
+
+A Docusaurus site is a **single-page React application**, so you can style it the same way you style React apps.
+
+You can choose from different approaches depending on your needs.  
+Highly interactive web apps may benefit from co-located component styles, while smaller static sites can use global stylesheets.
+
+<AdsComponent />
+
+## Global Styles {#global-styles}
+
+The simplest approach is **global CSS**, which is ideal for small websites or light customizations.
+
+If you're using `@docusaurus/preset-classic`, create your CSS file (e.g., `/src/css/custom.css`) and import it globally in your config:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        theme: {
+          customCss: ['./src/css/custom.css'],
+        },
+      },
+    ],
+  ],
+};
+```
+
+Example global CSS:
+
+```css title="/src/css/custom.css"
+.purple-text {
+  color: rebeccapurple;
+}
+```
+
+Use it directly inside your components:
+
+```jsx
+function MyComponent() {
+  return <h1 className="purple-text">Purple Heading!</h1>;
+}
+```
+
+### Class Name Types
+
+When adding custom styles, you may encounter:
+
+* **Theme class names** – stable and safe to target.
+* **Infima class names** – follow [BEM convention](http://getbem.com/). Generally stable but still internal.
+* **CSS module hashes** – end with a hash (`codeBlockContainer_RIuc`). Avoid targeting directly; use attribute selectors if needed.
+
+<AdsComponent />
+
+## Theme Class Names {#theme-class-names}
+
+We provide stable theme-agnostic class names for maintainable layout styling.
+
+<details>
+<summary>Click to view stable class names</summary>
+
+```mdx-code-block
+import ThemeClassNamesCode from '!!raw-loader!@site/src/utils/ThemeClassNames.ts';
+import CodeBlock from '@theme/CodeBlock';
+
+<CodeBlock className="language-ts">
+{ThemeClassNamesCode
+  .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g,'')
+  .replace(/^ *\n/gm,'')
+  .trim()}
+</CodeBlock>
+```
+
+</details>
+
+<AdsComponent />
+
+## Styling with Infima {#styling-your-site-with-infima}
+
+Docusaurus classic theme uses [Infima](https://infima.dev/) for base layout and components.
+
+You can override Infima CSS variables globally:
+
+```css title="/src/css/custom.css"
+:root {
+  --ifm-color-primary: #25c2a0;
+  --ifm-code-font-size: 95%;
+}
+```
+
+Infima uses 7 shades per color.
+Use [ColorBox](https://www.colorbox.io/) or the generator below to create your shades:
+
+<ColorGenerator />
+
+<AdsComponent />
+
+## Dark Mode {#dark-mode}
+
+The `<html>` element switches its `data-theme` attribute:
+
+* Light mode → `data-theme="light"`
+* Dark mode → `data-theme="dark"`
+
+Example:
+
+```css
+[data-theme='dark'] {
+  --ifm-color-primary: #4e89e8;
+}
+[data-theme='dark'] .purple-text {
+  color: plum;
+}
+```
+
+<AdsComponent />
+
+## Data Attributes {#data-attributes}
+
+You can inject `<html>` data attributes via query strings (`docusaurus-data-<key>`):
+
+```css title="/src/css/custom.css"
+html[data-navbar='false'] .navbar {
+  display: none;
+}
+
+html[data-red-border] div#__docusaurus {
+  border: thick solid red;
+}
+```
+
+<IframeWindow url="/docs/?docusaurus-data-navbar=false&docusaurus-data-red-border" />
+
+Useful for embedding docs in iframes with custom layouts.
+
+<AdsComponent />
+
+## Mobile View {#mobile-view}
+
+The default breakpoint between desktop and mobile is `996px`.
+Use media queries for responsive layouts:
+
+```css
+.banner {
+  padding: 4rem;
+}
+
+@media screen and (max-width: 996px) {
+  .banner {
+    padding: 2rem;
+  }
+}
+```
+
+---
+
+## CSS Modules {#css-modules}
+
+For **component-scoped styles**, name files with `.module.css`:
+
+```css title="styles.module.css"
+.main {
+  padding: 12px;
+}
+.heading {
+  font-weight: bold;
+}
+```
+
+```jsx
+import styles from './styles.module.css';
+
+export default function MyComponent() {
+  return (
+    <main className={styles.main}>
+      <h1 className={styles.heading}>Hello!</h1>
+    </main>
+  );
+}
+```
+
+Webpack automatically generates unique class names.
+
+<AdsComponent />
+
+## Sass/SCSS {#sassscss}
+
+To use Sass/SCSS, install the plugin:
+
+```bash npm2yarn
+npm install --save docusaurus-plugin-sass sass
+```
+
+Add it to `docusaurus.config.js`:
+
+```js title="docusaurus.config.js"
+export default {
+  plugins: ['docusaurus-plugin-sass'],
+};
+```
+
+### Global Sass Example
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        theme: {
+          customCss: ['./src/css/custom.scss'],
+        },
+      },
+    ],
+  ],
+};
+```
+
+### Module Sass Example
+
+Use `.module.scss` for scoped Sass modules:
+
+```scss title="styles.module.scss"
+.main {
+  padding: 12px;
+
+  article {
+    color: #ccc;
+  }
+}
+```
+
+```jsx
+import styles from './styles.module.scss';
+
+function MyComponent() {
+  return (
+    <main className={styles.main}>
+      <article>Lorem Ipsum</article>
+    </main>
+  );
+}
+```
+
+#### TypeScript Support
+
+Update `tsconfig.json`:
+
+```diff
+{
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
++    "types": ["docusaurus-plugin-sass"]
+  }
+}
+```

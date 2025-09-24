@@ -185,7 +185,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/blog"
+                    to="https://codeharborhub.github.io/blog"
                     className="mb-3 inline-block text-base text-gray-300 hover:text-[--ifm-color-primary]"
                   >
                     All Blog
