@@ -1,0 +1,108 @@
+---
+id: introduction
+sidebar_label: Introduction
+slug: /docs-introduction
+---
+
+# 📚 Docs Introduction
+
+The **CodeHarborHub Docs** feature gives you a powerful way to create and organize
+Markdown/MDX content in a **structured, hierarchical format**—perfect for building
+technical documentation, courses, or developer guides.
+
+:::info
+Check the [Docs Plugin API Reference](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs)  
+for a complete list of configuration options.
+:::
+
+Your documentation is organized into **four levels**, from smallest to largest:
+
+1. **Individual Pages** – Basic `.md` or `.mdx` files with front matter.  
+2. **Sidebars** – Define navigation and grouping of related docs.  
+3. **Versions** – Manage multiple versions of your documentation.  
+4. **Plugin Instances** – Run multiple independent docs sections in a single site.
+
+This guide introduces each layer step-by-step: starting with
+[creating individual pages](./docs-create-doc.mdx),  
+then [building sidebars](./sidebar/index.mdx),  
+followed by [versioning your content](./versioning.mdx),  
+and finally [using multiple docs plugin instances](./docs-multi-instance.mdx).
+
+<AdsComponent />
+
+## 🗂 Docs-only Mode {#docs-only-mode}
+
+By default, a CodeHarborHub site includes **Docs**, **Blog**, and **Pages**.  
+A fresh installation looks like this:
+
+```
+
+example.com/                               -> from `src/pages/index.js`
+example.com/docs/intro                      -> from `docs/intro.md`
+example.com/docs/tutorial-basics/...        -> from `docs/tutorial-basics/...`
+example.com/blog/2025/09/19/welcome         -> from `blog/2025-09-19-welcome/index.md`
+
+```
+
+All docs are served under the `docs/` subroute.  
+But what if you want **docs as the homepage** or you’re building a **documentation-only** site?
+
+### Enable Docs-Only Mode
+
+In `docusaurus.config.js`, set the docs plugin `routeBasePath` to `/`  
+and (optionally) disable the blog:
+
+```js title="docusaurus.config.js"
+export default {
+  // ...
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          // highlight-next-line
+          routeBasePath: '/', // Serve docs at the site root
+          /* other docs plugin options */
+        },
+        // highlight-next-line
+        blog: false, // Optional: disable the blog
+      },
+    ],
+  ],
+};
+````
+
+This moves your docs from:
+
+```
+https://example.com/docs/some-doc
+```
+
+to:
+
+```
+https://example.com/some-doc
+```
+
+<AdsComponent />
+
+### Setting a Docs Homepage
+
+Add front matter to the doc you want as the root page:
+
+```md title="docs/intro.md"
+---
+# highlight-next-line
+slug: /
+---
+
+Welcome to CodeHarborHub Docs!  
+This page is now the homepage.
+```
+
+Now your site’s structure will look like:
+
+```
+example.com/                       -> generated from `docs/intro.md`
+example.com/tutorial-basics/...    -> generated from `docs/tutorial-basics/...`
+```

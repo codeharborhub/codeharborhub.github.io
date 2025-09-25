@@ -1,0 +1,191 @@
+---
+description: Learn how to build and manage a complete blog using Docusaurus.
+---
+
+# Blog
+
+The **Blog** feature in Docusaurus lets you create a full-featured, customizable blog with minimal setup.  
+It supports Markdown/MDX posts, authors, tags, feeds, and multiple configuration options—perfect for sharing updates, tutorials, or news.
+
+:::info
+See the [Blog Plugin API Reference](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-blog) for the full list of options and advanced configuration.
+:::
+
+<AdsComponent />
+
+## Getting Started {#getting-started}
+
+1. **Create a `blog` directory** in the root of your project.
+2. Add a navbar item to point to the blog in `docusaurus.config.js`:
+
+```js title="docusaurus.config.js"
+export default {
+  themeConfig: {
+    navbar: {
+      items: [
+        // highlight-next-line
+        { to: 'blog', label: 'Blog', position: 'left' },
+      ],
+    },
+  },
+};
+````
+
+Once added, Docusaurus will automatically generate routes for your blog posts.
+
+## Writing Posts {#writing-posts}
+
+Each post is a Markdown (`.md`) or MDX (`.mdx`) file inside the `blog` folder.
+Use [front matter](/docs/markdown-features#front-matter) to define metadata such as title, description, author, and tags.
+
+Example:
+
+```md title="blog/2025-09-01-hello-blog.md"
+---
+title: Hello Blog
+description: My first Docusaurus blog post!
+authors:
+  - name: Ajay Dhangar
+    url: https://github.com/ajay-dhangar
+    image_url: https://github.com/ajay-dhangar.png
+tags: [introduction, welcome]
+image: /img/blog-banner.png
+hide_table_of_contents: false
+---
+
+Welcome to my new CodeHarborHub blog!  
+This is where I’ll share updates, tips, and tutorials.
+
+<!-- truncate -->
+
+Everything below the truncate marker will only appear on the full post page.
+```
+
+* The `<!-- truncate -->` marker defines the preview shown on the blog list page.
+* MDX files can use `{/* truncate */}` instead.
+
+## Customizing the Blog {#customizing}
+
+You can tweak blog behavior in the `@docusaurus/preset-classic` configuration:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        blog: {
+          blogTitle: 'CodeHarborHub Blog',
+          blogDescription: 'Updates, tutorials, and tech insights.',
+          postsPerPage: 'ALL',        // Disable pagination
+          blogSidebarTitle: 'All Posts',
+          blogSidebarCount: 'ALL',    // Show all posts in sidebar
+          showReadingTime: true,      // Display estimated reading time
+        },
+      },
+    ],
+  ],
+};
+```
+
+<AdsComponent />
+
+### Reading Time
+
+You can provide a custom reading time algorithm:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        blog: {
+          readingTime: ({ content, defaultReadingTime }) =>
+            defaultReadingTime({ content, options: { wordsPerMinute: 250 } }),
+        },
+      },
+    ],
+  ],
+};
+```
+
+### Feeds
+
+Generate **RSS/Atom/JSON** feeds for subscribers:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        blog: {
+          feedOptions: {
+            type: 'all',
+            copyright: `© ${new Date().getFullYear()} CodeHarborHub`,
+          },
+        },
+      },
+    ],
+  ],
+};
+```
+
+Feeds are available at:
+
+<Tabs>
+<TabItem value="rss">`/blog/rss.xml`</TabItem>
+<TabItem value="atom">`/blog/atom.xml`</TabItem>
+<TabItem value="json">`/blog/feed.json`</TabItem>
+</Tabs>
+
+<AdsComponent />
+
+## Blog-only Mode {#blog-only-mode}
+
+Want your blog to be the homepage?
+Disable docs and serve the blog at the root:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: false,
+        blog: {
+          routeBasePath: '/', // Serve blog at site root
+        },
+      },
+    ],
+  ],
+};
+```
+
+Remove `src/pages/index.js` if it exists to avoid route conflicts.
+
+## Multiple Blogs {#multiple-blogs}
+
+You can run more than one blog by adding additional plugin instances:
+
+```js title="docusaurus.config.js"
+export default {
+  plugins: [
+    [
+      '@docusaurus/plugin-content-blog',
+      {
+        id: 'news',
+        routeBasePath: 'news',
+        path: './news',
+      },
+    ],
+  ],
+};
+```
+
+This creates a second blog at `/news` with its own posts.
+
+---
+
+With these options, you can quickly deploy a modern, SEO-friendly blog, customize layouts, manage multiple authors, and grow your content with ease.

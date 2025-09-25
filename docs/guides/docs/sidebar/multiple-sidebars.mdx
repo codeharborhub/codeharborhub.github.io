@@ -1,0 +1,170 @@
+---
+slug: /sidebar/multiple-sidebars
+---
+
+# Using multiple sidebars
+
+You can create **different sidebars** for separate sets of Markdown files and display each one depending on the current page.
+
+:::tip
+The official Docusaurus site itself is a good example of multiple sidebars:
+
+- [Docs](/docs)
+- [API](https://docusaurus.io/docs/cli)
+:::
+
+Consider this configuration:
+
+```js title="sidebars.js"
+export default {
+  tutorialSidebar: {
+    'Category A': ['doc1', 'doc2'],
+  },
+  apiSidebar: ['doc3', 'doc4'],
+};
+```
+
+* When browsing `doc1` or `doc2`, the **tutorialSidebar** is shown.
+* When browsing `doc3` or `doc4`, the **apiSidebar** is shown.
+
+<AdsComponent />
+
+## Sidebar association {#sidebar-association}
+
+If a document is included in **multiple sidebars**, Docusaurus will not know which sidebar to display.
+
+Example:
+
+```js title="sidebars.js"
+export default {
+  tutorialSidebar: {
+    'Category A': ['doc1', 'doc2', 'commonDoc'],
+  },
+  apiSidebar: ['doc3', 'doc4', 'commonDoc'],
+};
+```
+
+Here, `commonDoc` belongs to both sidebars.
+Docusaurus does not guarantee which sidebar will be displayed when you open `commonDoc`.
+
+### Breaking the implicit binding
+
+When you add a doc to a sidebar, it creates a **two-way binding**:
+
+* The sidebar contains a link to the doc.
+* The doc will show that sidebar when visited.
+
+Sometimes you may want to break one side of this binding:
+
+1. **Link a doc in a sidebar but not display that sidebar when visiting the doc.**
+2. **Display a sidebar on a doc that does not contain a link to that doc.**
+
+Use the **front matter option** `displayed_sidebar` to control this behavior.
+
+For example:
+
+```md title="commonDoc.md"
+---
+displayed_sidebar: apiSidebar
+---
+```
+
+This forces Docusaurus to display `apiSidebar` when browsing `commonDoc`, even if it is also linked in `tutorialSidebar`.
+
+You can also display a sidebar that **does not include the doc itself**:
+
+```md title="home.md"
+---
+displayed_sidebar: tutorialSidebar
+---
+```
+
+Even if `tutorialSidebar` has no link to `home`, it will be displayed.
+
+To hide all sidebars completely:
+
+```md
+---
+displayed_sidebar: null
+---
+```
+
+This disables both the sidebar and pagination for that page.
+
+<AdsComponent />
+
+## Generating pagination {#generating-pagination}
+
+The sidebar controls the **Next** and **Previous** pagination links at the bottom of each doc.
+
+* Pagination is based on the **currently displayed sidebar**.
+* If no sidebar is displayed, no pagination is generated.
+
+If a sidebar is displayed using `displayed_sidebar` but does not actually contain the doc, **no pagination** will be shown.
+
+### Customizing pagination
+
+You can override the default next/prev links:
+
+```md title="windows.md"
+---
+pagination_next: getting-started
+pagination_prev: introduction
+---
+# Installation on Windows
+```
+
+You can also disable a link entirely:
+
+```md
+---
+pagination_next: null
+pagination_prev: null
+---
+```
+
+Use `pagination_label` to customize the label shown in pagination:
+
+```md
+---
+pagination_label: "Start Your Journey"
+---
+```
+
+<AdsComponent />
+
+## The `ref` sidebar item {#sidebar-item-ref}
+
+The `ref` item is like a [`doc` item](./items#sidebar-item-doc)
+but **does not affect sidebar association or pagination generation**.
+It simply creates a clickable link in the sidebar.
+
+This is useful when you want to link to a doc from multiple sidebars
+without making it "belong" to each sidebar.
+
+Example:
+
+```js title="sidebars.js"
+export default {
+  tutorialSidebar: {
+    'Category A': [
+      'doc1',
+      'doc2',
+      // highlight-next-line
+      { type: 'ref', id: 'commonDoc' },
+      'doc5',
+    ],
+  },
+  apiSidebar: ['doc3', 'doc4', 'commonDoc'],
+};
+```
+
+In this setup:
+
+* `commonDoc` **belongs** to `apiSidebar` (registered as `doc`).
+* `tutorialSidebar` only provides a link (registered as `ref`).
+* Pagination in `tutorialSidebar` will skip over `commonDoc`.
+* Sidebar association will show **apiSidebar** when `commonDoc` is opened.
+
+Think of `ref` as a **pure shortcut**:
+it creates a link without affecting navigation or pagination logic.

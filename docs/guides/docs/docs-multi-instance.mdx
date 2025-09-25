@@ -1,0 +1,195 @@
+---
+id: multi-instance
+description: Use multiple docs plugin instances on a single Docusaurus site.
+slug: /docs-multi-instance
+---
+
+# Docs Multi-instance
+
+The `@docusaurus/plugin-content-docs` plugin supports [multi-instance usage](https://docusaurus.io/docs/using-plugins#multi-instance-plugins-and-plugin-ids),  
+allowing you to run **multiple independent docs plugins** inside the same site.
+
+:::note
+This feature is primarily useful when working with [versioned documentation](./versioning.mdx).  
+If you only need [multiple sidebars](./sidebar/multiple-sidebars.mdx) within one documentation set,  
+you do **not** need multiple plugin instances.
+:::
+
+<AdsComponent />
+
+## Use-cases {#use-cases}
+
+Sometimes a single site needs to host **two or more completely distinct documentation sets** with different structures or release lifecycles.
+
+### Example 1 – Mobile SDKs
+A cross-platform mobile SDK might require:
+
+- **Android SDK docs** (`v1.0`, `v1.1`)
+- **iOS SDK docs** (`v1.0`, `v2.0`)
+
+Each SDK can have its own docs plugin instance, versions, and sidebars.
+
+:::warning
+If each documentation set is **very large**, consider creating **separate Docusaurus sites** instead.  
+Otherwise, rebuilding the entire site for a small update in just one section can slow down deployments.
+:::
+
+### Example 2 – Mixed versioned/unversioned docs
+Sometimes you need **versioned product docs** plus **static community pages**.
+
+For example, the Docusaurus site itself uses:
+
+- `/docs/*` → **versioned**
+- `/community/*` → **unversioned**
+
+<AdsComponent />
+
+## Setup {#setup}
+
+Suppose you need:
+
+- **Product** docs – versioned
+- **Community** docs – unversioned
+
+You can configure multiple instances of the docs plugin.
+
+:::warning
+The `@docusaurus/preset-classic` preset already includes a **default** docs plugin instance.  
+You only need to add extra instances manually.
+:::
+
+### Using the preset
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          // highlight-start
+          // id: 'product', // default instance, no ID
+          // highlight-end
+          path: 'product',
+          routeBasePath: 'product',
+          sidebarPath: './sidebarsProduct.js',
+        },
+      },
+    ],
+  ],
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        // highlight-start
+        id: 'community',
+        // highlight-end
+        path: 'community',
+        routeBasePath: 'community',
+        sidebarPath: './sidebarsCommunity.js',
+      },
+    ],
+  ],
+};
+````
+
+### Without the preset
+
+```js title="docusaurus.config.js"
+export default {
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        // highlight-start
+        // id: 'product', // default instance
+        // highlight-end
+        path: 'product',
+        routeBasePath: 'product',
+        sidebarPath: './sidebarsProduct.js',
+      },
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        // highlight-start
+        id: 'community',
+        // highlight-end
+        path: 'community',
+        routeBasePath: 'community',
+        sidebarPath: './sidebarsCommunity.js',
+      },
+    ],
+  ],
+};
+```
+
+<AdsComponent />
+
+## Versioned Paths {#versioned-paths}
+
+Each plugin instance maintains its own versioned folders:
+
+| Instance    | Versions file                | Docs folder                   | Sidebars folder                   |
+| ----------- | ---------------------------- | ----------------------------- | --------------------------------- |
+| **Default** | `website/versions.json`      | `website/versioned_docs`      | `website/versioned_sidebars`      |
+| With `id`   | `website/[id]_versions.json` | `website/[id]_versioned_docs` | `website/[id]_versioned_sidebars` |
+
+---
+
+## Tagging New Versions {#tagging-new-versions}
+
+Each docs plugin instance has its own CLI versioning command.
+Run the following to see available commands:
+
+```bash npm2yarn
+npm run docusaurus -- --help
+```
+
+Version the **default** instance:
+
+```bash npm2yarn
+npm run docusaurus docs:version 1.0.0
+```
+
+Version the **community** instance:
+
+```bash npm2yarn
+npm run docusaurus docs:version:community 1.0.0
+```
+
+<AdsComponent />
+
+## Navbar Items {#docs-navbar-items}
+
+All docs-related navbar items support an optional `docsPluginId` property.
+This lets you target a specific instance for links, sidebars, or version dropdowns.
+
+Example: separate version dropdowns for iOS and Android:
+
+```js title="docusaurus.config.js"
+export default {
+  themeConfig: {
+    navbar: {
+      items: [
+        {
+          type: 'docsVersionDropdown',
+          // highlight-start
+          docsPluginId: 'ios',
+          // highlight-end
+        },
+        {
+          type: 'docsVersionDropdown',
+          // highlight-start
+          docsPluginId: 'android',
+          // highlight-end
+        },
+      ],
+    },
+  },
+};
+```
+
+---
+
+By leveraging multi-instance docs, you can manage **multiple independent documentation sets**—each with its own sidebar, routing, and versioning—within a single Docusaurus site.

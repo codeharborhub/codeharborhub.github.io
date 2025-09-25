@@ -1,0 +1,174 @@
+---
+id: seo
+description: Best practices to improve the SEO (Search Engine Optimization) of the CodeHarborHub documentation site for contributors and maintainers.
+sidebar_label: SEO
+keywords:
+  - seo
+  - search engine optimization
+  - meta tags
+  - sitemap
+  - docusaurus
+---
+
+# SEO for CodeHarborHub
+
+This guide explains how contributors can help improve the **Search Engine Optimization (SEO)** of the [CodeHarborHub](https://codeharborhub.github.io) site.
+
+Good SEO ensures that learners, developers, and collaborators can easily discover our tutorials, projects, and documentation through search engines.
+
+<AdsComponent />
+
+## Why SEO Matters {#why-seo-matters}
+
+SEO makes CodeHarborHub content more **discoverable** to people searching for:
+
+- JavaScript projects, HTML/CSS tutorials, or AI/ML roadmaps  
+- Open-source courses or web development guidance  
+- Project documentation and code examples
+
+Every contributor can help by adding high-quality metadata, semantic content, and structured information to each page.
+
+---
+
+## Global Metadata {#global-metadata}
+
+Site-wide meta tags (keywords, descriptions, structured data) are set inside  
+`docusaurus.config.js` → `themeConfig.metadata` and `headTags`.
+
+```js title="docusaurus.config.js"
+export default {
+  themeConfig: {
+    metadata: [
+      {name: 'keywords', content: 'CodeHarborHub, web development, HTML, CSS, JavaScript, AI'},
+      {name: 'twitter:card', content: 'summary_large_image'},
+      {property: 'og:image', content: '/img/codeharborhub-social-card.jpg'},
+    ],
+  },
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://codeharborhub.github.io' },
+    },
+    {
+      tagName: 'script',
+      attributes: { type: 'application/ld+json' },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org/',
+        '@type': 'Organization',
+        name: 'CodeHarborHub',
+        url: 'https://codeharborhub.github.io',
+        logo: 'https://codeharborhub.github.io/img/nav-logo.jpg',
+      }),
+    },
+  ],
+};
+````
+
+These tags help search engines understand the purpose of our site and improve visibility across Google, Bing, and social platforms.
+
+<AdsComponent />
+
+## Per-Page Metadata {#per-page-metadata}
+
+Every Markdown or MDX page should include **front matter** with relevant SEO fields.
+
+```md title="example-doc.mdx"
+---
+title: HTML Roadmap for Beginners
+description: A complete beginner-friendly guide to HTML elements, attributes, and structure.
+keywords: [HTML, roadmap, beginner guide, web development]
+image: /img/html-roadmap-cover.png
+slug: /html-roadmap
+---
+```
+
+* **title** – Search engine title (can differ from the first heading).
+* **description** – Short summary (used in `<meta name="description">` and social previews).
+* **keywords** – Targeted keywords for search indexing.
+* **image** – Social sharing thumbnail (OG/Twitter cards).
+
+For **React pages**, contributors can use the `<Head>` component to add custom metadata.
+
+```jsx title="MyReactPage.jsx"
+import Head from '@docusaurus/Head';
+<Head>
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+</Head>
+```
+
+<AdsComponent />
+
+## Structured Content & Accessibility {#structured-content}
+
+CodeHarborHub uses semantic HTML tags like `<main>`, `<nav>`, `<article>`, and proper heading hierarchy (`#`, `##`, `###`) to help search engines and screen readers understand content structure.
+
+### Image Alt Text
+
+Always provide **alt text** for images:
+
+```md
+![CodeHarborHub Logo](/img/nav-logo.jpg 'CodeHarborHub')
+```
+
+* Improves accessibility.
+* Helps search engines index image content.
+
+---
+
+## Sitemap & Robots {#sitemap-robots}
+
+Docusaurus automatically generates a `sitemap.xml` via `@docusaurus/plugin-sitemap`:
+
+```
+https://codeharborhub.github.io/sitemap.xml
+```
+
+* Lists all important URLs for crawlers.
+* Updates automatically on each deployment.
+
+We also provide a permissive `robots.txt` in the `static/` directory:
+
+```txt title="static/robots.txt"
+User-agent: *
+Disallow:
+```
+
+This allows all search engines to crawl the site.
+
+<AdsComponent />
+
+## Tips for Contributors {#tips-contributors}
+
+* Always fill in **title**, **description**, and **keywords** in front matter.
+* Use **meaningful file names** and [slugs](./guides/docs/docs-create-doc.mdx#document-id) for clean URLs.
+* Include **publish dates** and **authors** in blog posts for [rich search results](https://search.google.com/test/rich-results).
+* Use internal links (`[link text](./target-page)`) to strengthen content relationships.
+
+---
+
+## Rich Social Previews {#rich-social-previews}
+
+Social platforms like Twitter, LinkedIn, and Facebook use Open Graph and Twitter Card metadata.
+Docusaurus automatically adds OG tags using your page's **title**, **description**, and **image**.
+Contributors can customize images per page for better share previews.
+
+<BrowserWindow>
+
+![CodeHarborHub social card preview](/img/codeharborhub-social-card.jpg "Social share preview")
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Final Checklist {#seo-checklist}
+
+Before submitting a pull request:
+
+* [ ] Front matter includes `title`, `description`, and `keywords`.
+* [ ] Images have meaningful **alt** attributes.
+* [ ] Content uses proper heading hierarchy (`#`, `##`, `###`).
+* [ ] Links use descriptive text instead of *click here*.
+* [ ] Internal links connect related tutorials and docs.
+
+Good SEO is a team effort—your contributions make **CodeHarborHub** more discoverable and valuable to learners worldwide.

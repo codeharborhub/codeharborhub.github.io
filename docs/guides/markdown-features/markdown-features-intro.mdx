@@ -1,0 +1,172 @@
+---
+id: introduction
+description: Learn how Docusaurus extends Markdown with MDX, front matter, components, and interactive elements.
+slug: /markdown-features
+---
+
+# Markdown Features
+
+Docusaurus uses **[Markdown](https://commonmark.org/)** as the primary format for writing documentation,  
+but it extends it with **[MDX](https://mdxjs.com/)**, enabling React components inside Markdown files.
+
+:::tip Quick Start
+Need a refresher? [Learn Markdown in 10 minutes](https://commonmark.org/help/) to get started quickly.
+:::
+
+<AdsComponent />
+
+## MDX Power {#mdx-power}
+
+MDX transforms Markdown into **React components**, allowing you to mix text, JSX, and interactive UI elements in a single file.  
+This is what makes Docusaurus docs highly customizable and interactive.
+
+Example:
+
+```mdx title="hello.mdx"
+# Hello World
+
+Welcome to my page!
+
+<MyComponent />
+````
+
+This renders both the Markdown heading and the `<MyComponent />` React component.
+
+:::info MDX Playground
+Use the [MDX Playground](https://mdxjs.com/playground/) to see how your Markdown+JSX compiles to React.
+:::
+
+<AdsComponent />
+
+## MDX vs CommonMark {#mdx-vs-commonmark}
+
+Docusaurus supports two Markdown parsing modes:
+
+* **MDX format** – Allows JSX and components.
+* **CommonMark format** – Standard Markdown with no JSX.
+
+By default, `.md` and `.mdx` files both use MDX.
+You can opt in to CommonMark with the `markdown.format` config or `mdx.format: md` front matter.
+
+```js title="docusaurus.config.js"
+export default {
+  markdown: {
+    format: 'detect', // auto: .md → CommonMark, .mdx → MDX
+  },
+};
+```
+
+:::danger Experimental
+CommonMark support is still experimental and may differ from other renderers.
+:::
+
+<AdsComponent />
+
+## Standard Markdown Features {#standard-features}
+
+All familiar Markdown syntax works:
+
+```md title="hello.mdx"
+### My Section
+
+Some **bold** text, some _italic_, and a [link](/).
+```
+
+```mdx-code-block
+<BrowserWindow url="http://localhost:3000/docs/hello">
+<h3>My Section</h3>
+Some **bold** text, some _italic_, and a [link](/).
+</BrowserWindow>
+```
+
+<AdsComponent />
+
+## Front Matter {#front-matter}
+
+Front matter lets you add **metadata** to your Markdown files.
+It’s written in YAML between triple dashes at the top of a file.
+
+```md title="getting-started.mdx"
+---
+title: Getting Started
+description: Quick introduction to my guide
+tags: [intro, tutorial]
+---
+```
+
+Different plugins support different front matter fields:
+
+* [Docs Front Matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter)
+* [Blog Front Matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-blog#markdown-front-matter)
+* [Pages Front Matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-pages#markdown-front-matter)
+
+You can even customize the parser:
+
+```js title="docusaurus.config.js"
+export default {
+  markdown: {
+    parseFrontMatter: async (params) => {
+      const result = await params.defaultParseFrontMatter(params);
+      if (result.frontMatter.shortTitle) {
+        result.frontMatter.title = result.frontMatter.shortTitle;
+      }
+      return result;
+    },
+  },
+};
+```
+
+<AdsComponent />
+
+## Quotes and Callouts {#quotes}
+
+> Docusaurus makes open source documentation easy.
+>
+> — The Team
+
+Quotes render with elegant styling.
+
+## Details & Collapsible Sections {#details}
+
+Docusaurus supports `<details>` for collapsible content:
+
+```md
+<details>
+  <summary>Click to expand</summary>
+
+  Hidden content **with Markdown** inside!
+</details>
+```
+
+```mdx-code-block
+<BrowserWindow>
+<details>
+  <summary>Click to expand</summary>
+
+  Hidden content **with Markdown** inside!
+</details>
+</BrowserWindow>
+```
+
+<AdsComponent />
+
+## Assets & Images {#assets}
+
+Use relative paths to reference images and files:
+
+```md
+![Logo](/img/nav-logo.jpg)
+```
+
+```mdx-code-block
+<BrowserWindow>
+![Logo](/img/nav-logo.jpg)
+</BrowserWindow>
+```
+
+Docusaurus will automatically optimize and resolve the asset URLs.
+
+---
+
+With **Markdown + MDX**, you can start with simple text and gradually enhance pages with
+dynamic React components, interactive demos, and custom UI elements—all in one file.

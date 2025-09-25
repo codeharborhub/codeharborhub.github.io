@@ -1,0 +1,205 @@
+---
+id: react
+description: Learn how to use React inside Markdown with MDX in Docusaurus.
+slug: /markdown-features/react
+---
+
+# MDX and React
+
+```mdx-code-block
+import styles from './markdown-features-react.module.css';
+```
+
+Docusaurus supports **[MDX](https://mdxjs.com/)**, which means you can write **React JSX directly inside Markdown files**.
+This allows you to create interactive documentation, reusable UI elements, and advanced layouts—without leaving your Markdown workflow.
+
+:::tip Quick Debugging
+The MDX compiler is strict. If you hit errors, try the [MDX Playground](https://mdxjs.com/playground/) to validate your syntax.
+:::
+
+<AdsComponent />
+
+## Exporting Components {#exporting-components}
+
+You can define a React component inside an MDX file by exporting it.
+Lines starting with `export` are treated as code, not prose:
+
+```jsx
+export const Highlight = ({children, color}) => (
+  <span
+    style={{
+      backgroundColor: color,
+      color: '#fff',
+      borderRadius: '4px',
+      padding: '0.2rem',
+    }}>
+    {children}
+  </span>
+);
+
+<Highlight color="#25c2a0">Docusaurus Green</Highlight> is my favorite color!
+```
+
+```mdx-code-block
+export const Highlight = ({children, color}) => (
+  <span
+    style={{
+      backgroundColor: color,
+      color: '#fff',
+      borderRadius: '4px',
+      padding: '0.2rem',
+    }}>
+    {children}
+  </span>
+);
+
+<BrowserWindow minHeight={180}>
+<Highlight color="#25c2a0">Docusaurus Green</Highlight> is my favorite color!
+</BrowserWindow>
+```
+
+:::warning JSX vs HTML
+All MDX files are parsed as JSX. Inline styles use **JS objects**:
+
+```jsx
+/* Incorrect HTML style */
+<span style="background-color:red">Foo</span>
+/* Correct JSX style */
+<span style={{backgroundColor:'red'}}>Foo</span>
+```
+
+:::
+
+<AdsComponent />
+
+## Importing Components {#importing-components}
+
+Instead of defining components inline, you can import them:
+
+```md
+import BrowserWindow from '@site/src/components/BrowserWindow';
+import Button from '@mui/material/Button';
+```
+
+The `@site` alias points to the root of your Docusaurus site.
+This makes imports stable even when docs are versioned or moved.
+
+```mdx-code-block
+<BrowserWindow>Imported Component Example</BrowserWindow>
+```
+
+If a component is complex or reused across many pages, keep it in a `.js` file:
+
+```jsx title="src/components/Highlight.js"
+import React from 'react';
+
+export default function Highlight({children, color}) {
+  return <span style={{backgroundColor: color, color: '#fff'}}>{children}</span>;
+}
+```
+
+```md title="docs/my-page.mdx"
+import Highlight from '@site/src/components/Highlight';
+
+<Highlight color="#25c2a0">Reusable Component</Highlight>
+```
+
+<BrowserWindow>
+<Highlight color="#25c2a0">Reusable Component</Highlight>
+</BrowserWindow>
+
+<AdsComponent />
+
+## Global Components {#global-components}
+
+You can register components globally so they’re available everywhere without imports.
+Wrap the default MDX mapping:
+
+```js title="src/theme/MDXComponents.js"
+import React from 'react';
+import MDXComponents from '@theme-original/MDXComponents';
+import Highlight from '@site/src/components/Highlight';
+
+export default {
+  ...MDXComponents,
+  Highlight,
+};
+```
+
+Now `<Highlight>` works in any MDX file:
+
+```md
+Use <Highlight color="#25c2a0">Docusaurus Green</Highlight> globally!
+```
+
+:::warning Uppercase Required
+MDX v3 treats **lowercase tags as HTML elements**. Always use **UpperCamelCase** for custom components.
+:::
+
+<AdsComponent />
+
+## Using Markdown Partials {#importing-markdown}
+
+You can import other Markdown files as components.
+Files prefixed with `_` won’t create a standalone page:
+
+```md title="_snippet.mdx"
+This is a reusable snippet for <b>{props.name}</b>.
+```
+
+```md
+import Snippet from './_snippet.mdx';
+
+<Snippet name="Ajay" />
+```
+
+This lets you reuse content across multiple pages.
+
+<AdsComponent />
+
+## Importing Code as Raw Text {#importing-code}
+
+You can display raw code from an external file using Webpack’s `raw-loader`:
+
+```bash npm2yarn
+npm install --save raw-loader
+```
+
+```jsx
+import CodeBlock from '@theme/CodeBlock';
+import MySource from '!!raw-loader!./MyComponent';
+
+<CodeBlock language="jsx">{MySource}</CodeBlock>
+```
+
+This is perfect for live examples that stay synced with actual code.
+
+<AdsComponent />
+
+## Available Globals {#available-exports}
+
+Inside an MDX page, you can access:
+
+* `frontMatter` – metadata from the file’s YAML front matter.
+* `toc` – table of contents headings as a JSON tree.
+* `contentTitle` – first `h1` heading in the file.
+
+```jsx
+import CodeBlock from '@theme/CodeBlock';
+
+<CodeBlock className="language-json">
+{JSON.stringify({frontMatter, toc, contentTitle}, null, 2)}
+</CodeBlock>
+```
+
+```mdx-code-block
+<BrowserWindow>
+Front matter, TOC, and content title are accessible as globals!
+</BrowserWindow>
+```
+
+---
+
+With MDX, Docusaurus turns Markdown into a **React-powered playground**.
+Mix documentation with live components, code examples, and dynamic UI—
+all in one seamless authoring experience.
