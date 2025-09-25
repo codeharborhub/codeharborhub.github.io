@@ -1,0 +1,194 @@
+---
+id: tabs
+description: Using Tabs in CodeHarborHub Markdown with MDX
+slug: /markdown-features/tabs
+---
+
+# Tabs
+
+```mdx-code-block
+import styles from './markdown-features-tabs-styles.module.css';
+```
+
+CodeHarborHub (built on Docusaurus) provides the **`<Tabs>`** component that you can use directly inside Markdown files thanks to [MDX](./markdown-features-react.mdx).
+
+Here’s a basic example:
+
+```jsx
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="html" label="HTML" default>
+    HTML content goes here.
+  </TabItem>
+  <TabItem value="css" label="CSS">
+    CSS content goes here.
+  </TabItem>
+  <TabItem value="js" label="JavaScript">
+    JavaScript content goes here.
+  </TabItem>
+</Tabs>
+```
+
+```mdx-code-block
+<BrowserWindow>
+  <Tabs>
+    <TabItem value="html" label="HTML">HTML content goes here.</TabItem>
+    <TabItem value="css" label="CSS">CSS content goes here.</TabItem>
+    <TabItem value="js" label="JavaScript">JavaScript content goes here.</TabItem>
+  </Tabs>
+</BrowserWindow>
+```
+
+<AdsComponent />
+
+## Using `values` & `defaultValue`
+
+You can provide a `values` array and a `defaultValue` to simplify tab definitions:
+
+```jsx
+<Tabs
+  defaultValue="html"
+  values={[
+    {label: 'HTML', value: 'html'},
+    {label: 'CSS', value: 'css'},
+    {label: 'JavaScript', value: 'js'},
+  ]}>
+  <TabItem value="html">HTML content goes here.</TabItem>
+  <TabItem value="css">CSS content goes here.</TabItem>
+  <TabItem value="js">JavaScript content goes here.</TabItem>
+</Tabs>
+```
+
+```mdx-code-block
+<BrowserWindow>
+  <Tabs
+    defaultValue="html"
+    values={[
+      {label: 'HTML', value: 'html'},
+      {label: 'CSS', value: 'css'},
+      {label: 'JavaScript', value: 'js'},
+    ]}>
+    <TabItem value="html">HTML content goes here.</TabItem>
+    <TabItem value="css">CSS content goes here.</TabItem>
+    <TabItem value="js">JavaScript content goes here.</TabItem>
+  </Tabs>
+</BrowserWindow>
+```
+
+<AdsComponent />
+
+## Syncing Tab Choices {#syncing-tab-choices}
+
+To synchronize multiple tab groups (e.g., **Beginner / Advanced**), use the same `groupId`.
+Changing one tab updates all groups with the same ID, and the choice is stored in `localStorage`:
+
+```jsx
+<Tabs groupId="skill-level">
+  <TabItem value="beginner" label="Beginner">Basic code setup</TabItem>
+  <TabItem value="advanced" label="Advanced">Advanced optimizations</TabItem>
+</Tabs>
+
+<Tabs groupId="skill-level">
+  <TabItem value="beginner" label="Beginner">Intro resources</TabItem>
+  <TabItem value="advanced" label="Advanced">Performance tips</TabItem>
+</Tabs>
+```
+
+```mdx-code-block
+<BrowserWindow>
+  <Tabs groupId="skill-level">
+    <TabItem value="beginner" label="Beginner">Basic code setup</TabItem>
+    <TabItem value="advanced" label="Advanced">Advanced optimizations</TabItem>
+  </Tabs>
+
+  <Tabs groupId="skill-level">
+    <TabItem value="beginner" label="Beginner">Intro resources</TabItem>
+    <TabItem value="advanced" label="Advanced">Performance tips</TabItem>
+  </Tabs>
+</BrowserWindow>
+```
+
+<AdsComponent />
+
+## Lazy Rendering {#lazy-rendering}
+
+By default, all tab contents are rendered at build time.
+To render only the **active tab** (improves performance on large pages),
+add the `lazy` prop:
+
+```jsx
+<Tabs lazy>
+  <TabItem value="html" label="HTML">Rendered only when active.</TabItem>
+  <TabItem value="css" label="CSS">Rendered only when active.</TabItem>
+</Tabs>
+```
+
+---
+
+## Styling Tabs {#styling-tabs}
+
+You can add a `className` prop to customize tab styles:
+
+```jsx
+<Tabs className="custom-tabs">
+  <TabItem value="html">HTML</TabItem>
+  <TabItem value="css">CSS</TabItem>
+</Tabs>
+```
+
+Then define your styles in a module:
+
+```css title="markdown-features-tabs-styles.module.css"
+.custom-tabs :global(.tabs__item) {
+  color: #25c2a0;
+}
+.custom-tabs :global(.tabs__item[aria-selected='true']) {
+  border-bottom: 2px solid #25c2a0;
+}
+```
+
+<AdsComponent />
+
+## Query String Support {#query-string}
+
+Persist tab selections in the URL so you can share a direct link
+to a page with a **specific tab preselected**.
+
+```jsx
+<Tabs queryString="topic">
+  <TabItem value="frontend" label="Frontend">Frontend Docs</TabItem>
+  <TabItem value="backend" label="Backend">Backend Docs</TabItem>
+</Tabs>
+```
+
+When a tab is selected, the URL updates to:
+
+```
+?topic=frontend
+```
+
+:::info
+
+You can also combine with `groupId` for persistent syncing:
+
+For convenience, when the queryString prop is true, the groupId value will be used as a fallback.
+
+```jsx
+<Tabs groupId="topic" queryString>
+  <TabItem value="frontend" label="Frontend">Frontend Docs</TabItem>
+  <TabItem value="backend" label="Backend">Backend Docs</TabItem>
+</Tabs>
+```
+
+<BrowserWindow>
+<Tabs groupId="topic" queryString>
+  <TabItem value="frontend" label="Frontend">Frontend Docs</TabItem>
+  <TabItem value="backend" label="Backend">Backend Docs</TabItem>
+</Tabs>
+</BrowserWindow>
+
+When the page loads, the tab query string choice will be restored in priority over the groupId choice (using localStorage).
+
+:::
