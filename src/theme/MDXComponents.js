@@ -26,6 +26,8 @@ import Tabs from "@theme/Tabs";
 import { FaReact } from "react-icons/fa";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import Comming from "@site/src/components/Comming";
+import Admonition from '@theme/Admonition';
+import TOCInline from '@theme/TOCInline';
 
 export default {
   // Re-use the default mapping
@@ -56,4 +58,6 @@ export default {
   LinearSearchVisualizer,
   AdsComponent,
   Comming,
+  Admonition,
+  TOCInline,
 };

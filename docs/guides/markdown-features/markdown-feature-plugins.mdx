@@ -1,0 +1,227 @@
+---
+id: plugins
+description: Using MDX plugins to expand Markdown functionality in CodeHarborHub
+slug: /markdown-features/plugins
+---
+
+# MDX Plugins
+
+CodeHarborHub uses [MDX](https://mdxjs.com/) to power its documentation. Sometimes, you may want to extend or tweak Markdown syntax. For example:
+
+- Embed a YouTube video using image-like syntax: `![](https://youtu.be/example)`
+- Style standalone links as social cards
+- Automatically prepend a copyright notice to every page
+
+The answer is: **create an MDX plugin!**  
+MDX supports a powerful [plugin system](https://mdxjs.com/advanced/plugins/) to customize how Markdown is parsed and transformed into JSX.
+
+There are three common plugin use-cases:
+
+- Use existing [Remark plugins](https://github.com/remarkjs/remark/blob/main/doc/plugins.md#list-of-plugins) or [Rehype plugins](https://github.com/rehypejs/rehype/blob/main/doc/plugins.md#list-of-plugins)
+- Transform elements produced by MDX syntax
+- Introduce **new syntax** to MDX
+
+<AdsComponent />
+
+## How MDX Plugins Work
+
+When Markdown is compiled, it goes through two intermediate steps:
+
+1. **Markdown AST (MDAST)**  
+2. **Hypertext AST (HAST)**  
+3. JSX Output
+
+Plugins operate on these ASTs:
+
+* **[Remark](https://github.com/remarkjs/remark/)** → processes the Markdown AST
+* **[Rehype](https://github.com/rehypejs/rehype/)** → processes the Hypertext AST
+
+:::tip
+Use plugins to introduce shorter syntax for frequently used JSX elements.  
+For example, CodeHarborHub’s [admonition blocks](./markdown-features-admonitions.mdx) are powered by a Remark plugin.
+:::
+
+<AdsComponent />
+
+## Default Plugins
+
+Docusaurus automatically injects a set of default Remark plugins during Markdown processing.  
+These handle tasks such as:
+
+- Generating a **Table of Contents**
+- Adding **anchor links** to each heading
+- Transforming images and links to `require()` calls
+
+These built-in plugins are great examples to inspire your own custom plugins.
+
+<AdsComponent />
+
+## Installing Plugins
+
+An MDX plugin is usually an **npm package**, so install it like any other dependency.
+
+Example: adding math support:
+
+```bash npm2yarn
+npm install --save remark-math@5 rehype-katex@6
+```
+
+<details>
+  <summary>Remark vs Rehype in action</summary>
+
+* `remark-math` extracts `$...$` math expressions from Markdown and transforms them into a JSX placeholder.  
+* `rehype-katex` then takes those placeholders and renders them into KaTeX-powered HTML.
+</details>
+
+:::warning
+Many official Remark/Rehype plugins are **ES Modules only**. Docusaurus supports ESM, but we recommend using an **ESM config file** for easier imports.
+:::
+
+<AdsComponent />
+
+## Adding Plugins to `docusaurus.config.js`
+
+Once installed, import and add the plugin to your config:
+
+```js title="docusaurus.config.js"
+// highlight-start
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+// highlight-end
+
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
+        },
+      },
+    ],
+  ],
+};
+```
+
+Using **CommonJS**? Dynamic imports make it work:
+
+```js title="docusaurus.config.js"
+module.exports = async function createConfigAsync() {
+  return {
+    presets: [
+      [
+        '@docusaurus/preset-classic',
+        {
+          docs: {
+            remarkPlugins: [(await import('remark-math')).default],
+            rehypePlugins: [(await import('rehype-katex')).default],
+          },
+        },
+      ],
+    ],
+  };
+};
+```
+
+---
+
+## Configuring Plugins
+
+Some plugins accept custom options. Use `[plugin, options]` syntax:
+
+```js title="docusaurus.config.js"
+import rehypeKatex from 'rehype-katex';
+
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          rehypePlugins: [
+            [rehypeKatex, {strict: false}],
+          ],
+        },
+      },
+    ],
+  ],
+};
+```
+
+Check the plugin’s documentation for available options.
+
+<AdsComponent />
+
+## Creating Your Own Plugin
+
+If no existing plugin fits your needs, you can create one. A plugin is a function that operates on the AST.
+
+Example: prefix every `h2` heading with `Section X.`
+
+```js title="src/remark/section-prefix.js"
+import {visit} from 'unist-util-visit';
+
+const plugin = () => {
+  return async (ast) => {
+    let count = 1;
+    visit(ast, 'heading', (node) => {
+      if (node.depth === 2 && node.children.length > 0) {
+        node.children.unshift({
+          type: 'text',
+          value: `Section ${count}. `,
+        });
+        count++;
+      }
+    });
+  };
+};
+
+export default plugin;
+```
+
+Import and register it:
+
+```js title="docusaurus.config.js"
+import sectionPrefix from './src/remark/section-prefix';
+
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          remarkPlugins: [sectionPrefix],
+        },
+      },
+    ],
+  ],
+};
+```
+
+:::tip
+The `transformer` function receives a second parameter, [`vfile`](https://github.com/vfile/vfile), which provides metadata like the current Markdown file’s path.
+:::
+
+<AdsComponent />
+
+## Processing Order
+
+By default, Docusaurus runs its internal plugins **before** your custom plugins. If you need to run your plugin first:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          beforeDefaultRemarkPlugins: [sectionPrefix],
+        },
+      },
+    ],
+  ],
+};
+```
+
+This ensures your transformations (like heading prefixes) are included in generated tables of contents.

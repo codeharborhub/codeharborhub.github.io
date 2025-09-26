@@ -1,0 +1,96 @@
+---
+id: links
+description: How to add and manage links in Markdown on CodeHarborHub
+slug: /markdown-features/links
+---
+
+# Markdown Links
+
+In CodeHarborHub, Markdown supports flexible ways of linking between documents, tutorials, and resources.
+
+There are two main approaches:
+
+- Using a **URL path**
+- Using a **file path**
+
+```md
+- [URL path to another document](../../installation)
+- [file path to another document](../../installation.mdx)
+```
+
+<AdsComponent />
+
+## URL Path Links
+
+URL paths are unprocessed by Docusaurus. They render directly to HTML, like:
+
+```html
+<a href="./installation">Link</a>
+```
+
+This means they resolve according to the page's **URL location**, not the file system path.
+
+## File Path Links
+
+When you want to reference another Markdown file managed by the same plugin, use the relative **file path**.  
+Docusaurus will convert the file path into the correct URL path, removing `.md` or `.mdx` extensions automatically.
+
+For example, if your file structure is:
+
+```
+docs/folder/doc1.md
+docs/folder/doc2.mdx
+docs/folder/subfolder/doc3.mdx
+docs/otherFolder/doc4.mdx
+```
+
+From `doc1.md`, you can write:
+
+```md title="docs/folder/doc1.md"
+I am referencing a [document](doc2.mdx).
+
+Reference to another [document in a subfolder](subfolder/doc3.mdx).
+
+[Relative document](../otherFolder/doc4.mdx) referencing works as well.
+```
+
+### How File Paths Resolve
+
+Assume the current file is `website/docs/category/source.mdx`:
+
+- `[link](./target.mdx)` → resolves from `website/docs/category`
+- `[link](../target.mdx)` → resolves from `website/docs`
+- `[link](/target.mdx)` → resolves from the docs content root (`website/docs`)
+- `[link](target.mdx)` → checked in `website/docs/category`, then `docs` root, then site root
+
+### Absolute File Paths
+
+You can also reference the site directory, but be careful:
+
+- `[link](/docs/target.mdx)` → resolved from site root `website` (⚠️ less portable)
+- `[link](@site/docs/target.mdx)` → relative to site root `website` (⚠️ less portable)
+
+<AdsComponent />
+
+## Benefits of File Path Links
+
+Using relative **file paths** instead of raw URL links provides key benefits:
+
+* Links work directly on GitHub and Markdown editors  
+* You can change a doc's slug without breaking links  
+* Editors can track file movements and update links automatically  
+* Versioned docs always link to the correct version  
+* Resistant to config changes (like `trailingSlash`)
+
+## Limitation
+
+:::warning
+Markdown file references only work if the **source and target files are managed by the same plugin**.  
+For example, linking a doc from a blog post requires **URL links**, not file paths.
+:::
+
+## Next Steps
+
+- Learn more about [versioned docs](../docs/versioning.mdx)  
+- Explore the [`trailingSlash` config](https://docusaurus.io/docs/api/docusaurus-config#trailingSlash)  
+- Visit [Docusaurus Markdown docs](https://docusaurus.io/docs/markdown-features) for advanced linking techniques

@@ -1,0 +1,269 @@
+---
+id: admonitions
+title: Admonitions
+description: Add tips, notes, and warnings to your CodeHarborHub Markdown docs with styled callouts
+slug: /guides/markdown-features/admonitions
+---
+
+Admonitions let you highlight **important information** in your docs using a simple Markdown syntax.
+
+They render as colorful callout boxes like **Tips**, **Notes**, **Warnings**, etc.
+
+<AdsComponent />
+
+## Basic Syntax
+
+Wrap your text with 3 colons and specify a type:
+
+```md
+:::note
+
+This is a note block with **Markdown** support.
+
+:::
+```
+
+<BrowserWindow>
+
+:::note
+
+This is a note block with **Markdown** support.
+
+:::
+
+</BrowserWindow>
+
+Supported types: `note`, `tip`, `info`, `warning`, `danger`
+
+---
+
+## Examples
+
+```md
+:::tip
+Great for best practices or quick advice.
+:::
+
+:::info
+Use to provide additional context.
+:::
+
+:::warning
+Warn users of potential issues.
+:::
+
+:::danger
+Critical alerts or breaking changes.
+:::
+```
+
+<BrowserWindow>
+
+:::tip
+Great for best practices or quick advice.
+:::
+
+:::info
+Use to provide additional context.
+:::
+
+:::warning
+Warn users of potential issues.
+:::
+
+:::danger
+Critical alerts or breaking changes.
+:::
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Adding a Custom Title
+
+You can provide a **custom title** (with Markdown too):
+
+```md
+:::note[Your **Custom** _Title_]
+
+This callout uses a custom title.
+
+:::
+```
+
+<BrowserWindow>
+
+:::note[Your **Custom** _Title_]
+
+This callout uses a custom title.
+
+:::
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Nested Admonitions
+
+Admonitions can be nested for layered messages.
+Use more colons `:` for each parent level:
+
+```md
+::::info Outer
+
+Outer content
+
+:::warning Inner
+Inner content
+:::
+
+::::
+```
+
+<BrowserWindow>
+
+::::info Outer
+
+Outer content
+
+:::warning Inner
+Inner content
+:::
+
+::::
+
+</BrowserWindow>
+
+---
+
+## Using MDX Inside
+
+Admonitions fully support **MDX components**.
+
+```mdx
+:::tip[Tabbed Example]
+
+<Tabs>
+  <TabItem value="react" label="React">React example 🚀</TabItem>
+  <TabItem value="vue" label="Vue">Vue example 🌿</TabItem>
+</Tabs>
+
+:::
+```
+
+<BrowserWindow>
+
+:::tip[Tabbed Example]
+
+<Tabs>
+  <TabItem value="react" label="React">React example 🚀</TabItem>
+  <TabItem value="vue" label="Vue">Vue example 🌿</TabItem>
+</Tabs>
+
+:::
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Using in JSX
+
+Outside Markdown, use the React component directly:
+
+```jsx title="MyPage.jsx"
+import Admonition from '@theme/Admonition';
+
+export default function MyPage() {
+  return (
+    <Admonition type="tip" icon="💡" title="Did you know?">
+      You can use Admonitions directly in JSX too!
+    </Admonition>
+  );
+}
+```
+
+<BrowserWindow>
+  <Admonition type="tip" icon="💡" title="Did you know?">
+    You can use Admonitions directly in JSX too!
+  </Admonition>
+</BrowserWindow>
+
+---
+
+## Customizing Admonitions
+
+### Custom Icons or Styling
+
+You can override default icons by **swizzling** the Admonition theme component:
+
+```jsx title="src/theme/Admonition.js"
+import React from 'react';
+import Admonition from '@theme-original/Admonition';
+import MyIcon from '@site/static/img/custom-icon.svg';
+
+export default function AdmonitionWrapper(props) {
+  if (props.type === 'info') {
+    return <Admonition icon={<MyIcon />} {...props} />;
+  }
+  return <Admonition {...props} />;
+}
+```
+
+### Add New Types
+
+Add a new keyword in `docusaurus.config.js`:
+
+```js title="docusaurus.config.js"
+export default {
+  presets: [
+    [
+      'classic',
+      {
+        docs: {
+          admonitions: {
+            keywords: ['my-callout'],
+            extendDefaults: true,
+          },
+        },
+      },
+    ],
+  ],
+};
+```
+
+Then create a custom renderer:
+
+```jsx title="src/theme/Admonition/Types.js"
+import React from 'react';
+import DefaultTypes from '@theme-original/Admonition/Types';
+
+function MyCallout(props) {
+  return (
+    <div style={{border: '2px dashed #ff9800', padding: 12}}>
+      <h4>{props.title || '⚡ My Callout'}</h4>
+      {props.children}
+    </div>
+  );
+}
+
+export default {
+  ...DefaultTypes,
+  'my-callout': MyCallout,
+};
+```
+
+Now you can use:
+
+```md
+:::my-callout[Custom Callout]
+This is a completely custom admonition.
+:::
+```
+
+<AdsComponent />
+
+## Best Practices
+
+* Always leave **blank lines** inside admonitions to avoid Prettier formatting issues.
+* Use **icons and concise titles** to improve readability.
+* Keep admonitions focused—avoid stuffing too much content.

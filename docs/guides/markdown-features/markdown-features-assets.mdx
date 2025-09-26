@@ -1,0 +1,205 @@
+---
+id: assets
+description: Handling assets in Markdown for CodeHarborHub docs
+slug: /markdown-features/assets
+---
+
+# Assets in Markdown
+
+In CodeHarborHub documentation, you may need to include **images**, **files**, or **SVGs** inside Markdown (`.md` / `.mdx`) files.
+
+Docusaurus provides several ways to handle these assets while keeping everything **organized** and **optimized**.
+
+A common practice is to **co-locate** assets next to the Markdown file that uses them:
+
+```
+/docs/guides/markdown-features/markdown-features-assets.mdx
+/docs/guides/markdown-features/assets/example-banner.png
+/docs/guides/markdown-features/assets/example-file.docx
+```
+
+This keeps docs self-contained and easy to maintain.
+
+<AdsComponent />
+
+## Images {#images}
+
+You can display images using **three different methods**:
+
+<Tabs>
+<TabItem value="Markdown syntax">
+
+### 1. Simple Markdown Syntax
+
+The easiest way to add an image:
+
+```md
+![Example banner](./assets/example-banner.jpg)
+```
+
+This works for most cases and Docusaurus will automatically process the file.
+
+</TabItem>
+<TabItem value="CommonJS require">
+
+### 2. Using `require()` in JSX
+
+If you need to use JSX for extra control (like `className` or styles):
+
+```jsx
+<img
+  src={require('./assets/example-banner.jpg').default}
+  alt="Example banner"
+/>
+```
+
+</TabItem>
+<TabItem value="ES Module import">
+
+### 3. Using ES `import`
+
+Recommended when importing at the top of the file:
+
+```jsx
+import banner from './assets/example-banner.jpg';
+
+<img src={banner} alt="Example banner" />;
+```
+
+</TabItem>
+</Tabs>
+
+All three methods display the same image:
+
+<BrowserWindow>
+  ![Example banner](/img/codeharborhub-social-card.jpg)
+</BrowserWindow>
+
+<AdsComponent />
+
+## Downloadable Files {#files}
+
+You can also link downloadable files (like `.docx`, `.pdf`, `.zip`) directly.
+
+**Markdown link syntax** (recommended):
+
+```md
+[Download the example doc](./assets/example-file.docx)
+```
+
+**JSX with `require()`** (for dynamic attributes):
+
+```jsx
+<a target="_blank" href={require('./assets/example-file.docx').default}>
+  Download this docx
+</a>
+```
+
+<BrowserWindow>
+[Download the example doc](./example-file.docx)
+</BrowserWindow>
+
+<AdsComponent />
+
+## Inline SVGs {#inline-svgs}
+
+Docusaurus supports importing **SVGs as React components**.
+This allows you to style or animate parts of the SVG using CSS.
+
+```jsx
+import MyIcon from './assets/logo.svg';
+
+<MyIcon className="customSvg" />;
+```
+
+For example, you can change the SVG color based on the current theme:
+
+```css
+[data-theme='light'] .customSvg [fill='#000'] {
+  fill: #1e90ff;
+}
+[data-theme='dark'] .customSvg [fill='#000'] {
+  fill: #00fa9a;
+}
+```
+
+<AdsComponent />
+
+## Themed Images {#themed-images}
+
+For sites that support **light/dark mode**, you may want different images per theme.
+Use the `ThemedImage` component to automatically swap images.
+
+```jsx
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import ThemedImage from '@theme/ThemedImage';
+
+<ThemedImage
+  alt="CodeHarborHub Logo"
+  sources={{
+    light: useBaseUrl('/img/codeharborhub-light.svg'),
+    dark: useBaseUrl('/img/codeharborhub-dark.svg'),
+  }}
+/>
+```
+
+This ensures the correct image is loaded depending on the current theme.
+
+### GitHub-style Theme Switching
+
+You can also replicate GitHub’s approach using path fragments:
+
+```md
+![Light mode](/img/codeharborhub-light.svg#gh-light-mode-only)
+![Dark mode](/img/codeharborhub-dark.svg#gh-dark-mode-only)
+```
+
+Add this CSS to hide/show based on theme:
+
+```css title="src/css/custom.css"
+[data-theme='light'] img[src$='#gh-dark-mode-only'],
+[data-theme='dark'] img[src$='#gh-light-mode-only'] {
+  display: none;
+}
+```
+
+<AdsComponent />
+
+## Static Assets {#static-assets}
+
+If you use **absolute paths** (`/img/...`), Docusaurus treats them as **static assets**.
+
+Example:
+
+```md
+![Static asset](/img/nav-logo.jpg)
+```
+
+Docusaurus will look for this image inside the `static/` directory:
+
+```
+/static/img/nav-logo.jpg
+```
+
+Benefits of using static assets:
+
+1. **Automatic Base URL Handling** – works even when deploying to a subpath.
+2. **Cache Optimization** – images are processed by Webpack and get a unique hash for better caching.
+
+If you need a raw URL (without build processing),
+use the `pathname://` protocol:
+
+```md
+![Raw image](pathname:///img/nav-logo.jpg)
+```
+
+This generates a direct `<img src="/img/nav-logo.jpg" />` tag.
+
+---
+
+## Best Practices {#best-practices}
+
+* Keep assets **close to the docs** that use them for easier maintenance.
+* Prefer **Markdown syntax** for most links/images for cleaner code.
+* Use `ThemedImage` or `inline SVGs` when working with **dark/light mode**.
+* Use **static assets** for site-wide shared files like logos and large downloads.

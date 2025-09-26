@@ -1,0 +1,344 @@
+---
+id: code-blocks
+title: Code Blocks in Markdown
+description: "Learn how to use, style, and supercharge code blocks in CodeHarborHub’s Markdown with syntax highlighting, line numbers, live editing, and more."
+slug: /guides/markdown-features/code-blocks
+---
+
+import CodeBlock from "@theme/CodeBlock";
+
+Code blocks are the **heart of technical documentation**.
+
+In CodeHarborHub (powered by Docusaurus & MDX), code blocks are **super-powered**. You can add syntax highlighting, titles, live editors, and even interactive tabs.
+
+This guide shows you **everything you can do with code blocks**, with real examples.
+
+<AdsComponent />
+
+## Basic Code Block
+
+Wrap your code with three backticks (\`\`\`) and specify the language for syntax highlighting.
+
+````md
+```js
+console.log("Hello CodeHarborHub!");
+```
+````
+
+<BrowserWindow>
+
+```js
+console.log("Hello CodeHarborHub!");
+```
+
+</BrowserWindow>
+
+✅ **Tip:** Always specify the language (like `js`, `python`, `html`) for better highlighting.
+
+<AdsComponent />
+
+## Adding a Title
+
+Give your readers context by adding a title to your code block.
+
+````md
+```jsx title="/src/components/Greeting.js"
+export default function Greeting() {
+  return <h1>Hello World!</h1>;
+}
+```
+````
+
+<BrowserWindow>
+
+```jsx title="/src/components/Greeting.js"
+export default function Greeting() {
+  return <h1>Hello World!</h1>;
+}
+```
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Syntax Highlighting & Themes
+
+CodeHarborHub uses [Prism](https://prismjs.com/) for beautiful syntax highlighting.
+
+You can customize the theme in `docusaurus.config.js`:
+
+```js title="docusaurus.config.js"
+import { themes as prismThemes } from "prism-react-renderer";
+
+export default {
+  themeConfig: {
+    prism: {
+      theme: prismThemes.dracula, // Dark & vibrant
+    },
+  },
+};
+```
+
+Supported languages include JavaScript, Python, Java, C++, and many more.
+To add extra languages (like PowerShell or Rust):
+
+```js title="docusaurus.config.js"
+export default {
+  themeConfig: {
+    prism: {
+      additionalLanguages: ["powershell", "rust"],
+    },
+  },
+};
+```
+
+Restart the dev server to see the changes.
+
+<AdsComponent />
+
+## Highlighting Lines
+
+Highlight key lines to draw attention.
+
+**With magic comments:**
+
+````mdx
+```js
+function importantCode() {
+  // highlight-next-line
+  return "⚡ This line is important!";
+}
+```
+````
+
+<BrowserWindow>
+
+```js
+function importantCode() {
+  // highlight-next-line
+  return "⚡ This line is important!";
+}
+```
+
+</BrowserWindow>
+
+**With meta string:**
+
+````md
+```js {2}
+function importantCode() {
+  return "⚡ This line is important!";
+}
+```
+````
+
+<AdsComponent />
+
+## Line Numbers
+
+Add line numbers for easier references.
+
+````md
+```jsx showLineNumbers
+function Example() {
+  return <p>Line numbers are enabled!</p>;
+}
+```
+````
+
+<BrowserWindow>
+
+```jsx showLineNumbers
+function Example() {
+  return <p>Line numbers are enabled!</p>;
+}
+```
+
+</BrowserWindow>
+
+You can even start counting from a specific number:
+
+````md
+```jsx showLineNumbers=5
+function Example() {
+  return <p>Starts from 5!</p>;
+}
+```
+````
+
+<AdsComponent />
+
+## Live Code Editor
+
+Want readers to experiment directly?
+Turn any code block into a **live playground** using `live`.
+
+Install the plugin first:
+
+```bash npm2yarn
+npm install --save @docusaurus/theme-live-codeblock
+```
+
+Enable it in `docusaurus.config.js`:
+
+```js
+export default {
+  themes: ["@docusaurus/theme-live-codeblock"],
+};
+```
+
+Now create a live block:
+
+````md
+```jsx live
+function Counter() {
+  const [count, setCount] = React.useState(0);
+  return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;
+}
+```
+````
+
+<BrowserWindow>
+
+```jsx live
+function Counter() {
+  const [count, setCount] = React.useState(0);
+  return <button onClick={() => setCount(count + 1)}>Count: {count}</button>;
+}
+```
+
+</BrowserWindow>
+
+**Users can edit the code and see instant results!**
+
+---
+
+## Multi-Language Tabs
+
+Show the same example in multiple languages using `<Tabs>` and `<TabItem>`.
+
+````mdx
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<Tabs>
+<TabItem value="js" label="JavaScript">
+
+```js
+console.log("Hello from JavaScript!");
+```
+
+</TabItem>
+<TabItem value="py" label="Python">
+
+```python
+print("Hello from Python!")
+```
+
+</TabItem>
+</Tabs>
+````
+
+<BrowserWindow>
+<Tabs>
+<TabItem value="js" label="JavaScript">
+
+```js
+console.log("Hello from JavaScript!");
+```
+
+</TabItem>
+<TabItem value="py" label="Python">
+
+```python
+print("Hello from Python!")
+```
+
+</TabItem>
+</Tabs>
+</BrowserWindow>
+
+<AdsComponent />
+
+## Advanced Tricks
+
+### Custom Magic Comments
+
+Create your own highlight styles.
+
+```js title="docusaurus.config.js"
+export default {
+  themeConfig: {
+    prism: {
+      magicComments: [
+        {
+          className: "code-block-error-line",
+          line: "This will error",
+        },
+      ],
+    },
+  },
+};
+```
+
+Then style it in CSS:
+
+```css title="src/css/custom.css"
+.code-block-error-line {
+  background: #ff000020;
+  border-left: 3px solid #ff000080;
+}
+```
+
+### Interactive Imports
+
+For live blocks, add custom components to the live scope:
+
+```bash npm2yarn
+npm run swizzle @docusaurus/theme-live-codeblock ReactLiveScope -- --eject
+```
+
+Then modify `src/theme/ReactLiveScope/index.js`:
+
+```js
+import React from "react";
+
+const FancyButton = (props) => (
+  <button
+    style={{ padding: 10, background: "#0070f3", color: "#fff" }}
+    {...props}
+  />
+);
+
+export default {
+  React,
+  FancyButton,
+};
+```
+
+Now you can use `<FancyButton>` inside your live code block!
+
+<AdsComponent />
+
+## Best Practices
+
+- **Use comments for highlighting** when code length changes frequently.
+- Always **specify a language** for better syntax highlighting.
+- Combine **line numbers** with highlights for tutorials and step-by-step guides.
+- Keep code blocks **short & focused**. Long blocks reduce readability.
+
+---
+
+### ✅ Summary
+
+| Feature         | Syntax Example                                |
+| --------------- | --------------------------------------------- |
+| Title           | ` ```js title="file.js" `                     |
+| Line Highlight  | ` ```js {1,3-5} ` or `// highlight-next-line` |
+| Line Numbers    | ` ```js showLineNumbers `                     |
+| Live Editor     | ` ```jsx live `                               |
+| Multi-Lang Tabs | `<Tabs>` + `<TabItem>`                        |
+
+<AdsComponent />
+
+Code blocks are not just **static snippets** they can be **interactive teaching tools**. Use these features to create **engaging, developer-friendly** docs in **CodeHarborHub**.
