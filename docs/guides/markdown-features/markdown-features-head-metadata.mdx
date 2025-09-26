@@ -1,0 +1,101 @@
+---
+id: head-metadata
+description: Declaring page-specific head metadata through MDX
+slug: /markdown-features/head-metadata
+---
+
+# Head Metadata
+
+Docusaurus automatically sets useful metadata inside `<html>`, `<head>` and `<body>` for every page. However, you can **add extra metadata or override defaults** directly inside your Markdown/MDX file  
+using the `<head>` tag.
+
+<AdsComponent />
+
+## Customizing head metadata {#customizing-head-metadata}
+
+To inject custom metadata, simply add a `<head>` declaration at the top of your `.mdx` document:
+
+```md title="markdown-features-head-metadata.mdx"
+---
+id: head-metadata
+title: Head Metadata
+---
+
+<!-- highlight-start -->
+<head>
+  <html className="extra-html-class" />
+  <body className="custom-body-class" />
+  <title>Custom Head Metadata for CodeHarborHub!</title>
+  <meta charSet="utf-8" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="canonical" href="https://codeharborhub.github.io/docs/markdown-features/head-metadata" />
+</head>
+<!-- highlight-end -->
+
+# Head Metadata
+
+Your page content goes here…
+```
+
+When rendered, these tags will be merged into the final HTML `<head>` section. You can confirm by inspecting the page with **Browser DevTools**.
+
+```mdx-code-block
+<head>
+  <html className="extra-html-class" />
+  <body className="custom-body-class" />
+  <title>Custom Head Metadata for CodeHarborHub!</title>
+  <meta charSet="utf-8" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="canonical" href="https://codeharborhub.github.io/docs/markdown-features/head-metadata" />
+</head>
+```
+
+:::note
+This feature is powered by the Docusaurus [`<Head>`](https://docusaurus.io/docs/docusaurus-core#head) component, which internally uses [react-helmet](https://github.com/nfl/react-helmet) for managing the document head.
+:::
+
+:::tip Regular SEO is easier
+For standard SEO tasks (like meta descriptions, keywords, and Open Graph tags),  
+prefer **front matter** fields such as `description`, `keywords`, and `image`.  
+These fields automatically populate both `description` and `og:description` without  
+manually writing multiple `<meta>` tags.
+:::
+
+<AdsComponent />
+
+## Markdown page description {#markdown-page-description}
+
+Each Markdown page has a **description** value that Docusaurus can use in multiple places—like the **generated category index cards** in the docs sidebar.
+
+By default, this description is derived from the first meaningful line of content. For example, the following Markdown:
+
+```md
+# Welcome
+
+Main content… May contain some [links](./file.mdx) or **emphasis**.
+```
+
+will produce a default description like:
+
+> `Main content… May contain some links or emphasis.`
+
+This is a **best effort** conversion.  
+If you need a precise description, explicitly set it in the front matter:
+
+```md
+---
+description: A custom description that overrides the default extraction.
+---
+
+# Welcome
+
+Main content… May contain some [links](./file.mdx) or **emphasis**.
+```
+
+<AdsComponent />
+
+### Why use front matter instead of `<head>`?
+
+* **Portable & versioned**: Works across all docs versions and i18n locales.  
+* **Automatic**: Updates Open Graph and social previews without extra tags.  
+* **Editor-friendly**: Visible in the same YAML section as other metadata.

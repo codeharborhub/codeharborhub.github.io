@@ -1,0 +1,195 @@
+---
+id: toc
+title: Headings & Table of Contents
+description: "Learn how to use headings, control their IDs, and customize the Table of Contents (TOC) in Markdown for CodeHarborHub docs."
+slug: /guides/markdown-features/toc
+---
+
+Headings give structure to your content, and the **Table of Contents (TOC)** helps readers navigate easily.
+
+This guide explains:
+* How to create Markdown headings
+* How to set custom IDs for deep links
+* How to customize TOC levels (globally & per page)
+* How to embed an **inline TOC** directly inside a page
+
+<AdsComponent />
+
+## Writing Headings {#markdown-headings}
+
+Use standard Markdown syntax:
+
+```md
+## Level 2 Title
+### Level 3 Title
+#### Level 4 Title
+```
+
+Each heading **automatically appears** in the sidebar and TOC.
+
+<BrowserWindow>
+
+## Level 2 Title
+
+### Level 3 Title
+
+#### Level 4 Title
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Heading IDs {#heading-ids}
+
+Every heading gets a **unique ID** so you can link directly to it.
+
+```md
+[Jump to Section](#level-2-title)
+```
+
+```jsx
+import Link from '@docusaurus/Link';
+
+<Link to="#level-2-title">Jump to Section</Link>
+```
+
+### Explicit IDs
+
+Generated IDs follow the heading text (e.g. `### Hello World` → `hello-world`).
+To lock an ID (useful for translations or renames), specify it manually:
+
+```md
+### Hello World {#my-explicit-id}
+```
+
+✅ Now the link will always be `#my-explicit-id`, even if the text changes.
+
+:::warning Avoid Duplicate IDs
+Custom IDs must be **unique per page**.
+Duplicate IDs break anchor links and create invalid HTML.
+:::
+
+<AdsComponent />
+
+## TOC Levels {#table-of-contents-heading-level}
+
+By default, the TOC shows only **H2** and **H3** headings.
+
+### Per Page
+
+Set the range with front matter:
+
+```md title="myDoc.md"
+---
+toc_min_heading_level: 2
+toc_max_heading_level: 5
+---
+```
+
+### Globally
+
+Change defaults in `docusaurus.config.js`:
+
+```js title="docusaurus.config.js"
+export default {
+  themeConfig: {
+    tableOfContents: {
+      minHeadingLevel: 2,
+      maxHeadingLevel: 5,
+    },
+  },
+};
+```
+
+Global settings can be **overridden per page** using front matter.
+
+<AdsComponent />
+
+## Inline Table of Contents {#inline-table-of-contents}
+
+You can insert a **TOC inside the page body** using the `toc` variable:
+
+```mdx
+import TOCInline from '@theme/TOCInline';
+
+<TOCInline toc={toc} />
+```
+
+<BrowserWindow>
+<TOCInline toc={toc} />
+</BrowserWindow>
+
+`toc` is a flat list of headings:
+
+```ts
+declare const toc: {
+  value: string; // Heading text
+  id: string;    // Anchor link
+  level: number; // Heading level (2–6)
+}[];
+```
+
+### Filter or Customize
+
+You can filter the array before rendering:
+
+```mdx
+<TOCInline
+  toc={toc.filter(node => node.level === 2 || node.level === 4)}
+  minHeadingLevel={2}
+  maxHeadingLevel={4}
+/>
+```
+
+This example displays only **H2** and **H4** headings.
+
+---
+
+## Advanced Tips {#customizing-table-of-contents-generation}
+
+* Headings inside **Tabs** or `<details>` still appear in the TOC.
+* Headings added with raw HTML (`<h2>`) **will not** appear in the TOC.
+* For complex use cases (ignoring certain headings, injecting custom ones),
+  watch [this issue](https://github.com/facebook/docusaurus/issues/6201).
+
+Example of hiding headings:
+
+```md
+<details>
+<summary>Expandable</summary>
+<h2 id="hidden-heading">This heading won't show in the TOC</h2>
+</details>
+```
+
+<AdsComponent />
+
+## Best Practices
+
+| Tip                                              | Why it matters                            |
+| ------------------------------------------------ | ----------------------------------------- |
+| Always specify explicit IDs for critical anchors | Keeps links stable if you rename headings |
+| Limit TOC depth to 3–4 levels                    | Improves readability                      |
+| Use inline TOC on long pages                     | Gives readers quick context               |
+| Keep headings descriptive                        | Helps SEO & accessibility                 |
+
+---
+
+## Demo Content for TOC
+
+Below are sample sections to test TOC rendering:
+
+### Section A {#section-a}
+
+Lorem ipsum dolor sit amet.
+
+#### Subsection A1
+
+Quick brown fox.
+
+### Section B {#section-b}
+
+Jumped over the lazy dog.
+
+#### Subsection B1
+
+Contributors can play with TOC filters here.

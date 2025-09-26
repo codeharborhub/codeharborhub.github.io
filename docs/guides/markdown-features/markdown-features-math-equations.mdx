@@ -1,0 +1,201 @@
+---
+id: math-equations
+description: Writing LaTeX Math Equations in CodeHarborHub Docs
+slug: /markdown-features/math-equations
+---
+
+# Math Equations
+
+CodeHarborHub documentation supports mathematical equations using [KaTeX](https://katex.org). KaTeX allows you to write LaTeX-style math directly inside Markdown files for clean, professional rendering.
+
+See [configuration](#configuration) to enable this feature.
+
+<AdsComponent />
+
+## Usage {#usage}
+
+Please read the [KaTeX](https://katex.org) documentation for detailed syntax. Below are the most common use-cases.
+
+### Inline Equations {#inline}
+
+For inline math, wrap the LaTeX expression in **single dollar signs**:
+
+```latex
+Let $f\colon[a,b]\to\R$ be Riemann integrable.  
+Let $F\colon[a,b]\to\R$ be $F(x)=\int_{a}^{x} f(t)\,dt$.  
+Then $F$ is continuous, and where $f$ is continuous, $F'(x)=f(x)$.
+```
+
+<BrowserWindow>
+
+Let $f\colon[a,b]\to\R$ be Riemann integrable.  
+Let $F\colon[a,b]\to\R$ be $F(x)=\int_{a}^{x} f(t)\,dt$.  
+Then $F$ is continuous, and where $f$ is continuous, $F'(x)=f(x)$.
+
+</BrowserWindow>
+
+### Block Equations {#blocks}
+
+For display-mode equations, use **double dollar signs** on separate lines:
+
+```latex
+$$
+I = \int_0^{2\pi} \sin(x)\,dx
+$$
+```
+
+<BrowserWindow>
+
+$$
+I = \int_0^{2\pi} \sin(x)\,dx
+$$
+
+</BrowserWindow>
+
+<AdsComponent />
+
+## Enabling Math Equations {#configuration}
+
+To render equations, install and configure the required plugins.
+
+### 1. Install Plugins
+
+Use the latest KaTeX-compatible versions:
+
+```bash npm2yarn
+npm install --save remark-math@6 rehype-katex@7
+```
+
+:::warning
+For **Docusaurus v3 (MDX v3)**, use `remark-math@6` and `rehype-katex@7`. Other versions may not work properly.
+:::
+
+### 2. Configure `docusaurus.config.js`
+
+These plugins are **ES Modules only**, so we recommend using an ESM config file:
+
+```js title="docusaurus.config.js (ESM)"
+// highlight-start
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+// highlight-end
+
+export default {
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          path: 'docs',
+          // highlight-start
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
+          // highlight-end
+        },
+      },
+    ],
+  ],
+};
+```
+
+<details>
+<summary>Using CommonJS?</summary>
+
+You can dynamically import ES modules with an async config:
+
+```js title="docusaurus.config.js (CommonJS)"
+module.exports = async function createConfigAsync() {
+  return {
+    presets: [
+      [
+        '@docusaurus/preset-classic',
+        {
+          docs: {
+            path: 'docs',
+            // highlight-start
+            remarkPlugins: [(await import('remark-math')).default],
+            rehypePlugins: [(await import('rehype-katex')).default],
+            // highlight-end
+          },
+        },
+      ],
+    ],
+  };
+};
+```
+</details>
+
+### 3. Add KaTeX Stylesheet
+
+Include the KaTeX CSS for proper rendering:
+
+```js title="docusaurus.config.js"
+export default {
+  // ...
+  stylesheets: [
+    {
+      href: 'https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css',
+      type: 'text/css',
+      integrity:
+        'sha384-odtC+0UGzzFL/6PNoE8rX/SPcQDXBJ+uRepguP4QkPCm2LBxH3FA3y+fKSiJ+AmM',
+      crossorigin: 'anonymous',
+    },
+  ],
+};
+```
+
+<details>
+<summary>Complete Example</summary>
+
+```js title="docusaurus.config.js"
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+
+export default {
+  title: 'CodeHarborHub',
+  tagline: 'Empowering Developers to Learn & Build',
+  presets: [
+    [
+      '@docusaurus/preset-classic',
+      {
+        docs: {
+          path: 'docs',
+          remarkPlugins: [remarkMath],
+          rehypePlugins: [rehypeKatex],
+        },
+      },
+    ],
+  ],
+  stylesheets: [
+    {
+      href: 'https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css',
+      type: 'text/css',
+      integrity:
+        'sha384-odtC+0UGzzFL/6PNoE8rX/SPcQDXBJ+uRepguP4QkPCm2LBxH3FA3y+fKSiJ+AmM',
+      crossorigin: 'anonymous',
+    },
+  ],
+};
+```
+</details>
+
+<AdsComponent />
+
+## Self-Hosting KaTeX Assets {#self-hosting}
+
+For maximum control or offline support, you can self-host KaTeX:
+
+1. Download the latest [KaTeX release](https://github.com/KaTeX/KaTeX/releases).
+2. Copy `katex.min.css` and the required `fonts` (usually `.woff2` is sufficient) into your site’s `static` directory.
+3. Update the stylesheet path in `docusaurus.config.js`:
+
+```js title="docusaurus.config.js"
+export default {
+  stylesheets: [
+    {
+      href: '/katex/katex.min.css',
+      type: 'text/css',
+    },
+  ],
+};
+```
