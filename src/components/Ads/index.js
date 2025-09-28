@@ -5,7 +5,7 @@ import styles from './styles.module.css';
 
 const AD_REFRESH_RATE = 20 * 1000;
 
-// ====== ✅ Ad Variants ======
+// ====== Ads Variants ======
 function CodeHarborHubIntro({ position }) {
   return (
     <a
@@ -57,7 +57,7 @@ function CodeHarborHubCommunity({ position }) {
   );
 }
 
-// ====== ✅ Main Rotating Ad Component ======
+// ====== Main Rotating Ad Component ======
 export default React.memo(function SidebarAd({ position }) {
   const [counter, setCounter] = useState(0);
 
