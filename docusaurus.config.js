@@ -247,22 +247,26 @@ const config = {
                 to: "/projects/",
               },
               {
-                label: "📚 E-books",
+                label: "E-books",
                 to: "/ebooks/",
               },
 
               {
-                label: "🛣️ Roadmap",
+                label: "Roadmap",
                 to: "/roadmap/",
               },
               {
-                label: "🧑‍💻 Live Editor",
+                label: "Live Editor",
                 to: "/LiveEditor/",
               },
               {
-                label: "📺 Broadcast",
+                label: "Broadcast",
                 to: "https://codeharborhub-broadcast-web.vercel.app/",
               },
+              {
+                label: "Events",
+                to: "/events/",
+              }
             ],
           },
           // {
