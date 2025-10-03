@@ -67,21 +67,21 @@ function Resource({
   duration,
 }: Resource) {
   return (
-    <Link className="resource fade-in" key={title} href={url}>
+    <Link className='resource fade-in' key={title} href={url}>
       <div>
-        <div className="resource-image-container">
+        <div className='resource-image-container'>
           <img
             src={image}
             alt={title}
-            loading="lazy"
-            className="resource-image"
+            loading='lazy'
+            className='resource-image'
           />
         </div>
-        <h3 className="resource-title">{title}</h3>
-        <p className="resource-description">{description}</p>
+        <h3 className='resource-title'>{title}</h3>
+        <p className='resource-description'>{description}</p>
       </div>
-      <div className="resource-footer">
-        <div className="resource-duration">
+      <div className='resource-footer'>
+        <div className='resource-duration'>
           {`${duration} ${type === "video" ? "watch" : "read"}`}
         </div>
       </div>
@@ -123,74 +123,71 @@ export default function ResourcesSection() {
   };
 
   return (
-    <section className="resources-section">
-      <div className="resources-container">
+    <section className='resources-section'>
+      <div className='resources-container'>
         {/* Section header */}
-        <div className="resources-header">
+        <div className='resources-header'>
           <div>
-            <span className="codeharborhub-badge">RESOURCES</span>
-            <h2 className="resources-title">Want to know more?</h2>
+            <span className='codeharborhub-badge'>RESOURCES</span>
+            <h2 className='resources-title'>Want to know more?</h2>
           </div>
           {/* Link to view all blogs */}
-          <Link to="https://codeharborhub.github.io/blog/" className="resources-all-blogs">
-            All Blogs <ArrowRightFilled className="arrow-icon" />
+          <Link
+            to='https://codeharborhub.github.io/blog/'
+            className='resources-all-blogs'>
+            All Blogs <ArrowRightFilled className='arrow-icon' />
           </Link>
         </div>
 
         {/* Filter buttons for resource types */}
-        <div className="resources-filters bg-secondary-700">
+        <div className='resources-filters'>
           <button
             className={`filter-button ${activeType === "all" ? "active" : ""}`}
-            onClick={() => setActiveType("all")}
-          >
+            onClick={() => setActiveType("all")}>
             All
           </button>
           <button
             className={`filter-button ${activeType === "blog" ? "active" : ""}`}
-            onClick={() => setActiveType("blog")}
-          >
+            onClick={() => setActiveType("blog")}>
             Blogs
           </button>
           <button
             className={`filter-button ${
               activeType === "tutorial" ? "active" : ""
             }`}
-            onClick={() => setActiveType("tutorial")}
-          >
+            onClick={() => setActiveType("tutorial")}>
             Tutorials
           </button>
           <button
             className={`filter-button ${
               activeType === "courses" ? "active" : ""
             }`}
-            onClick={() => setActiveType("courses")}
-          >
+            onClick={() => setActiveType("courses")}>
             Courses
           </button>
           <button
             className={`filter-button ${activeType === "dsa" ? "active" : ""}`}
-            onClick={() => setActiveType("dsa")}
-          >
+            onClick={() => setActiveType("dsa")}>
             DSA
           </button>
         </div>
 
         {/* Displaying the current set of resources */}
-        <div className="resources-content">
-          <div className="resources-grid">
+        <div className='resources-content'>
+          <div className='resources-grid'>
             {currentResources.map((resource, idx) => {
               return <Resource {...resource} key={idx} />;
             })}
           </div>
 
           {/* Pagination controls */}
-          <div className="pagination">
-            <button onClick={prevPage} className="pagination-button">
-              <ChevronLeftRegular className="chevron-icon" />
+          <div className='pagination'>
+            <button onClick={prevPage} className='pagination-button'>
+              <ChevronLeftRegular className='chevron-icon' />
             </button>
 
-            <button onClick={nextPage} className="pagination-button">
-              <ChevronRightRegular className="chevron-icon" />
+            <button onClick={nextPage} className='pagination-button'>
+              <ChevronRightRegular className='chevron-icon' />
             </button>
           </div>
         </div>
