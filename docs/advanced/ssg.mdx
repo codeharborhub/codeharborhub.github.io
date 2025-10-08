@@ -1,0 +1,182 @@
+---
+title: "Static Site Generation (SSG)"
+sidebar_label: Static Site Generation
+description: Learn how CodeHarborHub builds blazing-fast static sites using React and Docusaurus for better performance and SEO.
+---
+
+In our [architecture](architecture.mdx) guide, we explained how the theme and plugins interact during build time. Now, let’s dive deeper into **Static Site Generation (SSG)** — the process that powers CodeHarborHub’s speed and SEO optimization.
+
+Docusaurus, which powers our site, **statically renders React components into HTML**, allowing the content to load instantly and rank better on search engines.
+
+---
+
+## How It Works
+
+The theme is compiled **twice** during the build:
+
+- **Server-side rendering (SSR)**: Compiles React in a virtual environment using [React DOM Server](https://reactjs.org/docs/react-dom-server.html).  
+  This process outputs static HTML files — no browser APIs like `window` or `document` exist here.
+- **Client-side rendering (CSR)**: Runs React inside the browser, allowing dynamic features such as animations, interactivity, and data updates.
+
+:::info SSR or SSG?
+Although _server-side rendering (SSR)_ and _static site generation (SSG)_ can differ, Docusaurus primarily performs **SSG** — meaning everything is rendered once during build time, then served statically via CDN for lightning-fast delivery.
+
+Unlike frameworks like [Next.js](https://nextjs.org/), CodeHarborHub doesn’t re-render content per request. Instead, it delivers optimized, pre-rendered pages directly.
+:::
+
+---
+
+## Common SSR Pitfalls
+
+You might already know that Node globals like `process` or `'fs'` aren’t available in the browser but it’s equally important to remember that **browser globals like `window` or `document` aren’t available during SSR**.
+
+```jsx
+import React from 'react';
+
+export default function WhereAmI() {
+  return <span>{window.location.href}</span>;
+}
+```
+
+Running this code during `docusaurus build` will trigger:
+
+```
+ReferenceError: window is not defined
+```
+
+**Why?**
+
+Because the site is rendered on the server — where no `window` object exists.
+
+---
+
+## The Exception: `process.env.NODE_ENV`
+
+```mdx-code-block
+<details id="node-env">
+<summary>What about <code>process.env.NODE_ENV</code>?</summary>
+```
+
+You can safely use `process.env.NODE_ENV` because Webpack injects it during build time.  
+This is useful for conditional rendering or optimizing development vs production builds.
+
+```jsx
+import React from 'react';
+
+export default function ExpensiveComponent() {
+  if (process.env.NODE_ENV === 'development') {
+    return <>Development Mode: Skipping heavy operations</>;
+  }
+  const result = someExpensiveOperation();
+  return <>{result}</>;
+}
+```
+
+```mdx-code-block
+</details>
+```
+
+---
+
+## Understanding SSR in Depth
+
+React isn’t just for interactivity — it’s also a **templating engine**.
+
+Docusaurus leverages this to **render your React components into pure HTML**, which is instantly visible when a page loads. Afterward, the JavaScript bundle hydrates the page — turning it into a dynamic single-page app.
+
+This two-step process ensures:
+- 🚀 **Faster perceived load times**
+- 🌐 **SEO-optimized content**
+- 🧠 **Progressive enhancement** (works even before JS fully loads)
+
+---
+
+## Escape Hatches: When You Need Browser APIs
+
+Sometimes, you’ll need to access browser-only functionality.  
+For example:
+- Running code blocks in real time  
+- Loading user themes dynamically  
+- Displaying data fetched from APIs  
+
+Here are safe ways to handle this:
+
+### 1. `<BrowserOnly>`
+
+Wrap browser-specific components inside [`<BrowserOnly>`](https://docusaurus.io/docs/docusaurus-core#browseronly):
+
+```jsx
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+function MyBrowserComponent() {
+  return (
+    <BrowserOnly fallback={<div>Loading...</div>}>
+      {() => {
+        const BrowserLib = require('browser-lib').BrowserLib;
+        return <BrowserLib />;
+      }}
+    </BrowserOnly>
+  );
+}
+```
+
+✅ Ensures the component runs only in the browser — never during static rendering.
+
+---
+
+### 2. `useIsBrowser()`
+
+Use this hook to conditionally run logic depending on the environment:
+
+```jsx
+import useIsBrowser from '@docusaurus/useIsBrowser';
+
+function MyComponent() {
+  const isBrowser = useIsBrowser();
+  const currentURL = isBrowser ? window.location.href : 'Loading...';
+  return <span>{currentURL}</span>;
+}
+```
+
+---
+
+### 3. `useEffect()`
+
+Move browser-only side effects inside `useEffect()` so they execute only after hydration:
+
+```jsx
+import React, { useEffect } from 'react';
+
+function MyComponent() {
+  useEffect(() => {
+    console.log("Now running in browser!");
+  }, []);
+  return <span>Welcome to CodeHarborHub!</span>;
+}
+```
+
+---
+
+### 4. `ExecutionEnvironment`
+
+For quick checks, you can use the `ExecutionEnvironment` utility:
+
+```js title="a-client-module.js"
+import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
+
+if (ExecutionEnvironment.canUseDOM) {
+  document.title = "Loaded on client!";
+}
+```
+
+---
+
+## Summary
+
+- 🧱 CodeHarborHub statically builds your pages using **SSG** for speed and SEO.  
+- ⚙️ React components are rendered on the server first (SSR) and hydrated later (CSR).  
+- 🧩 Use safe methods like `<BrowserOnly>`, `useIsBrowser()`, or `useEffect()` when accessing browser APIs.  
+- 🚫 Avoid using `window` or `document` directly during build time.
+
+With these principles, you can confidently create interactive yet highly optimized static pages —  
+the foundation of what makes **CodeHarborHub** fast, scalable, and developer-friendly ⚡

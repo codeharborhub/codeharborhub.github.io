@@ -1,0 +1,197 @@
+---
+title: Client Architecture
+description: Understanding how the CodeHarborHub client system works
+---
+
+The **client architecture** of CodeHarborHub (built on Docusaurus) defines how the front-end interacts with React components, themes, and client-side modules. It focuses on modularity, performance, and extensibility — allowing you to customize your learning platform’s UI and logic.
+
+---
+
+## Theme Aliases {#theme-aliases}
+
+Themes in CodeHarborHub work by exporting a set of **React components** such as `Navbar`, `Layout`, and `Footer`. These components render structured data provided by plugins.  
+
+They are imported using the Webpack alias `@theme`:
+
+```js
+import Navbar from '@theme/Navbar';
+```
+
+### How it works
+
+The `@theme` alias points to several possible directories in this order of priority:
+
+1. `website/src/theme` — The **user’s custom theme directory** (highest priority).  
+2. `node_modules/@docusaurus/theme-*` — Theme package components.  
+3. Core fallback components provided by Docusaurus (least used).  
+
+This creates a **layered architecture** — higher layers override lower ones.  
+For example:
+
+```
+website
+├── node_modules
+│   └── @docusaurus/theme-classic
+│       └── theme
+│           └── Navbar.js
+└── src
+    └── theme
+        └── Navbar.js
+```
+
+Here, `website/src/theme/Navbar.js` takes precedence whenever you import `@theme/Navbar`. This concept is known as **swizzling** — overriding or extending existing components.
+
+### Wrapping and Extending Components
+
+If you want to extend a theme component instead of replacing it, use:
+
+- `@theme-original` — Imports the next component down the stack.
+- `@theme-init` — Imports the base implementation from the original theme.
+
+Example: enhancing a `CodeBlock` component with a live playground:
+
+```js
+import InitialCodeBlock from '@theme-init/CodeBlock';
+import React from 'react';
+import ReactLivePlayground from '@theme/ReactLivePlayground';
+
+export default function CodeBlock(props) {
+  return props.live ? (
+    <ReactLivePlayground {...props} />
+  ) : (
+    <InitialCodeBlock {...props} />
+  );
+}
+```
+
+:::warning
+Unless you’re building a reusable theme (like `@docusaurus/theme-live-codeblock`), you won’t usually need `@theme-init`.
+:::
+
+### Visualization of Theme Stack
+
+Internally, CodeHarborHub loads components as a “stack” of layers:
+
+```text
++-------------------------------------------------+
+|        website/src/theme/CodeBlock.js           | <-- @theme/CodeBlock
++-------------------------------------------------+
+| theme-live-codeblock/theme/CodeBlock/index.js   | <-- @theme-original/CodeBlock
++-------------------------------------------------+
+| plugin-awesome-codeblock/theme/CodeBlock.js     |
++-------------------------------------------------+
+| theme-classic/theme/CodeBlock/index.js          | <-- @theme-init/CodeBlock
++-------------------------------------------------+
+```
+
+The **site layer** (`src/theme`) always takes precedence since it’s loaded last.
+
+---
+
+## Client Modules {#client-modules}
+
+Client modules are **global scripts or styles** that run before React renders your site. They include JS and CSS that modify global state, register event listeners, or add global styling.
+
+Under the hood:
+
+```js title="@docusaurus/core/App.tsx"
+import '@generated/client-modules';
+```
+
+### Declaring Client Modules
+
+Plugins and sites can declare client modules using:
+
+- [`getClientModules`](https://docusaurus.io/docs/api/plugin-methods/lifecycle-apis#getClientModules)
+- [`siteConfig.clientModules`](https://docusaurus.io/docs/api/docusaurus-config#clientModules)
+
+These modules are imported globally and executed both during server-side rendering (SSR) and client-side hydration.
+
+Example of a client-side script:
+
+```js title="mySiteGlobalJs.js"
+import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
+
+if (ExecutionEnvironment.canUseDOM) {
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Period') {
+      location.assign(location.href.replace('.com', '.dev'));
+    }
+  });
+}
+```
+
+Example of global CSS:
+
+```css title="mySiteGlobalCss.css"
+/* Global stylesheet */
+.globalSelector {
+  color: #007bff;
+  font-weight: bold;
+}
+```
+
+---
+
+## Client Module Lifecycles {#client-module-lifecycles}
+
+Client modules can define **lifecycle functions** to handle route transitions in your single-page app (SPA).
+
+### Available Lifecycle Methods
+
+- `onRouteUpdate`: triggered when navigation starts  
+- `onRouteDidUpdate`: triggered after the new route has rendered  
+
+These functions receive `{ location, previousLocation }` as parameters.
+
+Example:
+
+```js title="myClientModule.js"
+export function onRouteDidUpdate({location, previousLocation}) {
+  if (location.pathname !== previousLocation?.pathname) {
+    const title = document.querySelector('h1');
+    if (title) title.innerText += ' 🚀';
+  }
+}
+
+export function onRouteUpdate({location, previousLocation}) {
+  if (location.pathname !== previousLocation?.pathname) {
+    const progress = setTimeout(() => {
+      nprogress.start();
+    }, 200);
+    return () => clearTimeout(progress);
+  }
+}
+```
+
+TypeScript version:
+
+```ts title="myClientModule.ts"
+import type {ClientModule} from '@docusaurus/types';
+
+const module: ClientModule = {
+  onRouteUpdate({location, previousLocation}) {
+    // Custom navigation logic
+  },
+  onRouteDidUpdate({location, previousLocation}) {
+    // DOM manipulations or analytics
+  },
+};
+
+export default module;
+```
+
+Both lifecycles run on the **client side only** and are safe for accessing browser globals.
+
+---
+
+:::tip Prefer React-based Implementations
+
+If your feature depends on **state**, **hooks**, or **context**,  
+it’s better to use [component swizzling](https://docusaurus.io/docs/swizzling#wrapping) instead of client modules.  
+Client modules are ideal for simple global effects, not for complex UI logic.
+:::
+
+---
+
+By understanding **theme aliases** and **client modules**, you can fully control CodeHarborHub’s front-end architecture — blending flexibility, modular design, and smooth client-side experiences.

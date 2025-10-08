@@ -85,6 +85,19 @@ const sidebars = {
         "seo",
       ],
     },
+
+    {
+      type: "category",
+      label: "Advanced Guides",
+      link: { type: "doc", id: "advanced/index" },
+      items: [
+        "advanced/architecture",
+        'advanced/plugins',
+        'advanced/routing',
+        'advanced/ssg',
+        'advanced/client',
+      ],
+    },
   ],
 };
 
