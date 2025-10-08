@@ -1,0 +1,141 @@
+---
+title: Plugins
+---
+
+Plugins are the **building blocks** of features in a CodeHarborHub (Docusaurus) site. Each plugin manages a specific feature — such as rendering content, transforming data, or integrating external services.
+
+Plugins can work independently or be distributed as part of a **preset** (a bundle of plugins and themes).
+
+---
+
+## Creating Plugins {#creating-plugins}
+
+A plugin in Docusaurus is simply a **function** that receives two parameters: `context` and `options`. It returns a **plugin instance object** (or a promise) that defines how it behaves across the site’s lifecycle.
+
+For deeper insights, check out the [Plugin Method Reference](https://docusaurus.io/docs/api/plugin-methods).
+
+### Function Definition {#function-definition}
+
+You can define a plugin directly inside your `docusaurus.config.js` file:
+
+```js title="docusaurus.config.js"
+export default {
+  // ...
+  plugins: [
+    // highlight-start
+    async function myPlugin(context, options) {
+      return {
+        name: 'my-plugin',
+        async loadContent() {
+          // Load or generate data here
+        },
+        async contentLoaded({content, actions}) {
+          // Use the data and add routes
+        },
+        // Other lifecycle APIs
+      };
+    },
+    // highlight-end
+  ],
+};
+```
+
+### Module Definition {#module-definition}
+
+You can also define your plugin as a separate file or npm package:
+
+```js title="docusaurus.config.js"
+export default {
+  // ...
+  plugins: [
+    // Without options:
+    './my-plugin',
+    // Or with options:
+    ['./my-plugin', options],
+  ],
+};
+```
+
+Then, create a plugin module like this:
+
+```js title="my-plugin/index.js"
+export default async function myPlugin(context, options) {
+  return {
+    name: 'my-plugin',
+    async loadContent() {
+      // Fetch or prepare plugin data
+    },
+    async contentLoaded({content, actions}) {
+      // Connect content with routes or components
+    },
+  };
+}
+```
+
+---
+
+## Types of Plugins {#plugin-types}
+
+Plugins come in several types:
+
+- **Package:** Installed from npm (e.g., `@docusaurus/plugin-content-docs`)  
+- **Project:** Created within your local project using a file path  
+- **Local:** Inline function definitions within your config file  
+- **Synthetic:** Internal “virtual” plugins created by Docusaurus to support modular architecture  
+
+You can see all installed plugins via the [Debug Metadata Panel](/__docusaurus/debug/metadata).
+
+---
+
+## Plugin Design {#plugin-design}
+
+The plugin system in Docusaurus provides **hooks** into the site’s lifecycle — enabling you to:
+
+- Extend Webpack configurations  
+- Modify or load additional content  
+- Generate custom routes  
+- Create reusable UI components  
+
+This design gives developers full control over both data flow and front-end rendering.
+
+---
+
+## Theme Design {#theme-design}
+
+Once plugins load their content, the data is sent to the client side via:
+
+- [`createData` + `addRoute`](https://docusaurus.io/docs/api/plugin-methods/lifecycle-apis#addRoute)  
+- [`setGlobalData`](https://docusaurus.io/docs/api/plugin-methods/lifecycle-apis#setGlobalData)  
+
+Since plugins and themes operate in **different environments** (Node vs. Browser), the data is **serialized** into plain JSON before being rendered.
+
+**Themes** provide the UI layer to visualize the plugin’s data. For instance, a blog system might include both a `plugin-content-blog` and a `theme-blog`.
+
+```js title="docusaurus.config.js"
+export default {
+  themes: ['theme-blog'],
+  plugins: ['plugin-content-blog'],
+};
+```
+
+If you want to switch design styles, you can easily replace the theme:
+
+```js title="docusaurus.config.js"
+export default {
+  themes: ['theme-blog-bootstrap'],
+  plugins: ['plugin-content-blog'],
+};
+```
+
+Even though both themes receive the same data, they can render it completely differently — allowing flexible, modular UI experiences.
+
+---
+
+## Summary {#summary}
+
+- **Themes** share the same lifecycle methods as **Plugins**.  
+- Themes run **after** all plugins have loaded.  
+- Themes add UI component aliases through `getThemePath`.  
+- Plugins manage **data and logic**, while themes manage **presentation**.  
+
+Together, plugins and themes form the **core modular architecture** of a Docusaurus-powered site like CodeHarborHub — allowing limitless customization, scalability, and innovation.

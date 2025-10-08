@@ -1,0 +1,102 @@
+---
+title: Architecture
+description: "How CodeHarborHub’s documentation engine and architecture work together to build your site"
+---
+
+```mdx-code-block
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
+```
+
+<Zoom>
+
+![Architecture overview](/img/architecture.png)
+
+</Zoom>
+
+This diagram explains how **CodeHarborHub’s documentation system** (powered by Docusaurus) works under the hood to build and serve your learning platform. Each **plugin** is responsible for collecting and processing content (like docs, tutorials, or blogs) and emitting structured JSON data.  
+
+The **themes** provide the layout and UI components that transform this JSON data into dynamic, interactive web pages.
+
+The **bundler** then takes care of packaging everything—building both the **server** and **client** bundles that power the entire site experience.
+
+---
+
+## Key Architectural Layers
+
+### 1. Plugin Layer
+
+Plugins manage content and configuration. Each plugin runs entirely in **Node.js**, processing Markdown, MDX, and metadata into structured JSON.  
+
+For example:
+- The **Docs Plugin** gathers all your course and guide files.  
+- The **Blog Plugin** handles educational blog content.  
+- The **Pages Plugin** renders custom pages like `/about`, `/events`, or `/community`.
+
+All plugin lifecycle methods run in **Node**. That means plugin code must be written in **CommonJS** (using `require`) or **ES Modules** (using `import/export`) that Node can execute.
+
+---
+
+### 2. Theme Layer
+
+Themes define how the content looks and feels. Theme components are written in **React**, built with **Webpack**, and rendered on the client side.  
+
+They receive the JSON output from plugins and render them as complete pages—  
+such as documentation layouts, course cards, contributor profiles, and interactive learning modules.
+
+**Themes and plugins don’t directly import or depend on each other.**  
+They communicate through **JSON data** and **route configuration**, ensuring modularity and scalability.
+
+A useful way to think about it:
+> Imagine plugins are written in another language (like Rust or Go) — they just output structured data.  
+> The theme is the visual layer that interprets and displays that data beautifully.
+
+---
+
+### 3. Configuration Layer
+
+Your `docusaurus.config.js` (or `docusaurus.config.mjs`) connects everything.
+
+It runs in **Node.js** and defines:
+- Global settings like `title`, `url`, `baseUrl`, and `favicon`
+- Plugin and theme configurations
+- Site metadata, SEO tags, and integration settings
+
+You can pass callbacks or dynamic logic to plugins here.  
+However, only **serializable values** (those that survive `JSON.stringify()`) make it to the client.
+
+This means:
+- ✅ Strings, numbers, arrays, and objects are preserved  
+- ⚠️ Functions, regexes, and complex data structures are lost in the browser bundle
+
+During bundling, the configuration file is serialized and injected into the client bundle, allowing the site to access global data via:
+
+```js
+import { useDocusaurusContext } from '@docusaurus/core';
+
+const { siteConfig } = useDocusaurusContext();
+console.log(siteConfig.themeConfig);
+```
+
+---
+
+## Summary of the Build Process
+
+| Stage | Environment | Responsibility |
+|--------|--------------|----------------|
+| **Plugins** | Node.js | Collect content and generate JSON data |
+| **Themes** | Browser + Webpack | Render JSON data into UI components |
+| **Bundler** | Build (Webpack/Vite) | Output optimized server and client bundles |
+| **Config** | Node.js | Define site structure and plugin options |
+
+---
+
+## Why This Matters for CodeHarborHub
+
+This architecture allows CodeHarborHub to be:
+- ⚡ **Fast and modular** — each content type (Docs, Blogs, Events) acts independently  
+- 🧠 **Extensible** — easily add new learning modules or plugins  
+- 🌐 **Universal** — supports versioning, localization, and custom themes  
+- 🔒 **Safe and scalable** — clean separation between content, configuration, and rendering
+
+---
