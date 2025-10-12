@@ -5,22 +5,29 @@ import { Sparkles } from "lucide-react";
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden">
       {/* <HeroSection /> */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+        <div className="absolute inset-0 bg-grid-slate-200/50 dark:bg-grid-slate-800/50 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:[mask-image:linear-gradient(0deg,rgba(15,23,42,1),rgba(15,23,42,0.6))]" />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.1%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%224%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <div className="text-center">
             <div className="flex justify-center mb-8">
-              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 border border-white/20">
-                <Sparkles className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm font-medium">ABOUT CODEHARBORHUB</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-6">
+                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  ABOUT CODEHARBORHUB
+                </span>
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent p-2">
-              Where Knowledge Meets Innovation
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 dark:from-blue-400 dark:via-cyan-400 dark:to-blue-400 bg-clip-text text-transparent">
+                Where Knowledge Meets
+              </span>
+              <br />
+              <span className="text-slate-900 dark:text-white">Innovation</span>
             </h1>
-            <p className="text-xl text-blue-100 mx-auto leading-relaxed">
+            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8 mx-auto">
               At CodeHarborHub, we believe that learning is more than just
               acquiring knowledge — it’s about transforming ideas into reality,
               creativity into innovation, and passion into purpose. Our mission
@@ -34,7 +41,9 @@ const About = () => {
       </section>
       {/* Our Mission */}
       <section className="py-20">
-        <h2 className="text-4xl md:text-5xl text-center pb-6 font-bold">Our Mission</h2>
+        <h2 className="text-4xl md:text-5xl text-center pb-8 font-bold">
+          Our Mission
+        </h2>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>

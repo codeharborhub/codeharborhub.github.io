@@ -12,7 +12,7 @@ const WhoWeAre = () => {
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
     >
-      <h2 className="text-4xl md:text-5xl text-center font-bold text-gray-900 mb-8 dark:text-white">
+      <h2 className="text-4xl md:text-5xl text-center font-bold text-gray-900 pb-8 dark:text-white">
         Who We Are
       </h2>
       <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
