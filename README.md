@@ -23,6 +23,41 @@ At CodeHarborHub, our mission is clear: to provide accessible and comprehensive 
 - **Inspiring Showcases**: Explore inspiring showcases of real-world projects and innovative web solutions.
 - **Engaging Community**: Connect with a vibrant community of developers, share knowledge, and collaborate on projects.
 
+---
+
+## 🧠 Events & Hackathons
+
+### 🏁 CodeHarborHub x Hacktoberfest 2025
+Celebrate open source with us this **Hacktoberfest 2025 (Oct 1 – Oct 31)**!  
+We’re hosting **CodeHarborHub x Hacktoberfest 2025**, empowering developers to contribute, collaborate, and showcase their skills.
+
+**Event Highlights:**
+- Open to all — no team required!
+- Beginner-friendly issues and mentoring support.
+- Swag rewards & contributor recognition.
+- Community Discord support and leaderboard.
+
+**👉 Participate here:**  [Hacktoberfest 2025 @ CodeHarborHub](https://github.com/CodeHarborHub/codeharborhub.github.io/issues)
+
+📅 **Event Start:** October 1, 2025  
+📅 **Event End:** October 31, 2025  
+
+<img alt="CodeHarborHub-X-Hacktoberfest Event Banner" src="https://github.com/user-attachments/assets/10e5f9e2-83c5-4bfe-9a4d-3fade91a1dbd" />
+
+---
+
+## 🏆 Open Source Programs & Recognitions
+
+CodeHarborHub is proud to participate in various open source and community-driven initiatives.
+
+| Program | Year | Status | Highlights |
+|----------|------|---------|-------------|
+| **GirlScript Summer of Code (GSSoC)** | 2024 | ✅ Participated | Mentored & maintained open-source repos |
+| **Hacktoberfest** | 2024–2025 | 🟢 Active | Hosting events & beginner-friendly projects |
+| **Google Summer of Code (GSoC)** | Coming Soon | 🔜 Planned | Expanding community mentorship |
+
+---
+
 ## Discord Channel for GSSoC 2024 Contributors
 
 Now, resolve your all doubts and communicate with our all contributors.
