@@ -280,6 +280,16 @@ export const Users: User[] = [
   },
 
   {
+    title: "Crop Recommendation System",
+    description:
+      "A Crop Recommendation System that suggests the best crops to grow based on soil and weather conditions.",
+    preview: require("./showcase/crop-recommendation-system.png"),
+    website: "https://crop-recommendation-system11.streamlit.app/",
+    source: "https://github.com/ak-0283/Crop-Recommendation-System",
+    tags: ["opensource","ml", "favorite", "python", "streamlit"],
+  },
+
+  {
     title: "Movie Recommendation App",
     description:
       "A movie recommendation app that suggests movies based on the keywords searched by the user.",
