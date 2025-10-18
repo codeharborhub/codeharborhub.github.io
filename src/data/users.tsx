@@ -24,10 +24,12 @@ export type TagType =
   | "personal"
   | "templates"
   | "portfolio"
+  | "python"
   | "nextjs"
   | "vanilla"
   | "typescript"
   | "ai"
+  | "streamlit"
   | "ml"
   | "mdx"
   | "game"
@@ -224,6 +226,16 @@ export const Tags: { [type in TagType]: Tag } = {
   },
   scss: {
     label: "SCSS",
+    description: "",
+    color: "#007acc",
+  },
+  python: {
+    label: "Python",
+    description: "",
+    color: "#007acc",
+  },
+  streamlit: {
+    label: "Streamlit",
     description: "",
     color: "#007acc",
   },
