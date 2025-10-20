@@ -9,7 +9,7 @@ export const Users: User[] = [
   preview: require("./showcase/surora.png"),
   website: "https://aurora-01.vercel.app/",
   source: "https://github.com/samosagpt/aurora",
-  tags: ["ai", "deep-learning", "data-science"],
+  tags: ["ai", "deep-learning", "data-science", "opensource", "favorite", "ML", "streamlit", "python"],
 }
   // Youtube Clone
 
