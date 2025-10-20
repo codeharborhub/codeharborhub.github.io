@@ -6,7 +6,7 @@ export const Users: User[] = [
   title: "Aurora",
   description: 
     "Aurora — Agentic Agentic Unified multi-model Reasoning Orchestrator for Rapid One-shot Assistance.",
-  preview: require("./showcase/surora.png"),
+  preview: require("./showcase/aurora.png"),
   website: "https://aurora-01.vercel.app/",
   source: "https://github.com/samosagpt/aurora",
   tags: ["ai", "deep-learning", "data-science", "opensource", "favorite", "ML", "streamlit", "python"],
