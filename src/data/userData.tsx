@@ -288,6 +288,15 @@ export const Users: User[] = [
     source: "https://github.com/ak-0283/Crop-Recommendation-System",
     tags: ["opensource","ml", "favorite", "python", "streamlit"],
   },
+  {
+    title: "Sleep Disorder Prediction System",
+    description:
+      "A Sleep Health Lifestyle Prediction system that predicts sleep quality based on lifestyle factors.",
+    preview: require("./showcase/sleep.png"),
+    website: "https://sleeppredictionsystem112.streamlit.app/",
+    source: "https://github.com/ak-0283/Sleep-Health-Lifestyle-Prediction",
+    tags: ["opensource","ml", "favorite", "python", "streamlit"],
+  },
 
   {
     title: "Movie Recommendation App",
