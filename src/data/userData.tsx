@@ -1,6 +1,16 @@
 import { User } from "./users";
 
 export const Users: User[] = [
+  //Aurora
+  {
+  title: "Aurora",
+  description: 
+    "Aurora — Agentic Agentic Unified multi-model Reasoning Orchestrator for Rapid One-shot Assistance.",
+  preview: require("./showcase/surora.png"),
+  website: "https://aurora-01.vercel.app/",
+  source: "https://github.com/samosagpt/aurora",
+  tags: ["ai", "deep-learning", "data-science"],
+}
   // Youtube Clone
 
   {
