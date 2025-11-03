@@ -215,8 +215,8 @@ const config = {
             ],
           },
           {
-            to: "/showcase",
-            html: '<span class="nav-emoji">🌍</span> Showcase',
+            to: "/github-stars-nominate",
+            html: '<span class="nav-emoji">⭐</span> GitHub Stars',
             position: "left",
           },
           {
@@ -243,6 +243,10 @@ const config = {
             position: "left",
             items: [
               {
+                to: "/showcase",
+                label: "Showcase",
+              },
+              {
                 label: "Projects",
                 to: "/projects/",
               },
@@ -266,7 +270,7 @@ const config = {
               {
                 label: "Events",
                 to: "/events/",
-              }
+              },
             ],
           },
           // {
