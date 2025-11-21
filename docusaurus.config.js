@@ -170,7 +170,7 @@ const config = {
                 <a class="dropbtn" href="/docs/">Docs</a>
                 <div class="dropdown-content">
                   <a href="https://codeharborhub.github.io/tutorial/html/intro-html" class="nav__icons"> <img src="/icons/html-5.svg" title="HTML5" alt="HTML" /> </a>
-                  <a href="https://codeharborhub.github.io/tutorial/css/introduction/what-is-css" class="nav__icons"> <img src="/icons/css.svg" title="CSS" alt="CSS" /> </a>
+                  <a href="https://codeharborhub.github.io/tutorial/css/introduction" class="nav__icons"> <img src="/icons/css.svg" title="CSS" alt="CSS" /> </a>
                   <a href="https://codeharborhub.github.io/tutorial/javascript/introduction-to-javascript/what-is-javascript" class="nav__icons" > <img src="/icons/js.svg" title="JavaScript" alt="JavaScript" /> </a>
                   <a href="https://codeharborhub.github.io/tutorial/react/create-react-app" class="nav__icons"> <img src="/icons/jsx.svg" title="React.Js" alt="React" /> </a>
                   <a href="#" class="nav__icons"> <img src="/icons/ts.svg" title="TypeScript" alt="TypeScript" /> </a>
