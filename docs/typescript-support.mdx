@@ -3,13 +3,9 @@ title: TypeScript Support
 description: "CodeHarborHub is built with Docusaurus, which is written in TypeScript and provides first-class TypeScript support."
 ---
 
-import TOCInline from '@theme/TOCInline';
-
 CodeHarborHub runs on **Docusaurus**, which is written entirely in TypeScript and provides first-class TypeScript support.
 
 The minimum recommended version is **TypeScript 5.1**.
-
-<AdsComponent />
 
 ## Initialization {#initialization}
 
@@ -22,13 +18,11 @@ npx create-docusaurus@latest my-site classic --typescript
 
 This automatically sets up `.ts` and `.tsx` support for theme components and pages.
 
----
-
 ## Setup for Existing Projects {#setup}
 
 If you’re migrating an existing CodeHarborHub site to TypeScript, install these packages:
 
-```bash npm2yarn title="terminal"
+```bash npm2yarn
 npm install --save-dev typescript @docusaurus/module-type-aliases @docusaurus/tsconfig @docusaurus/types
 ```
 
@@ -43,10 +37,7 @@ Then create a `tsconfig.json` at your project root:
 }
 ```
 
-Docusaurus itself does not compile your TypeScript files.
-The `tsconfig.json` improves **editor IntelliSense**, and you can run `tsc` to type-check code locally or in CI.
-
-<AdsComponent />
+Docusaurus itself does not compile your TypeScript files. The `tsconfig.json` improves **editor IntelliSense**, and you can run `tsc` to type-check code locally or in CI.
 
 ## Typing the Config File {#typing-config}
 
@@ -110,8 +101,6 @@ export default config;
 
 </details>
 
-<AdsComponent />
-
 ## Swizzling TypeScript Theme Components {#swizzling-typescript-theme-components}
 
 When swizzling (overriding) components, add the `--typescript` flag
@@ -132,7 +121,5 @@ All official Docusaurus themes support TypeScript swizzling, including:
 If you maintain a custom theme, see the
 [Lifecycle APIs guide](https://docusaurus.io/docs/api/plugin-methods/extend-infrastructure#getTypeScriptThemePath)
 to add TypeScript support.
-
----
 
 With TypeScript configured, **CodeHarborHub** gains **type safety, autocompletion, and better developer experience** across the entire documentation platform.
