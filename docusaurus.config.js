@@ -5,7 +5,6 @@ const remarkMath = require("remark-math");
 const rehypeKatex = require("rehype-katex");
 
 const path = require("path");
-require("dotenv").config();
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
