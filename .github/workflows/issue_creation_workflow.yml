@@ -33,8 +33,10 @@ jobs:
 
       - name: Validate Issue Content
         id: validate-issue
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          issue_body="${{ github.event.issue.body }}"
+          issue_body="$ISSUE_BODY"
           if [[ "$issue_body" == *"AI-generated content"* ]] || [[ "$issue_body" == *"existing sites"* ]]; then
             echo "Issue body contains disallowed content."
             exit 1
