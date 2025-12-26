@@ -41,8 +41,10 @@ jobs:
           fi
 
       - name: Check for Security and Trust
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          issue_body="${{ github.event.issue.body }}"
+          issue_body="$ISSUE_BODY"
           if [[ "$issue_body" != *"security"* ]] || [[ "$issue_body" != *"trust"* ]]; then
             echo "Issue does not mention security or trust."
             exit 1
