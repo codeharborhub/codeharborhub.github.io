@@ -13,6 +13,7 @@ import { CommunityStatsProvider } from "../context/CommunityStats";
 import Faq from "./Faq";
 import Organizations from "../components/HomePage/organizations";
 import TweetsSection from "../components/HomePage/TweetsSection";
+import WhyChooseCodeHarbor from "../components/WhyChooseCodeHarbor";
 
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
@@ -38,6 +39,12 @@ export default function Home() {
       <main className={style.main__home}>
         <div className={style.home__header}>
           <Header />
+        </div>
+
+        <hr className={style.home__hr} />
+
+        <div className={style.home__header}>
+          <WhyChooseCodeHarbor />
         </div>
 
         <hr className={style.home__hr} />
