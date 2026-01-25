@@ -43,20 +43,20 @@ const reasons = [
 
 const WhyChooseCodeHarbor = () => {
   return (
-    <section className="py-24 px-6 bg-[var(--ifm-bg-color)] transition-colors duration-300 font-sans relative overflow-hidden">
+    <section className="py-24 px-6 transition-colors duration-300 font-sans relative overflow-hidden">
       {/* Subtle Background Pattern */}
       <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
         <svg width="100%" height="100%"><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1"/></pattern><rect width="100%" height="100%" fill="url(#grid)" /></svg>
       </div>
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="mx-auto relative z-10">
         
         {/* Header */}
         <div className="text-center mb-20">
           <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-[0.2em] uppercase text-[var(--ifm-color-primary)] bg-[var(--ifm-color-primary)]/10 rounded-full border border-[var(--ifm-color-primary)]/20">
             Why CodeHarborHub?
           </span>
-          <h2 className="text-4xl md:text-6xl font-black text-[var(--ifm-text-color)] leading-tight tracking-tight">
+          <h2 className="text-[2.2rem] font-black text-[var(--ifm-text-color)] leading-tight tracking-tight">
             Empowering Your <span className="text-[var(--ifm-color-primary)]">Tech Journey</span>
           </h2>
           <p className="mt-6 text-lg opacity-70 text-[var(--ifm-text-color)] max-w-2xl mx-auto leading-relaxed">
@@ -66,7 +66,7 @@ const WhyChooseCodeHarbor = () => {
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {reasons.map((item, index) => (
             <div 
               key={index} 
@@ -81,7 +81,7 @@ const WhyChooseCodeHarbor = () => {
               </div>
               
               {/* Content */}
-              <h3 className="text-2xl font-bold text-[var(--ifm-text-color)] mb-4">
+              <h3 className="font-bold text-[var(--ifm-text-color)] mb-4">
                 {item.title}
               </h3>
               <p className="opacity-60 text-[var(--ifm-text-color)] leading-relaxed text-base">

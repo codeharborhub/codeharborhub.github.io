@@ -177,7 +177,7 @@ const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link
-                    to="/community/team/"
+                    to="/our-team/"
                     className="mb-3 inline-block text-base text-gray-300 hover:text-[--ifm-color-primary]"
                   >
                     Our Team
