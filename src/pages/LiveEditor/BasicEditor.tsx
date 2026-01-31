@@ -26,12 +26,6 @@ const BasicEditor = () => {
     }
 
     const iframe = iframeRef.current;
-    const document = iframe.contentDocument;
-
-    if (!document) {
-      alert("iframe contentDocument is not available");
-      return;
-    }
 
     const documentContents = `
       <!DOCTYPE html>
@@ -46,9 +40,7 @@ const BasicEditor = () => {
       </html>
     `;
 
-    document.open();
-    document.write(documentContents);
-    document.close();
+    iframe.srcdoc = documentContents;
   }, [html, css, js]);
 
   return (
@@ -210,7 +202,12 @@ const BasicEditor = () => {
           </div>
         </div>
 
-        <iframe ref={iframeRef} className="output_container" id="preview" />
+        <iframe
+          ref={iframeRef}
+          className="output_container"
+          id="preview"
+          sandbox="allow-scripts"
+        />
       </div>
     </div>
   );
