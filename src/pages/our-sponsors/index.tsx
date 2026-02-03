@@ -5,6 +5,7 @@ import Layout from "@theme/Layout";
 import sponsors from "../../database/sponsors";
 import { FaPlusCircle } from 'react-icons/fa';
 import Head from "@docusaurus/Head";
+import { QRCode } from "../../components/ui/shared-assets/qr-code";
 
 const OurSponsors: React.FC = () => {
   const [showScanner, setShowScanner] = useState(false);
@@ -60,7 +61,7 @@ const OurSponsors: React.FC = () => {
           <div className="scanner-popup">
             <div className="scanner-content">
               <h2 className="TitleText">Scan to Sponsor</h2>
-              <img src="/sponsors/scan-pay.jpg" alt="Payment Scanner" />
+              <QRCode value="upi://pay?pn=CodeHarborHub&mode=01&pa=gpay-11253238941@okbizaxis" size="lg" />
               <button className="scanner-button" onClick={handlePaymentSuccess}>
                 I have paid
               </button>
