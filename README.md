@@ -32,7 +32,7 @@ Celebrate open source with us this **Hacktoberfest 2025 (Oct 1 – Oct 31)**!
 We’re hosting **CodeHarborHub x Hacktoberfest 2025**, empowering developers to contribute, collaborate, and showcase their skills.
 
 **Event Highlights:**
-- Open to all — no team required!
+- Open to all, no team required!
 - Beginner-friendly issues and mentoring support.
 - Swag rewards & contributor recognition.
 - Community Discord support and leaderboard.
