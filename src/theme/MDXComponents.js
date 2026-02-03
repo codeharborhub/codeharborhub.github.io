@@ -18,6 +18,7 @@ import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import Comming from "@site/src/components/Comming";
 import Admonition from '@theme/Admonition';
 import TOCInline from '@theme/TOCInline';
+import CodePenEmbed from '@site/src/components/CodePenEmbed';
 
 export default {
   // Re-use the default mapping
@@ -40,4 +41,5 @@ export default {
   Comming,
   Admonition,
   TOCInline,
+  CodePenEmbed,
 };
