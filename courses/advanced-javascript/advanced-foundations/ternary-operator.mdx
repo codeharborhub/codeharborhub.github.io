@@ -12,13 +12,24 @@ The **Conditional (Ternary) Operator** is the only JavaScript operator that take
 The word "Ternary" literally means "composed of three parts."
 :::
 
-## The Syntax
+## Basic Syntax
 
-Instead of writing 5 lines of code for a simple "either/or" decision, the ternary operator lets you do it in one.
+The syntax consists of a condition followed by a question mark (`?`), then an expression to execute if the condition is truthy, followed by a colon (`:`), and finally the expression to execute if the condition is falsy.
 
-```javascript title="index.js"
+```javascript title="Basic Syntax"
 condition ? expressionIfTrue : expressionIfFalse;
 ```
+
+For example:
+
+```javascript title="index.js"
+const age = 20;
+const canVote = age >= 18 ? 'Yes, you can vote!' : 'Not yet.';
+console.log(canVote); // "Yes, you can vote!"
+```
+
+Understanding this syntax is crucial as it allows you to write more concise and readable code, especially when dealing with simple conditional logic.
+
 
 ### Comparative Breakdown
 
@@ -65,7 +76,7 @@ The Ternary operator isn't just about saving space. In modern JavaScript (especi
 
 ### Use Case: Dynamic Template Literals
 
-```javascript {4} showLineNumbers
+```javascript title="index.js" {4} showLineNumbers
 const isPremium = true;
 
 // Using ternary inside a string!
@@ -88,33 +99,3 @@ penId="qENxKKP"
 Try changing the condition in the JS panel to check for a specific number or a boolean value to see how the UI updates instantly.
 :::
 
----
-
-## Common Pitfalls
-
-While powerful, don't abuse the ternary operator.
-
-:::danger Ternary Hell
-Avoid nesting ternaries too deeply. If your logic requires multiple levels of checks, a standard `if...else` or `switch` statement is much more readable.
-
-**Bad Practice:**
-
-```javascript title="index.js"
-const result = condition1 ? (condition2 ? 'A' : 'B') : (condition3 ? 'C' : 'D');
-// ❌ This is hard to read and debug!
-
-```
-
-:::
-
-## Quick Check
-
-```javascript title="index.js"
-const score = 85;
-const grade = score > 90 ? "A" : "B";
-
-```
-
-**What is the value of `grade`?**
-
-The value of `grade` is `"B"` because the condition `score > 90` evaluates to `false`, so the expression after the colon (`"B"`) is returned.
