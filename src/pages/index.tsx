@@ -14,6 +14,7 @@ import Faq from "./Faq";
 import Organizations from "../components/HomePage/organizations";
 import TweetsSection from "../components/HomePage/TweetsSection";
 import WhyChooseCodeHarbor from "../components/WhyChooseCodeHarbor";
+import ContributorList from "../components/ContributorList";
 
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
@@ -74,13 +75,20 @@ export default function Home() {
 
         <hr className={style.home__hr} />
 
-        <div className={style.home__divider}>
+        {/* <div className={style.home__divider}>
           <Heading as="h2" className={clsx("text--center", style.mainHeading)}>
             Frequently Asked Questions
           </Heading>
         </div>
 
-        <Faq />
+        <Faq /> */}
+
+        <div className={style.home__divider}>
+          <Heading as="h2" className={clsx("text--center", style.mainHeading)}>
+            Our Contributors
+          </Heading>
+        </div>
+        <ContributorList contributorsPerPage={150} contributorsIgnore={["restyled-commits", "dependabot", "renovate", "deepsource-autofix", "ImgBotApp"]} />
 
         <ScrollTopToButton />
         <ScrollBottomToTop />
