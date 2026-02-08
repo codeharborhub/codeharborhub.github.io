@@ -8,6 +8,7 @@ sidebar_position: 4
 import {
 ActiveTeamRow
 } from '@site/src/components/TeamProfileCards';
+import ContributorList from '@site/src/components/ContributorList';
 
 ## Owner and Founder {#owner}
 
@@ -21,4 +22,4 @@ If you are interested in joining the team, or would like to contribute to the Op
 
 ## Contributors {#contributors}
 
-![Contributors](https://opencollective.com/codeharborhub/contributors.svg?button=false&avatarHeight=50&width=1000)
+<ContributorList contributorsPerPage={150} contributorsIgnore={["restyled-commits", "dependabot", "renovate", "deepsource-autofix", "ImgBotApp"]} />
