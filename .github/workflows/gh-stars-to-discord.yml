@@ -1,0 +1,80 @@
+name: GitHub Stars to Discord
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every 1 hour. You can change the frequency as needed.
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+  GITHUB_REPOSITORY: 'codeharborhub/codeharborhub.github.io'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get the current number of stars and check rate limit
+        id: get_stars
+        run: |
+          response=$(curl -s -i https://api.github.com/repos/${{ env.GITHUB_REPOSITORY }})
+          stars=$(echo "$response" | grep -oP '"stargazers_count":\s*\K\d+')
+          rate_limit_remaining=$(echo "$response" | grep -Fi 'X-RateLimit-Remaining:' | awk -F': ' '{print $2}' | tr -d '\r')
+
+          echo "Current stars: $stars"
+          echo "Rate limit remaining: $rate_limit_remaining"
+
+          echo "stars=$stars" >> $GITHUB_OUTPUT
+          echo "rate_limit_remaining=$rate_limit_remaining" >> $GITHUB_OUTPUT
+
+      - name: Stop if rate limit is low
+        if: ${{ steps.get_stars.outputs.rate_limit_remaining < 10 }}
+        run: |
+          echo "Rate limit is low, exiting"
+          exit 1
+
+      - name: Cache previous stars count
+        id: cache_previous_stars
+        uses: actions/cache@v4
+        with:
+          path: previous_stars.txt
+          key: stars-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            stars-${{ github.repository }}-
+
+      - name: Load the previous number of stars
+        id: load_previous_stars
+        run: |
+          if [ -f previous_stars.txt ]; then
+            echo "Loading previous stars"
+            PREVIOUS_STARS=$(cat previous_stars.txt)
+          else
+            echo "No previous stars found"
+            PREVIOUS_STARS=0
+          fi
+          echo "Previous stars: $PREVIOUS_STARS"
+          echo "previous_stars=$PREVIOUS_STARS" >> $GITHUB_OUTPUT
+
+      - name: Compare and notify if new stars
+        if: ${{ steps.get_stars.outputs.stars != steps.load_previous_stars.outputs.previous_stars }}
+        run: |
+          NEW_STARS=${{ steps.get_stars.outputs.stars }}
+          PREVIOUS_STARS=${{ steps.load_previous_stars.outputs.previous_stars }}
+          if [ $NEW_STARS -gt $PREVIOUS_STARS ]; then
+            echo "There are new stars: $NEW_STARS stars (previous: $PREVIOUS_STARS)"
+            curl -H "Content-Type: application/json" \
+              -d "{\"content\": \"The repository has gained new stars! Previous: $PREVIOUS_STARS → Total: $NEW_STARS\"}" \
+              ${DISCORD_WEBHOOK_URL}
+          else
+            echo "No new stars"
+          fi
+
+      - name: Save current stars count
+        run: |
+          echo "${{ steps.get_stars.outputs.stars }}" > previous_stars.txt
+
+      - name: Update cache with new stars count
+        uses: actions/cache@v4
+        with:
+          path: previous_stars.txt
+          key: stars-${{ github.repository }}-${{ github.run_id }}
