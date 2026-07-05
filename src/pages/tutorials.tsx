@@ -32,7 +32,7 @@ export default function Tutorials(): JSX.Element {
       icon: Rocket,
       description: "Start here: Frontend, Backend, DevOps, and Git basics.",
       color: "from-green-500 to-emerald-500",
-      path: "/absolute-beginners",
+      path: "#", // /absolute-beginners
       tags: ["Frontend", "Backend", "Git/GitHub", "Full Stack"],
     },
     {
