@@ -22,14 +22,6 @@ const config = {
     // emailService: process.env.EMAIL_SERVICE,
   },
 
-  scripts: [
-    {
-      src: "https://pl30217709.effectivecpmnetwork.com/37/9b/93/379b9339e60d740e9d4e4cb4c624b027.js",
-      id: "_carbonads_js",
-      async: true,
-    },
-  ],
-
   organizationName: "codeharborhub",
   projectName: "codeharborhub.github.io",
 
