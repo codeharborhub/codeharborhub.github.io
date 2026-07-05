@@ -2,9 +2,6 @@
 
 Welcome to CodeHarborHub! Your gateway to top-notch tech education. **Tired of limitations?** CodeHarborHub shatters them. We're the exclusive platform offering a comprehensive tech curriculum, taught by industry masters, completely free. Join our vibrant community, master in-demand skills, and launch your dream tech career.
 
-<!--
-<a href="https://github.com/Ajay-Dhangar"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=DEF72C&random=false&center=false &width=1000&lines=Hi%2C+there.+If+you+like+CodeHarborHub,+give+it+a+Star" alt="Typing SVG" /></a> -->
-
 <a href="https://www.producthunt.com/products/poster?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-codeharborhub-2" target="_blank" rel="noopener noreferrer"><img alt="CodeHarborHub - Your safe haven to learn, code, and contribute. | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1182511&amp;theme=light&amp;t=1782658556715"></a>
 
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fcodeharborhub.github.io%2F)](https://codeharborhub.github.io/)
