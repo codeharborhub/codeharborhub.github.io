@@ -34,7 +34,7 @@ We’re hosting **CodeHarborHub x Hacktoberfest 2025**, empowering developers to
 - Swag rewards & contributor recognition.
 - Community Discord support and leaderboard.
 
-**👉 Participate here:**  [Hacktoberfest 2025 @ CodeHarborHub](https://github.com/CodeHarborHub/codeharborhub.github.io/issues)
+**Participate here:**  [Hacktoberfest 2025 @ CodeHarborHub](https://github.com/CodeHarborHub/codeharborhub.github.io/issues)
 
 📅 **Event Start:** October 1, 2025  
 📅 **Event End:** October 31, 2025  
