@@ -25,6 +25,16 @@ const config = {
   organizationName: "codeharborhub",
   projectName: "codeharborhub.github.io",
 
+  headTags: [
+    {
+      tagName: 'meta',
+      attributes: {
+        name: 'impact-site-verification',
+        value: '0ecab9f1-a456-4638-9f7a-17e0ff5f55f6',
+      },
+    },
+  ],
+
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
 
