@@ -1,0 +1,368 @@
+.tracker {
+  background: var(--ifm-background-color);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.titleSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ifm-heading-color);
+}
+
+.lastUpdated {
+  font-size: 12px;
+  color: var(--ifm-text-color-secondary);
+}
+
+.statsContainer {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.progressCircle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.bgCircle {
+  fill: none;
+  stroke: var(--ifm-color-emphasis-200);
+  stroke-width: 4;
+}
+
+.progressCircle {
+  fill: none;
+  stroke: var(--ifm-color-primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.percentageText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ifm-heading-color);
+}
+
+.stats {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--ifm-text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ifm-heading-color);
+}
+
+.celebration {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: var(--ifm-color-emphasis-200);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ifm-color-primary), #29d5b0);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.toggleBtn {
+  padding: 10px 16px;
+  border: 1px solid var(--ifm-color-primary);
+  background: transparent;
+  color: var(--ifm-color-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.toggleBtn:hover {
+  background: var(--ifm-color-primary);
+  color: white;
+}
+
+.actionBtn {
+  padding: 10px 16px;
+  border: none;
+  background: var(--ifm-color-primary);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lessonsList {
+  margin-top: 20px;
+  border-top: 1px solid var(--ifm-color-emphasis-300);
+  padding-top: 20px;
+  animation: slideIn 0.3s ease;
+}
+
+.lessonsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 12px;
+}
+
+.lessonCount {
+  font-size: 14px;
+  color: var(--ifm-text-color-secondary);
+  font-weight: 500;
+}
+
+.lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyMessage {
+  text-align: center;
+  color: var(--ifm-text-color-secondary);
+  padding: 20px;
+  font-style: italic;
+}
+
+.lessonItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.lessonItem:hover {
+  background: var(--ifm-color-emphasis-50);
+  border-color: var(--ifm-color-primary);
+}
+
+.lessonItem.completed {
+  background: var(--ifm-color-success-light);
+  border-color: var(--ifm-color-success);
+}
+
+.checkbox {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.lessonItem:hover .checkbox {
+  border-color: var(--ifm-color-primary);
+}
+
+.lessonItem.completed .checkbox {
+  background: var(--ifm-color-success);
+  border-color: var(--ifm-color-success);
+}
+
+.checkmark {
+  color: white;
+  font-weight: bold;
+}
+
+.lessonContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.lessonTitle {
+  font-weight: 600;
+  color: var(--ifm-heading-color);
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.lessonItem.completed .lessonTitle {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.lessonMeta {
+  font-size: 12px;
+  color: var(--ifm-text-color-secondary);
+  margin-bottom: 6px;
+}
+
+.lessonDescription {
+  font-size: 13px;
+  color: var(--ifm-text-color-secondary);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+.completedBadge {
+  flex-shrink: 0;
+  background: var(--ifm-color-success);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.encouragement {
+  text-align: center;
+  padding: 12px;
+  background: var(--ifm-color-info-light);
+  color: var(--ifm-color-info-dark);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .tracker {
+    padding: 16px;
+  }
+
+  .statsContainer {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .stats {
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .toggleBtn,
+  .actionBtn {
+    width: 100%;
+  }
+
+  .lessonItem {
+    flex-direction: column;
+  }
+
+  .completedBadge {
+    align-self: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lessonItem,
+  .progressFill,
+  .actionBtn {
+    transition: all 0.2s ease;
+  }
+
+  .celebration {
+    animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
