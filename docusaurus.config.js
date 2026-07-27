@@ -3,6 +3,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 const remarkMath = require("remark-math");
 const rehypeKatex = require("rehype-katex");
+const readingTimePlugin = require("./plugins/remark-reading-time");
 
 const path = require("path");
 
@@ -56,7 +57,7 @@ const config = {
           },
           editUrl:
             "https://github.com/codeharborhub/codeharborhub.github.io/edit/main/",
-          remarkPlugins: [remarkMath],
+          remarkPlugins: [readingTimePlugin, remarkMath],
           rehypePlugins: [rehypeKatex],
         },
         pages: {
