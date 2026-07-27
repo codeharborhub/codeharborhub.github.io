@@ -117,6 +117,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
+      },
       image: "img/codeharborhub-social-card.jpg",
       announcementBar: {
         id: "announcementBar",

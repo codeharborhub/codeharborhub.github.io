@@ -1,0 +1,116 @@
+---
+id: dark-mode
+title: Dark Mode
+description: Dark mode support with persistent user preference
+---
+
+# Dark Mode
+
+CodeHarborHub includes full dark mode support with persistent user preferences. Your theme choice is automatically saved and remembered across sessions.
+
+## Features
+
+✨ **Automatic Theme Detection**: Respects your system preference if you haven't set a preference in CodeHarborHub
+
+🌓 **Manual Theme Control**: Use the theme toggle button in the navigation bar to switch between light and dark modes
+
+💾 **Persistent Preferences**: Your theme choice is saved in browser localStorage and restored on your next visit
+
+⚡ **Smooth Transitions**: Color transitions are animated for a pleasant visual experience
+
+🎨 **Complete Coverage**: All components and pages support dark mode
+
+## Using Dark Mode
+
+### Switching Themes
+
+1. Look for the theme toggle button in the top-right corner of the navigation bar
+2. Click the button to switch between light and dark modes
+3. Your preference is automatically saved
+
+### System Preference
+
+If you haven't manually set a theme:
+- CodeHarborHub will check your system-wide dark mode preference
+- If your system is set to dark mode, the site will automatically display in dark mode
+- You can override this anytime by using the theme toggle button
+
+## For Developers
+
+### Using the Color Mode Hook
+
+If you're developing components for CodeHarborHub, you can use the `useColorMode` hook to access the current theme:
+
+```jsx
+import useColorMode from '@site/src/hooks/useColorMode';
+
+export default function MyComponent() {
+  const { colorMode, isDark, toggleColorMode } = useColorMode();
+
+  return (
+    <div>
+      <p>Current theme: {colorMode}</p>
+      <button onClick={toggleColorMode}>
+        Switch to {isDark ? 'light' : 'dark'} mode
+      </button>
+    </div>
+  );
+}
+```
+
+### CSS Variables
+
+Dark mode is applied using the `[data-theme="dark"]` attribute. Use these CSS variables for theming:
+
+**Light Mode** (`:root`):
+```css
+--ifm-color-primary: #2e93e2;
+--ifm-bg-color: #f8f9fa;
+--ifm-text-color: #000;
+```
+
+**Dark Mode** (`[data-theme="dark"]`):
+```css
+--ifm-color-primary: #48bf84;
+--ifm-bg-color: #1a202c;
+--ifm-text-color: #fff;
+```
+
+### Creating Dark-Mode Aware Components
+
+```jsx
+import styles from './MyComponent.module.css';
+
+export default function MyComponent() {
+  return <div className={styles.card}>Content</div>;
+}
+```
+
+```css
+/* MyComponent.module.css */
+.card {
+  background: white;
+  color: black;
+}
+
+[data-theme="dark"] .card {
+  background: #1a202c;
+  color: white;
+}
+```
+
+## Browser Compatibility
+
+Dark mode works on all modern browsers that support CSS custom properties and localStorage:
+- Chrome/Edge 49+
+- Firefox 31+
+- Safari 9.1+
+- Opera 36+
+
+## Storage
+
+Your theme preference is stored in the browser's localStorage under the key `theme`. You can manually clear this to reset to system preference:
+
+```javascript
+localStorage.removeItem('theme');
+```
