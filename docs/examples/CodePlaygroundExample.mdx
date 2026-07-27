@@ -1,0 +1,137 @@
+---
+id: code-playground-example
+title: Code Playground Component
+description: Interactive code editor with live execution
+---
+
+import CodePlayground from '@site/src/components/CodePlayground';
+
+# Code Playground
+
+The Code Playground component provides an interactive development environment for writing and executing code directly in the browser. It supports JavaScript, HTML, and CSS with live preview and console output.
+
+## Features
+
+- Live code execution in the browser
+- Split-view editor and output panes
+- Console output for JavaScript logging
+- HTML/CSS live preview
+- Syntax highlighting and code formatting
+- Tab indentation support (press Tab key)
+- Quick actions: Run, Copy, Reset
+- Responsive mobile design
+- Keyboard shortcuts (Ctrl+Enter to run)
+
+## Usage
+
+### JavaScript Playground
+
+```jsx
+<CodePlayground language="javascript" />
+```
+
+### HTML Playground
+
+```jsx
+<CodePlayground language="html" />
+```
+
+### CSS Playground
+
+```jsx
+<CodePlayground language="css" />
+```
+
+### With Initial Code
+
+```jsx
+<CodePlayground 
+  language="javascript"
+  initialCode={`console.log('Hello, World!');\nconst name = 'CodeHarborHub';\nconsole.log(name);`}
+/>
+```
+
+## JavaScript Playground Example
+
+<CodePlayground language="javascript" />
+
+## HTML Playground Example
+
+<CodePlayground language="html" />
+
+## CSS Playground Example
+
+<CodePlayground language="css" />
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Enter` or `Cmd+Enter` | Run code |
+| `Tab` | Insert indentation |
+| `Ctrl+A` | Select all code |
+
+## Supported Languages
+
+### JavaScript
+- Full ES6+ support with arrow functions, async/await
+- Console logging (console.log, console.error, console.warn)
+- Error handling and reporting
+- Access to standard JavaScript APIs
+
+### HTML
+- Full HTML5 support
+- Inline styles and embedded scripts
+- Live rendering preview
+- Safe sandboxed execution
+
+### CSS
+- Modern CSS3 features
+- Gradients, animations, transforms
+- Flexbox and Grid support
+- Live style preview with sample HTML
+
+## Features
+
+**Live Execution**: Code runs immediately when you click Run or press Ctrl+Enter
+
+**Console Output**: JavaScript console logs appear in real-time with color-coded message types
+
+**Error Reporting**: Syntax and runtime errors are displayed with helpful messages
+
+**Copy to Clipboard**: Quickly copy your code with the Copy button
+
+**Reset**: Restore default example code with the Reset button
+
+**Mobile Responsive**: Stacks vertically on smaller screens
+
+**Sandbox Security**: HTML and CSS execute in an isolated iframe
+
+## Console Output Types
+
+- **log** - Standard console.log output
+- **error** - Errors and exceptions in red
+- **warn** - Warning messages in yellow
+- **info** - Informational messages in blue
+
+## Accessibility
+
+- Keyboard navigation support
+- ARIA labels for all buttons
+- Clear error messages
+- Screen reader friendly
+
+## Tips
+
+1. Use `console.log()` to debug JavaScript code
+2. Press Tab to indent code and Shift+Tab to outdent
+3. HTML preview supports onclick handlers and event listeners
+4. CSS examples include sample HTML for styling demonstration
+5. Use `console.error()` for intentional error logging
+
+## Limitations
+
+- JavaScript runs in the browser without Node.js APIs
+- No access to external APIs (use mock data instead)
+- HTML/CSS execute in a sandboxed iframe for security
+- Console only shows text and simple JSON serialized objects
