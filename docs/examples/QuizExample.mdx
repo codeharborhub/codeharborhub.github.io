@@ -1,0 +1,113 @@
+---
+id: quiz-example
+title: Quiz Component
+description: Interactive quiz component for assessments
+---
+
+import Quiz from '@site/src/components/Quiz';
+
+# Quiz Component Example
+
+The Quiz component provides an interactive assessment experience with multiple-choice questions, immediate feedback, and keyboard accessibility.
+
+## Features
+
+- Multiple-choice questions with answer reveal
+- Explanations after each answer
+- Score summary at completion
+- Keyboard navigation (arrow keys, Enter)
+- Progress tracking
+- Responsive design
+- Accessibility features (ARIA labels, screen reader support)
+
+## Usage
+
+```jsx
+import Quiz from '@site/src/components/Quiz';
+
+const questions = [
+  {
+    question: "What is the output of 2 + 2 * 3?",
+    options: ["8", "12", "10", "7"],
+    correct: 0,
+    explanation: "Following order of operations, multiplication is performed before addition: 2 + (2 * 3) = 2 + 6 = 8"
+  },
+  {
+    question: "Which of these is not a primitive type in JavaScript?",
+    options: ["string", "number", "array", "boolean"],
+    correct: 2,
+    explanation: "Arrays are objects in JavaScript, not primitive types. Primitive types include string, number, boolean, undefined, null, and symbol."
+  }
+];
+
+export default function Page() {
+  return <Quiz questions={questions} />;
+}
+```
+
+## Question Structure
+
+Each question object must have:
+
+- `question` (string): The question text
+- `options` (array of strings): The available answer choices
+- `correct` (number): Index of the correct answer (0-based)
+- `explanation` (string): Explanation shown after answering
+
+## Keyboard Shortcuts
+
+When a question hasn't been answered:
+- **↑ / ↓ Arrow Keys**: Navigate between options
+- **Enter**: Select focused option
+
+When a question is answered:
+- **← / → Arrow Keys**: Navigate to previous/next question
+- **Home**: Jump to first question
+- **End**: Jump to last question
+
+## Example Quiz
+
+<Quiz questions={[
+  {
+    question: "What does HTML stand for?",
+    options: [
+      "Hyper Text Markup Language",
+      "High Tech Modern Language",
+      "Home Tool Markup Language",
+      "Hyperlinks and Text Markup Language"
+    ],
+    correct: 0,
+    explanation: "HTML (HyperText Markup Language) is the standard markup language used to create web pages."
+  },
+  {
+    question: "Which CSS property is used to control text spacing?",
+    options: [
+      "text-padding",
+      "letter-spacing",
+      "word-distance",
+      "character-gap"
+    ],
+    correct: 1,
+    explanation: "The letter-spacing property controls the space between characters in text. For space between words, use word-spacing."
+  },
+  {
+    question: "What is the primary purpose of JavaScript in web development?",
+    options: [
+      "Styling web pages",
+      "Adding interactivity and dynamic behavior",
+      "Managing server databases",
+      "Creating HTML structure"
+    ],
+    correct: 1,
+    explanation: "JavaScript is used to add interactivity, handle user events, manipulate the DOM, and create dynamic behavior in web applications."
+  }
+]} />
+
+## Customization
+
+The component uses CSS custom properties for theming. You can override these in your custom CSS:
+
+- `--ifm-color-primary`: Primary button and accent color
+- `--ifm-color-success`: Correct answer highlight
+- `--ifm-color-danger`: Incorrect answer highlight
+- `--ifm-color-info`: Selected option highlight
