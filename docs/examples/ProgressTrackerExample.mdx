@@ -1,0 +1,208 @@
+---
+id: progress-tracker-example
+title: Learning Progress Tracker
+description: Track learning progress through tutorial series
+---
+
+import ProgressTracker from '@site/src/components/ProgressTracker';
+
+# Learning Progress Tracker
+
+The Progress Tracker component helps learners monitor their progress through a series of tutorials or lessons. It provides visual feedback with progress percentages, estimated completion time, and persistent progress storage.
+
+## Features
+
+✨ **Visual Progress Display**: Circular progress indicator with percentage
+
+📊 **Statistics**: Completed lessons, remaining lessons, and estimated time
+
+💾 **Persistent Storage**: Progress is saved to browser localStorage
+
+✅ **Lesson Management**: Toggle completion status for each lesson
+
+⏱️ **Time Estimation**: Automatically calculates remaining study time
+
+🎉 **Achievement Celebrations**: Special message when all lessons are complete
+
+📱 **Responsive Design**: Works on mobile and desktop
+
+## Basic Usage
+
+```jsx
+import ProgressTracker from '@site/src/components/ProgressTracker';
+
+const lessons = [
+  { id: 'lesson-1', title: 'Getting Started' },
+  { id: 'lesson-2', title: 'Core Concepts' },
+  { id: 'lesson-3', title: 'Advanced Topics' },
+];
+
+export default function Course() {
+  return <ProgressTracker seriesId="my-course" lessons={lessons} />;
+}
+```
+
+## With Durations and Descriptions
+
+```jsx
+const lessons = [
+  {
+    id: 'intro',
+    title: 'Course Introduction',
+    duration: 5,
+    description: 'Learn what you\'ll accomplish in this course'
+  },
+  {
+    id: 'setup',
+    title: 'Environment Setup',
+    duration: 15,
+    description: 'Install and configure necessary tools'
+  },
+  {
+    id: 'basics',
+    title: 'Fundamentals',
+    duration: 30,
+    description: 'Understand core concepts and principles'
+  },
+];
+
+export default function JavaScriptCourse() {
+  return (
+    <ProgressTracker 
+      seriesId="javascript-course" 
+      lessons={lessons}
+    />
+  );
+}
+```
+
+## Example Progress Tracker
+
+<ProgressTracker
+  seriesId="demo-course"
+  lessons={[
+    { id: 'html-basics', title: 'HTML Basics', duration: 20, description: 'Learn HTML structure and semantic elements' },
+    { id: 'css-styling', title: 'CSS Styling', duration: 25, description: 'Master CSS layouts and responsive design' },
+    { id: 'js-fundamentals', title: 'JavaScript Fundamentals', duration: 30, description: 'Understand variables, functions, and DOM manipulation' },
+    { id: 'dom-api', title: 'DOM API', duration: 25, description: 'Work with the Document Object Model' },
+    { id: 'async', title: 'Async JavaScript', duration: 30, description: 'Learn promises, async/await, and callbacks' },
+    { id: 'project', title: 'Build a Project', duration: 45, description: 'Create a real-world application' },
+  ]}
+/>
+
+## Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `seriesId` | string | Unique ID for the course (used for localStorage key) |
+| `lessons` | array | Array of lesson objects |
+| `onProgress` | function | Callback when progress changes |
+
+## Lesson Object Structure
+
+```javascript
+{
+  id: string,              // Unique lesson identifier (required)
+  title: string,           // Lesson title (required)
+  duration: number,        // Duration in minutes (optional)
+  description: string      // Lesson description (optional)
+}
+```
+
+## Features
+
+### Progress Visualization
+- Circular progress indicator showing completion percentage
+- Progress bar showing visual completion status
+- Statistics: completed/total lessons and estimated remaining time
+
+### Lesson Management
+- Click checkboxes to mark lessons complete/incomplete
+- "Complete All" button to quickly finish remaining lessons
+- "Reset" button to clear all progress (with confirmation)
+- Collapsible lesson list for clean interface
+
+### Persistent Storage
+- Progress automatically saved to localStorage
+- Each course has separate storage using `seriesId`
+- Progress persists across browser sessions
+
+### User Feedback
+- Completion count and percentage display
+- Time estimate based on lesson duration
+- Celebration message when course is complete
+- Encouragement messages based on progress level
+
+## Time Estimation
+
+Time estimates are calculated based on lesson duration values:
+- Each lesson's individual duration (in minutes) is considered
+- If duration is not provided, defaults to 0.5 hours per lesson
+- Total estimated time = sum of uncompleted lesson durations
+
+## Callbacks
+
+```jsx
+function handleProgress(completedLessons) {
+  console.log('Progress updated:', completedLessons);
+  // Optionally sync progress to backend
+}
+
+<ProgressTracker 
+  seriesId="course" 
+  lessons={lessons}
+  onProgress={handleProgress}
+/>
+```
+
+## Customization
+
+The component uses CSS variables for theming. Override these in your custom CSS:
+
+```css
+:root {
+  --ifm-color-primary: #2e93e2;
+  --ifm-color-success: #22c55e;
+  --ifm-color-info: #3b82f6;
+}
+```
+
+## Accessibility
+
+- ARIA labels on all interactive elements
+- Semantic HTML structure
+- Keyboard navigation support
+- Clear visual indicators for completed/incomplete lessons
+- Collapsible sections with proper `aria-expanded` attributes
+
+## Tips
+
+1. Use consistent lesson IDs - they're used for localStorage keys
+2. Include duration estimates for accurate time calculations
+3. Add descriptions to help learners understand lesson content
+4. Use the `seriesId` to track different courses separately
+5. Reset progress only when explicitly requested by the user
+
+## Storage Management
+
+Progress is stored in localStorage with key: `tutorial_progress_{seriesId}`
+
+To manually clear progress:
+```javascript
+localStorage.removeItem('tutorial_progress_my-course');
+```
+
+To export progress:
+```javascript
+const progress = localStorage.getItem('tutorial_progress_my-course');
+console.log(JSON.parse(progress));
+```
+
+## Browser Compatibility
+
+Works on all modern browsers supporting:
+- localStorage API
+- CSS Grid and Flexbox
+- ES6 JavaScript
+
+Supported: Chrome 60+, Firefox 55+, Safari 11+, Edge 79+
