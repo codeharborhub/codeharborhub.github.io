@@ -19,6 +19,7 @@ import Comming from "@site/src/components/Comming";
 import Admonition from '@theme/Admonition';
 import TOCInline from '@theme/TOCInline';
 import CodePenEmbed from '@site/src/components/CodePenEmbed';
+import CodePreview from '@site/src/components/CodePreview';
 
 export default {
   // Re-use the default mapping
@@ -42,4 +43,5 @@ export default {
   Admonition,
   TOCInline,
   CodePenEmbed,
+  CodePreview,
 };

@@ -199,10 +199,11 @@ const config = {
               {
                 type: "html",
                 value: `<div class="dropdown_grid">
-                <a class="dropbtn" href="#"> Courses </a>
+                <a class="dropbtn" href="/courses/"> Courses </a>
                 <div class="dropdown-content">
-                  <a href="#" class="nav__icons"> <img src="/icons/html-5.svg" alt="HTML" /> </a>
-                  <a href="#" class="nav__icons"> <img src="/icons/jsx.svg" alt="React" /> </a>
+                  <a href="/courses/category/html" class="nav__icons"> <img src="/icons/html-5.svg" alt="HTML" /> </a>
+                  <a href="/courses/category/css-course" class="nav__icons"> <img src="/icons/css.svg" alt="CSS" /> </a>
+                  <a href="/courses/category/reactjs" class="nav__icons"> <img src="/icons/jsx.svg" alt="React" /> </a>
                 </div>
               </div>`,
               },
