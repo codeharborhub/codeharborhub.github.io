@@ -1,0 +1,134 @@
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  overflow: hidden;
+  margin: 1.5rem 0;
+  background-color: #1d1e22;
+  box-shadow: var(--ifm-global-shadow-lw);
+}
+
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.editorPanel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--ifm-color-emphasis-300);
+  background-color: #1d1e22;
+}
+
+.tabBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #141518;
+  border-bottom: 1px solid #2d2f36;
+  padding-right: 0.75rem;
+}
+
+.tabGroup {
+  display: flex;
+}
+
+.tabBtn {
+  padding: 0.6rem 1.2rem;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #a0a5b1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+  color: #ffffff;
+}
+
+.activeTab {
+  background-color: #1d1e22;
+  color: var(--ifm-color-primary-lightest, #60a5fa);
+  border-bottom: 2px solid var(--ifm-color-primary, #2563eb);
+}
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.resetActive {
+  color: #f3f4f6;
+  border-color: #4b5563;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.resetActive:hover {
+  background-color: #374151;
+  color: #ffffff;
+}
+
+.resetIcon {
+  display: block;
+}
+
+.editorScrollArea {
+  flex: 1;
+  max-height: 380px;
+  overflow-y: auto;
+  background-color: #1d1e22;
+}
+
+.prismEditor {
+  min-height: 250px;
+  color: #f8f8f2;
+}
+
+.prismEditor textarea {
+  outline: none !important;
+}
+
+.previewPanel {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.previewHeader {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #4b5563;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.previewIframe {
+  width: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+.loadingState {
+  padding: 2rem;
+  text-align: center;
+  color: var(--ifm-color-emphasis-600);
+}
