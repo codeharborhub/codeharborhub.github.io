@@ -1,0 +1,1496 @@
+.page {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(46, 147, 226, 0.08),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 85% 25%,
+      rgba(124, 92, 255, 0.07),
+      transparent 30rem
+    ),
+    var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ifm-color-emphasis-200) 32%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ifm-color-emphasis-200) 32%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 80%);
+}
+
+.glowOne,
+.glowTwo {
+  position: absolute;
+  width: 30rem;
+  height: 30rem;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.12;
+}
+
+.glowOne {
+  top: 18rem;
+  left: -18rem;
+  background: var(--ifm-color-primary);
+}
+
+.glowTwo {
+  top: 45rem;
+  right: -18rem;
+  background: #7c5cff;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+  position: relative;
+  padding: 7rem 0 6rem;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+  align-items: center;
+  gap: 5rem;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  padding: 0.42rem 0.7rem 0.42rem 0.42rem;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--ifm-color-primary) 25%,
+    var(--ifm-color-emphasis-200)
+  );
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 7%,
+    var(--ifm-background-surface-color)
+  );
+  color: var(--ifm-color-primary);
+}
+
+.eyebrowIcon {
+  display: grid;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ifm-color-primary) 14%, transparent);
+}
+
+.eyebrowDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ifm-color-emphasis-400);
+}
+
+.hero h1 {
+  max-width: 780px;
+  margin: 1.4rem 0 1.35rem;
+  font-size: clamp(3rem, 5.5vw, 5.25rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.gradientText {
+  display: block;
+  background: linear-gradient(
+    110deg,
+    var(--ifm-color-primary),
+    #7c5cff 60%,
+    #bd5cff
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heroDescription {
+  max-width: 690px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.12rem;
+  line-height: 1.8;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 48px;
+  padding-inline: 1.1rem;
+  border-radius: 12px;
+  font-weight: 750;
+}
+
+.primaryButton {
+  box-shadow: 0 12px 30px color-mix(
+    in srgb,
+    var(--ifm-color-primary) 22%,
+    transparent
+  );
+}
+
+.secondaryButton {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-surface-color);
+}
+
+.trustRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.3rem;
+  margin-top: 1.5rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.85rem;
+}
+
+.trustRow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.trustRow svg {
+  color: var(--ifm-color-primary);
+}
+
+/* =========================================================
+   HERO CODE WINDOW
+========================================================= */
+
+.heroVisual {
+  position: relative;
+  min-height: 430px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.codeWindow {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 560px);
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 20px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 96%,
+    #000
+  );
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+}
+
+.windowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-emphasis-100) 65%,
+    transparent
+  );
+}
+
+.windowDots {
+  display: flex;
+  gap: 5px;
+}
+
+.windowDots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ifm-color-emphasis-300);
+}
+
+.windowTitle {
+  color: var(--ifm-color-emphasis-600);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.75rem;
+}
+
+.windowStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+.windowStatus span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #36b37e;
+}
+
+.codeBody {
+  padding: 1.5rem 1.25rem;
+  min-height: 280px;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.82rem;
+  line-height: 2;
+}
+
+.codeLine {
+  display: flex;
+  white-space: nowrap;
+}
+
+.lineNumber {
+  width: 34px;
+  margin-right: 1rem;
+  color: var(--ifm-color-emphasis-400);
+  user-select: none;
+  text-align: right;
+}
+
+.codeIndent {
+  display: inline-block;
+  width: 1.1rem;
+}
+
+.codeMuted {
+  color: var(--ifm-color-emphasis-500);
+}
+
+.codeTag {
+  color: #7c5cff;
+}
+
+.codeText {
+  color: var(--ifm-color-primary);
+}
+
+.codeFooter {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+.codeFooter span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.floatingCardOne,
+.floatingCardTwo {
+  position: absolute;
+  z-index: 3;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 94%,
+    transparent
+  );
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px);
+}
+
+.floatingCardOne {
+  top: 5%;
+  left: -3%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+}
+
+.floatingCardOne strong,
+.floatingCardOne small {
+  display: block;
+}
+
+.floatingCardOne strong {
+  font-size: 0.8rem;
+}
+
+.floatingCardOne small {
+  margin-top: 2px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.68rem;
+}
+
+.floatingIcon {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 12%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.floatingCardTwo {
+  right: -3%;
+  bottom: 7%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.floatingCardTwo svg {
+  color: #36b37e;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.section {
+  position: relative;
+  padding: 6rem 0;
+}
+
+.sectionHeader {
+  max-width: 720px;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+
+.sectionEyebrow {
+  justify-content: center;
+  margin-bottom: 0.85rem;
+  color: var(--ifm-color-primary);
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 850;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.sectionHeader h2 span {
+  color: var(--ifm-color-primary);
+}
+
+.sectionHeader p {
+  max-width: 650px;
+  margin: 1rem auto 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+/* =========================================================
+   LEARNING PATH
+========================================================= */
+
+.path {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.pathItem {
+  position: relative;
+  display: grid;
+  grid-template-columns: 58px 32px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.pathNumber {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  margin-top: 1.2rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-color-emphasis-600);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.pathConnector {
+  position: relative;
+}
+
+.pathConnector span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--ifm-color-emphasis-300);
+}
+
+.pathItem:last-child .pathConnector span {
+  display: none;
+}
+
+.pathCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 88%,
+    transparent
+  );
+  color: inherit;
+  text-decoration: none !important;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.pathCard:hover {
+  transform: translateX(5px);
+  border-color: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 42%,
+    var(--ifm-color-emphasis-200)
+  );
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.07);
+}
+
+.pathIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.pathMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.15rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pathContent h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.pathContent p {
+  margin: 0.3rem 0 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.pathArrow {
+  color: var(--ifm-color-emphasis-500);
+}
+
+/* =========================================================
+   TUTORIAL CARDS
+========================================================= */
+
+.tutorialSection {
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-emphasis-100) 32%,
+    transparent
+  );
+}
+
+.tutorialGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tutorialCard {
+  position: relative;
+  display: flex;
+  min-height: 315px;
+  flex-direction: column;
+  padding: 1.35rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 18px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.035);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.tutorialCard:hover {
+  transform: translateY(-5px);
+  border-color: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 38%,
+    var(--ifm-color-emphasis-200)
+  );
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.09);
+}
+
+.featuredCard {
+  border-color: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 25%,
+    var(--ifm-color-emphasis-200)
+  );
+}
+
+.featuredBadge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 9%, transparent);
+  color: var(--ifm-color-primary);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.tutorialTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tutorialIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.levelBadge {
+  padding: 0.3rem 0.5rem;
+  border-radius: 999px;
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.tutorialCard h3 {
+  margin: 1.15rem 0 0.55rem;
+  font-size: 1.1rem;
+}
+
+.tutorialCard > p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.topicList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.topicList span {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 7px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.65rem;
+}
+
+.tutorialFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.tutorialFooter > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+.tutorialFooter a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* =========================================================
+   LEARNING MAP
+========================================================= */
+
+.learnGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(380px, 1.05fr);
+  gap: 5rem;
+  align-items: center;
+}
+
+.learnContent h2 {
+  max-width: 600px;
+  margin: 0.8rem 0 1rem;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.learnContent h2 span {
+  color: var(--ifm-color-primary);
+}
+
+.learnContent > p {
+  max-width: 600px;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.8;
+}
+
+.learnChecklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 1.2rem;
+  margin: 1.7rem 0;
+}
+
+.learnChecklist div {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.83rem;
+}
+
+.learnChecklist svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--ifm-color-primary);
+}
+
+.learnButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 11px;
+}
+
+.learningMap {
+  padding: 1.35rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 20px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+}
+
+.mapHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.mapHeader span {
+  display: block;
+  color: var(--ifm-color-primary);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.mapHeader strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.mapIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.mapTrack {
+  position: relative;
+  padding: 1.3rem 0 0.2rem;
+}
+
+.mapProgress {
+  position: absolute;
+  top: 31px;
+  bottom: 30px;
+  left: 20px;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--ifm-color-primary),
+    color-mix(in srgb, var(--ifm-color-primary) 12%, transparent)
+  );
+}
+
+.mapItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 62px;
+}
+
+.mapNode {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 50%;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-color-emphasis-600);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.mapNodeActive {
+  border-color: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 35%,
+    var(--ifm-color-emphasis-300)
+  );
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.mapItem strong,
+.mapItem span {
+  display: block;
+}
+
+.mapItem strong {
+  font-size: 0.83rem;
+}
+
+.mapItem span {
+  margin-top: 0.15rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.68rem;
+}
+
+/* =========================================================
+   PRINCIPLES
+========================================================= */
+
+.principlesSection {
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-emphasis-100) 30%,
+    transparent
+  );
+}
+
+.principlesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.principleCard {
+  padding: 1.3rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 16px;
+  background: var(--ifm-background-surface-color);
+}
+
+.principleIcon {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.principleCard h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+}
+
+.principleCard p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+/* =========================================================
+   PRACTICE / BUILD
+========================================================= */
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.actionCard {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 18px;
+  background: var(--ifm-background-surface-color);
+}
+
+.actionIcon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.actionEyebrow {
+  color: var(--ifm-color-primary);
+  font-size: 0.65rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+
+.actionCard h3 {
+  margin: 0.3rem 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.actionCard p {
+  margin: 0 0 0.8rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.actionCard a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* =========================================================
+   NOTE
+========================================================= */
+
+.beginnerNote {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  overflow: hidden;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--ifm-color-primary) 25%,
+    var(--ifm-color-emphasis-200)
+  );
+  border-radius: 18px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 5%,
+    var(--ifm-background-surface-color)
+  );
+}
+
+.noteIcon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 12%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.noteContent span {
+  color: var(--ifm-color-primary);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+
+.noteContent h3 {
+  margin: 0.25rem 0;
+  font-size: 1rem;
+}
+
+.noteContent p {
+  max-width: 850px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.noteSpark {
+  position: absolute;
+  right: 1.5rem;
+  color: color-mix(in srgb, var(--ifm-color-primary) 30%, transparent);
+}
+
+/* =========================================================
+   FINAL CTA
+========================================================= */
+
+.finalSection {
+  position: relative;
+  padding: 4rem 0 7rem;
+}
+
+.finalCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 4.5rem 2rem;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--ifm-color-primary) 25%,
+    var(--ifm-color-emphasis-200)
+  );
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--ifm-color-primary) 14%, transparent),
+      transparent 35%
+    ),
+    var(--ifm-background-surface-color);
+  text-align: center;
+}
+
+.finalGlow {
+  position: absolute;
+  z-index: -1;
+  top: -10rem;
+  left: 50%;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  background: var(--ifm-color-primary);
+  filter: blur(110px);
+  opacity: 0.08;
+  transform: translateX(-50%);
+}
+
+.finalIcon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--ifm-color-primary) 25%,
+    transparent
+  );
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  color: var(--ifm-color-primary);
+}
+
+.finalEyebrow {
+  color: var(--ifm-color-primary);
+  font-size: 0.67rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.finalCard h2 {
+  max-width: 720px;
+  margin: 0.7rem auto 1rem;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.finalCard h2 span {
+  display: block;
+  color: var(--ifm-color-primary);
+}
+
+.finalCard > p {
+  max-width: 650px;
+  margin: 0 auto;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.75;
+}
+
+.finalActions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.7rem;
+}
+
+.finalPrimary,
+.finalSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  border-radius: 11px;
+}
+
+.finalSecondary {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-surface-color);
+}
+
+.finalTrust {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem 1.3rem;
+  margin-top: 1.4rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.72rem;
+}
+
+.finalTrust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.finalTrust svg {
+  color: var(--ifm-color-primary);
+}
+
+/* =========================================================
+   DARK MODE
+========================================================= */
+
+[data-theme="dark"] .page {
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(46, 147, 226, 0.11),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 85% 25%,
+      rgba(124, 92, 255, 0.09),
+      transparent 30rem
+    ),
+    var(--ifm-background-color);
+}
+
+[data-theme="dark"] .codeWindow {
+  background: #0b0f17;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 35px 100px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+[data-theme="dark"] .tutorialCard,
+[data-theme="dark"] .pathCard,
+[data-theme="dark"] .learningMap,
+[data-theme="dark"] .principleCard,
+[data-theme="dark"] .actionCard,
+[data-theme="dark"] .beginnerNote,
+[data-theme="dark"] .finalCard {
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 92%,
+    transparent
+  );
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media screen and (max-width: 1100px) {
+  .heroGrid,
+  .learnGrid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .heroContent {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .eyebrow,
+  .heroActions,
+  .trustRow {
+    justify-content: center;
+  }
+
+  .heroDescription {
+    margin-inline: auto;
+  }
+
+  .heroVisual {
+    min-height: 400px;
+  }
+
+  .learnContent {
+    max-width: 800px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .learnContent h2 {
+    margin-inline: auto;
+  }
+
+  .learnContent > p {
+    margin-inline: auto;
+  }
+
+  .learnChecklist {
+    text-align: left;
+  }
+
+  .learnButton {
+    margin-top: 0.5rem;
+  }
+
+  .tutorialGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .principlesGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .hero {
+    padding: 4.5rem 0 4rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.6rem, 11vw, 4rem);
+  }
+
+  .heroDescription {
+    font-size: 1rem;
+  }
+
+  .heroVisual {
+    min-height: 350px;
+  }
+
+  .codeWindow {
+    transform: none;
+  }
+
+  .floatingCardOne {
+    left: 0;
+  }
+
+  .floatingCardTwo {
+    right: 0;
+  }
+
+  .section {
+    padding: 4rem 0;
+  }
+
+  .tutorialGrid,
+  .principlesGrid,
+  .actionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .learnChecklist {
+    grid-template-columns: 1fr;
+  }
+
+  .pathItem {
+    grid-template-columns: 46px 20px minmax(0, 1fr);
+  }
+
+  .pathNumber {
+    width: 38px;
+    height: 38px;
+    font-size: 0.65rem;
+  }
+
+  .pathCard {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    padding: 0.9rem;
+  }
+
+  .pathIcon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .pathContent p {
+    font-size: 0.77rem;
+  }
+
+  .noteSpark {
+    display: none;
+  }
+
+  .finalCard {
+    padding: 3.5rem 1.25rem;
+    border-radius: 22px;
+  }
+}
+
+@media screen and (max-width: 560px) {
+  .hero {
+    padding-top: 3.5rem;
+  }
+
+  .hero h1 {
+    font-size: 2.55rem;
+  }
+
+  .heroActions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .trustRow {
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .heroVisual {
+    min-height: 315px;
+  }
+
+  .codeBody {
+    padding: 1rem 0.7rem;
+    font-size: 0.62rem;
+  }
+
+  .lineNumber {
+    width: 22px;
+    margin-right: 0.55rem;
+  }
+
+  .codeIndent {
+    width: 0.6rem;
+  }
+
+  .windowTitle {
+    display: none;
+  }
+
+  .floatingCardOne {
+    top: -0.5rem;
+    left: 0;
+    transform: scale(0.88);
+    transform-origin: left top;
+  }
+
+  .floatingCardTwo {
+    right: 0;
+    bottom: -0.5rem;
+    transform: scale(0.88);
+    transform-origin: right bottom;
+  }
+
+  .sectionHeader h2 {
+    font-size: 2rem;
+  }
+
+  .pathItem {
+    grid-template-columns: 1fr;
+    margin-bottom: 0.8rem;
+  }
+
+  .pathNumber,
+  .pathConnector {
+    display: none;
+  }
+
+  .pathCard {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .pathArrow {
+    display: none;
+  }
+
+  .tutorialCard {
+    min-height: 290px;
+  }
+
+  .learningMap {
+    padding: 1rem;
+  }
+
+  .actionCard {
+    grid-template-columns: 1fr;
+  }
+
+  .actionIcon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .beginnerNote {
+    align-items: flex-start;
+  }
+
+  .finalActions {
+    flex-direction: column;
+  }
+
+  .finalPrimary,
+  .finalSecondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .pathCard,
+  .tutorialCard {
+    transition: none;
+  }
+}
+
+.pathCard:focus-visible,
+.tutorialFooter a:focus-visible,
+.actionCard a:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.finalPrimary:focus-visible,
+.finalSecondary:focus-visible {
+  outline: 3px solid color-mix(
+    in srgb,
+    var(--ifm-color-primary) 40%,
+    transparent
+  );
+  outline-offset: 3px;
+}

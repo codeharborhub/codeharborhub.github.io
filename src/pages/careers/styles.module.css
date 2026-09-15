@@ -1,0 +1,1616 @@
+.page {
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+}
+
+.container {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.containerSmall {
+  width: min(850px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+/* ================================================================
+   HERO
+================================================================ */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 105px 0 90px;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  background:
+    radial-gradient(
+      circle at 15% 30%,
+      color-mix(in srgb, var(--ifm-color-primary) 12%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 85% 20%,
+      color-mix(in srgb, #8b5cf6 9%, transparent),
+      transparent 30%
+    ),
+    var(--ifm-background-color);
+}
+
+.heroGrid,
+.finalGrid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(
+        in srgb,
+        var(--ifm-color-emphasis-300) 18%,
+        transparent
+      ) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(
+        in srgb,
+        var(--ifm-color-emphasis-300) 18%,
+        transparent
+      ) 1px,
+      transparent 1px
+    );
+
+  background-size: 48px 48px;
+
+  mask-image: linear-gradient(
+    to bottom,
+    black,
+    transparent 90%
+  );
+}
+
+.heroGlow,
+.finalGlow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  top: -330px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+  filter: blur(110px);
+  pointer-events: none;
+}
+
+.hero .container {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.9fr);
+  align-items: center;
+  gap: 75px;
+}
+
+.heroContent {
+  max-width: 690px;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ifm-color-primary);
+  font-size: 0.71rem;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  padding: 9px 12px;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 25%, transparent);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 6%,
+    transparent
+  );
+}
+
+.hero h1 {
+  margin: 25px 0 22px;
+  max-width: 750px;
+  font-size: clamp(3rem, 6vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.058em;
+  font-weight: 900;
+}
+
+.hero h1 span {
+  display: block;
+  color: var(--ifm-color-primary);
+}
+
+.heroContent > p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+  margin-top: 30px;
+}
+
+.primaryButton,
+.secondaryButton,
+.outlineButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.primaryButton {
+  color: #fff;
+  border: 1px solid var(--ifm-color-primary);
+  background: var(--ifm-color-primary);
+  box-shadow:
+    0 12px 30px
+      color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+}
+
+.primaryButton:hover {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 35px
+      color-mix(in srgb, var(--ifm-color-primary) 28%, transparent);
+}
+
+.secondaryButton,
+.outlineButton {
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-surface-color);
+}
+
+.secondaryButton:hover,
+.outlineButton:hover {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+  border-color: var(--ifm-color-primary);
+  transform: translateY(-2px);
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 24px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.72rem;
+}
+
+.heroMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.heroMeta svg {
+  color: var(--ifm-color-primary);
+}
+
+/* ================================================================
+   HERO TERMINAL
+================================================================ */
+
+.heroVisual {
+  position: relative;
+}
+
+.terminal {
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 95%,
+    #000 5%
+  );
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.15),
+    0 0 0 1px
+      color-mix(
+        in srgb,
+        var(--ifm-color-emphasis-100) 40%,
+        transparent
+      );
+}
+
+.terminalHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 48px;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-emphasis-600);
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 0.67rem;
+}
+
+.windowDots {
+  display: flex;
+  gap: 6px;
+}
+
+.windowDots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ifm-color-emphasis-300);
+}
+
+.terminalHeader > span {
+  margin: 0 auto;
+}
+
+.terminalLive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #16a34a;
+}
+
+.terminalLive i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.terminalBody {
+  min-height: 350px;
+  padding: 25px;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 0.77rem;
+  line-height: 1.8;
+}
+
+.terminalBody p {
+  margin: 0 0 13px;
+}
+
+.terminalMuted {
+  color: var(--ifm-color-emphasis-500);
+}
+
+.terminalCommand {
+  color: var(--ifm-color-primary);
+}
+
+.terminalOutput {
+  padding-left: 18px;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.terminalTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-left: 18px;
+  margin-bottom: 15px;
+}
+
+.terminalTags span {
+  padding: 4px 7px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 5px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.62rem;
+}
+
+.cursor {
+  margin-left: 4px;
+  color: var(--ifm-color-primary);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.floatingCardOne,
+.floatingCardTwo {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 10px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.floatingCardOne {
+  top: 14%;
+  left: -34px;
+}
+
+.floatingCardTwo {
+  right: -30px;
+  bottom: 12%;
+}
+
+.floatingCardOne svg,
+.floatingCardTwo svg {
+  color: var(--ifm-color-primary);
+}
+
+.floatingCardOne strong,
+.floatingCardOne span,
+.floatingCardTwo strong,
+.floatingCardTwo span {
+  display: block;
+}
+
+.floatingCardOne strong,
+.floatingCardTwo strong {
+  font-size: 0.72rem;
+}
+
+.floatingCardOne span,
+.floatingCardTwo span {
+  margin-top: 2px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.59rem;
+}
+
+/* ================================================================
+   MISSION
+================================================================ */
+
+.missionSection {
+  padding: 90px 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.missionGrid {
+  display: grid;
+  grid-template-columns: 1fr 0.9fr;
+  gap: 90px;
+}
+
+.missionGrid h2 {
+  max-width: 600px;
+  margin: 12px 0 0;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.missionGrid h2 span {
+  color: var(--ifm-color-primary);
+}
+
+.missionGrid p {
+  margin: 0 0 17px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.95rem;
+  line-height: 1.8;
+}
+
+/* ================================================================
+   STATS
+================================================================ */
+
+.statsSection {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  background: var(--ifm-background-surface-color);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat {
+  padding: 12px 25px;
+  border-right: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.stat:first-child {
+  padding-left: 0;
+}
+
+.stat:last-child {
+  border-right: 0;
+}
+
+.stat strong,
+.stat span {
+  display: block;
+}
+
+.stat strong {
+  font-size: 1rem;
+}
+
+.stat span {
+  margin-top: 3px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+/* ================================================================
+   SECTIONS
+================================================================ */
+
+.section {
+  padding: 100px 0;
+}
+
+.mutedSection {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(
+        in srgb,
+        var(--ifm-color-emphasis-100) 32%,
+        transparent
+      ),
+      transparent
+    );
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 42px;
+}
+
+.sectionHeading > div:first-child {
+  max-width: 720px;
+}
+
+.sectionHeading h2,
+.sectionHeadingCentered h2 {
+  margin: 10px 0 11px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.sectionHeading p,
+.sectionHeadingCentered p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+}
+
+.sectionHeadingCentered {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.sectionHeadingCentered p {
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.roleSummary {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.roleSummary strong {
+  font-size: 1.4rem;
+  color: var(--ifm-color-primary);
+}
+
+.roleSummary span {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+/* ================================================================
+   JOB EXPLORER
+================================================================ */
+
+.jobExplorer {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 10px;
+  height: 47px;
+  padding: 0 14px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 10px;
+  background: var(--ifm-background-surface-color);
+}
+
+.searchBox:focus-within {
+  border-color: var(--ifm-color-primary);
+  box-shadow:
+    0 0 0 3px
+      color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+}
+
+.searchBox > svg {
+  color: var(--ifm-color-emphasis-500);
+}
+
+.searchBox input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ifm-font-color-base);
+  font-size: 0.82rem;
+}
+
+.searchBox button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ifm-color-emphasis-600);
+  background: transparent;
+  cursor: pointer;
+}
+
+.filterRow {
+  display: flex;
+  gap: 8px;
+}
+
+.filterRow select {
+  min-width: 145px;
+  height: 47px;
+  padding: 0 12px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 10px;
+  outline: none;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  font-size: 0.76rem;
+}
+
+/* ================================================================
+   JOBS
+================================================================ */
+
+.jobsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.jobCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 315px;
+  padding: 24px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 15px;
+  background: var(--ifm-background-surface-color);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.jobCard:hover {
+  transform: translateY(-4px);
+  border-color: var(--ifm-color-primary);
+  box-shadow:
+    0 18px 45px
+      color-mix(in srgb, var(--ifm-color-primary) 8%, transparent);
+}
+
+.featuredJob {
+  border-color:
+    color-mix(in srgb, var(--ifm-color-primary) 30%, var(--ifm-color-emphasis-200));
+}
+
+.jobTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jobIcon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border-radius: 10px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+}
+
+.featuredBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.jobTitleRow {
+  margin-top: 20px;
+}
+
+.jobTitleRow h3 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.department {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.67rem;
+}
+
+.jobCard > p {
+  margin: 13px 0 16px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.jobMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.68rem;
+}
+
+.jobMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.jobTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 15px;
+}
+
+.jobTags span {
+  padding: 4px 7px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 5px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.62rem;
+}
+
+.jobFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 17px;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.jobFooter > span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.jobFooter a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ifm-color-primary);
+  font-size: 0.73rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.jobFooter a:hover {
+  text-decoration: none;
+}
+
+.fullTime {
+  color: #16a34a;
+  background: color-mix(in srgb, #16a34a 10%, transparent);
+}
+
+.internship {
+  color: #2563eb;
+  background: color-mix(in srgb, #2563eb 10%, transparent);
+}
+
+.contract {
+  color: #d97706;
+  background: color-mix(in srgb, #d97706 10%, transparent);
+}
+
+.volunteer {
+  color: #9333ea;
+  background: color-mix(in srgb, #9333ea 10%, transparent);
+}
+
+.emptyState {
+  padding: 65px 20px;
+  text-align: center;
+  border: 1px dashed var(--ifm-color-emphasis-300);
+  border-radius: 15px;
+}
+
+.emptyState > svg {
+  color: var(--ifm-color-primary);
+}
+
+.emptyState h3 {
+  margin: 12px 0 5px;
+}
+
+.emptyState p {
+  margin: 0 0 17px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.8rem;
+}
+
+.emptyState button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  color: var(--ifm-color-primary);
+  background: var(--ifm-background-surface-color);
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+/* ================================================================
+   DEPARTMENTS
+================================================================ */
+
+.departmentGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.departmentCard {
+  padding: 23px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+}
+
+.departmentIcon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  margin-bottom: 19px;
+  border-radius: 10px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+}
+
+.departmentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.departmentHeader h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.departmentHeader span {
+  color: var(--ifm-color-emphasis-500);
+  font-size: 0.61rem;
+}
+
+.departmentCard p {
+  min-height: 76px;
+  margin: 10px 0 18px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.departmentCard a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ifm-color-primary);
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+/* ================================================================
+   VALUES
+================================================================ */
+
+.valuesLayout {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 75px;
+}
+
+.valuesIntro {
+  position: sticky;
+  top: 100px;
+  align-self: start;
+}
+
+.valuesIntro h2 {
+  margin: 10px 0 13px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.valuesIntro h2 span {
+  display: block;
+  color: var(--ifm-color-primary);
+}
+
+.valuesIntro p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+}
+
+.valuesGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.valueCard {
+  position: relative;
+  padding: 25px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+}
+
+.valueNumber {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  color: var(--ifm-color-emphasis-400);
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.valueIcon {
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 11px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+}
+
+.valueCard h3 {
+  margin: 18px 0 7px;
+  font-size: 0.98rem;
+}
+
+.valueCard p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.76rem;
+  line-height: 1.65;
+}
+
+/* ================================================================
+   BENEFITS
+================================================================ */
+
+.benefitsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.benefitCard {
+  padding: 23px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 13px;
+  background: var(--ifm-background-surface-color);
+}
+
+.benefitIcon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border-radius: 10px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+}
+
+.benefitCard h3 {
+  margin: 17px 0 7px;
+  font-size: 0.96rem;
+}
+
+.benefitCard p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.76rem;
+  line-height: 1.65;
+}
+
+/* ================================================================
+   OPEN SOURCE
+================================================================ */
+
+.openSourceCard {
+  display: grid;
+  grid-template-columns: 0.65fr 1.35fr;
+  align-items: center;
+  gap: 55px;
+  padding: 50px;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 15% 50%,
+      color-mix(in srgb, var(--ifm-color-primary) 10%, transparent),
+      transparent 35%
+    ),
+    var(--ifm-background-surface-color);
+}
+
+.openSourceVisual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 230px;
+}
+
+.githubMark {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 110px;
+  height: 110px;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 30%, transparent);
+  border-radius: 30px;
+  color: var(--ifm-color-primary);
+  background: var(--ifm-background-surface-color);
+  box-shadow:
+    0 25px 60px
+      color-mix(in srgb, var(--ifm-color-primary) 15%, transparent);
+}
+
+.openSourceOrb {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border: 1px dashed
+    color-mix(in srgb, var(--ifm-color-primary) 25%, transparent);
+  border-radius: 50%;
+}
+
+.openSourceContent h2 {
+  margin: 10px 0 12px;
+  font-size: 2.3rem;
+  letter-spacing: -0.04em;
+}
+
+.openSourceContent > p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+}
+
+.openSourceChecklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 23px 0;
+}
+
+.openSourceChecklist span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.74rem;
+}
+
+.openSourceChecklist svg {
+  color: var(--ifm-color-primary);
+}
+
+.openSourceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+/* ================================================================
+   PROCESS
+================================================================ */
+
+.process {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.processStep {
+  position: relative;
+  padding: 24px 18px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 13px;
+  background: var(--ifm-background-surface-color);
+}
+
+.processNumber {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 20px;
+  border-radius: 9px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.processStep h3 {
+  margin: 0 0 8px;
+  font-size: 0.91rem;
+}
+
+.processStep p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+/* ================================================================
+   FAQ
+================================================================ */
+
+.faq {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.faqItem > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 65px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ifm-font-color-base);
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.faqChevron {
+  flex: 0 0 auto;
+  color: var(--ifm-color-emphasis-500);
+  transition: transform 180ms ease;
+}
+
+.faqOpen .faqChevron {
+  transform: rotate(180deg);
+  color: var(--ifm-color-primary);
+}
+
+.faqAnswer {
+  padding: 0 35px 20px 0;
+}
+
+.faqAnswer p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+/* ================================================================
+   FINAL CTA
+================================================================ */
+
+.finalCta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 105px 0;
+  text-align: center;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--ifm-color-primary) 13%, transparent),
+      transparent 40%
+    ),
+    var(--ifm-background-color);
+}
+
+.finalGlow {
+  top: -370px;
+}
+
+.finalContent {
+  position: relative;
+}
+
+.finalIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 20px;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 25%, transparent);
+  border-radius: 13px;
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+}
+
+.finalContent h2 {
+  margin: 13px 0;
+  font-size: clamp(2.25rem, 5vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.finalContent h2 span {
+  color: var(--ifm-color-primary);
+}
+
+.finalContent > p {
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+}
+
+.finalActions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.finalMeta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 23px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.69rem;
+}
+
+.finalMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.finalMeta svg {
+  color: var(--ifm-color-primary);
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+
+@media (max-width: 1100px) {
+  .hero .container {
+    grid-template-columns: 1fr;
+    gap: 55px;
+  }
+
+  .heroContent {
+    max-width: 800px;
+  }
+
+  .heroVisual {
+    max-width: 760px;
+  }
+
+  .departmentGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .process {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .processStep:last-child {
+    grid-column: 2;
+  }
+
+  .valuesLayout {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  .valuesIntro {
+    position: static;
+  }
+}
+
+@media (max-width: 850px) {
+  .section {
+    padding: 75px 0;
+  }
+
+  .missionGrid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat {
+    padding: 12px 20px;
+  }
+
+  .stat:nth-child(2) {
+    border-right: 0;
+  }
+
+  .stat:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  }
+
+  .stat:first-child {
+    padding-left: 20px;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 30px;
+  }
+
+  .jobExplorer {
+    flex-direction: column;
+  }
+
+  .filterRow {
+    width: 100%;
+  }
+
+  .filterRow select {
+    flex: 1;
+  }
+
+  .jobsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefitsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .openSourceCard {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 35px;
+  }
+
+  .openSourceVisual {
+    min-height: 190px;
+  }
+
+  .process {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .processStep:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .container,
+  .containerSmall {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .hero {
+    padding: 75px 0 60px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.6rem, 12vw, 3.7rem);
+  }
+
+  .heroContent > p {
+    font-size: 0.94rem;
+  }
+
+  .heroActions {
+    flex-direction: column;
+  }
+
+  .heroActions a {
+    width: 100%;
+  }
+
+  .heroMeta {
+    gap: 8px 15px;
+  }
+
+  .terminalBody {
+    min-height: 300px;
+    padding: 20px;
+    font-size: 0.66rem;
+  }
+
+  .floatingCardOne {
+    left: 8px;
+    top: -18px;
+  }
+
+  .floatingCardTwo {
+    right: 8px;
+    bottom: -18px;
+  }
+
+  .missionSection {
+    padding: 70px 0;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat {
+    padding: 11px 9px !important;
+  }
+
+  .stat:nth-child(odd) {
+    border-right: 1px solid var(--ifm-color-emphasis-200);
+  }
+
+  .stat:nth-child(even) {
+    border-right: 0;
+  }
+
+  .departmentGrid,
+  .valuesGrid,
+  .benefitsGrid,
+  .process {
+    grid-template-columns: 1fr;
+  }
+
+  .jobExplorer {
+    gap: 8px;
+  }
+
+  .filterRow {
+    flex-direction: column;
+  }
+
+  .filterRow select {
+    width: 100%;
+  }
+
+  .jobCard {
+    min-height: 0;
+  }
+
+  .openSourceCard {
+    padding: 25px;
+  }
+
+  .openSourceChecklist {
+    grid-template-columns: 1fr;
+  }
+
+  .openSourceActions {
+    flex-direction: column;
+  }
+
+  .openSourceActions a {
+    width: 100%;
+  }
+
+  .processStep {
+    padding: 21px;
+  }
+
+  .faqItem > button {
+    min-height: 60px;
+    font-size: 0.81rem;
+  }
+
+  .finalCta {
+    padding: 80px 0;
+  }
+
+  .finalContent h2 {
+    font-size: 2.5rem;
+  }
+
+  .finalActions {
+    flex-direction: column;
+  }
+
+  .finalActions a {
+    width: 100%;
+  }
+
+  .finalMeta {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+/* ================================================================
+   ACCESSIBILITY
+================================================================ */
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.outlineButton:focus-visible,
+.searchBox input:focus-visible,
+.filterRow select:focus-visible,
+.faqItem button:focus-visible,
+.emptyState button:focus-visible {
+  outline: 3px solid
+    color-mix(in srgb, var(--ifm-color-primary) 35%, transparent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryButton,
+  .secondaryButton,
+  .outlineButton,
+  .jobCard,
+  .faqChevron {
+    transition: none;
+  }
+
+  .cursor {
+    animation: none;
+  }
+}
