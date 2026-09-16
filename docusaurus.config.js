@@ -613,9 +613,9 @@ const config = {
       "@docusaurus/plugin-content-docs",
       /** @type {import('@docusaurus/plugin-content-docs').Options} */
       {
-        id: "projects",
-        path: "projects",
-        routeBasePath: "projects",
+        id: "project",
+        path: "project",
+        routeBasePath: "project",
         // editUrl: "#",
         sidebarPath: require.resolve("./sidebarsCommunity.js"),
         remarkPlugins: [[npm2yarn, { sync: true }], remarkMath, rehypeKatex],
