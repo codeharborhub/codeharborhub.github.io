@@ -77,7 +77,7 @@ const LEARNING_PILLARS = [
     title: "Learn",
     description:
       "Understand concepts through structured tutorials, documentation and learning resources.",
-    href: "/tutorial/",
+    href: "/tutorials/",
   },
   {
     number: "02",
@@ -547,7 +547,7 @@ export default function AboutPage(): React.JSX.Element {
                 <div className={styles.openSourceActions}>
                   <Link
                     className={styles.primaryButton}
-                    href="https://github.com/CodeHarborHub"
+                    href="https://github.com/codeharborhub"
                   >
                     <Github size={17} />
                     Explore GitHub
@@ -680,7 +680,7 @@ export default function AboutPage(): React.JSX.Element {
               <div className={styles.finalActions}>
                 <Link
                   className={styles.primaryButton}
-                  to="/tutorial/"
+                  to="/tutorials/"
                 >
                   Start Learning
                   <ArrowRight size={17} />

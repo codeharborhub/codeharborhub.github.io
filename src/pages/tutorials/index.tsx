@@ -650,7 +650,7 @@ export default function Tutorials(): JSX.Element {
                   </p>
 
                   <Link
-                    to="/tutorial/best-practices/"
+                    to="#" // /tutorial/best-practices/
                     className={styles.darkButton}
                   >
                     Explore best practices
@@ -724,7 +724,7 @@ export default function Tutorials(): JSX.Element {
 
               <div className={styles.ctaActions}>
                 <Link
-                  to="/tutorial/"
+                  to="#" // /tutorial/
                   className={`${styles.primaryButton} ${styles.largeButton}`}
                 >
                   Start learning

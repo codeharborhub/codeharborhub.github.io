@@ -62,7 +62,7 @@ const learningSteps: LearningStep[] = [
     description:
       "Learn how websites, browsers, servers, URLs, domains, and the internet work together.",
     icon: Globe2,
-    href: "/docs/web-development/",
+    href: "#", // /docs/web-development/
     tag: "Foundations",
   },
   {
@@ -71,7 +71,7 @@ const learningSteps: LearningStep[] = [
     description:
       "Build the structure of your first webpages using semantic HTML elements.",
     icon: FileCode2,
-    href: "/docs/html/",
+    href: "#", // /docs/html/
     tag: "Structure",
   },
   {
@@ -80,7 +80,7 @@ const learningSteps: LearningStep[] = [
     description:
       "Style your webpages and learn layouts, responsive design, colors, spacing, and animations.",
     icon: Layers3,
-    href: "/docs/css/",
+    href: "#", // /docs/javascript/
     tag: "Design",
   },
   {
@@ -89,7 +89,7 @@ const learningSteps: LearningStep[] = [
     description:
       "Add logic, interaction, events, dynamic content, and real programming fundamentals.",
     icon: Code2,
-    href: "/docs/javascript/",
+    href: "#", // /docs/javascript/
     tag: "Programming",
   },
   {
@@ -118,7 +118,7 @@ const tutorials: Tutorial[] = [
     description:
       "Start creating webpages from scratch and understand the building blocks of the web.",
     icon: FileCode2,
-    href: "/docs/html/",
+    href: "#", // /docs/html/
     level: "Beginner",
     duration: "3–5 hours",
     topics: ["Elements", "Forms", "Links", "Images"],
@@ -129,7 +129,7 @@ const tutorials: Tutorial[] = [
     description:
       "Make your webpages beautiful with colors, typography, layouts, Flexbox, Grid, and responsive design.",
     icon: Layers3,
-    href: "/docs/css/",
+    href: "#", // /docs/css/
     level: "Beginner",
     duration: "4–6 hours",
     topics: ["Selectors", "Flexbox", "Grid", "Responsive"],
@@ -140,7 +140,7 @@ const tutorials: Tutorial[] = [
     description:
       "Learn programming fundamentals and make webpages interactive with JavaScript.",
     icon: Code2,
-    href: "/docs/javascript/",
+    href: "#", // /docs/javascript/
     level: "Beginner",
     duration: "8–12 hours",
     topics: ["Variables", "Functions", "Arrays", "DOM"],
@@ -151,7 +151,7 @@ const tutorials: Tutorial[] = [
     description:
       "Learn how developers save, manage, share, and collaborate on code using Git and GitHub.",
     icon: GitBranch,
-    href: "/docs/git/",
+    href: "#", // /docs/git/
     level: "Beginner",
     duration: "2–3 hours",
     topics: ["Git", "Commits", "Branches", "GitHub"],
@@ -161,7 +161,7 @@ const tutorials: Tutorial[] = [
     description:
       "Build a strong foundation in programming concepts, algorithms, data structures, and computers.",
     icon: Terminal,
-    href: "/docs/computer-science/",
+    href: "#", // /docs/computer-science/
     level: "Beginner",
     duration: "6–10 hours",
     topics: ["Logic", "Algorithms", "Data", "Systems"],
@@ -171,7 +171,7 @@ const tutorials: Tutorial[] = [
     description:
       "Understand the complete journey from writing code to publishing a website on the internet.",
     icon: MonitorPlay,
-    href: "/docs/web-development/",
+    href: "#", // /docs/web-development/
     level: "Beginner",
     duration: "3–5 hours",
     topics: ["Frontend", "Backend", "HTTP", "Deployment"],
@@ -929,7 +929,7 @@ export default function AbsoluteBeginnersPage(): React.JSX.Element {
                     "button button--primary",
                     styles.finalPrimary,
                   )}
-                  to="/docs/html/"
+                  to="#" // /docs/html/
                 >
                   Start with HTML
                   <ArrowRight size={18} />

@@ -70,7 +70,7 @@ const articles: BlogArticle[] = [
     title: "Modern Web Development: From Fundamentals to Production",
     description:
       "Understand the complete journey from HTML and CSS fundamentals to building maintainable, scalable, production-ready web applications.",
-    slug: "/blog/modern-web-development",
+    slug: "#", // /blog/modern-web-development
     category: "Web Development",
     tags: ["HTML", "CSS", "JavaScript", "Frontend"],
     author: "Ajay Dhangar",
@@ -89,7 +89,7 @@ const articles: BlogArticle[] = [
     title: "Understanding the JavaScript Event Loop",
     description:
       "Learn how JavaScript handles asynchronous operations, callbacks, promises, microtasks, and the event loop.",
-    slug: "/blog/javascript-event-loop",
+    slug: "#", // /blog/javascript-event-loop
     category: "JavaScript",
     tags: ["JavaScript", "Async", "Runtime"],
     author: "CodeHarborHub",
@@ -106,7 +106,7 @@ const articles: BlogArticle[] = [
     title: "Designing Scalable React Applications",
     description:
       "Explore practical patterns for structuring React applications as projects grow from prototypes into production systems.",
-    slug: "/blog/scalable-react-applications",
+    slug: "#", // /blog/scalable-react-applications
     category: "React",
     tags: ["React", "Architecture", "TypeScript"],
     author: "CodeHarborHub",
@@ -123,7 +123,7 @@ const articles: BlogArticle[] = [
     title: "How AI Is Changing the Developer Workflow",
     description:
       "A practical look at how developers can use AI for research, coding, debugging, documentation, testing, and learning.",
-    slug: "/blog/ai-developer-workflow",
+    slug: "#", // /blog/ai-developer-workflow
     category: "AI & ML",
     tags: ["AI", "Developer Tools", "Productivity"],
     author: "CodeHarborHub",
@@ -139,7 +139,7 @@ const articles: BlogArticle[] = [
     title: "A Practical Guide to Your First Open Source Contribution",
     description:
       "Learn how to discover projects, understand repositories, choose issues, create pull requests, and become a useful contributor.",
-    slug: "/blog/first-open-source-contribution",
+    slug: "#", // /blog/first-open-source-contribution
     category: "Open Source",
     tags: ["GitHub", "Open Source", "Contributing"],
     author: "Ajay Dhangar",
@@ -156,7 +156,7 @@ const articles: BlogArticle[] = [
     title: "Building a Strong Developer Portfolio in 2026",
     description:
       "What actually makes a developer portfolio useful to recruiters, hiring managers, clients, and open-source communities.",
-    slug: "/blog/developer-portfolio-2026",
+    slug: "#", // /blog/developer-portfolio-2026
     category: "Career",
     tags: ["Career", "Portfolio", "Jobs"],
     author: "CodeHarborHub",
@@ -172,7 +172,7 @@ const articles: BlogArticle[] = [
     title: "Docker for Developers: From Local Setup to Deployment",
     description:
       "Understand containers, images, Dockerfiles, Compose, networking, volumes, and practical development workflows.",
-    slug: "/blog/docker-for-developers",
+    slug: "#", // /blog/docker-for-developers
     category: "DevOps",
     tags: ["Docker", "DevOps", "Deployment"],
     author: "CodeHarborHub",
@@ -188,7 +188,7 @@ const articles: BlogArticle[] = [
     title: "TypeScript Practices That Make Large Codebases Better",
     description:
       "Practical TypeScript patterns for safer APIs, reusable types, maintainability, and better developer experience.",
-    slug: "/blog/typescript-best-practices",
+    slug: "#", // /blog/typescript-best-practices
     category: "Web Development",
     tags: ["TypeScript", "JavaScript", "Best Practices"],
     author: "CodeHarborHub",
@@ -496,7 +496,7 @@ export default function BlogsPage(): JSX.Element {
                 <h2>Featured from the community</h2>
               </div>
 
-              <Link to="/blog/" className={styles.textLink}>
+              <Link to="https://codeharborhub.github.io/blog/" className={styles.textLink}>
                 View all posts
                 <ArrowRight size={16} />
               </Link>
@@ -817,7 +817,7 @@ export default function BlogsPage(): JSX.Element {
 
               <div className={styles.newsletterActions}>
                 <Link
-                  to="/newsletter/"
+                  to="#" // /newsletter/
                   className={styles.primaryButton}
                 >
                   Join the newsletter
@@ -861,7 +861,7 @@ export default function BlogsPage(): JSX.Element {
 
                 <div className={styles.communityActions}>
                   <a
-                    href="https://github.com/CodeHarborHub"
+                    href="https://github.com/codeharborhub"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.primaryButton}
@@ -931,7 +931,7 @@ export default function BlogsPage(): JSX.Element {
 
               <div className={styles.finalActions}>
                 <Link
-                  to="/tutorial/"
+                  to="/tutorials/"
                   className={styles.primaryButton}
                 >
                   Start learning

@@ -298,7 +298,7 @@ export default function Team(): React.JSX.Element {
     description:
       "CodeHarborHub is a free, open-source learning platform for developers to learn, practice, build real-world projects and grow together.",
     sameAs: [
-      "https://github.com/CodeHarborHub",
+      "https://github.com/codeharborhub",
       "https://x.com/Codeharborhub",
       "https://www.linkedin.com/company/codeharborhub",
     ],
@@ -373,7 +373,7 @@ export default function Team(): React.JSX.Element {
 
         <meta
           name="twitter:image"
-          content={`${SITE_URL}/img/codeharborhub-og.png`}
+          content={`${SITE_URL}/img/codeharborhub-social-card.jpg`}
         />
 
         <script type="application/ld+json">
@@ -663,7 +663,7 @@ export default function Team(): React.JSX.Element {
 
                 <Link
                   className={styles.secondaryButton}
-                  href="https://github.com/CodeHarborHub"
+                  href="https://github.com/codeharborhub"
                 >
                   Explore GitHub
                   <ArrowUpRight size={17} />
