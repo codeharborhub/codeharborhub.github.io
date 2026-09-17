@@ -1,0 +1,1436 @@
+.page {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------
+   Breadcrumb
+------------------------------------------------------- */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 18px 0 8px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.86rem;
+}
+
+.breadcrumb a {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------
+   Hero
+------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  padding: 74px 0 72px;
+  background:
+    radial-gradient(
+      circle at 8% 20%,
+      color-mix(in srgb, var(--ifm-color-primary) 14%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 88% 20%,
+      color-mix(in srgb, #7c3aed 12%, transparent),
+      transparent 30%
+    );
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: var(--ifm-color-emphasis-200);
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+  gap: 64px;
+  align-items: center;
+}
+
+.heroContent {
+  max-width: 760px;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ifm-color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 18px 0 20px;
+  max-width: 760px;
+  font-size: clamp(2.7rem, 6vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.hero h1 span {
+  display: block;
+  color: var(--ifm-color-primary);
+}
+
+.heroContent > p {
+  max-width: 690px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.12rem;
+  line-height: 1.75;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.primaryButton,
+.secondaryButton,
+.continueButton,
+.cardButton,
+.finalSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.primaryButton {
+  padding: 0 18px;
+  color: #fff;
+  background: var(--ifm-color-primary);
+  box-shadow: 0 12px 30px
+    color-mix(in srgb, var(--ifm-color-primary) 22%, transparent);
+}
+
+.primaryButton:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  text-decoration: none;
+  box-shadow: 0 16px 36px
+    color-mix(in srgb, var(--ifm-color-primary) 28%, transparent);
+}
+
+.secondaryButton {
+  padding: 0 18px;
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-surface-color);
+}
+
+.secondaryButton:hover {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.heroMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.82rem;
+}
+
+/* -------------------------------------------------------
+   Progress Panel
+------------------------------------------------------- */
+
+.progressPanel {
+  padding: 26px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 24px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 92%,
+    transparent
+  );
+  box-shadow: 0 25px 70px color-mix(in srgb, #000 9%, transparent);
+}
+
+.progressPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.panelLabel {
+  display: block;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.progressPanel h2 {
+  margin: 6px 0 0;
+  font-size: 3.5rem;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.progressIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 25%, transparent);
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+}
+
+.progressTrack,
+.cardProgressTrack,
+.miniTrack {
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ifm-color-emphasis-200);
+}
+
+.progressTrack {
+  margin-top: 25px;
+}
+
+.progressTrack span,
+.cardProgressTrack span,
+.miniTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ifm-color-primary);
+  transition: width 500ms ease;
+}
+
+.progressStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.progressStats div {
+  padding: 14px 10px;
+  text-align: center;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 12px;
+}
+
+.progressStats strong,
+.progressStats span {
+  display: block;
+}
+
+.progressStats strong {
+  font-size: 1.1rem;
+}
+
+.progressStats span {
+  margin-top: 3px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+.currentLearning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 6%,
+    transparent
+  );
+}
+
+.currentIcon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 12%,
+    transparent
+  );
+}
+
+.currentLearning div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.currentLearning span,
+.currentLearning strong {
+  display: block;
+}
+
+.currentLearning span {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.72rem;
+}
+
+.currentLearning strong {
+  margin-top: 2px;
+  font-size: 0.9rem;
+}
+
+.currentLearning a {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 9px;
+  background: var(--ifm-background-surface-color);
+}
+
+/* -------------------------------------------------------
+   Stats
+------------------------------------------------------- */
+
+.statsSection {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+}
+
+.statIcon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+}
+
+.statCard strong,
+.statCard span {
+  display: block;
+}
+
+.statCard strong {
+  font-size: 0.87rem;
+}
+
+.statCard span {
+  margin-top: 2px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.72rem;
+}
+
+/* -------------------------------------------------------
+   Continue
+------------------------------------------------------- */
+
+.continueSection {
+  padding: 52px 0 20px;
+}
+
+.continueCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 24px;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ifm-color-primary) 7%, transparent),
+      transparent
+    ),
+    var(--ifm-background-surface-color);
+}
+
+.continueLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  min-width: 0;
+}
+
+.continueIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 13px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 10%,
+    transparent
+  );
+}
+
+.continueLeft span {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.75rem;
+}
+
+.continueLeft h2 {
+  margin: 4px 0 4px;
+  font-size: 1.4rem;
+}
+
+.continueLeft p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.continueRight {
+  min-width: 245px;
+}
+
+.miniProgress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  font-size: 0.75rem;
+}
+
+.miniProgress span {
+  color: var(--ifm-color-emphasis-600);
+}
+
+.miniTrack {
+  height: 6px;
+}
+
+.continueButton {
+  width: 100%;
+  margin-top: 14px;
+  color: #fff;
+  background: var(--ifm-color-primary);
+}
+
+.continueButton:hover {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------
+   Section Header
+------------------------------------------------------- */
+
+.explorerSection {
+  padding: 70px 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 28px;
+}
+
+.sectionHeader h2,
+.sectionHeaderCentered h2 {
+  margin: 9px 0 8px;
+  font-size: clamp(1.8rem, 3.5vw, 2.7rem);
+  letter-spacing: -0.035em;
+}
+
+.sectionHeader p,
+.sectionHeaderCentered p {
+  max-width: 690px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.65;
+}
+
+.viewAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  color: var(--ifm-color-primary);
+  font-size: 0.85rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.viewAll:hover {
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------
+   Explorer Controls
+------------------------------------------------------- */
+
+.explorerControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 280px;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 11px;
+  background: var(--ifm-background-surface-color);
+}
+
+.searchBox svg {
+  color: var(--ifm-color-emphasis-600);
+}
+
+.searchBox input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--ifm-font-color-base);
+  background: transparent;
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.filter,
+.filterActive {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 9px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter {
+  color: var(--ifm-color-emphasis-700);
+  background: var(--ifm-background-surface-color);
+}
+
+.filterActive {
+  color: #fff;
+  border-color: var(--ifm-color-primary);
+  background: var(--ifm-color-primary);
+}
+
+/* -------------------------------------------------------
+   Roadmap Cards
+------------------------------------------------------- */
+
+.roadmapGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.roadmapCard {
+  position: relative;
+  display: flex;
+  min-height: 390px;
+  flex-direction: column;
+  padding: 21px;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 18px;
+  background: var(--ifm-background-surface-color);
+  transition:
+    transform 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.roadmapCard:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 40%,
+    var(--ifm-color-emphasis-200)
+  );
+  box-shadow: 0 18px 50px color-mix(in srgb, #000 8%, transparent);
+}
+
+.roadmapCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: var(--ifm-color-primary);
+  opacity: 0.65;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.roadmapIcon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 13px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 27px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.67rem;
+  font-weight: 750;
+}
+
+.statusCompleted {
+  color: #16803c;
+  background: color-mix(in srgb, #16803c 10%, transparent);
+}
+
+.statusProgress {
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 10%,
+    transparent
+  );
+}
+
+.statusNotStarted {
+  color: var(--ifm-color-emphasis-700);
+  background: var(--ifm-color-emphasis-100);
+}
+
+.cardContent {
+  flex: 1;
+  margin-top: 20px;
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cardTags span {
+  padding: 4px 7px;
+  color: var(--ifm-color-emphasis-700);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 6px;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.cardContent h3 {
+  margin: 13px 0 7px;
+  font-size: 1.3rem;
+  letter-spacing: -0.025em;
+}
+
+.cardContent p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.81rem;
+  line-height: 1.65;
+}
+
+.cardDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.cardDetails div {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+.cardProgress {
+  margin-top: 16px;
+}
+
+.cardProgress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  font-size: 0.72rem;
+}
+
+.cardProgress > div:first-child span {
+  color: var(--ifm-color-emphasis-600);
+}
+
+.cardProgressTrack {
+  height: 5px;
+}
+
+.cardButton {
+  width: 100%;
+  margin-top: 17px;
+  color: var(--ifm-color-primary);
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 24%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 6%,
+    transparent
+  );
+}
+
+.cardButton:hover {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+  border-color: var(--ifm-color-primary);
+  transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------
+   Empty
+------------------------------------------------------- */
+
+.emptyState {
+  display: flex;
+  min-height: 240px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  border: 1px dashed var(--ifm-color-emphasis-300);
+  border-radius: 18px;
+}
+
+.emptyState svg {
+  color: var(--ifm-color-primary);
+}
+
+.emptyState h3 {
+  margin: 12px 0 4px;
+}
+
+.emptyState p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.85rem;
+}
+
+.emptyState button {
+  margin-top: 16px;
+  padding: 8px 13px;
+  color: var(--ifm-color-primary);
+  border: 1px solid var(--ifm-color-primary);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------
+   Learning Steps
+------------------------------------------------------- */
+
+.stepsSection {
+  padding: 82px 0;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-emphasis-100) 30%,
+    transparent
+  );
+}
+
+.sectionHeaderCentered {
+  max-width: 760px;
+  margin: 0 auto 42px;
+  text-align: center;
+}
+
+.sectionHeaderCentered p {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.stepsGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.stepCard {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 15px;
+  background: var(--ifm-background-surface-color);
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepHeader > span {
+  color: var(--ifm-color-primary);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.stepHeader > div {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 9px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+}
+
+.stepCard h3 {
+  margin: 18px 0 7px;
+  font-size: 0.98rem;
+}
+
+.stepCard p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.stepArrow {
+  display: grid;
+  place-items: center;
+  color: var(--ifm-color-emphasis-500);
+}
+
+/* -------------------------------------------------------
+   Learning System
+------------------------------------------------------- */
+
+.systemSection {
+  padding: 82px 0;
+}
+
+.systemCard {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: 60px;
+  align-items: center;
+  padding: 48px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ifm-color-primary) 8%, transparent),
+      transparent 35%
+    ),
+    var(--ifm-background-surface-color);
+}
+
+.systemContent h2 {
+  max-width: 650px;
+  margin: 11px 0 15px;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+}
+
+.systemContent h2 span {
+  color: var(--ifm-color-primary);
+}
+
+.systemContent > p {
+  max-width: 650px;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+}
+
+.systemList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 24px 0 28px;
+}
+
+.systemList div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
+}
+
+.systemList svg {
+  flex: 0 0 auto;
+  color: var(--ifm-color-primary);
+}
+
+.systemVisual {
+  display: flex;
+  justify-content: center;
+}
+
+.systemWindow {
+  width: 100%;
+  max-width: 470px;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 17px;
+  background: var(--ifm-background-color);
+  box-shadow: 0 30px 80px color-mix(in srgb, #000 12%, transparent);
+}
+
+.windowHeader {
+  display: flex;
+  gap: 6px;
+  padding: 13px;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.windowHeader span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ifm-color-emphasis-400);
+}
+
+.learningPipeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 30px 18px;
+}
+
+.pipelineItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.pipelineItem > div {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 11px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 7%,
+    transparent
+  );
+}
+
+.pipelineItem span {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.learningPipeline > svg {
+  color: var(--ifm-color-emphasis-400);
+}
+
+.codeLines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.codeLines span {
+  display: block;
+  width: 70%;
+  height: 7px;
+  border-radius: 99px;
+  background: var(--ifm-color-emphasis-200);
+}
+
+.codeLines span:nth-child(2) {
+  width: 88%;
+}
+
+.codeLines span:nth-child(3) {
+  width: 55%;
+}
+
+.codeLines span:nth-child(4) {
+  width: 76%;
+}
+
+.codeLines span:nth-child(5) {
+  width: 44%;
+}
+
+/* -------------------------------------------------------
+   Explore
+------------------------------------------------------- */
+
+.exploreSection {
+  padding: 0 0 82px;
+}
+
+.exploreGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.exploreCard {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 17px;
+  color: inherit;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.exploreCard:hover {
+  color: inherit;
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.exploreCard > svg:first-child {
+  flex: 0 0 auto;
+  color: var(--ifm-color-primary);
+}
+
+.exploreCard div {
+  flex: 1;
+  min-width: 0;
+}
+
+.exploreCard h3 {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.exploreCard p {
+  margin: 3px 0 0;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.exploreCard > svg:last-child {
+  flex: 0 0 auto;
+  color: var(--ifm-color-emphasis-500);
+}
+
+/* -------------------------------------------------------
+   Final CTA
+------------------------------------------------------- */
+
+.finalSection {
+  padding: 0 0 90px;
+}
+
+.finalCard {
+  position: relative;
+  padding: 58px 30px;
+  overflow: hidden;
+  text-align: center;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 25px;
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--ifm-color-primary) 15%, transparent),
+      transparent 55%
+    ),
+    var(--ifm-background-surface-color);
+}
+
+.finalIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 15px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 11px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 10%,
+    transparent
+  );
+}
+
+.finalCard > span {
+  color: var(--ifm-color-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.finalCard h2 {
+  max-width: 700px;
+  margin: 10px auto;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  letter-spacing: -0.045em;
+}
+
+.finalCard p {
+  max-width: 600px;
+  margin: 0 auto;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.65;
+}
+
+.finalActions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 27px;
+}
+
+.finalSecondary {
+  padding: 0 18px;
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: transparent;
+}
+
+.finalSecondary:hover {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------
+   Responsive
+------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .progressPanel {
+    max-width: 650px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .roadmapGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stepsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stepArrow {
+    display: none;
+  }
+
+  .systemCard {
+    grid-template-columns: 1fr;
+  }
+
+  .systemVisual {
+    justify-content: flex-start;
+  }
+
+  .exploreGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 48px 0 52px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.45rem, 12vw, 4rem);
+  }
+
+  .heroContent > p {
+    font-size: 1rem;
+  }
+
+  .heroActions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .heroMeta {
+    gap: 10px 15px;
+  }
+
+  .progressPanel {
+    padding: 21px;
+  }
+
+  .continueCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .continueRight {
+    min-width: 0;
+  }
+
+  .sectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .explorerControls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .searchBox {
+    width: 100%;
+  }
+
+  .filters {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .filter,
+  .filterActive {
+    flex: 0 0 auto;
+  }
+
+  .roadmapGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .stepsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .systemCard {
+    padding: 28px;
+  }
+
+  .systemList {
+    grid-template-columns: 1fr;
+  }
+
+  .learningPipeline {
+    gap: 5px;
+    padding: 25px 10px;
+  }
+
+  .pipelineItem > div {
+    width: 37px;
+    height: 37px;
+  }
+
+  .exploreGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .breadcrumb {
+    padding-top: 13px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .progressStats {
+    gap: 6px;
+  }
+
+  .progressStats div {
+    padding: 11px 5px;
+  }
+
+  .stepsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .systemCard {
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .learningPipeline {
+    gap: 2px;
+  }
+
+  .pipelineItem span {
+    font-size: 0.6rem;
+  }
+
+  .pipelineItem > div {
+    width: 34px;
+    height: 34px;
+  }
+
+  .learningPipeline > svg {
+    width: 13px;
+  }
+
+  .finalCard {
+    padding: 42px 20px;
+    border-radius: 19px;
+  }
+}
+
+/* -------------------------------------------------------
+   Reduced Motion
+------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryButton,
+  .secondaryButton,
+  .continueButton,
+  .cardButton,
+  .roadmapCard,
+  .exploreCard {
+    transition: none;
+  }
+
+  .progressTrack span,
+  .cardProgressTrack span,
+  .miniTrack span {
+    transition: none;
+  }
+}
