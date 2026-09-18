@@ -977,14 +977,14 @@ export default function RoadmapsPage(): JSX.Element {
 
                 <div className="career-links">
                   {[
-                    ["Frontend Developer", "/roadmaps/frontend/"],
-                    ["Backend Developer", "/roadmaps/backend/"],
-                    ["Full Stack Developer", "/roadmaps/full-stack/"],
-                    ["AI Engineer", "/roadmaps/ai-engineer/"],
-                    ["Data Engineer", "/roadmaps/data-engineer/"],
-                    ["DevOps Engineer", "/roadmaps/devops/"],
-                    ["Cybersecurity", "/roadmaps/cybersecurity/"],
-                    ["Software Engineer", "/roadmaps/software-engineer/"],
+                    ["Frontend Developer", "#"], // /roadmaps/frontend/
+                    ["Backend Developer", "#"], // /roadmaps/backend/
+                    ["Full Stack Developer", "#"], // /roadmaps/full-stack/
+                    ["AI Engineer", "#"], // /roadmaps/ai-engineer/
+                    ["Data Engineer", "#"], // /roadmaps/data-engineer/
+                    ["DevOps Engineer", "#"], // /roadmaps/devops/
+                    ["Cybersecurity", "#"], // /roadmaps/cybersecurity/
+                    ["Software Engineer", "#"], // /roadmaps/software-engineer/
                   ].map(([title, href]) => (
                     <Link key={title} to={href}>
                       <span>{title}</span>

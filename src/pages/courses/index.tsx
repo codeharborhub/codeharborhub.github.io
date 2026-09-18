@@ -555,7 +555,8 @@ function CourseCard({
         </div>
 
         <Link
-          to={`/courses/${course.slug}/`}
+          // to={`/courses/${course.slug}/`}
+          to="#"
           className={styles.courseButton}
           aria-label={`View ${course.title}`}
         >
