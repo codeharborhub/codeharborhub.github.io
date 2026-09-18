@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+// @ts-ignore
 import Layout from "@theme/Layout";
+// @ts-ignore
 import Link from "@docusaurus/Link";
 
 import {
@@ -23,6 +25,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+// @ts-ignore
 import styles from "./styles.module.css";
 
 type Section = {
@@ -950,7 +953,7 @@ export default function TermsOfService(): React.JSX.Element {
 
               <div className={styles.finalActions}>
                 <Link
-                  to="/tutorial/"
+                  to="/tutorials/"
                   className={styles.primaryButton}
                 >
                   Start learning
