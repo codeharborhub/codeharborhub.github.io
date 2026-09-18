@@ -270,7 +270,7 @@ export default function Tutorials(): JSX.Element {
 
               <div className={styles.heroActions}>
                 <Link
-                  to="/tutorial/"
+                  to="/tutorials/"
                   className={`${styles.primaryButton} ${styles.largeButton}`}
                 >
                   <BookOpen size={19} />

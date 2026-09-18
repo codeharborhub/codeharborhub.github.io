@@ -816,7 +816,7 @@ export default function RoadmapPage(): React.JSX.Element {
         <section className={styles.exploreSection}>
           <div className="container">
             <div className={styles.exploreGrid}>
-              <Link className={styles.exploreCard} to="/tutorial/">
+              <Link className={styles.exploreCard} to="/tutorials/">
                 <BookOpen size={21} />
                 <div>
                   <h3>Tutorials</h3>
@@ -883,7 +883,7 @@ export default function RoadmapPage(): React.JSX.Element {
 
                 <Link
                   className={styles.finalSecondary}
-                  to="/tutorial/"
+                  to="/tutorials/"
                 >
                   Start learning
                 </Link>

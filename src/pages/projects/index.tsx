@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
+// @ts-ignore
 import Layout from "@theme/Layout";
+// @ts-ignore
 import Link from "@docusaurus/Link";
 
 import {
@@ -30,7 +32,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-
+// @ts-ignore
 import styles from "./styles.module.css";
 
 type Difficulty = "Beginner" | "Intermediate" | "Advanced";
@@ -67,7 +69,7 @@ const PROJECTS: Project[] = [
     duration: "1–2 weeks",
     technologies: ["HTML", "CSS", "JavaScript"],
     tags: ["Portfolio", "Responsive", "UI"],
-    href: "/projects/developer-portfolio/",
+    href: "#", // /projects/developer-portfolio/
     featured: true,
     popular: true,
     icon: <Globe size={22} />,
@@ -81,7 +83,7 @@ const PROJECTS: Project[] = [
     duration: "3–5 weeks",
     technologies: ["React", "Node.js", "PostgreSQL"],
     tags: ["SaaS", "Auth", "CRUD"],
-    href: "/projects/task-management-saas/",
+    href: "#", // /projects/task-management-saas/
     featured: true,
     popular: true,
     icon: <Layers3 size={22} />,
@@ -95,7 +97,7 @@ const PROJECTS: Project[] = [
     duration: "5–8 weeks",
     technologies: ["Next.js", "Node.js", "PostgreSQL"],
     tags: ["Commerce", "Payments", "Admin"],
-    href: "/projects/ecommerce-platform/",
+    href: "#", // /projects/ecommerce-platform/
     featured: true,
     icon: <BriefcaseBusiness size={22} />,
   },
@@ -108,7 +110,7 @@ const PROJECTS: Project[] = [
     duration: "3–4 weeks",
     technologies: ["React", "Node.js", "WebSocket"],
     tags: ["Realtime", "WebSocket", "Messaging"],
-    href: "/projects/realtime-chat/",
+    href: "#", // /projects/realtime-chat/
     popular: true,
     icon: <Users size={22} />,
   },
@@ -121,7 +123,7 @@ const PROJECTS: Project[] = [
     duration: "2–3 weeks",
     technologies: ["React", "TypeScript", "Charts"],
     tags: ["Analytics", "Dashboard", "Charts"],
-    href: "/projects/analytics-dashboard/",
+    href: "#", // /projects/analytics-dashboard/
     icon: <BarChart3 size={22} />,
   },
   {
@@ -133,7 +135,7 @@ const PROJECTS: Project[] = [
     duration: "2–4 weeks",
     technologies: ["Node.js", "Express", "PostgreSQL"],
     tags: ["REST API", "Backend", "Testing"],
-    href: "/projects/rest-api-platform/",
+    href: "#", // /projects/rest-api-platform/
     icon: <Server size={22} />,
   },
   {
@@ -145,7 +147,7 @@ const PROJECTS: Project[] = [
     duration: "4–7 weeks",
     technologies: ["React", "Python", "LLM API"],
     tags: ["AI", "LLM", "Developer Tools"],
-    href: "/projects/ai-developer-assistant/",
+    href: "#", // /projects/ai-developer-assistant/
     featured: true,
     icon: <Sparkles size={22} />,
   },
@@ -158,7 +160,7 @@ const PROJECTS: Project[] = [
     duration: "1–2 weeks",
     technologies: ["Node.js", "MongoDB", "Redis"],
     tags: ["API", "Caching", "Analytics"],
-    href: "/projects/url-shortener/",
+    href: "#", // /projects/url-shortener/
     icon: <Zap size={22} />,
   },
   {
@@ -170,7 +172,7 @@ const PROJECTS: Project[] = [
     duration: "6–10 weeks",
     technologies: ["Next.js", "Supabase", "TypeScript"],
     tags: ["EdTech", "LMS", "Progress"],
-    href: "/projects/learning-management-system/",
+    href: "#", // /projects/learning-management-system/
     popular: true,
     icon: <BookOpen size={22} />,
   },
@@ -183,7 +185,7 @@ const PROJECTS: Project[] = [
     duration: "4–6 weeks",
     technologies: ["React", "Python", "PostgreSQL"],
     tags: ["Security", "Monitoring", "Dashboard"],
-    href: "/projects/cybersecurity-dashboard/",
+    href: "#", // /projects/cybersecurity-dashboard/
     icon: <ShieldCheck size={22} />,
   },
   {
@@ -195,7 +197,7 @@ const PROJECTS: Project[] = [
     duration: "3–5 weeks",
     technologies: ["React", "Node.js", "MySQL"],
     tags: ["Inventory", "Business", "Admin"],
-    href: "/projects/inventory-management/",
+    href: "#", // /projects/inventory-management/
     icon: <Database size={22} />,
   },
   {
@@ -207,7 +209,7 @@ const PROJECTS: Project[] = [
     duration: "4–6 weeks",
     technologies: ["React", "Docker", "GitHub Actions"],
     tags: ["DevOps", "CI/CD", "Cloud"],
-    href: "/projects/devops-dashboard/",
+    href: "#", // /projects/devops-dashboard/
     icon: <Rocket size={22} />,
   },
 ];
@@ -219,7 +221,7 @@ const TRACKS: Track[] = [
       "Build responsive interfaces, dashboards, component systems and production-quality user experiences.",
     icon: <Globe size={23} />,
     projects: "20+ Projects",
-    href: "/projects/frontend/",
+    href: "#", // /projects/frontend/
   },
   {
     title: "Backend Engineering",
@@ -227,7 +229,7 @@ const TRACKS: Track[] = [
       "Work with APIs, databases, authentication, caching, queues and scalable backend architecture.",
     icon: <Server size={23} />,
     projects: "20+ Projects",
-    href: "/projects/backend/",
+    href: "#", // /projects/backend/
   },
   {
     title: "Full Stack Development",
@@ -235,7 +237,7 @@ const TRACKS: Track[] = [
       "Build complete products from frontend to backend, database, authentication and deployment.",
     icon: <Layers3 size={23} />,
     projects: "30+ Projects",
-    href: "/projects/full-stack/",
+    href: "#", // /projects/full-stack/
   },
   {
     title: "AI & Machine Learning",
@@ -243,7 +245,7 @@ const TRACKS: Track[] = [
       "Build practical AI applications, intelligent assistants, ML systems and data-driven products.",
     icon: <Sparkles size={23} />,
     projects: "15+ Projects",
-    href: "/projects/ai-ml/",
+    href: "#", // /projects/ai-ml/
   },
   {
     title: "Cybersecurity",
@@ -251,7 +253,7 @@ const TRACKS: Track[] = [
       "Create security-focused applications covering monitoring, authentication, vulnerabilities and defensive engineering.",
     icon: <ShieldCheck size={23} />,
     projects: "15+ Projects",
-    href: "/projects/cybersecurity/",
+    href: "#", // /projects/cybersecurity/
   },
   {
     title: "DevOps & Cloud",
@@ -259,7 +261,7 @@ const TRACKS: Track[] = [
       "Practice containers, CI/CD, deployment automation, cloud infrastructure and observability.",
     icon: <Rocket size={23} />,
     projects: "15+ Projects",
-    href: "/projects/devops/",
+    href: "#", // /projects/devops/
   },
 ];
 
@@ -380,7 +382,7 @@ export default function ProjectsPage(): React.JSX.Element {
               <div className={styles.heroActions}>
                 <Link
                   className={styles.primaryButton}
-                  to="/projects/all/"
+                  to="#" // /projects/all/
                 >
                   Explore Projects
                   <ArrowRight size={17} />
@@ -388,7 +390,7 @@ export default function ProjectsPage(): React.JSX.Element {
 
                 <Link
                   className={styles.secondaryButton}
-                  to="/projects/featured/"
+                  to="#" // /projects/featured/
                 >
                   <Star size={17} />
                   Featured Projects
@@ -709,7 +711,7 @@ export default function ProjectsPage(): React.JSX.Element {
             <div className={styles.centerAction}>
               <Link
                 className={styles.outlineButton}
-                to="/projects/all/"
+                to="#" // /projects/all/
               >
                 Browse Full Project Library
                 <ArrowRight size={17} />
@@ -833,7 +835,7 @@ export default function ProjectsPage(): React.JSX.Element {
 
                 <Link
                   className={styles.primaryButton}
-                  to="/projects/industry/"
+                  to="#" // /projects/industry/
                 >
                   Explore Industry Projects
                   <ArrowRight size={17} />
@@ -974,7 +976,7 @@ export default function ProjectsPage(): React.JSX.Element {
               <div className={styles.finalActions}>
                 <Link
                   className={styles.primaryButton}
-                  to="/projects/all/"
+                  to="#" // /projects/all/
                 >
                   Start Building
                   <ArrowRight size={17} />

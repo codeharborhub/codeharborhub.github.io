@@ -496,7 +496,8 @@ function CourseCard({
         </div>
 
         <h3>
-          <Link to={`/courses/${course.slug}/`}>{course.title}</Link>
+          {/* <Link to={`/courses/${course.slug}/`}>{course.title}</Link> */}
+          <Link to='#'>{course.title}</Link>
         </h3>
 
         <p>{course.description}</p>

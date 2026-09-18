@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
+// @ts-ignore
 import Layout from "@theme/Layout";
+// @ts-ignore
 import Link from "@docusaurus/Link";
 import {
   ArrowRight,
@@ -26,7 +28,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-
+// @ts-ignore
 import "./styles.css";
 
 type RoadmapLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert";
@@ -229,7 +231,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "3–5 months",
     skills: ["Node.js", "Express", "REST", "Auth", "SQL"],
-    href: "/roadmaps/nodejs/",
+    href: "#", // /roadmaps/nodejs/
     icon: <Server />,
     popular: true,
   },
@@ -243,7 +245,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "4–6 months",
     skills: ["Python", "FastAPI", "Django", "PostgreSQL"],
-    href: "/roadmaps/python-backend/",
+    href: "#", // /roadmaps/python-backend/
     icon: <Server />,
   },
 
@@ -256,7 +258,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "3–5 months",
     skills: ["REST", "GraphQL", "OpenAPI", "Auth", "Testing"],
-    href: "/roadmaps/api-development/",
+    href: "#", // /roadmaps/api-development/
     icon: <Database />,
     industry: true,
   },
@@ -274,7 +276,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "6–9 months",
     skills: ["Kotlin", "Android", "APIs", "SQLite", "Testing"],
-    href: "/roadmaps/android/",
+    href: "#", // /roadmaps/android/
     icon: <Code2 />,
   },
 
@@ -287,7 +289,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "4–6 months",
     skills: ["Dart", "Flutter", "State", "APIs", "Firebase"],
-    href: "/roadmaps/flutter/",
+    href: "#", // /roadmaps/flutter/
     icon: <Zap />,
   },
 
@@ -304,7 +306,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "9–15 months",
     skills: ["Python", "ML", "LLMs", "RAG", "MLOps"],
-    href: "/roadmaps/ai-engineer/",
+    href: "#", // /roadmaps/ai-engineer/
     icon: <BrainCircuit />,
     featured: true,
     popular: true,
@@ -320,7 +322,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "9–12 months",
     skills: ["Python", "Math", "ML", "Deep Learning", "MLOps"],
-    href: "/roadmaps/machine-learning/",
+    href: "#", // /roadmaps/machine-learning/
     icon: <BrainCircuit />,
     industry: true,
   },
@@ -334,7 +336,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "8–12 months",
     skills: ["PyTorch", "Neural Networks", "CV", "NLP"],
-    href: "/roadmaps/deep-learning/",
+    href: "#", // /roadmaps/deep-learning/
     icon: <BrainCircuit />,
   },
 
@@ -347,7 +349,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "4–8 months",
     skills: ["LLMs", "RAG", "Agents", "Embeddings", "Evaluation"],
-    href: "/roadmaps/generative-ai/",
+    href: "#", // /roadmaps/generative-ai/
     icon: <Sparkles />,
     featured: true,
     industry: true,
@@ -366,7 +368,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Beginner",
     duration: "4–6 months",
     skills: ["Excel", "SQL", "Python", "Statistics", "BI"],
-    href: "/roadmaps/data-analyst/",
+    href: "#", // /roadmaps/data-analyst/
     icon: <Database />,
     popular: true,
   },
@@ -380,7 +382,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "8–12 months",
     skills: ["Python", "Statistics", "SQL", "ML", "Visualization"],
-    href: "/roadmaps/data-scientist/",
+    href: "#", // /roadmaps/data-scientist/
     icon: <Database />,
   },
 
@@ -393,7 +395,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "8–12 months",
     skills: ["SQL", "Python", "ETL", "Spark", "Cloud"],
-    href: "/roadmaps/data-engineer/",
+    href: "#", // /roadmaps/data-engineer/
     icon: <Database />,
     industry: true,
   },
@@ -411,7 +413,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "8–12 months",
     skills: ["Linux", "Docker", "Kubernetes", "CI/CD", "Cloud"],
-    href: "/roadmaps/devops/",
+    href: "#", // /roadmaps/devops/
     icon: <Server />,
     featured: true,
     industry: true,
@@ -426,7 +428,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "7–10 months",
     skills: ["AWS", "Azure", "Networking", "IAM", "Terraform"],
-    href: "/roadmaps/cloud/",
+    href: "#", // /roadmaps/cloud/
     icon: <Globe2 />,
     industry: true,
   },
@@ -440,7 +442,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Expert",
     duration: "12–18 months",
     skills: ["SRE", "Kubernetes", "Observability", "Systems"],
-    href: "/roadmaps/sre/",
+    href: "#", // /roadmaps/sre/
     icon: <Server />,
   },
 
@@ -457,7 +459,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Beginner",
     duration: "6–9 months",
     skills: ["Networking", "Linux", "Security", "Web Security"],
-    href: "/roadmaps/cybersecurity/",
+    href: "#", // /roadmaps/cybersecurity/
     icon: <ShieldCheck />,
     featured: true,
   },
@@ -471,7 +473,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "8–12 months",
     skills: ["Linux", "Networking", "Web Security", "Pentesting"],
-    href: "/roadmaps/ethical-hacking/",
+    href: "#", // /roadmaps/ethical-hacking/
     icon: <ShieldCheck />,
     industry: true,
   },
@@ -485,7 +487,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Expert",
     duration: "12–18 months",
     skills: ["AppSec", "Cloud Security", "IAM", "Detection"],
-    href: "/roadmaps/security-engineer/",
+    href: "#", // /roadmaps/security-engineer/
     icon: <ShieldCheck />,
   },
 
@@ -502,7 +504,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Beginner",
     duration: "3–5 months",
     skills: ["Python", "OOP", "DSA", "APIs", "Testing"],
-    href: "/roadmaps/python/",
+    href: "#", // /roadmaps/python/
     icon: <Terminal />,
     popular: true,
   },
@@ -516,7 +518,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "5–8 months",
     skills: ["Java", "OOP", "Collections", "Spring", "SQL"],
-    href: "/roadmaps/java/",
+    href: "#", // /roadmaps/java/
     icon: <Code2 />,
   },
 
@@ -529,7 +531,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "4–6 months",
     skills: ["C++", "STL", "OOP", "Memory", "DSA"],
-    href: "/roadmaps/cpp/",
+    href: "#", // /roadmaps/cpp/
     icon: <Terminal />,
   },
 
@@ -546,7 +548,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "12–24 months",
     skills: ["DSA", "OS", "DBMS", "Networks", "Architecture"],
-    href: "/roadmaps/computer-science/",
+    href: "#", // /roadmaps/computer-science/
     icon: <BookOpen />,
     featured: true,
   },
@@ -560,7 +562,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Intermediate",
     duration: "4–8 months",
     skills: ["Arrays", "Trees", "Graphs", "DP", "Algorithms"],
-    href: "/roadmaps/dsa/",
+    href: "#", // /roadmaps/dsa/
     icon: <Trophy />,
     popular: true,
   },
@@ -574,7 +576,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Expert",
     duration: "4–8 months",
     skills: ["Architecture", "Scaling", "Databases", "Caching"],
-    href: "/roadmaps/system-design/",
+    href: "#", // /roadmaps/system-design/
     icon: <Layers3 />,
     industry: true,
   },
@@ -592,7 +594,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Advanced",
     duration: "3–6 months",
     skills: ["DSA", "CS", "System Design", "Behavioral"],
-    href: "/roadmaps/sde-interview/",
+    href: "#", // /roadmaps/sde-interview/
     icon: <BriefcaseBusiness />,
     featured: true,
     popular: true,
@@ -607,7 +609,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Beginner",
     duration: "1–3 months",
     skills: ["Git", "GitHub", "Issues", "PRs", "Code Review"],
-    href: "/roadmaps/open-source/",
+    href: "#", // /roadmaps/open-source/
     icon: <Users />,
   },
 
@@ -620,7 +622,7 @@ const ROADMAPS: Roadmap[] = [
     level: "Beginner",
     duration: "1–3 months",
     skills: ["Markdown", "Docs", "APIs", "Git", "Writing"],
-    href: "/roadmaps/technical-writer/",
+    href: "#", // /roadmaps/technical-writer/
     icon: <BookOpen />,
   },
 ];
@@ -825,7 +827,7 @@ export default function RoadmapsPage(): JSX.Element {
               </a>
 
               <Link
-                to="/tutorial/"
+                to="/tutorials/"
                 className="button button--secondary"
               >
                 Start Learning
@@ -1300,7 +1302,7 @@ export default function RoadmapsPage(): JSX.Element {
 
                 <div className="roadmaps-cta__actions">
                   <Link
-                    to="/tutorial/"
+                    to="/tutorials/"
                     className="button button--primary"
                   >
                     Start Learning

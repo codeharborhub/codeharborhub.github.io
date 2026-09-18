@@ -75,7 +75,7 @@ const PHASES: RoadmapPhase[] = [
           "DNS basics",
         ],
         status: "completed",
-        href: "/docs/html/",
+        href: "#",
         icon: <Globe2 />,
       },
       {
@@ -92,7 +92,7 @@ const PHASES: RoadmapPhase[] = [
           "Nesting",
         ],
         status: "completed",
-        href: "/docs/html/introduction/",
+        href: "#",
         icon: <FileCode2 />,
       },
       {
@@ -108,7 +108,7 @@ const PHASES: RoadmapPhase[] = [
           "Document hierarchy",
         ],
         status: "current",
-        href: "/docs/html/document-structure/",
+        href: "#",
         icon: <Layers3 />,
       },
     ],
@@ -136,7 +136,7 @@ const PHASES: RoadmapPhase[] = [
           "Quotes",
         ],
         status: "upcoming",
-        href: "/docs/html/text/",
+        href: "#",
         icon: <BookOpen />,
       },
       {
@@ -153,7 +153,7 @@ const PHASES: RoadmapPhase[] = [
           "Download links",
         ],
         status: "upcoming",
-        href: "/docs/html/links/",
+        href: "#",
         icon: <ArrowUpRight />,
       },
       {
@@ -169,7 +169,7 @@ const PHASES: RoadmapPhase[] = [
           "List semantics",
         ],
         status: "upcoming",
-        href: "/docs/html/lists/",
+        href: "#",
         icon: <Menu />,
       },
       {
@@ -179,7 +179,7 @@ const PHASES: RoadmapPhase[] = [
           "Use images correctly while considering performance and accessibility.",
         topics: ["<img>", "src", "alt", "width", "height", "Responsive images"],
         status: "upcoming",
-        href: "/docs/html/images/",
+        href: "#",
         icon: <Monitor />,
       },
     ],
@@ -208,7 +208,7 @@ const PHASES: RoadmapPhase[] = [
           "<footer>",
         ],
         status: "upcoming",
-        href: "/docs/html/semantic-elements/",
+        href: "#",
         icon: <Layers3 />,
       },
       {
@@ -224,7 +224,7 @@ const PHASES: RoadmapPhase[] = [
           "Heading hierarchy",
         ],
         status: "upcoming",
-        href: "/docs/html/content-structure/",
+        href: "#",
         icon: <Code2 />,
       },
       {
@@ -239,7 +239,7 @@ const PHASES: RoadmapPhase[] = [
           "Avoiding unnecessary markup",
         ],
         status: "upcoming",
-        href: "/docs/html/div-span/",
+        href: "#",
         icon: <Terminal />,
       },
     ],
@@ -266,7 +266,7 @@ const PHASES: RoadmapPhase[] = [
           "form submission",
         ],
         status: "upcoming",
-        href: "/docs/html/forms/",
+        href: "#",
         icon: <FileCode2 />,
       },
       {
@@ -275,7 +275,7 @@ const PHASES: RoadmapPhase[] = [
         description: "Master the most common HTML input controls.",
         topics: ["input", "textarea", "select", "option", "button", "label"],
         status: "upcoming",
-        href: "/docs/html/form-controls/",
+        href: "#",
         icon: <Zap />,
       },
       {
@@ -294,7 +294,7 @@ const PHASES: RoadmapPhase[] = [
           "radio",
         ],
         status: "upcoming",
-        href: "/docs/html/input-types/",
+        href: "#",
         icon: <Code2 />,
       },
       {
@@ -312,7 +312,7 @@ const PHASES: RoadmapPhase[] = [
           "type validation",
         ],
         status: "upcoming",
-        href: "/docs/html/form-validation/",
+        href: "#",
         icon: <ShieldCheck />,
       },
     ],
@@ -340,7 +340,7 @@ const PHASES: RoadmapPhase[] = [
           "<tfoot>",
         ],
         status: "upcoming",
-        href: "/docs/html/tables/",
+        href: "#",
         icon: <Layers3 />,
       },
       {
@@ -356,7 +356,7 @@ const PHASES: RoadmapPhase[] = [
           "column headers",
         ],
         status: "upcoming",
-        href: "/docs/html/accessible-tables/",
+        href: "#",
         icon: <Accessibility />,
       },
     ],
@@ -383,7 +383,7 @@ const PHASES: RoadmapPhase[] = [
           "fallback content",
         ],
         status: "upcoming",
-        href: "/docs/html/audio-video/",
+        href: "#",
         icon: <Monitor />,
       },
       {
@@ -397,7 +397,7 @@ const PHASES: RoadmapPhase[] = [
           "external content",
         ],
         status: "upcoming",
-        href: "/docs/html/iframe/",
+        href: "#",
         icon: <Globe2 />,
       },
       {
@@ -413,7 +413,7 @@ const PHASES: RoadmapPhase[] = [
           "image performance",
         ],
         status: "upcoming",
-        href: "/docs/html/responsive-images/",
+        href: "#",
         icon: <Rocket />,
       },
     ],
@@ -440,7 +440,7 @@ const PHASES: RoadmapPhase[] = [
           "robots",
         ],
         status: "upcoming",
-        href: "/docs/html/metadata/",
+        href: "#",
         icon: <Search />,
       },
       {
@@ -457,7 +457,7 @@ const PHASES: RoadmapPhase[] = [
           "Canonical URLs",
         ],
         status: "upcoming",
-        href: "/docs/html/seo/",
+        href: "#",
         icon: <Globe2 />,
       },
       {
@@ -473,7 +473,7 @@ const PHASES: RoadmapPhase[] = [
           "Social descriptions",
         ],
         status: "upcoming",
-        href: "/docs/html/social-metadata/",
+        href: "#",
         icon: <Sparkles />,
       },
     ],
@@ -500,7 +500,7 @@ const PHASES: RoadmapPhase[] = [
           "Semantic HTML",
         ],
         status: "upcoming",
-        href: "/docs/html/accessibility/",
+        href: "#",
         icon: <Accessibility />,
       },
       {
@@ -516,7 +516,7 @@ const PHASES: RoadmapPhase[] = [
           "Native semantics",
         ],
         status: "upcoming",
-        href: "/docs/html/aria/",
+        href: "#",
         icon: <ShieldCheck />,
       },
       {
@@ -532,7 +532,7 @@ const PHASES: RoadmapPhase[] = [
           "Keyboard navigation",
         ],
         status: "upcoming",
-        href: "/docs/html/accessible-forms/",
+        href: "#",
         icon: <CheckCircle2 />,
       },
     ],
@@ -552,7 +552,7 @@ const PHASES: RoadmapPhase[] = [
         description: "Create native modal and non-modal dialog experiences.",
         topics: ["<dialog>", "showModal()", "close()", "returnValue"],
         status: "upcoming",
-        href: "/docs/html/dialog/",
+        href: "#",
         icon: <Monitor />,
       },
       {
@@ -566,7 +566,7 @@ const PHASES: RoadmapPhase[] = [
           "Progressive enhancement",
         ],
         status: "upcoming",
-        href: "/docs/html/details-summary/",
+        href: "#",
         icon: <ChevronDown />,
       },
       {
@@ -581,7 +581,7 @@ const PHASES: RoadmapPhase[] = [
           "Reusable markup",
         ],
         status: "upcoming",
-        href: "/docs/html/template/",
+        href: "#",
         icon: <Layers3 />,
       },
       {
@@ -596,7 +596,7 @@ const PHASES: RoadmapPhase[] = [
           "Component architecture",
         ],
         status: "upcoming",
-        href: "/docs/html/web-components/",
+        href: "#",
         icon: <Code2 />,
       },
     ],
@@ -622,7 +622,7 @@ const PHASES: RoadmapPhase[] = [
           "Security headers",
         ],
         status: "upcoming",
-        href: "/docs/html/security/",
+        href: "#",
         icon: <Lock />,
       },
       {
@@ -638,7 +638,7 @@ const PHASES: RoadmapPhase[] = [
           "Sanitization",
         ],
         status: "upcoming",
-        href: "/docs/html/xss/",
+        href: "#",
         icon: <ShieldCheck />,
       },
       {
@@ -653,7 +653,7 @@ const PHASES: RoadmapPhase[] = [
           "Third-party content",
         ],
         status: "upcoming",
-        href: "/docs/html/safe-embeds/",
+        href: "#",
         icon: <Lock />,
       },
     ],
@@ -679,7 +679,7 @@ const PHASES: RoadmapPhase[] = [
           "Code review",
         ],
         status: "upcoming",
-        href: "/docs/html/code-quality/",
+        href: "#",
         icon: <CheckCircle2 />,
       },
       {
@@ -693,7 +693,7 @@ const PHASES: RoadmapPhase[] = [
           "Validation workflows",
         ],
         status: "upcoming",
-        href: "/docs/html/validation/",
+        href: "#",
         icon: <Check />,
       },
       {
@@ -709,7 +709,7 @@ const PHASES: RoadmapPhase[] = [
           "DOM size",
         ],
         status: "upcoming",
-        href: "/docs/html/performance/",
+        href: "#",
         icon: <Zap />,
       },
       {
@@ -719,7 +719,7 @@ const PHASES: RoadmapPhase[] = [
           "Integrate HTML development into a modern Git-based workflow.",
         topics: ["Git", "GitHub", "Code review", "Pull requests", "Deployment"],
         status: "upcoming",
-        href: "/docs/html/workflow/",
+        href: "#",
         icon: <Terminal />,
       },
     ],
@@ -745,7 +745,7 @@ const PHASES: RoadmapPhase[] = [
           "Accessibility",
         ],
         status: "upcoming",
-        href: "/projects/html-portfolio/",
+        href: "#",
         icon: <Trophy />,
       },
       {
@@ -761,7 +761,7 @@ const PHASES: RoadmapPhase[] = [
           "Accessibility",
         ],
         status: "upcoming",
-        href: "/projects/html-blog/",
+        href: "#",
         icon: <BookOpen />,
       },
       {
@@ -771,7 +771,7 @@ const PHASES: RoadmapPhase[] = [
           "Create a professional product landing page ready for CSS styling.",
         topics: ["Hero", "Features", "Pricing", "FAQ", "CTA", "Footer"],
         status: "upcoming",
-        href: "/projects/html-landing-page/",
+        href: "#",
         icon: <Rocket />,
       },
       {
@@ -788,7 +788,7 @@ const PHASES: RoadmapPhase[] = [
           "Git",
         ],
         status: "upcoming",
-        href: "/docs/html/industry-ready/",
+        href: "#",
         icon: <Award />,
       },
     ],
@@ -800,19 +800,19 @@ const QUICK_PATHS = [
     title: "HTML Fundamentals",
     description: "Start from zero and learn the core language.",
     icon: <BookOpen />,
-    href: "/docs/html/",
+    href: "#",
   },
   {
     title: "Semantic HTML",
     description: "Write meaningful, accessible document structure.",
     icon: <Layers3 />,
-    href: "/docs/html/semantic-elements/",
+    href: "#",
   },
   {
     title: "HTML Accessibility",
     description: "Build interfaces usable by everyone.",
     icon: <Accessibility />,
-    href: "/docs/html/accessibility/",
+    href: "#",
   },
   {
     title: "HTML Projects",
@@ -964,7 +964,7 @@ export default function HTMLRoadmapPage(): JSX.Element {
                 </p>
 
                 <div className={styles.heroActions}>
-                  <Link to="/docs/html/" className="button button--primary">
+                  <Link to="#" className="button button--primary">
                     Start HTML
                     <ArrowRight size={18} />
                   </Link>
@@ -1347,7 +1347,7 @@ export default function HTMLRoadmapPage(): JSX.Element {
                 </p>
               </div>
 
-              <Link to="/roadmaps/css/" className="button button--primary">
+              <Link to="#" className="button button--primary">
                 CSS Roadmap
                 <ArrowRight size={18} />
               </Link>
@@ -1381,7 +1381,7 @@ export default function HTMLRoadmapPage(): JSX.Element {
                 </p>
 
                 <div className={styles.ctaActions}>
-                  <Link to="/docs/html/" className="button button--primary">
+                  <Link to="#" className="button button--primary">
                     Start Learning HTML
                     <ArrowRight size={18} />
                   </Link>

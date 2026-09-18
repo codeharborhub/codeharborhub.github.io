@@ -1,8 +1,12 @@
 import React from "react";
+// @ts-ignore
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+// @ts-ignore
 import Layout from "@theme/Layout";
+// @ts-ignore
 import Link from "@docusaurus/Link";
 import books from "../../database/ebooks";
+// @ts-ignore
 import Head from "@docusaurus/Head";
 
 export default function Books(): JSX.Element {
