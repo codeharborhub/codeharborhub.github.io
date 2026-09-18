@@ -1,397 +1,751 @@
+import React, { FormEvent, useState } from "react";
+// @ts-ignore
 import Layout from "@theme/Layout";
-import styles from "./Contact.module.css";
-import React, { useState, ChangeEvent, FormEvent } from "react";
-import { motion } from "framer-motion";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
-import { FaYoutube, FaDiscord, FaLinkedin } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
-import Popup from "../../components/popup/popup";
-import axios from 'axios'
+// @ts-ignore
 import Link from "@docusaurus/Link";
-// import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-// Interface defining the structure of form values
+
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronDown,
+  Clock3,
+  Code2,
+  ExternalLink,
+  Github,
+  HelpCircle,
+  Mail,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  XCircle,
+} from "lucide-react";
+// @ts-ignore
+import styles from "./styles.module.css";
+
+type FeedbackType =
+  | "Question"
+  | "Suggestion"
+  | "Issue"
+  | "Contribution"
+  | "Partnership"
+  | "Other";
+
 interface FormValues {
   fullName: string;
   email: string;
   phone: string;
-  message: string;
-  feedbackType: string;
+  feedbackType: FeedbackType;
   otherFeedback: string;
+  message: string;
 }
 
-/**
- * Renders the contact page component.
- * @returns {JSX.Element} A JSX element for the contact page.
- */
-export default function Contact(): JSX.Element {
-  // const {
-  //   siteConfig: { customFields },
-  // } = useDocusaurusContext();
-  // State to manage form values
-  const [formValues, setFormValues] = useState<FormValues>({
-    fullName: "",
-    email: "",
-    phone: "",
-    message: "",
-    feedbackType: "Question",
-    otherFeedback: "",
-  });
-    const [checker,setChecker]=useState({popup:false,status:false,loading:false})
-  // Function to handle input changes for text inputs, textarea, and select
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+type SubmitState = "idle" | "loading" | "success" | "error";
+
+const INITIAL_FORM: FormValues = {
+  fullName: "",
+  email: "",
+  phone: "",
+  feedbackType: "Question",
+  otherFeedback: "",
+  message: "",
+};
+
+const feedbackOptions: FeedbackType[] = [
+  "Question",
+  "Suggestion",
+  "Issue",
+  "Contribution",
+  "Partnership",
+  "Other",
+];
+
+const contactChannels = [
+  {
+    title: "Email",
+    description: "For general questions, feedback and collaboration.",
+    value: "codeharborhub@gmail.com",
+    href: "mailto:codeharborhub@gmail.com",
+    icon: Mail,
+  },
+  {
+    title: "GitHub",
+    description: "Explore our open-source projects and repositories.",
+    value: "CodeHarborHub",
+    href: "https://github.com/CodeHarborHub",
+    icon: Github,
+  },
+  {
+    title: "Community",
+    description: "Connect with developers and contributors.",
+    value: "Join the community",
+    href: "https://discord.com/invite/c53FQn3pRv",
+    icon: Users,
+  },
+];
+
+const faqs = [
+  {
+    question: "How can I report a problem with the website?",
+    answer:
+      "Use the contact form and select Issue. Include the page URL, what went wrong, and the steps needed to reproduce the problem.",
+  },
+  {
+    question: "How can I contribute to CodeHarborHub?",
+    answer:
+      "You can contribute through documentation, tutorials, code, projects, issues, reviews and community support.",
+  },
+  {
+    question: "Can I suggest a new tutorial or roadmap?",
+    answer:
+      "Yes. Select Suggestion in the contact form and describe the topic, target audience and what you would like to learn.",
+  },
+  {
+    question: "Can organizations collaborate with CodeHarborHub?",
+    answer:
+      "Yes. Select Partnership and provide enough context about the organization, proposed collaboration and expected outcome.",
+  },
+];
+
+function Contact(): React.JSX.Element {
+  const [form, setForm] = useState<FormValues>(INITIAL_FORM);
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const handleChange = (
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
-    const { name, value } = e.target;
-    setFormValues((prevValues) => ({
-      ...prevValues,
+    const { name, value } = event.target;
+
+    setForm((current) => ({
+      ...current,
       [name]: value,
     }));
   };
 
-  // Function to handle phone number input changes
-  const handlePhoneChange = (phone: string) => {
-    setFormValues((prevValues) => ({
-      ...prevValues,
-      phone: phone,
-    }));
-  };
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  // Function to handle form submission
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    setSubmitState("loading");
+    setErrorMessage("");
 
-    setChecker((prev) => ({ ...prev, loading: true }));
+    const payload = {
+      name: form.fullName.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      message: form.message.trim(),
+      feedbackType: form.feedbackType,
+      otherFeedback: form.otherFeedback.trim(),
+    };
 
     try {
-      // Sending form data to the backend with correct headers
-      const response = await axios.post(
+      const response = await fetch(
         "https://chh-backend.vercel.app/email-contact",
         {
-          name: formValues.fullName,
-          email: formValues.email,
-          phone: formValues.phone,
-          message: formValues.message,
-          feedbackType: formValues.feedbackType,
-          otherFeedback: formValues.otherFeedback,
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify(payload),
         }
       );
 
-      // Resetting form values after submission
-      setFormValues({
-        fullName: "",
-        email: "",
-        phone: "",
-        message: "",
-        feedbackType: "Question",
-        otherFeedback: "",
-      });
+      let data: unknown = null;
 
-      if (response.data.ok) {
-        setChecker((prev) => ({
-          ...prev,
-          popup: true,
-          status: true,
-          loading: false,
-        }));
-      } else {
-        setChecker((prev) => ({
-          ...prev,
-          popup: true,
-          status: false,
-          loading: false,
-        }));
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
       }
-    } catch (error) {
-      console.error("Error submitting the form:", error);
-      setChecker((prev) => ({
-        ...prev,
-        popup: true,
-        status: false,
-        loading: false,
-      }));
-    }
 
-    // Hide popup after 2 seconds
-    setTimeout(() => {
-      setChecker((prev) => ({
-        ...prev,
-        popup: false,
-        status: false,
-      }));
-    }, 2000);
+      if (!response.ok) {
+        const message =
+          typeof data === "object" &&
+          data !== null &&
+          "message" in data &&
+          typeof (data as { message?: unknown }).message === "string"
+            ? (data as { message: string }).message
+            : "Unable to send your message. Please try again.";
+
+        throw new Error(message);
+      }
+
+      setSubmitState("success");
+      setForm(INITIAL_FORM);
+
+      window.setTimeout(() => {
+        setSubmitState("idle");
+      }, 6000);
+    } catch (error) {
+      console.error("Contact form error:", error);
+
+      setSubmitState("error");
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again later."
+      );
+    }
   };
 
   return (
-    <Layout>
-      {/* Contact section with styled components */}
-      <section id="contact" className={styles.main__contact}>
-        {/* Background divs for styling */}
-        {checker.popup? <Popup status={checker.status?"✔":"✖"} message={checker.status?"Success":"Something went wrong"} />:<></> }
-        <div className={styles.main__contact_child1} />
-        <div className={styles.main__contact_child2} />
-        <div className={styles.main__contact_container}>
-          <div className={styles.main__contact_contains}>
-            <div className={styles.main__contact_contains_left}>
-              {/* Section for contact information */}
-              <div className={styles.main__contact_ud_wrapper}>
-                <div className={styles.ud_contact_title}>
-                  {/* Motion-animated title */}
-                  <motion.span
-                    initial={{ opacity: 0, x: -15 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 1,
-                      type: "spring",
-                      stiffness: 100,
-                      delay: 0.2,
-                    }}
-                    className={styles.contact_us}
-                  >
-                    <b>CONTACT US</b>
-                  </motion.span>
-                  {/* Motion-animated heading */}
-                  <motion.h2
-                    initial={{ opacity: 0, x: -150 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 1,
-                      type: "spring",
-                      stiffness: 100,
-                      delay: 0.5,
-                    }}
-                    className={styles.contact_heading}
-                  >
-                    Let&apos;s talk about your problem.
-                  </motion.h2>
+    <Layout
+      title="Contact CodeHarborHub"
+      description="Contact CodeHarborHub for questions, suggestions, issues, contributions and partnerships."
+    >
+      <main className={styles.page}>
+        {/* Hero */}
+        <section className={styles.hero}>
+          <div className={styles.heroGlow} />
+
+          <div className={styles.container}>
+            <div className={styles.heroContent}>
+              <div className={styles.eyebrow}>
+                <MessageSquare size={16} aria-hidden="true" />
+                <span>Contact CodeHarborHub</span>
+              </div>
+
+              <h1>
+                Let&apos;s build the future of
+                <span> developer learning.</span>
+              </h1>
+
+              <p>
+                Have a question, found an issue, want to contribute, or have an
+                idea for CodeHarborHub? Send us a message and our community can
+                help move it forward.
+              </p>
+
+              <div className={styles.heroActions}>
+                <a href="#contact-form" className={styles.primaryButton}>
+                  Send a message
+                  <ArrowRight size={18} aria-hidden="true" />
+                </a>
+
+                <Link
+                  to="/contributing/"
+                  className={styles.secondaryButton}
+                >
+                  Contribute
+                  <Code2 size={18} aria-hidden="true" />
+                </Link>
+              </div>
+
+              <div className={styles.heroTrust}>
+                <div>
+                  <CheckCircle2 size={17} aria-hidden="true" />
+                  <span>Open source</span>
                 </div>
-                {/* Contact information items */}
-                <div className={styles.contact_info}>
-                  {/* Animated div for location */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 1,
-                      type: "spring",
-                      stiffness: 100,
-                      delay: 0.5,
-                    }}
-                    className={styles.contact_info_item}
-                  >
-                    {/* Location icon */}
-                    <div className={styles.icon}>
-                      <svg
-                        width="29"
-                        height="35"
-                        viewBox="0 0 29 35"
-                        className={styles.fill_current}
-                      >
-                        <path d="M14.5 0.710938C6.89844 0.710938 0.664062 6.72656 0.664062 14.0547C0.664062 19.9062 9.03125 29.5859 12.6406 33.5234C13.1328 34.0703 13.7891 34.3437 14.5 34.3437C15.2109 34.3437 15.8672 34.0703 16.3594 33.5234C19.9688 29.6406 28.3359 19.9062 28.3359 14.0547C28.3359 6.67188 22.1016 0.710938 14.5 0.710938ZM14.9375 32.2109C14.6641 32.4844 14.2812 32.4844 14.0625 32.2109C11.3828 29.3125 2.57812 19.3594 2.57812 14.0547C2.57812 7.71094 7.9375 2.625 14.5 2.625C21.0625 2.625 26.4219 7.76562 26.4219 14.0547C26.4219 19.3594 17.6172 29.2578 14.9375 32.2109Z" />
-                        <path d="M14.5 8.58594C11.2734 8.58594 8.59375 11.2109 8.59375 14.4922C8.59375 17.7188 11.2187 20.3984 14.5 20.3984C17.7812 20.3984 20.4062 17.7734 20.4062 14.4922C20.4062 11.2109 17.7266 8.58594 14.5 8.58594ZM14.5 18.4297C12.3125 18.4297 10.5078 16.625 10.5078 14.4375C10.5078 12.25 12.3125 10.4453 14.5 10.4453C16.6875 10.4453 18.4922 12.25 18.4922 14.4375C18.4922 16.625 16.6875 18.4297 14.5 18.4297Z" />
-                      </svg>
-                    </div>
-                    {/* Location information */}
-                    <div>
-                      <h5 className={styles.location_heading}>Our Location</h5>
-                      <p className={styles.location_text}>
-                        Mandsaur, Madhya Pradesh, India - 458002
-                      </p>
-                    </div>
-                  </motion.div>
-                  {/* Animated div for contact email */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 1,
-                      type: "spring",
-                      stiffness: 100,
-                      delay: 0.5,
-                    }}
-                    className={styles.contact_info_item}
-                  >
-                    {/* Email icon */}
-                    <div className={styles.icon}>
-                      <svg
-                        width="34"
-                        height="25"
-                        viewBox="0 0 34 25"
-                        className={styles.fill_current}
-                      >
-                        <path d="M30.5156 0.960938H3.17188C1.42188 0.960938 0 2.38281 0 4.13281V20.9219C0 22.6719 1.42188 24.0938 3.17188 24.0938H30.5156C32.2656 24.0938 33.6875 22.6719 33.6875 20.9219V4.13281C33.6875 2.38281 32.2656 0.960938 30.5156 0.960938ZM30.5156 2.875C30.7891 2.875 31.0078 2.92969 31.2266 3.09375L17.6094 11.3516C17.1172 11.625 16.5703 11.625 16.0781 11.3516L2.46094 3.09375C2.67969 2.98438 2.89844 2.875 3.17188 2.875H30.5156ZM30.5156 22.125H3.17188C2.51562 22.125 1.91406 21.5781 1.91406 20.8672V5.00781L15.0391 12.9922C15.5859 13.3203 16.1875 13.4844 16.7891 13.4844C17.3906 13.4844 17.9922 13.3203 18.5391 12.9922L31.6641 5.00781V20.8672C31.7734 21.5781 31.1719 22.125 30.5156 22.125Z" />
-                      </svg>
-                    </div>
-                    {/* Email information */}
-                    <div>
-                      <h5 className={styles.help_heading}>How Can We Help?</h5>
-                      <p className={styles.help_text}>
-                        codeharborhub@gmail.com
-                      </p>
-                    </div>
-                  </motion.div>
+
+                <div>
+                  <CheckCircle2 size={17} aria-hidden="true" />
+                  <span>Community driven</span>
+                </div>
+
+                <div>
+                  <CheckCircle2 size={17} aria-hidden="true" />
+                  <span>Built for learners</span>
                 </div>
               </div>
-              {/* Social Media Icons*/}
-              <motion.div>
-                <h5 className={styles.social_media_heading}>Find Us On</h5>
-                <div className={styles.social_media_icons}>
-                  <Link
-                    to="https://www.linkedin.com/company/codeharborhub/"
-                    target="_blank" rel="noopener noreferrer"
-                  >
-                    <FaLinkedin />
-                  </Link>
-                  <Link to="https://www.youtube.com/channel/@ajay-dhangar" target="_blank" rel="noopener noreferrer">
-                    <FaYoutube />
-                  </Link>
-                  <Link
-                    href="https://discord.com/invite/c53FQn3pRv"
-                    target="_blank"
-                  >
-                    <FaDiscord />
-                  </Link>
-                  <Link to="https://x.com/CodesWithAjay?mx=2" target="_blank" rel="noopener noreferrer">
-                    <FaXTwitter />
-                  </Link>
-                </div>
-              </motion.div>
             </div>
-            {/* Section for the contact form */}
-            <motion.div
-              initial={{ opacity: 0, x: 15 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{
-                duration: 1,
-                type: "spring",
-                stiffness: 100,
-                delay: 0.5,
-              }}
-              className={styles.main__contact_contains_right}
-            >
-              <div className={styles.form_container}>
-                {/* Form heading */}
-                <h3 className={styles.form_heading}>Send us a Message</h3>
-                {/* Actual form */}
-                <form onSubmit={handleSubmit}>
-                  {/* Form input for full name */}
-                  <div className={styles.form_group}>
-                    <label htmlFor="fullName" className={styles.form_label}>
-                      Full Name*
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      placeholder="Ajay Dhangar"
-                      value={formValues.fullName}
-                      onChange={handleInputChange}
-                      className={styles.form_input}
-                      required
-                    />
+
+            <div className={styles.heroVisual} aria-hidden="true">
+              <div className={styles.codeWindow}>
+                <div className={styles.windowHeader}>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+
+                <div className={styles.codeBody}>
+                  <div>
+                    <span className={styles.codeKeyword}>const</span>{" "}
+                    <span className={styles.codeVariable}>community</span>{" "}
+                    = {"{"}
                   </div>
-                  {/* Form input for email */}
-                  <div className={styles.form_group}>
-                    <label htmlFor="email" className={styles.form_label}>
-                      Email*
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="example@gmail.com"
-                      value={formValues.email}
-                      onChange={handleInputChange}
-                      className={styles.form_input}
-                      required
-                    />
+
+                  <div className={styles.codeIndent}>
+                    <span className={styles.codeProperty}>learn</span>:{" "}
+                    <span className={styles.codeString}>true</span>,
                   </div>
-                  {/* Form input for phone number */}
-                  <div className={styles.form_group}>
-                    <label htmlFor="phone" className={styles.form_label}>
-                      Phone Number
-                    </label>
-                    <PhoneInput
-                      country={"us"}
-                      value={formValues.phone}
-                      onChange={handlePhoneChange}
-                      containerClass={styles.phone_input_container}
-                      inputClass={styles.phone_input}
-                      dropdownStyle={{color:"black"}}
-                    />
+
+                  <div className={styles.codeIndent}>
+                    <span className={styles.codeProperty}>build</span>:{" "}
+                    <span className={styles.codeString}>true</span>,
                   </div>
-                  {/* Form select for feedback type */}
-                  <div className={styles.form_group}>
-                    <label htmlFor="feedbackType" className={styles.form_label}>
-                      Feedback Type* &nbsp;
-                    </label>
-                    <select
-                      name="feedbackType"
-                      value={formValues.feedbackType}
-                      onChange={handleInputChange}
-                      className={styles.form_select}
-                      required
+
+                  <div className={styles.codeIndent}>
+                    <span className={styles.codeProperty}>contribute</span>:{" "}
+                    <span className={styles.codeString}>true</span>,
+                  </div>
+
+                  <div>{"};"}</div>
+
+                  <div className={styles.codeSpacing} />
+
+                  <div>
+                    <span className={styles.codeKeyword}>await</span>{" "}
+                    <span className={styles.codeFunction}>
+                      sendMessage
+                    </span>
+                    {"(community);"}
+                  </div>
+
+                  <div className={styles.codeCursor}>▋</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Channels */}
+        <section className={styles.channelsSection}>
+          <div className={styles.container}>
+            <div className={styles.sectionHeading}>
+              <div>
+                <span className={styles.sectionLabel}>CONNECT</span>
+                <h2>Choose how you want to reach us</h2>
+              </div>
+
+              <p>
+                Pick the channel that matches your question or collaboration
+                idea.
+              </p>
+            </div>
+
+            <div className={styles.channelGrid}>
+              {contactChannels.map((channel) => {
+                const Icon = channel.icon;
+
+                return (
+                  <a
+                    key={channel.title}
+                    href={channel.href}
+                    target={
+                      channel.href.startsWith("http") ? "_blank" : undefined
+                    }
+                    rel={
+                      channel.href.startsWith("http")
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
+                    className={styles.channelCard}
+                  >
+                    <div className={styles.channelIcon}>
+                      <Icon size={21} aria-hidden="true" />
+                    </div>
+
+                    <div className={styles.channelContent}>
+                      <div className={styles.channelTitleRow}>
+                        <h3>{channel.title}</h3>
+                        <ExternalLink
+                          size={15}
+                          aria-hidden="true"
+                          className={styles.externalIcon}
+                        />
+                      </div>
+
+                      <p>{channel.description}</p>
+
+                      <span>{channel.value}</span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Form */}
+        <section id="contact-form" className={styles.formSection}>
+          <div className={styles.container}>
+            <div className={styles.formLayout}>
+              <aside className={styles.formAside}>
+                <span className={styles.sectionLabel}>GET IN TOUCH</span>
+
+                <h2>Tell us what&apos;s on your mind.</h2>
+
+                <p>
+                  Whether you are learning, building, contributing or
+                  collaborating, your feedback helps us improve CodeHarborHub.
+                </p>
+
+                <div className={styles.infoList}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
+                      <Clock3 size={19} aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <strong>Response time</strong>
+                      <span>
+                        We&apos;ll review your message as soon as possible.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
+                      <ShieldCheck size={19} aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <strong>Respectful communication</strong>
+                      <span>
+                        Please keep conversations constructive and respectful.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
+                      <Users size={19} aria-hidden="true" />
+                    </div>
+
+                    <div>
+                      <strong>Open community</strong>
+                      <span>
+                        Ideas and contributions are welcome from developers at
+                        every level.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.locationCard}>
+                  <MapPin size={19} aria-hidden="true" />
+
+                  <div>
+                    <strong>CodeHarborHub</strong>
+                    <span>Open-source developer community</span>
+                  </div>
+                </div>
+              </aside>
+
+              <div className={styles.formCard}>
+                <div className={styles.formCardHeader}>
+                  <div className={styles.formIcon}>
+                    <Send size={20} aria-hidden="true" />
+                  </div>
+
+                  <div>
+                    <h3>Send a message</h3>
+                    <p>Fields marked with * are required.</p>
+                  </div>
+                </div>
+
+                {submitState === "success" && (
+                  <div
+                    className={`${styles.alert} ${styles.successAlert}`}
+                    role="status"
+                  >
+                    <CheckCircle2 size={20} aria-hidden="true" />
+
+                    <div>
+                      <strong>Message sent successfully!</strong>
+                      <span>
+                        Thanks for reaching out to CodeHarborHub.
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSubmitState("idle")}
+                      aria-label="Close success message"
                     >
-                      <option value="Question">Question</option>
-                      <option value="Suggestion">Suggestion</option>
-                      <option value="Issue">Issue</option>
-                      <option value="Other">Other</option>
-                    </select>
+                      <XCircle size={18} aria-hidden="true" />
+                    </button>
                   </div>
-                  {/* Conditional input for other feedback */}
-                  {formValues.feedbackType === "Other" && (
-                    <div className={styles.form_group}>
-                      <label
-                        htmlFor="otherFeedback"
-                        className={styles.form_label}
-                      >
+                )}
+
+                {submitState === "error" && (
+                  <div
+                    className={`${styles.alert} ${styles.errorAlert}`}
+                    role="alert"
+                  >
+                    <XCircle size={20} aria-hidden="true" />
+
+                    <div>
+                      <strong>Message could not be sent.</strong>
+                      <span>{errorMessage}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSubmitState("idle")}
+                      aria-label="Close error message"
+                    >
+                      <XCircle size={18} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className={styles.form}>
+                  <div className={styles.formGrid}>
+                    <div className={styles.field}>
+                      <label htmlFor="fullName">
+                        Full name <span>*</span>
+                      </label>
+
+                      <input
+                        id="fullName"
+                        name="fullName"
+                        type="text"
+                        value={form.fullName}
+                        onChange={handleChange}
+                        placeholder="Enter your full name"
+                        autoComplete="name"
+                        required
+                        disabled={submitState === "loading"}
+                      />
+                    </div>
+
+                    <div className={styles.field}>
+                      <label htmlFor="email">
+                        Email address <span>*</span>
+                      </label>
+
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        required
+                        disabled={submitState === "loading"}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.formGrid}>
+                    <div className={styles.field}>
+                      <label htmlFor="phone">Phone number</label>
+
+                      <input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={form.phone}
+                        onChange={handleChange}
+                        placeholder="+91 98765 43210"
+                        autoComplete="tel"
+                        disabled={submitState === "loading"}
+                      />
+                    </div>
+
+                    <div className={styles.field}>
+                      <label htmlFor="feedbackType">
+                        What can we help with? <span>*</span>
+                      </label>
+
+                      <div className={styles.selectWrapper}>
+                        <select
+                          id="feedbackType"
+                          name="feedbackType"
+                          value={form.feedbackType}
+                          onChange={handleChange}
+                          required
+                          disabled={submitState === "loading"}
+                        >
+                          {feedbackOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+
+                        <ChevronDown
+                          size={17}
+                          aria-hidden="true"
+                          className={styles.selectIcon}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {form.feedbackType === "Other" && (
+                    <div className={styles.field}>
+                      <label htmlFor="otherFeedback">
                         Please specify
                       </label>
+
                       <input
-                        type="text"
+                        id="otherFeedback"
                         name="otherFeedback"
-                        placeholder="Please specify your feedback"
-                        value={formValues.otherFeedback}
-                        onChange={handleInputChange}
-                        className={styles.form_input}
+                        type="text"
+                        value={form.otherFeedback}
+                        onChange={handleChange}
+                        placeholder="Tell us what you need help with"
+                        disabled={submitState === "loading"}
                       />
                     </div>
                   )}
-                  {/* Form textarea for message */}
-                  <div className={styles.form_group}>
-                    <label htmlFor="message" className={styles.form_label}>
-                      Message*
+
+                  <div className={styles.field}>
+                    <label htmlFor="message">
+                      Message <span>*</span>
                     </label>
+
                     <textarea
+                      id="message"
                       name="message"
-                      rows={5}
-                      placeholder="Type your message here"
-                      value={formValues.message}
-                      onChange={handleInputChange}
-                      className={styles.form_textarea}
+                      value={form.message}
+                      onChange={handleChange}
+                      placeholder="Write your message here..."
+                      rows={7}
                       required
+                      minLength={10}
+                      disabled={submitState === "loading"}
                     />
+
+                    <div className={styles.fieldHint}>
+                      Please provide enough detail for us to understand your
+                      request.
+                    </div>
                   </div>
-                  {/* Form submit button */}
-                  <div className={styles.form_group}>
-                    <button type="submit" className={styles.form_button}>
-                      {checker.loading?<div className={styles.loader} />:"Send"}
+
+                  <div className={styles.formFooter}>
+                    <p>
+                      By submitting this form, you agree to communicate
+                      respectfully with the CodeHarborHub community.
+                    </p>
+
+                    <button
+                      type="submit"
+                      className={styles.submitButton}
+                      disabled={submitState === "loading"}
+                    >
+                      {submitState === "loading" ? (
+                        <>
+                          <span className={styles.spinner} />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          Send message
+                          <Send size={17} aria-hidden="true" />
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
               </div>
-            </motion.div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* FAQ */}
+        <section className={styles.faqSection}>
+          <div className={styles.container}>
+            <div className={styles.faqHeader}>
+              <div className={styles.faqHeading}>
+                <div className={styles.faqIcon}>
+                  <HelpCircle size={21} aria-hidden="true" />
+                </div>
+
+                <div>
+                  <span className={styles.sectionLabel}>FAQ</span>
+                  <h2>Common questions</h2>
+                </div>
+              </div>
+
+              <p>
+                Quick answers to common questions about contacting and
+                contributing to CodeHarborHub.
+              </p>
+            </div>
+
+            <div className={styles.faqList}>
+              {faqs.map((faq, index) => {
+                const isOpen = openFaq === index;
+
+                return (
+                  <div
+                    key={faq.question}
+                    className={`${styles.faqItem} ${
+                      isOpen ? styles.faqItemOpen : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className={styles.faqQuestion}
+                      onClick={() =>
+                        setOpenFaq(isOpen ? null : index)
+                      }
+                      aria-expanded={isOpen}
+                    >
+                      <span>{faq.question}</span>
+
+                      <ChevronDown
+                        size={19}
+                        aria-hidden="true"
+                        className={styles.faqChevron}
+                      />
+                    </button>
+
+                    {isOpen && (
+                      <div className={styles.faqAnswer}>
+                        <p>{faq.answer}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className={styles.finalSection}>
+          <div className={styles.container}>
+            <div className={styles.finalCard}>
+              <div className={styles.finalGlow} />
+
+              <div className={styles.finalIcon}>
+                <Sparkles size={24} aria-hidden="true" />
+              </div>
+
+              <h2>Want to build with us?</h2>
+
+              <p>
+                CodeHarborHub grows through developers, learners and open-source
+                contributors who share knowledge and build together.
+              </p>
+
+              <div className={styles.finalActions}>
+                <Link
+                  to="/contributing/"
+                  className={styles.primaryButton}
+                >
+                  Start contributing
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+
+                <a
+                  href="https://github.com/CodeHarborHub"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.secondaryButton}
+                >
+                  <Github size={18} aria-hidden="true" />
+                  Explore GitHub
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
     </Layout>
   );
 }
+
+export default Contact;

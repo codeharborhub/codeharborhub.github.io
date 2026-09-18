@@ -1,0 +1,1037 @@
+.page {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* =====================================================
+   Breadcrumb
+===================================================== */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 18px 0 8px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.84rem;
+}
+
+.breadcrumb a {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   Hero
+===================================================== */
+
+.hero {
+  position: relative;
+  padding: 3rem 0 2rem;
+  background:
+    radial-gradient(
+      circle at 8% 20%,
+      color-mix(in srgb, var(--ifm-color-primary) 13%, transparent),
+      transparent 33%
+    ),
+    radial-gradient(
+      circle at 88% 30%,
+      color-mix(in srgb, #7c3aed 10%, transparent),
+      transparent 32%
+    );
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--ifm-color-emphasis-200);
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+  gap: 70px;
+  align-items: center;
+}
+
+.heroContent {
+  max-width: 760px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ifm-color-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 18px 0 20px;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.hero h1 span {
+  display: block;
+  color: var(--ifm-color-primary);
+}
+
+.heroContent > p {
+  max-width: 690px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.primaryButton,
+.secondaryButton,
+.repositoryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-size: 0.85rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.primaryButton {
+  color: #fff;
+  background: var(--ifm-color-primary);
+  box-shadow: 0 12px 30px
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+}
+
+.primaryButton:hover {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px
+    color-mix(in srgb, var(--ifm-color-primary) 28%, transparent);
+}
+
+.secondaryButton {
+  color: var(--ifm-font-color-base);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-surface-color);
+}
+
+.secondaryButton:hover {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+/* =====================================================
+   License Visual
+===================================================== */
+
+.licenseVisual {
+  position: relative;
+  display: flex;
+  min-height: 330px;
+  align-items: center;
+  justify-content: center;
+}
+
+.visualGlow {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 10%,
+    transparent
+  );
+  filter: blur(50px);
+}
+
+.licenseCard {
+  position: relative;
+  width: min(100%, 410px);
+  padding: 27px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 23px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-background-surface-color) 94%,
+    transparent
+  );
+  box-shadow: 0 30px 80px color-mix(in srgb, #000 12%, transparent);
+}
+
+.licenseCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.licenseCardTop > span {
+  padding: 6px 9px;
+  color: var(--ifm-color-primary);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+  font-size: 0.67rem;
+  font-weight: 750;
+}
+
+.licenseIcon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+}
+
+.licenseName {
+  margin-top: 34px;
+  font-size: 4.3rem;
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.08em;
+}
+
+.licenseMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 27px;
+}
+
+.licenseMeta div {
+  padding: 13px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 11px;
+}
+
+.licenseMeta span,
+.licenseMeta strong {
+  display: block;
+}
+
+.licenseMeta span {
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.65rem;
+}
+
+.licenseMeta strong {
+  margin-top: 4px;
+  font-size: 0.76rem;
+}
+
+.licenseCode {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  color: var(--ifm-color-emphasis-600);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.7rem;
+}
+
+/* =====================================================
+   Summary
+===================================================== */
+
+.summarySection {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.summaryCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 13px;
+  background: var(--ifm-background-surface-color);
+}
+
+.summaryIcon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 9px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 9%,
+    transparent
+  );
+}
+
+.summaryCard strong,
+.summaryCard span {
+  display: block;
+}
+
+.summaryCard strong {
+  font-size: 0.82rem;
+}
+
+.summaryCard span {
+  margin-top: 3px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+/* =====================================================
+   Content
+===================================================== */
+
+.contentSection {
+  padding: 78px 0 60px;
+}
+
+.contentLayout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 800px);
+  justify-content: center;
+  gap: 55px;
+}
+
+.sidebar {
+  position: relative;
+}
+
+.sidebarCard {
+  position: sticky;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  padding: 17px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+}
+
+.sidebarTitle {
+  margin-bottom: 10px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebarCard a {
+  padding: 8px 9px;
+  color: var(--ifm-color-emphasis-700);
+  border-radius: 7px;
+  font-size: 0.77rem;
+  text-decoration: none;
+}
+
+.sidebarCard a:hover {
+  color: var(--ifm-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 6%,
+    transparent
+  );
+}
+
+/* =====================================================
+   Article
+===================================================== */
+
+.article {
+  min-width: 0;
+}
+
+.articleSection {
+  scroll-margin-top: 90px;
+  margin-bottom: 70px;
+}
+
+.articleSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 18px;
+}
+
+.headingIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 18%, transparent);
+  border-radius: 11px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 7%,
+    transparent
+  );
+}
+
+.sectionHeading span {
+  display: block;
+  color: var(--ifm-color-primary);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.sectionHeading h2 {
+  margin: 3px 0 0;
+  font-size: 1.65rem;
+  letter-spacing: -0.03em;
+}
+
+.articleSection > p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.94rem;
+  line-height: 1.8;
+}
+
+/* =====================================================
+   Info Box
+===================================================== */
+
+.infoBox {
+  display: flex;
+  gap: 12px;
+  margin-top: 23px;
+  padding: 17px;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 13px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 5%,
+    transparent
+  );
+}
+
+.infoBox > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--ifm-color-primary);
+}
+
+.infoBox strong {
+  font-size: 0.82rem;
+}
+
+.infoBox p {
+  margin: 4px 0 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+/* =====================================================
+   Permissions
+===================================================== */
+
+.permissionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+  margin-top: 23px;
+}
+
+.permissionItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 10px;
+  background: var(--ifm-background-surface-color);
+}
+
+.permissionItem svg {
+  flex: 0 0 auto;
+  color: var(--ifm-color-primary);
+}
+
+.permissionItem span {
+  color: var(--ifm-color-emphasis-800);
+  font-size: 0.78rem;
+}
+
+/* =====================================================
+   Conditions
+===================================================== */
+
+.conditionList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 23px;
+}
+
+.conditionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 11px;
+}
+
+.conditionItem > span {
+  color: var(--ifm-color-primary);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.conditionItem p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+/* =====================================================
+   Disclaimer
+===================================================== */
+
+.disclaimerBox {
+  margin-top: 23px;
+  padding: 19px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+}
+
+.disclaimerHeader {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ifm-color-emphasis-900);
+  font-size: 0.83rem;
+}
+
+.disclaimerHeader svg {
+  color: var(--ifm-color-primary);
+}
+
+.disclaimerList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 16px;
+  padding-top: 15px;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.disclaimerList div {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.disclaimerList div > span {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 5px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--ifm-color-primary);
+}
+
+.disclaimerList p {
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* =====================================================
+   Full License
+===================================================== */
+
+.licenseHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 23px;
+  padding: 14px 15px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-bottom: 0;
+  border-radius: 13px 13px 0 0;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-emphasis-100) 50%,
+    transparent
+  );
+}
+
+.licenseHeader strong,
+.licenseHeader span {
+  display: block;
+}
+
+.licenseHeader strong {
+  font-size: 0.82rem;
+}
+
+.licenseHeader span {
+  margin-top: 3px;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.68rem;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--ifm-color-emphasis-700);
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  background: var(--ifm-background-surface-color);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copyButton:hover {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+}
+
+.licenseText {
+  overflow-x: auto;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 0 0 13px 13px;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.licenseText pre {
+  min-width: 680px;
+  margin: 0;
+  padding: 23px;
+  background: transparent;
+}
+
+.licenseText code {
+  color: var(--ifm-color-emphasis-800);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.73rem;
+  line-height: 1.75;
+}
+
+/* =====================================================
+   Repository CTA
+===================================================== */
+
+.repositorySection {
+  padding: 30px 0 75px;
+}
+
+.repositoryCard {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 24px;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 18%, transparent);
+  border-radius: 19px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ifm-color-primary) 6%, transparent),
+      transparent
+    ),
+    var(--ifm-background-surface-color);
+}
+
+.repositoryIcon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  color: var(--ifm-color-primary);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 10%,
+    transparent
+  );
+}
+
+.repositoryContent {
+  flex: 1;
+}
+
+.repositoryContent > span {
+  color: var(--ifm-color-primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.repositoryContent h2 {
+  margin: 4px 0 4px;
+  font-size: 1.15rem;
+}
+
+.repositoryContent p {
+  max-width: 700px;
+  margin: 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.repositoryButton {
+  flex: 0 0 auto;
+  color: #fff;
+  background: var(--ifm-color-primary);
+}
+
+.repositoryButton:hover {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+/* =====================================================
+   Related
+===================================================== */
+
+.relatedSection {
+  padding: 0 0 75px;
+}
+
+.relatedHeader {
+  margin-bottom: 20px;
+}
+
+.relatedHeader > span {
+  color: var(--ifm-color-primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.relatedHeader h2 {
+  margin: 6px 0 0;
+  font-size: 1.65rem;
+  letter-spacing: -0.03em;
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.relatedCard {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 17px;
+  color: inherit;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 13px;
+  background: var(--ifm-background-surface-color);
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.relatedCard:hover {
+  color: inherit;
+  border-color: var(--ifm-color-primary);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.relatedCard > svg:first-child {
+  flex: 0 0 auto;
+  color: var(--ifm-color-primary);
+}
+
+.relatedCard div {
+  flex: 1;
+  min-width: 0;
+}
+
+.relatedCard h3 {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.relatedCard p {
+  margin: 3px 0 0;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.relatedCard > svg:last-child {
+  color: var(--ifm-color-emphasis-500);
+}
+
+/* =====================================================
+   Final CTA
+===================================================== */
+
+.finalSection {
+  padding: 0 0 90px;
+}
+
+.finalCard {
+  padding: 58px 25px;
+  text-align: center;
+  border: 1px solid
+    color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--ifm-color-primary) 13%, transparent),
+      transparent 55%
+    ),
+    var(--ifm-background-surface-color);
+}
+
+.finalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  color: var(--ifm-color-primary);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--ifm-color-primary) 8%,
+    transparent
+  );
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.finalCard h2 {
+  max-width: 750px;
+  margin: 14px auto 9px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.045em;
+}
+
+.finalCard > p {
+  max-width: 630px;
+  margin: 0 auto;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.finalActions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 11px;
+  margin-top: 27px;
+}
+
+/* =====================================================
+   Responsive
+===================================================== */
+
+@media (max-width: 1050px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .licenseVisual {
+    justify-content: flex-start;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contentLayout {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 35px;
+  }
+}
+
+@media (max-width: 800px) {
+  .hero {
+    padding: 52px 0 58px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+  }
+
+  .heroActions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .contentLayout {
+    display: block;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .permissionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .relatedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .repositoryCard {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .repositoryContent {
+    min-width: calc(100% - 65px);
+  }
+
+  .repositoryButton {
+    width: 100%;
+    margin-top: 3px;
+  }
+}
+
+@media (max-width: 560px) {
+  .breadcrumb {
+    padding-top: 13px;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .licenseCard {
+    padding: 22px;
+  }
+
+  .licenseName {
+    font-size: 3.5rem;
+  }
+
+  .licenseMeta {
+    grid-template-columns: 1fr;
+  }
+
+  .contentSection {
+    padding-top: 55px;
+  }
+
+  .articleSection {
+    margin-bottom: 55px;
+  }
+
+  .sectionHeading h2 {
+    font-size: 1.4rem;
+  }
+
+  .licenseHeader {
+    align-items: flex-start;
+  }
+
+  .finalCard {
+    padding: 43px 18px;
+    border-radius: 18px;
+  }
+
+  .finalActions {
+    flex-direction: column;
+  }
+
+  .finalActions .primaryButton,
+  .finalActions .secondaryButton {
+    width: 100%;
+  }
+}
+
+/* =====================================================
+   Reduced Motion
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryButton,
+  .secondaryButton,
+  .repositoryButton,
+  .relatedCard {
+    transition: none;
+  }
+}

@@ -1,0 +1,952 @@
+.page {
+  --ch-border: var(--ifm-color-emphasis-200);
+  --ch-muted: var(--ifm-color-emphasis-700);
+  --ch-soft: var(--ifm-color-emphasis-100);
+  --ch-primary: var(--ifm-color-primary);
+  --ch-primary-dark: var(--ifm-color-primary-dark);
+  --ch-bg: var(--ifm-background-color);
+  --ch-surface: var(--ifm-background-surface-color);
+
+  background: var(--ch-bg);
+  color: var(--ifm-font-color-base);
+}
+
+.container {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+/* =========================================================
+   Hero
+   ========================================================= */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 0 90px;
+  border-bottom: 1px solid var(--ch-border);
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      color-mix(in srgb, var(--ch-primary) 12%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 85% 30%,
+      color-mix(in srgb, var(--ch-primary) 8%, transparent),
+      transparent 30%
+    ),
+    var(--ch-bg);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 58px;
+  color: var(--ch-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.backLink:hover {
+  color: var(--ch-primary);
+  transform: translateX(-3px);
+  text-decoration: none;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 70px;
+  align-items: center;
+}
+
+.heroContent {
+  max-width: 760px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-bottom: 22px;
+  padding: 7px 11px;
+  border: 1px solid
+    color-mix(in srgb, var(--ch-primary) 24%, var(--ch-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ch-primary) 7%, transparent);
+  color: var(--ch-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(3rem, 6vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  font-weight: 900;
+}
+
+.hero h1 span {
+  color: var(--ch-primary);
+}
+
+.heroDescription {
+  max-width: 720px;
+  margin: 27px 0 0;
+  color: var(--ch-muted);
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem);
+  line-height: 1.8;
+}
+
+.heroActions,
+.finalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.primaryButton,
+.secondaryButton,
+.reportButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 17px;
+  border-radius: 11px;
+  font-size: 0.92rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.primaryButton {
+  border: 1px solid var(--ch-primary);
+  background: var(--ch-primary);
+  color: #fff;
+  box-shadow: 0 8px 22px
+    color-mix(in srgb, var(--ch-primary) 18%, transparent);
+}
+
+.primaryButton:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px
+    color-mix(in srgb, var(--ch-primary) 25%, transparent);
+  text-decoration: none;
+}
+
+.secondaryButton {
+  border: 1px solid var(--ch-border);
+  background: var(--ch-surface);
+  color: var(--ifm-font-color-base);
+}
+
+.secondaryButton:hover {
+  border-color: var(--ch-primary);
+  color: var(--ch-primary);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.heroCard {
+  padding: 30px;
+  border: 1px solid var(--ch-border);
+  border-radius: 22px;
+  background: var(--ch-surface);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.07);
+}
+
+.heroCardIcon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 25px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--ch-primary) 12%, transparent);
+  color: var(--ch-primary);
+}
+
+.heroCardLabel,
+.sectionKicker {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ch-primary);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroCard h2 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.25;
+}
+
+.heroCard p {
+  margin: 15px 0 0;
+  color: var(--ch-muted);
+  line-height: 1.75;
+}
+
+.heroCardFooter {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ch-border);
+  color: var(--ch-muted);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.heroCardFooter svg {
+  flex: 0 0 auto;
+  color: var(--ch-primary);
+}
+
+/* =========================================================
+   Sections
+   ========================================================= */
+
+.section {
+  padding: 100px 0;
+}
+
+.altSection {
+  background: var(--ch-soft);
+  border-block: 1px solid var(--ch-border);
+}
+
+.sectionHeader {
+  display: flex;
+  gap: 17px;
+  align-items: flex-start;
+  margin-bottom: 42px;
+}
+
+.sectionNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 30px;
+  margin-top: 2px;
+  border: 1px solid
+    color-mix(in srgb, var(--ch-primary) 25%, var(--ch-border));
+  border-radius: 8px;
+  color: var(--ch-primary);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.sectionLead {
+  max-width: 850px;
+  margin: -15px 0 42px;
+  color: var(--ch-muted);
+  font-size: 1.04rem;
+  line-height: 1.8;
+}
+
+/* =========================================================
+   Pledge
+   ========================================================= */
+
+.pledgeCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 25px;
+  padding: 34px;
+  border: 1px solid var(--ch-border);
+  border-radius: 20px;
+  background: var(--ch-surface);
+}
+
+.pledgeIcon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ch-primary) 11%, transparent);
+  color: var(--ch-primary);
+}
+
+.pledgeCard p {
+  margin: 0;
+  color: var(--ch-muted);
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.pledgeCard p + p {
+  margin-top: 17px;
+}
+
+/* =========================================================
+   Standards
+   ========================================================= */
+
+.standardsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.standardCard {
+  padding: 30px;
+  border: 1px solid var(--ch-border);
+  border-radius: 20px;
+  background: var(--ch-surface);
+}
+
+.cardHeader {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ch-border);
+}
+
+.cardIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 13px;
+}
+
+.positive .cardIcon {
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #16a34a;
+}
+
+.negative .cardIcon {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #dc2626;
+}
+
+.cardHeader span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ch-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.standardCard ul {
+  display: grid;
+  gap: 17px;
+  margin: 25px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.standardCard li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  color: var(--ch-muted);
+  line-height: 1.65;
+}
+
+.positive li svg {
+  color: #16a34a;
+}
+
+.negative li svg {
+  color: #dc2626;
+}
+
+/* =========================================================
+   Info Cards
+   ========================================================= */
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.infoCard {
+  padding: 27px;
+  border: 1px solid var(--ch-border);
+  border-radius: 18px;
+  background: var(--ch-surface);
+}
+
+.infoCard > svg {
+  color: var(--ch-primary);
+}
+
+.infoCard h3 {
+  margin: 20px 0 9px;
+  font-size: 1.15rem;
+}
+
+.infoCard p {
+  margin: 0;
+  color: var(--ch-muted);
+  line-height: 1.7;
+}
+
+/* =========================================================
+   Scope
+   ========================================================= */
+
+.scopeLayout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 55px;
+  align-items: start;
+}
+
+.scopeIntro > p {
+  margin: 0;
+  color: var(--ch-muted);
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+
+.representationNote {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  margin-top: 25px;
+  padding: 18px;
+  border: 1px solid var(--ch-border);
+  border-radius: 14px;
+  background: var(--ch-surface);
+}
+
+.representationNote svg {
+  margin-top: 2px;
+  color: var(--ch-primary);
+}
+
+.representationNote p {
+  margin: 0;
+  color: var(--ch-muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.spaceList {
+  border-top: 1px solid var(--ch-border);
+}
+
+.spaceItem {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 18px;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--ch-border);
+}
+
+.spaceItem span {
+  color: var(--ch-primary);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.spaceItem p {
+  margin: 0;
+  color: var(--ch-muted);
+  line-height: 1.6;
+}
+
+/* =========================================================
+   Reporting
+   ========================================================= */
+
+.reportingCard {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  overflow: hidden;
+  border: 1px solid
+    color-mix(in srgb, var(--ch-primary) 28%, var(--ch-border));
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 0% 100%,
+      color-mix(in srgb, var(--ch-primary) 13%, transparent),
+      transparent 40%
+    ),
+    var(--ch-surface);
+}
+
+.reportingContent {
+  padding: 42px;
+}
+
+.reportingIcon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 25px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--ch-primary) 12%, transparent);
+  color: var(--ch-primary);
+}
+
+.reportingContent h2 {
+  margin: 0;
+  font-size: clamp(1.9rem, 4vw, 2.65rem);
+  letter-spacing: -0.035em;
+}
+
+.reportingContent p {
+  max-width: 690px;
+  margin: 17px 0 0;
+  color: var(--ch-muted);
+  line-height: 1.75;
+}
+
+.reportButton {
+  width: fit-content;
+  margin-top: 25px;
+  border: 1px solid var(--ch-primary);
+  background: var(--ch-primary);
+  color: #fff;
+}
+
+.reportButton:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.reportingAssurance {
+  display: grid;
+  gap: 25px;
+  align-content: center;
+  padding: 42px;
+  border-left: 1px solid var(--ch-border);
+  background: color-mix(in srgb, var(--ch-soft) 55%, transparent);
+}
+
+.reportingAssurance > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 13px;
+}
+
+.reportingAssurance svg {
+  margin-top: 2px;
+  color: var(--ch-primary);
+}
+
+.reportingAssurance strong,
+.reportingAssurance span {
+  display: block;
+}
+
+.reportingAssurance strong {
+  margin-bottom: 5px;
+}
+
+.reportingAssurance span {
+  color: var(--ch-muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   Enforcement
+   ========================================================= */
+
+.enforcementList {
+  display: grid;
+  gap: 14px;
+}
+
+.enforcementCard {
+  display: grid;
+  grid-template-columns: 58px 48px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 25px;
+  border: 1px solid var(--ch-border);
+  border-radius: 17px;
+  background: var(--ch-surface);
+}
+
+.enforcementNumber {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  border-radius: 11px;
+  background: var(--ch-soft);
+  color: var(--ch-primary);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.enforcementIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--ch-primary) 10%, transparent);
+  color: var(--ch-primary);
+}
+
+.enforcementBody h3 {
+  margin: 0 0 17px;
+  font-size: 1.25rem;
+}
+
+.enforcementColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 25px;
+}
+
+.enforcementColumns span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ch-primary);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.enforcementColumns p {
+  margin: 0;
+  color: var(--ch-muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+/* =========================================================
+   FAQ
+   ========================================================= */
+
+.faqList {
+  display: grid;
+  gap: 11px;
+  max-width: 900px;
+}
+
+.faqItem {
+  overflow: hidden;
+  border: 1px solid var(--ch-border);
+  border-radius: 14px;
+  background: var(--ch-surface);
+}
+
+.faqItem summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+}
+
+.faqItem summary::-webkit-details-marker {
+  display: none;
+}
+
+.faqItem summary svg {
+  flex: 0 0 auto;
+  color: var(--ch-muted);
+  transition: transform 160ms ease;
+}
+
+.faqItem[open] summary svg {
+  transform: rotate(90deg);
+  color: var(--ch-primary);
+}
+
+.faqItem p {
+  margin: 0;
+  padding: 0 22px 22px;
+  color: var(--ch-muted);
+  line-height: 1.75;
+}
+
+/* =========================================================
+   Attribution
+   ========================================================= */
+
+.attribution {
+  padding: 80px 0;
+  border-top: 1px solid var(--ch-border);
+}
+
+.attributionCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 45px;
+  align-items: center;
+  padding: 32px;
+  border: 1px solid var(--ch-border);
+  border-radius: 20px;
+  background: var(--ch-surface);
+}
+
+.attributionCard h2 {
+  margin: 0 0 10px;
+  font-size: 1.45rem;
+}
+
+.attributionCard p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--ch-muted);
+  line-height: 1.7;
+  font-size: 0.9rem;
+}
+
+.attributionLinks {
+  display: grid;
+  gap: 8px;
+  min-width: 250px;
+}
+
+.attributionLinks a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: var(--ifm-font-color-base);
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.attributionLinks a:hover {
+  background: var(--ch-soft);
+  color: var(--ch-primary);
+  text-decoration: none;
+}
+
+/* =========================================================
+   Final CTA
+   ========================================================= */
+
+.finalCta {
+  padding: 100px 0;
+  border-top: 1px solid var(--ch-border);
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--ch-primary) 13%, transparent),
+      transparent 45%
+    ),
+    var(--ch-soft);
+}
+
+.finalCtaInner {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.finalCtaIcon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 22px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ch-primary) 12%, transparent);
+  color: var(--ch-primary);
+}
+
+.finalCta h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  letter-spacing: -0.04em;
+}
+
+.finalCta p {
+  max-width: 650px;
+  margin: 16px auto 0;
+  color: var(--ch-muted);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.finalActions {
+  justify-content: center;
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 996px) {
+  .heroGrid,
+  .scopeLayout,
+  .reportingCard,
+  .attributionCard {
+    grid-template-columns: 1fr;
+  }
+
+  .heroGrid {
+    gap: 40px;
+  }
+
+  .standardsGrid,
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .reportingAssurance {
+    border-top: 1px solid var(--ch-border);
+    border-left: 0;
+  }
+
+  .attributionLinks {
+    max-width: 450px;
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .hero {
+    padding: 24px 0 65px;
+  }
+
+  .backLink {
+    margin-bottom: 42px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.7rem, 14vw, 4rem);
+  }
+
+  .heroDescription {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .heroActions,
+  .finalActions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .reportButton {
+    width: 100%;
+  }
+
+  .section {
+    padding: 70px 0;
+  }
+
+  .sectionHeader {
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+
+  .sectionHeader h2 {
+    font-size: 2rem;
+  }
+
+  .pledgeCard {
+    grid-template-columns: 1fr;
+    padding: 25px;
+  }
+
+  .standardCard {
+    padding: 23px;
+  }
+
+  .reportingContent,
+  .reportingAssurance {
+    padding: 27px;
+  }
+
+  .enforcementCard {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .enforcementNumber {
+    grid-row: span 2;
+  }
+
+  .enforcementIcon {
+    display: none;
+  }
+
+  .enforcementBody {
+    grid-column: 2;
+  }
+
+  .enforcementColumns {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  .attribution {
+    padding: 60px 0;
+  }
+
+  .attributionCard {
+    padding: 25px;
+    gap: 25px;
+  }
+
+  .finalCta {
+    padding: 70px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backLink,
+  .primaryButton,
+  .secondaryButton,
+  .reportButton,
+  .faqItem summary svg {
+    transition: none;
+  }
+}

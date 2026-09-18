@@ -2,7 +2,6 @@ import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
 
 import AdsComponent from "@site/src/components/AdsComponent";
 import BrowserWindow from "@site/src/components/BrowserWindow";
-import Courses from "@site/src/components/Courses";
 import File from "@site/src/components/File";
 import GiscusComponent from "@site/src/components/GiscusComponent";
 import Highlight from "@site/src/components/Highlight";
@@ -33,7 +32,6 @@ export default {
   GiscusComponent,
   DocCardList,
   FaReact,
-  Courses,
   File,
   Lesson,
   Image,
