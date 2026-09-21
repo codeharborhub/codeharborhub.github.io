@@ -26,12 +26,49 @@ const config = {
   organizationName: "codeharborhub",
   projectName: "codeharborhub.github.io",
 
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en'],
+    localeConfigs: {
+      en: {
+        label: 'English (US)',
+        htmlLang: 'en-US', // Signals US English target to search engines
+      },
+    },
+  },
+
   headTags: [
     {
       tagName: 'meta',
       attributes: {
         name: 'impact-site-verification',
         value: '0ecab9f1-a456-4638-9f7a-17e0ff5f55f6',
+      },
+    },
+    {
+      tagName: 'script',
+      attributes: {
+        type: 'application/ld+json',
+      },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'CodeHarborHub',
+        url: 'https://codeharborhub.github.io',
+        logo: 'https://codeharborhub.github.io/img/logo.png',
+        sameAs: [
+          'https://github.com/CodeHarborHub',
+          'https://twitter.com/CodeHarborHub',
+          'https://www.linkedin.com/company/codeharborhub',
+        ],
+      }),
+    },
+    {
+      tagName: "script",
+      attributes: {
+        async: "true",
+        src: "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5832817025080991",
+        crossorigin: "anonymous",
       },
     },
   ],
@@ -118,7 +155,7 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: "img/codeharborhub-social-card.jpg",
+      image: "/img/codeharborhub-social-card.png",
       announcementBar: {
         id: "announcementBar",
         content:
@@ -150,7 +187,7 @@ const config = {
         {
           property: "og:image",
           content:
-            "https://codeharborhub.github.io/img/codeharborhub-social-card.jpg",
+            "https://codeharborhub.github.io/img/codeharborhub-social-card.png",
         },
         { property: "og:url", content: "https://codeharborhub.github.io" },
       ],
@@ -324,7 +361,7 @@ const config = {
           //   label: "Auth",
           // },
         ],
-        // hideOnScroll: true,
+        hideOnScroll: true,
       },
       footer: {
         style: "dark",
@@ -594,6 +631,20 @@ const config = {
         path: "courses",
         routeBasePath: "courses",
         sidebarPath: require.resolve("./sidebarsCourses.js"),
+        remarkPlugins: [remarkMath],
+        rehypePlugins: [rehypeKatex],
+        showLastUpdateAuthor: true,
+        showLastUpdateTime: true,
+      },
+    ],
+    [
+      "@docusaurus/plugin-content-docs",
+      /** @type {import('@docusaurus/plugin-content-docs').Options} */
+      {
+        id: "tutorials",
+        path: "tutorials",
+        routeBasePath: "tutorials",
+        sidebarPath: require.resolve("./sidebarsCommunity.js"),
         remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
         showLastUpdateAuthor: true,

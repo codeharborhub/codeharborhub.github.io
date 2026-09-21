@@ -1,0 +1,169 @@
+---
+id: html-vs-html5
+title: "Key Differences Between HTML and HTML5"
+sidebar_label: "HTML vs HTML5"
+sidebar_position: 4
+slug: /tutorials/html/getting-started/html-vs-html5
+description: "Discover the major improvements, semantic features, multimedia support, and modern APIs introduced in HTML5 compared to legacy HTML versions."
+keywords:
+  - HTML vs HTML5
+  - HTML5 features
+  - semantic elements in HTML5
+  - HTML5 video and audio
+  - modern HTML standards
+  - CodeHarborHub HTML
+authors:
+  - name: ajay-dhangar
+    link: https://github.com/ajay-dhangar
+tags: [html, html5, web-development, beginner]
+---
+
+As web technologies evolved, traditional **HTML (specifically HTML4.01)** became insufficient for modern interactive web applications. Introduced in 2014 by WHATWG and W3C, **HTML5** revolutionized frontend development by adding native multimedia, rich graphic elements, offline storage, and semantic layout tags.
+
+In this lesson, we will explore the core differences between older HTML standards and HTML5, along with how layout positioning and document structures have changed.
+
+---
+
+## Core Comparison Table
+
+| Feature / Capability | Classic HTML (HTML 4.01) | Modern HTML5 |
+| :--- | :--- | :--- |
+| **DOCTYPE Declaration** | Long and complex declaration referencing DTD links. | Simplified declaration: `<!DOCTYPE html>`. |
+| **Multimedia Support** | Relied on external third-party plugins (Flash, Silverlight). | Native support via `<audio>` and `<video>` tags. |
+| **Document Structure** | Heavily dependent on generic `<div>` tags with custom classes/IDs. | Semantic tags (`<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>`). |
+| **Local Data Storage** | Cookies (limited to ~4KB, sent with every HTTP request). | `localStorage` and `sessionStorage` (up to 5–10MB per origin). |
+| **Canvas & Graphics** | Required external applets or Flash for 2D/3D graphics. | Native vector & raster drawing with `<canvas>` and `<svg>`. |
+| **Form Controls** | Basic input types (`text`, `password`, `checkbox`, `radio`). | Advanced input types (`email`, `date`, `color`, `range`, `number`). |
+| **Mobile Friendliness** | Not optimized for mobile viewports out of the box. | Built natively for responsive design and mobile-first viewports. |
+
+---
+
+## Simplified Syntax & DOCTYPE
+
+HTML5 significantly streamlined document syntax compared to older strict markup formats.
+
+### HTML 4.01 Strict Syntax
+```html
+<!DOCTYPE PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>HTML4 Document</title>
+  </head>
+  <body>
+    <p>Older HTML setup.</p>
+  </body>
+</html>
+
+```
+
+### HTML5 Modern Syntax
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 Document | CodeHarborHub</title>
+  </head>
+  <body>
+    <p>Modern, clean HTML5 setup.</p>
+  </body>
+</html>
+
+```
+
+---
+
+## Structural Semantic Tags vs Legacy Div Containers
+
+Before HTML5, web layouts were created using nested `<div>` elements tagged with generic class names or IDs. HTML5 introduced **semantic layout tags** that clarify structural context to search engines and screen readers.
+
+```
++-----------------------------------------------------------------+
+|                         LAYOUT EVOLUTION                        |
++--------------------------------+--------------------------------+
+| Classic HTML (HTML4)           | Modern HTML5                   |
++--------------------------------+--------------------------------+
+| <div id="header">              | <header>                       |
+| <div id="nav">                 | <nav>                          |
+| <div class="main-content">     | <main>                         |
+| <div class="article">          | <article>                      |
+| <div class="sidebar">          | <aside>                        |
+| <div id="footer">              | <footer>                       |
++--------------------------------+--------------------------------+
+
+```
+
+### Modern HTML5 Layout Scaffold with Positioning
+
+```html
+<!-- HTML5 Semantic Page Layout with CSS Positioning Reference -->
+<div class="layout-container" style="position: relative; min-height: 100vh;">
+
+  <!-- Sticky Header Bar -->
+  <header style="position: sticky; top: 0; z-index: 100; background: #1b1b1d; color: #fff; padding: 1rem;">
+    <h1>CodeHarborHub Tutorials</h1>
+    <nav>
+      <a href="/tutorials/html/getting-started/what-is-html" style="color: #61dafb;">What is HTML?</a> |
+      <a href="/tutorials/html/getting-started/html-vs-html5" style="color: #61dafb;">HTML vs HTML5</a>
+    </nav>
+  </header>
+
+  <!-- Main Content Grid -->
+  <div class="page-body" style="display: flex; gap: 20px; padding: 20px;">
+    
+    <!-- Primary Content Area -->
+    <main style="flex: 3;">
+      <article>
+        <h2>Native Multimedia in HTML5</h2>
+        <p>HTML5 allows embedding audio and video natively without third-party plugins:</p>
+        
+        <video controls width="100%">
+          <source src="demo.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </article>
+    </main>
+
+    <!-- Sidebar with Sticky Positioning -->
+    <aside style="flex: 1; position: sticky; top: 80px; height: max-content; background: #f4f4f5; padding: 15px; border-radius: 8px;">
+      <h3>Table of Contents</h3>
+      <ul>
+        <li><a href="#comparison-table">Comparison Table</a></li>
+        <li><a href="#syntax">Simplified Syntax</a></li>
+        <li><a href="#positioning">Positioning Techniques</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <!-- Absolute/Fixed Floating Action Button -->
+  <button style="position: fixed; bottom: 20px; right: 20px; padding: 12px 18px; border-radius: 50px; background: #0070f3; color: white; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+    &uarr; Top
+  </button>
+
+  <!-- Footer Element -->
+  <footer style="background: #1b1b1d; color: #fff; text-align: center; padding: 1rem; margin-top: 40px;">
+    <p>&copy; 2026 CodeHarborHub. Built for global developers.</p>
+  </footer>
+</div>
+
+```
+
+## Positioning & Layout Improvements in the HTML5 Era
+
+While CSS controls visual layout, HTML5 structural containers enable cleaner CSS positioning workflows:
+
+1. **Relative Context (`position: relative`):** HTML5 semantic elements like `<article>` or `<section>` are frequently designated as relative positioning contexts for child elements (badges, author tags, overlay menus).
+2. **Sticky Containers (`position: sticky`):** Modern `<header>` and `<aside>` elements work seamlessly with CSS sticky positioning, ensuring persistent navigation without JavaScript.
+3. **Absolute Overlays (`position: absolute`):** Interactive UI indicators inside cards or containers can be placed precisely without polluting the main document flow.
+
+## Summary & Key Takeaways
+
+1. **Better Performance:** HTML5 removes the need for heavy browser plugins by offering native audio, video, canvas drawing, and client-side storage.
+2. **Enhanced SEO & Accessibility:** Semantic tags (`<header>`, `<main>`, `<article>`, `<section>`) inform search engines and assistive tools about page structure better than generic `<div>` blocks.
+3. **Modern Form Controls:** Built-in form validation and mobile-optimized input types save development effort.
+4. **Clean Positioning Architecture:** Combining HTML5 semantic tags with CSS Flexbox/Grid simplifies responsive positioning across all screen sizes.
+
+*Ready for the next lesson? Proceed to **HTML Elements and Attributes**!*
