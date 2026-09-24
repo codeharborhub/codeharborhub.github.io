@@ -644,7 +644,7 @@ const config = {
         id: "tutorials",
         path: "tutorials",
         routeBasePath: "tutorials",
-        sidebarPath: require.resolve("./sidebarsCommunity.js"),
+        sidebarPath: require.resolve("./sidebars.ts"),
         remarkPlugins: [remarkMath],
         rehypePlugins: [rehypeKatex],
         showLastUpdateAuthor: true,
