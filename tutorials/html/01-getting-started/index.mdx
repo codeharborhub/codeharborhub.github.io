@@ -5,6 +5,7 @@ sidebar_label: "Getting Started"
 sidebar_position: 1
 slug: /html/getting-started
 description: "Master the basics of HTML from scratch. Explore web architecture, document structures, browser tools, and create your first web page with CodeHarborHub."
+image: /img/tutorials/html/getting-started.png
 keywords:
   - HTML getting started
   - HTML course overview
@@ -14,133 +15,100 @@ keywords:
 tags: [html, web-development, beginner, frontend]
 ---
 
+Welcome to the very first module of the **CodeHarborHub HTML Tutorial**! 🎉
 
-Welcome to the first step of your web development journey! HTML (**HyperText Markup Language**) is the foundational building block of every webpage on the internet. In this guide, you will learn how the web works, set up your code editor, and build your very first web page from scratch.
+Every website you have ever visited, from a simple blog to a huge social network, is built on **HTML** (HyperText Markup Language). It is the skeleton of the web, and learning it is the first step of every frontend and full-stack developer's journey.
 
-## How the Web Works
+In this module you will go from *"What even is HTML?"* to *building and inspecting your very own web page*, step by step, with no prior experience required.
 
-When you visit a website in your browser (like Chrome, Firefox, or Safari), a multi-step request and response process happens behind the scenes:
+:::tip No experience? No problem!
+This module is written for absolute beginners. All you need is a computer, a web browser, and curiosity.
+:::
 
-1. **URL Entry**: You type a URL (e.g., `https://codeharborhub.github.io`) into your browser address bar.
-2. **DNS Lookup**: Your browser queries a Domain Name System (DNS) server to translate the domain name into an IP address (e.g., `192.0.2.1`).
-3. **HTTP Request**: The browser sends an HTTP/HTTPS request to the web server hosting that IP address.
-4. **Server Response**: The server processes the request and sends back files—primarily **HTML**, **CSS**, and **JavaScript**.
-5. **Rendering**: Your browser parses the HTML code, fetches linked assets, and renders the visual page on your screen.
+<AdsComponent />
 
+<br />
 
-```
+## What You Will Learn
 
-+---------+  1. HTTP Request (Get index.html)  +------------+
-| Browser | ---------------------------------> | Web Server |
-| Client  | <--------------------------------- |            |
-+---------+  2. Response (HTML, CSS, JS)       +------------+
+By the end of this module, you will be able to:
 
-```
+- Explain **what HTML is** and what role it plays in a website.
+- Understand the **history of HTML** and how it evolved into HTML5.
+- Describe **how the web works**, from typing a URL to seeing a page.
+- Read and write a valid **HTML document structure**.
+- Create, save, and open your **first HTML page**.
+- Use **browser developer tools** to inspect and debug any web page.
 
-## The Core Web Triad
+## Module Roadmap
 
-Modern web development relies on three core technologies working together:
+Follow the lessons in order for the best learning experience.
 
-| Technology | Role | Analogy (Building a House) |
-| :--- | :--- | :--- |
-| **HTML** | **Structure** & Content | The framing, walls, and rooms |
-| **CSS** | **Styling** & Presentation | Paint, interior decoration, and aesthetics |
-| **JavaScript** | **Behavior** & Interactivity | Electricity, plumbing, and automatic doors |
+| # | Lesson | What you'll get |
+|---|--------|-----------------|
+| 1 | [What is HTML?](./what-is-html.mdx) | The core idea of markup, elements, and why HTML matters. |
+| 2 | [HTML History](./html-history.mdx) | How HTML grew from a research project to the web's backbone. |
+| 3 | [HTML vs HTML5](./html-vs-html5.mdx) | What changed in HTML5 and why modern sites use it. |
+| 4 | [How the Web Works](./how-the-web-works.mdx) | Browsers, servers, requests, and responses explained simply. |
+| 5 | [HTML Document Structure](./html-document-structure.mdx) | `<!DOCTYPE>`, `<html>`, `<head>`, and `<body>` demystified. |
+| 6 | [Create Your First HTML Page](./create-your-first-html-page.mdx) | A hands-on walkthrough to build and run your first page. |
+| 7 | [Browser Developer Tools](./browser-developer-tools.mdx) | Inspect, edit, and debug pages like a professional. |
 
-## Setting Up Your Development Environment
+<AdsComponent />
+<br />
 
-To write HTML code efficiently, you need a modern code editor. We recommend **Visual Studio Code (VS Code)**.
+## A Quick Peek at HTML
 
-### Step 1: Install VS Code
-1. Download VS Code from the official website: [code.visualstudio.com](https://code.visualstudio.com/).
-2. Run the installer for your operating system (Windows, macOS, or Linux) and follow the installation prompts.
-
-### Step 2: Essential Extensions
-Enhance your workflow by installing these recommended extensions from the VS Code Marketplace:
-
-* **Live Server** (by Ritwick Dey): Launches a local development server with a live reload feature for static pages.
-* **Prettier - Code Formatter**: Automatically formats your HTML code to maintain clean, consistent syntax.
-* **Auto Rename Tag**: Automatically renames paired HTML tags when you modify either the opening or closing tag.
-
-## Creating Your First HTML Page
-
-Follow these simple steps to create and view your first HTML file locally:
-
-1. Create a new folder on your computer named `my-first-website`.
-2. Open **VS Code**, go to **File > Open Folder**, and select `my-first-website`.
-3. Create a new file named `index.html`.
-4. Copy and paste the following HTML code into `index.html`:
+Curious what HTML looks like? Here is a tiny, complete web page:
 
 ```html title="index.html"
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My First HTML Page</title>
-</head>
-<body>
-  <h1>Hello, World!</h1>
-  <p>Welcome to my first web page built with HTML5.</p>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My First Page</title>
+  </head>
+  <body>
+    <h1>Hello, CodeHarborHub! 👋</h1>
+    <p>This is my very first web page.</p>
+  </body>
 </html>
-
 ```
 
-## Anatomy of an HTML Document
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h1>Hello, CodeHarborHub! 👋</h1>
+<p>This is my very first web page.</p>
+</>
+</BrowserWindow>
 
-Let's break down each element of the starter template:
+Don't worry if it looks unfamiliar. By the end of this module, you will understand every single line of it.
 
-### 1. `<!DOCTYPE html>`
+## What You Need Before You Start
 
-The document type declaration. It informs the web browser that this document is written in modern **HTML5**. It must always be at the very top of the file.
+You don't need to install anything complicated. Here is the short checklist:
 
-### 2. `<html lang="en">`
+1. **A modern web browser**: [Google Chrome](https://www.google.com/chrome/), [Mozilla Firefox](https://www.mozilla.org/firefox/), or [Microsoft Edge](https://www.microsoft.com/edge).
+2. **A code editor**: [Visual Studio Code](https://code.visualstudio.com/) is highly recommended and free.
+3. **A folder** on your computer to save your practice files.
 
-The root element that wraps all content on the page. The `lang="en"` attribute specifies that the primary language of the document is English, aiding search engines and assistive technologies like screen readers.
+:::info
+Even a basic text editor such as Notepad will work, but a code editor gives you syntax highlighting, auto-completion, and a much better experience.
+:::
 
-### 3. `<head>`
+## Tips for Learning Effectively
 
-Contains document **metadata** (data about data) that is not directly displayed on the main webpage canvas.
+- **Type the code yourself.** Copy-pasting feels fast, but typing builds muscle memory.
+- **Experiment freely.** Change things, break things, and see what happens. That is how you learn.
+- **Use the developer tools often.** They are your best friend for understanding any website.
+- **Practice a little every day.** Consistency beats long, occasional study sessions.
 
-* `<meta charset="UTF-8">`: Sets character encoding to UTF-8, supporting almost all human languages and special symbols.
-* `<meta name="viewport" content="width=device-width, initial-scale=1.0">`: Configures responsive viewport behavior for mobile devices and tablets.
-* `<title>`: Defines the title shown in the browser tab and search engine result listings.
+:::warning Don't skip the fundamentals
+It is tempting to jump straight to CSS and JavaScript, but a solid understanding of HTML makes everything that follows easier.
+:::
 
-### 4. `<body>`
+<AdsComponent />
+<br />
 
-Contains all the visible content displayed to users, such as text, images, buttons, links, tables, and videos.
-
-## Running Your HTML Page
-
-
-
-## Quick Hands-On Exercise
-
-Try editing your `index.html` file to customize the content:
-
-1. Change the `<title>` text to `[Your Name]'s Portfolio`.
-2. Update the `<h1>` heading to display a customized welcome message.
-3. Add a second paragraph `<p>` describing your goals for learning web development.
-4. Save the file and observe the updates in your browser.
-
-## Summary Checklist
-
-Before moving to the next section, make sure you understand:
-
-* [x] What HTML stands for and its role in web development.
-* [x] The function of the core document tags (`<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`).
-* [x] How to create and run an `.html` file locally in a web browser.
-        
-        
-```
-├── 01-getting-started/
-│   ├── index.mdx
-        │   ├── what-is-html.mdx
-        │   ├── html-history.mdx
-        │   ├── html-vs-html5.mdx
-        │   ├── how-the-web-works.mdx
-        │   ├── html-document-structure.mdx
-        │   ├── create-your-first-html-page.mdx
-        │   └── browser-developer-tools.mdx
-```
+> Happy coding from all of us at **CodeHarborHub**! 💙

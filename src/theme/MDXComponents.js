@@ -19,7 +19,6 @@ import Admonition from '@theme/Admonition';
 import TOCInline from '@theme/TOCInline';
 import CodePenEmbed from '@site/src/components/CodePenEmbed';
 import CodePreview from '@site/src/components/CodePreview';
-import { Timeline, TimelineEvent } from '@site/src/components/Timeline';
 
 export default {
   // Re-use the default mapping
@@ -43,6 +42,4 @@ export default {
   TOCInline,
   CodePenEmbed,
   CodePreview,
-  Timeline, 
-  TimelineEvent,
 };
