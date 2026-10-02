@@ -1,0 +1,32 @@
+name: PR Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check repository
+        run: |
+          echo "Checking pull request quality..."
+          test -f CONTRIBUTING.md
+          test -f CODE_OF_CONDUCT.md
+          test -f SECURITY.md
+
+      - name: Check for merge conflicts
+        run: |
+          git diff --check
+
+      - name: Summary
+        run: |
+          echo "PR quality checks completed."
