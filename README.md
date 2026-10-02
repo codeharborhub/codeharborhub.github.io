@@ -1,6 +1,15 @@
-# CodeHarborHub
+<!--codeharborhub Banner -->
+<div align="center">
+   <img src="https://github.com/user-attachments/assets/3aa8ab17-2f7b-4169-be2f-2cbca6bbd226" alt="CodeHarborHub" width="100%" />
+  <!-- <img src="https://github.com/user-attachments/assets/df522da4-9809-4843-ab36-4033cb9859b5" alt="CodeHarborHub 2026" width="100%" /> -->
 
 Welcome to CodeHarborHub! Your gateway to top-notch tech education. **Tired of limitations?** CodeHarborHub shatters them. We're the exclusive platform offering a comprehensive tech curriculum, taught by industry masters, completely free. Join our vibrant community, master in-demand skills, and launch your dream tech career.
+
+</div>
+
+---
+
+<div align="center">
 
 <a href="https://www.producthunt.com/products/poster?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-codeharborhub-2" target="_blank" rel="noopener noreferrer"><img alt="CodeHarborHub - Your safe haven to learn, code, and contribute. | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1182511&amp;theme=light&amp;t=1782658556715"></a>
 
@@ -9,9 +18,15 @@ Welcome to CodeHarborHub! Your gateway to top-notch tech education. **Tired of l
 [![Contributors](https://img.shields.io/github/contributors/CodeHarborHub/codeharborhub)](https://github.com/CodeHarborHub/codeharborhub/graphs/contributors)
 [![slack](https://img.shields.io/badge/slack-CodeHarborHub-brightgreen.svg?logo=slack)](https://join.slack.com/t/codeharborhub/shared_invite/zt-2mana2uz5-oUQqFAnLqoywHjB9fXTGpA)
 
+</div>
+
+<div align="center">
+
 ## About
 
 At CodeHarborHub, our mission is clear: to provide accessible and comprehensive educational resources to learners of all levels, from beginners to advanced professionals. Whether you're a novice or a seasoned developer, our inclusive platform offers tailored learning opportunities. Join us today and embark on your path to tech mastery!
+
+</div>
 
 ## Features
 
@@ -23,6 +38,17 @@ At CodeHarborHub, our mission is clear: to provide accessible and comprehensive 
 ---
 
 ## 🧠 Events & Hackathons
+
+<!-- Hacktoberfest 2026 Banner -->
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/1d841427-eda0-4628-8134-14f8a04bce20" alt="Hacktoberfest 2026" width="100%" />
+  
+ ### Welcome to Hacktoberfest 2026!
+
+  We are excited to participate in **Hacktoberfest 2026**! We welcome contributions from developers of all skill levels.
+</div>
+
+---
 
 ### 🏁 CodeHarborHub x Hacktoberfest 2025
 Celebrate open source with us this **Hacktoberfest 2025 (Oct 1 – Oct 31)**!  
