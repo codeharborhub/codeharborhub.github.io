@@ -1,15 +1,367 @@
 ---
-id: strong-and-bold
-title: "Strong Importance vs Bold Text: strong vs b Tags"
-sidebar_label: "Strong & Bold"
+id: html-strong-and-bold
+title: "HTML Strong and Bold"
+sidebar_label: "Strong and Bold"
 sidebar_position: 6
 slug: /html/text-content/strong-and-bold
-description: "Understand the semantic difference between the strong tag for high importance and the b tag for stylistic bold offset in HTML."
+description: "Learn the difference between the HTML strong and b tags. Understand semantic importance vs visual style, accessibility, font-weight in CSS, and best practices for global audiences, explained in simple language on CodeHarborHub."
 keywords:
-  - strong vs b tag
-  - bold text HTML
-  - semantic strong tag
-  - visual vs semantic emphasis
+  - HTML strong tag
+  - HTML b tag
+  - HTML strong vs b
+  - HTML bold text
+  - HTML semantic tags
+  - CSS font-weight
+  - HTML text importance
+  - HTML accessibility bold text
+  - learn HTML bold
   - CodeHarborHub HTML
-tags: [html, typography, semantics, beginner]
+tags: [html, web-development, beginner, strong, bold, text, frontend]
 ---
+
+Imagine you are reading a safety notice. One sentence is darker than the rest: **"Do not touch the wire."** Your eyes go straight to it. You do not need to be told it matters. The design already said it for you.
+
+On the web, we can do the same thing with two HTML tags, `<strong>` and `<b>`. Both show text in **bold** by default, so many learners think they are the same. They are not. The difference is small, but it is one of the most useful ideas in HTML, and it will make you a more thoughtful developer.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to make text bold with `<strong>` and `<b>`
+- The key difference: **importance** vs **appearance**
+- Which tag to choose in real situations
+- Why this choice matters for accessibility and for users around the world
+- How to control boldness with CSS `font-weight`
+- Common mistakes, and how to avoid them
+
+:::info Learning tip
+This lesson is about **meaning**. If you understand why, you will never need to memorize a rule.
+:::
+
+## The Quick Answer
+
+Both tags look the same in a browser. What changes is the message you send.
+
+| Tag | Full meaning | What it tells the browser |
+| :-- | :-- | :-- |
+| `<strong>` | Strong importance | "This text is serious or urgent." |
+| `<b>` | Bring attention to | "Notice this text, but it is not more important." |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p><strong>Warning:</strong> Save your work before closing.</p>
+<p>Our new course covers <b>HTML</b>, <b>CSS</b>, and <b>JavaScript</b>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p><strong>Warning:</strong> Save your work before closing.</p>
+<p>Our new course covers <b>HTML</b>, <b>CSS</b>, and <b>JavaScript</b>.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Both lines show bold text. But in the first line, the word "Warning" carries real importance. In the second, the bold words are simply easy to spot.
+
+## The `<strong>` Tag: "This Really Matters"
+
+Use `<strong>` when the content is **important, serious, or urgent**. The meaning stays even when the visual style changes.
+
+Good uses for `<strong>`:
+
+- Warnings and safety notes
+- Deadlines and conditions the reader must not miss
+- A key sentence that changes the meaning of a paragraph
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="strong-examples.html"
+<p><strong>Do not</strong> share your password with anyone.</p>
+<p>The registration closes on <strong>31 October</strong>.</p>
+<p>This medicine is <strong>not safe for children</strong>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/strong-examples.html">
+<>
+<p><strong>Do not</strong> share your password with anyone.</p>
+<p>The registration closes on <strong>31 October</strong>.</p>
+<p>This medicine is <strong>not safe for children</strong>.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Ask yourself one question: **"If this text were missing, would the reader make a mistake?"** If the answer is yes, `<strong>` is a good choice.
+
+### Nesting for Extra Importance
+
+You can place `<strong>` inside another `<strong>` to show that one part is even more important.
+
+```html
+<p><strong>Back up your files. <strong>Never</strong> delete the original.</strong></p>
+```
+
+Use this rarely. If everything is important, nothing stands out.
+
+## The `<b>` Tag: "Please Notice This"
+
+The `<b>` tag draws attention without saying "this is more important." Think of it as a **highlighter pen** for the eye.
+
+Good uses for `<b>`:
+
+- **Keywords** in a summary, so readers can scan quickly
+- **Product names** in a review
+- **Ingredient names** in a recipe
+- The first words of an article introduction
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="b-examples.html"
+<p>Ingredients: <b>2 cups rice</b>, <b>1 tsp salt</b>, and <b>water</b>.</p>
+<p>In this review we compare the <b>Nova X1</b> and the <b>Orbit Pro</b>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/b-examples.html">
+<>
+<p>Ingredients: <b>2 cups rice</b>, <b>1 tsp salt</b>, and <b>water</b>.</p>
+<p>In this review we compare the <b>Nova X1</b> and the <b>Orbit Pro</b>.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Nothing here is a warning. The bold text just helps a reader scan the page quickly.
+
+## Why Does the Difference Matter?
+
+Since both look the same, it is fair to ask why we should care. There are three good reasons.
+
+### 1. Accessibility
+
+Users who cannot see the screen use **screen readers**, which read the page aloud. Tools differ in how they handle emphasis, and many do not announce bold by default. Still, `<strong>` puts real meaning in your code, so assistive technology **can** use it, and users can often customize this. A `<b>` tag or a style made only with CSS carries no such meaning.
+
+### 2. Meaning survives style changes
+
+Suppose you later redesign your site and decide important text should be **red** instead of bold. If you used `<strong>`, you change one CSS rule. If you used `<b>` everywhere, you would have to search through every page and decide which bold text was important.
+
+### 3. Clear code for your team
+
+When another developer reads `<strong>`, they instantly know your intention. Clear code is easier to maintain, and it is a habit that employers value in every country.
+
+## Choosing Between Them: A Simple Decision Guide
+
+Follow these steps.
+
+1. **Is the text important, serious, or urgent?** Use `<strong>`.
+2. **Do you only want the reader's eye to land here?** Use `<b>`.
+3. **Do you only want a different look, with no special meaning?** Use CSS instead.
+
+| Situation | Best choice |
+| :-- | :-- |
+| "Warning: high voltage" | `<strong>` |
+| "Last date to apply: 15 May" | `<strong>` |
+| A brand name in a product list | `<b>` |
+| A keyword in a scannable summary | `<b>` |
+| Making a table label look heavier | CSS `font-weight` |
+
+## Controlling Boldness with CSS
+
+Both tags are bold because the browser gives them `font-weight: bold`. You can change that with CSS. The tag keeps its **meaning**, and CSS controls the **look**.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="font-weight.html"
+<style>
+  strong {
+    font-weight: 800;
+    color: #b91c1c;
+  }
+  .plain-title {
+    font-weight: 700;
+  }
+</style>
+
+<p><strong>Important:</strong> Check your internet connection.</p>
+<p class="plain-title">This text is bold only through CSS.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/font-weight.html">
+<>
+<p><strong style={{fontWeight: 800, color: '#b91c1c'}}>Important:</strong> Check your internet connection.</p>
+<p style={{fontWeight: 700}}>This text is bold only through CSS.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here are common `font-weight` values.
+
+| Value | Name | Note |
+| :-- | :-- | :-- |
+| `400` | Normal | The default for body text |
+| `500` | Medium | Available only if the font supports it |
+| `600` | Semi-bold | Popular for subtle emphasis |
+| `700` | Bold | Same as the keyword `bold` |
+| `800` to `900` | Extra bold | Only in fonts that include these weights |
+
+:::tip Good to know
+A font can show a weight only if that weight is available in the font file. If a font has only regular and bold, values like `600` and `800` may look identical to `700`.
+:::
+
+## Writing for a Global Audience
+
+People read your pages in many languages and scripts, so it helps to think beyond English.
+
+<Tabs>
+<TabItem value="code" label="Multilingual Example" default>
+
+```html title="global.html"
+<p><strong>Attention:</strong> The server will restart tonight.</p>
+<p><strong>Atención:</strong> El servidor se reiniciará esta noche.</p>
+<p><strong>सावधान:</strong> सर्वर आज रात रीस्टार्ट होगा।</p>
+<p><strong>注意:</strong> サーバーは今夜再起動します。</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/global.html">
+<>
+<p><strong>Attention:</strong> The server will restart tonight.</p>
+<p><strong>Atención:</strong> El servidor se reiniciará esta noche.</p>
+<p><strong>सावधान:</strong> सर्वर आज रात रीस्टार्ट होगा।</p>
+<p><strong>注意:</strong> サーバーは今夜再起動します。</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The same tag works in every language, which is a big benefit of semantic HTML. A few friendly reminders:
+
+- **Do not rely on bold alone.** Some fonts and scripts do not have a true bold style, so the browser may fake it. Bold can look blurry in these cases, so test your page with the languages you support.
+- **Make sure the text says it too.** Words like "Warning" or "Important" help users who cannot see the bold style, and they translate well.
+- **Add the `lang` attribute** to your page, for example `<html lang="hi">`. It helps browsers, translation tools, and screen readers choose the right pronunciation and font.
+- **Keep contrast high.** Bold gray text on a light background is still hard to read for many people.
+
+## Common Mistakes
+
+### Mistake 1: Using `<strong>` for headings
+
+```html
+<!-- Please avoid -->
+<p><strong>Chapter 1: Getting Started</strong></p>
+
+<!-- Better -->
+<h2>Chapter 1: Getting Started</h2>
+```
+
+A heading gives your page structure. Bold text does not. See the [Headings](./headings) lesson for more.
+
+### Mistake 2: Bolding entire paragraphs
+
+```html
+<!-- Too much -->
+<p><strong>Welcome to our website. We offer many courses. Please read all of the
+following text carefully because everything here is important.</strong></p>
+```
+
+When everything is bold, nothing stands out. Keep bold text to a few words or one short sentence.
+
+### Mistake 3: Using bold only for size or style
+
+If you only want text to look heavier in a design, such as a table header or a button label, use CSS `font-weight`. Do not add `<strong>` to say something is important when it is not.
+
+### Mistake 4: Using bold when a link or list is better
+
+Instead of bolding a list of items in one paragraph, use a proper list. Instead of bolding "click here", write a clear link with descriptive text.
+
+### Mistake 5: Believing `<strong>` boosts search ranking
+
+Search engines may notice emphasized text, but wrapping keywords in `<strong>` does not magically improve your ranking. Write for people first. Clear, useful content is what matters.
+
+## Try It Yourself
+
+Practice with a short project.
+
+1. Create a file named `notice.html`.
+2. Write a short paragraph about a class or event.
+3. Use `<strong>` for **one** important detail, like the date or a rule.
+4. Use `<b>` for the **names** of two topics or products.
+5. Add a CSS rule to make your `<strong>` text dark red.
+6. Ask a friend: "Which part of this notice matters most?" If they choose your `<strong>` text, you did it right.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the main difference between `<strong>` and `<b>`?</summary>
+
+`<strong>` shows that text is important. `<b>` only draws attention to text, without adding importance.
+
+</details>
+
+<details>
+<summary>2. Which tag would you use for "Do not share your password"?</summary>
+
+`<strong>`, because it is a serious instruction the reader must not miss.
+
+</details>
+
+<details>
+<summary>3. How do you make text bold without adding meaning?</summary>
+
+Use CSS, for example `font-weight: 700`.
+
+</details>
+
+<details>
+<summary>4. Why should you avoid using `<strong>` for page titles?</summary>
+
+Titles need heading tags such as `<h1>` or `<h2>`. Headings build the page outline, and bold text does not.
+
+</details>
+
+<details>
+<summary>5. Why is it a good idea to write the word "Warning" and not depend on bold alone?</summary>
+
+Some users cannot see the styling, some fonts do not have a true bold, and clear words translate and read aloud well.
+
+</details>
+
+## Key Takeaways
+
+- `<strong>` means **important**. `<b>` means **look here**.
+- Both are bold by default, but the meaning is different, and meaning is what HTML is for.
+- Use CSS `font-weight` when you only need a visual change.
+- Keep bold text short, and do not use it in place of headings, lists, or links.
+- Write clear words and set the `lang` attribute so your content works for readers everywhere.
+
+You now know how to show importance and attention. Next, learn how to add stress and tone to your writing in [Emphasis and Italic](./emphasis-and-italic).

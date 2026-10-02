@@ -1,15 +1,339 @@
 ---
-id: horizontal-rule
-title: "Horizontal Rules: The hr Tag for Thematic Breaks"
+id: html-horizontal-rule
+title: "HTML Horizontal Rule"
 sidebar_label: "Horizontal Rule"
 sidebar_position: 5
 slug: /html/text-content/horizontal-rule
-description: "Explore the hr element in HTML to create thematic breaks, section dividers, and visual content shifts across web pages."
+description: "Learn how to use the HTML hr tag to mark a thematic break between topics. Understand its meaning, default look, how to style it with CSS, accessibility tips, and common mistakes, explained clearly on CodeHarborHub."
 keywords:
+  - HTML horizontal rule
   - HTML hr tag
-  - horizontal rule
-  - thematic break HTML
-  - section divider HTML
+  - HTML thematic break
+  - style hr with CSS
+  - HTML divider line
+  - HTML hr accessibility
+  - HTML void elements
+  - HTML separator
+  - learn HTML hr
   - CodeHarborHub HTML
-tags: [html, hr-tag, layout, beginner]
+tags: [html, web-development, beginner, horizontal-rule, text, frontend]
 ---
+
+Think about reading a story. Suddenly the writer leaves a small gap, maybe adds a line or a few stars, and starts again in a new place or at a new time. You feel the change right away. Nobody had to explain it.
+
+HTML has a tool for exactly this moment: the **horizontal rule**, written as `<hr />`. It draws a line across the page, but its real job is not decoration. It tells the reader, "The topic is changing here."
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<hr />` tag is and what it means
+- When a horizontal rule is the right choice
+- How to style it with CSS, since old HTML attributes are outdated
+- How screen readers treat it
+- Common mistakes, and better alternatives
+
+## The Basics
+
+The `<hr />` tag creates a **thematic break** between two blocks of content. It is a **void element**, which means it has no content inside and no closing tag. (You met void elements in the [Line Breaks](./line-breaks) lesson.)
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h2>Morning Routine</h2>
+<p>I start my day with a glass of water and a short walk.</p>
+
+<hr />
+
+<h2>Evening Routine</h2>
+<p>I finish my day by reading for twenty minutes.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h2>Morning Routine</h2>
+<p>I start my day with a glass of water and a short walk.</p>
+
+<hr />
+
+<h2>Evening Routine</h2>
+<p>I finish my day by reading for twenty minutes.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The browser draws a thin line across the full width of its container, with a little space above and below. It is a block-level element, so it always sits on its own row.
+
+:::info Two ways to write it
+In plain HTML, both `<hr>` and `<hr />` work. In MDX and JSX, use `<hr />`, because unclosed tags cause errors there.
+:::
+
+## What Does "Thematic Break" Mean?
+
+In older HTML, `<hr>` meant "horizontal **rule**", so people thought of it only as a line. In modern HTML, the meaning is a **shift in theme** at the paragraph level.
+
+Here is the difference in simple terms.
+
+| Old idea | Modern idea |
+| :-- | :-- |
+| "Draw a line here." | "The subject changes here." |
+| About appearance | About meaning |
+| Visual decoration | Content structure |
+
+That is why the line you see is only the **default look**. The meaning stays even if you restyle it.
+
+## When to Use `<hr />`
+
+Use it when there is a real change of topic inside a section, but the change is too small for a new heading.
+
+- **A scene change** in a story
+- **A shift in subject** between two paragraphs
+- **A separator** between a main article and its notes or sign-off
+- **A pause** between a question and its long answer
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="story.html"
+<p>Amara closed her laptop and looked out of the window. The rain had stopped.</p>
+
+<hr />
+
+<p>Three weeks later, her first app was live in more than thirty countries.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/story.html">
+<>
+<p>Amara closed her laptop and looked out of the window. The rain had stopped.</p>
+
+<hr />
+
+<p>Three weeks later, her first app was live in more than thirty countries.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A quick test: **if you removed the line, would the change of topic still be clear?** If yes, you probably do not need `<hr />`. If a reader might get confused, it helps.
+
+## Old Attributes Are Gone: Use CSS
+
+Old tutorials show attributes like `width`, `size`, `align`, and `noshade` on `<hr>`. These are **deprecated**. They still work in some browsers, but you should not use them. CSS gives you full control instead.
+
+| Old attribute | Modern CSS |
+| :-- | :-- |
+| `width="50%"` | `width: 50%;` |
+| `size="5"` | `border-width` or `height` |
+| `align="center"` | `margin-inline: auto;` |
+| `noshade` | `border-style` and `background` |
+
+### A Clean Custom Line
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="styled-hr.html"
+<style>
+  .soft-line {
+    width: 60%;
+    margin: 2rem auto;
+    border: none;
+    border-top: 3px solid #2563eb;
+    border-radius: 2px;
+  }
+</style>
+
+<p>First topic.</p>
+<hr class="soft-line" />
+<p>Second topic.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/styled-hr.html">
+<>
+<p>First topic.</p>
+<hr style={{width: '60%', margin: '2rem auto', border: 'none', borderTop: '3px solid #2563eb', borderRadius: '2px'}} />
+<p>Second topic.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### A Few More Styles
+
+<Tabs>
+<TabItem value="dashed" label="Dashed" default>
+
+```css
+hr.dashed {
+  border: none;
+  border-top: 2px dashed #64748b;
+}
+```
+
+</TabItem>
+<TabItem value="fade" label="Fading">
+
+```css
+hr.fade {
+  height: 2px;
+  border: none;
+  background: linear-gradient(to right, transparent, #2563eb, transparent);
+}
+```
+
+</TabItem>
+<TabItem value="dots" label="Dotted">
+
+```css
+hr.dotted {
+  border: none;
+  border-top: 4px dotted #94a3b8;
+  width: 30%;
+  margin-inline: auto;
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::tip Reset first
+Browsers add their own border style and margin to `<hr>`. Setting `border: none` first, then adding the style you want, gives you a predictable result in every browser.
+:::
+
+## Accessibility and Global Readers
+
+Not everyone sees the page in the same way, so it helps to know what happens behind the scenes.
+
+- **Screen readers** usually announce `<hr />` as a **separator**. Some readers skip it, and others say the word. This is why you should use it only when the break is meaningful.
+- **Decorative lines** made with CSS borders are ignored by assistive tools. That is good when the line is only for looks.
+- **Contrast matters.** A very light gray line on a white background may be invisible for low-vision users. Choose a color that can be seen.
+- **Right-to-left languages** such as Arabic and Hebrew work fine with `<hr />`, because it spans the full width of its container.
+- **Do not rely on the line alone.** If a new section is important, add a heading, which also helps translation tools and search engines.
+
+## Choosing the Right Tool
+
+`<hr />` is not the only way to separate content. Pick the tool that matches your goal.
+
+| Goal | Best choice |
+| :-- | :-- |
+| Change of topic inside a section | `<hr />` |
+| A new major section of the page | A heading, like `<h2>` |
+| A purely visual line, such as under a title | CSS `border-bottom` |
+| Space between two blocks | CSS `margin` or `padding` |
+| Separate items in a list | Use list styling or `border` on each item |
+
+## Common Mistakes
+
+### Mistake 1: Using `<hr />` everywhere
+
+```html
+<!-- Too many lines -->
+<p>Paragraph one.</p>
+<hr />
+<p>Paragraph two.</p>
+<hr />
+<p>Paragraph three.</p>
+<hr />
+```
+
+When every paragraph gets a line, the break loses its meaning. Save it for real changes of topic.
+
+### Mistake 2: Using it only for decoration
+
+If you only want a line under a title, a CSS `border-bottom` is the better tool. It does not say "the topic changed" when nothing changed.
+
+### Mistake 3: Using deprecated attributes
+
+```html
+<!-- Outdated -->
+<hr width="50%" size="4" noshade />
+
+<!-- Modern -->
+<hr style="width: 50%; border-top: 4px solid #000;" />
+```
+
+### Mistake 4: Writing a closing tag
+
+`</hr>` is not valid. Void elements never have a closing tag.
+
+### Mistake 5: Using it instead of headings
+
+A line does not tell users what the next section is about. If the next part has its own subject, give it a [heading](./headings).
+
+## Try It Yourself
+
+Here is a small exercise.
+
+1. Create a file called `travel-diary.html`.
+2. Write two short paragraphs about a place you visited or want to visit.
+3. Add a third paragraph about a **different day** or a **different place**.
+4. Place an `<hr />` between the parts where the story changes.
+5. Add a CSS class that makes your line 40% wide, centered, and dotted.
+6. Remove the `<hr />` and read the text again. Is the change still clear?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `<hr />` represent in modern HTML?</summary>
+
+A thematic break, meaning a shift in topic between blocks of content.
+
+</details>
+
+<details>
+<summary>2. Does `<hr />` need a closing tag?</summary>
+
+No. It is a void element and has no content to wrap.
+
+</details>
+
+<details>
+<summary>3. How should you change the width or color of a horizontal rule today?</summary>
+
+Use CSS, such as `width`, `border-top`, and `margin`. The old HTML attributes are deprecated.
+
+</details>
+
+<details>
+<summary>4. When is a heading better than `<hr />`?</summary>
+
+When the next part is a new section with its own subject. A heading names that section, and a line does not.
+
+</details>
+
+<details>
+<summary>5. Why should you not use `<hr />` between every paragraph?</summary>
+
+Too many breaks make each one meaningless, and screen readers may announce a separator every time.
+
+</details>
+
+## Key Takeaways
+
+- `<hr />` marks a **change of theme**, not just a line on the screen.
+- It is a **void, block-level** element with no closing tag.
+- Style it with **CSS**. The old attributes are deprecated.
+- Use it sparingly, and prefer headings for new sections and CSS borders for decoration.
+- Choose visible colors and think about screen readers so every learner can follow your page.
+
+Next, learn how to show importance and attention in your text with [Strong and Bold](./strong-and-bold).
