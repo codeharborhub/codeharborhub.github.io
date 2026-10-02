@@ -1,15 +1,367 @@
 ---
-id: line-breaks
-title: "Line Breaks and Forced Spaces in HTML"
+id: html-line-breaks
+title: "HTML Line Breaks"
 sidebar_label: "Line Breaks"
 sidebar_position: 4
 slug: /html/text-content/line-breaks
-description: "Learn when and how to use the self-closing br tag for forcing line breaks in addresses, poetry, and inline text blocks without breaking paragraphs."
+description: "Understand how the HTML br tag works, when to use a line break instead of a new paragraph, how to handle addresses and poems, and which CSS options and mistakes to know. A clear, step-by-step guide on CodeHarborHub."
 keywords:
+  - HTML line break
   - HTML br tag
-  - line break tag
-  - forced line breaks
-  - inline breaks HTML
+  - HTML br vs p
+  - HTML new line
+  - HTML wbr tag
+  - HTML white-space pre-line
+  - HTML void elements
+  - HTML address formatting
+  - learn HTML line breaks
   - CodeHarborHub HTML
-tags: [html, line-breaks, formatting, beginner]
+tags: [html, web-development, beginner, line-break, text, frontend]
 ---
+
+In the last lesson you learned that pressing Enter in your code does **not** start a new line on the page. The browser ignores it. So what do you do when you really do want a new line, such as in an address or a poem, without starting a whole new paragraph?
+
+That is the job of the `<br />` tag. It is tiny, but understanding **when** to use it (and when not to) is what separates clean HTML from messy HTML. This lesson explains both.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<br />` tag does, in plain terms
+- What a **void element** is and why `<br />` has no closing tag
+- The difference between a line break and a new paragraph
+- Where line breaks make sense, and where they do not
+- Better alternatives using CSS
+- How to control where a long word may break with `<wbr />`
+
+## The Problem: Enter Does Nothing
+
+Start with the problem. Here is a short message typed on three lines.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="problem.html"
+<p>
+  Roses are red
+  Violets are blue
+  I love HTML
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/problem.html">
+<>
+<p>
+  Roses are red
+  Violets are blue
+  I love HTML
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+All three lines run together into one. As you learned, the browser **collapses** line breaks in your code into a single space. To tell the browser "start a new line here", we need an actual HTML instruction.
+
+## The Solution: The `<br />` Tag
+
+`br` stands for **break**. Place it exactly where you want the line to end.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="solution.html"
+<p>
+  Roses are red<br />
+  Violets are blue<br />
+  I love HTML
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/solution.html">
+<>
+<p>
+  Roses are red<br />
+  Violets are blue<br />
+  I love HTML
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Now each line stands on its own, and they all still belong to **one paragraph**.
+
+## How to Think About `<br />`
+
+Here is a simple way to picture it.
+
+- **Typing text** is like writing on a typewriter. The words keep flowing to the right until the paper edge, then wrap.
+- **`<br />`** is like pressing the carriage return on that typewriter. The next word starts at the beginning of a new line, even though you were not at the edge yet.
+
+That is all it does. It does not create a new block, and it does not add extra space. It only says, "continue from the next line."
+
+## Void Elements: Why No Closing Tag?
+
+Most HTML elements wrap around content, like `<p>text</p>`. The `<br />` tag has **nothing to wrap**, because a line break has no content inside it. Elements like this are called **void elements**.
+
+| Wrapping element | Void element |
+| :-- | :-- |
+| `<p>Hello</p>` | `<br />` |
+| `<strong>Hi</strong>` | `<hr />` |
+| `<a href="#">Link</a>` | `<img src="a.png" alt="" />` |
+
+You may see three ways of writing it, and all of them work in HTML.
+
+```html
+<br>
+<br/>
+<br />
+```
+
+:::info Which one should I use?
+In plain HTML, `<br>` is perfectly valid. The self-closing form `<br />` is required in JSX and MDX, and it is common in many style guides. Since our CodeHarborHub docs run on MDX, `<br />` is the safest habit.
+:::
+
+## Line Break vs New Paragraph
+
+This is the most important idea in the lesson. Both give you a new line, but they mean different things.
+
+| | `<br />` | `<p>` |
+| :-- | :-- | :-- |
+| Meaning | "Same thought, next line" | "A new idea starts here" |
+| Extra space between lines | No | Yes (default margin) |
+| Structure | Stays inside one element | Creates a separate block |
+| Best for | Addresses, poems, sign-offs | Normal body text |
+
+A quick test: **if you could put a full stop and start a new idea, use a new paragraph. If the lines belong together as one unit, use a line break.**
+
+### Side by Side
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="compare.html"
+<!-- Two paragraphs: two ideas -->
+<p>I woke up early today.</p>
+<p>Then I went for a long walk.</p>
+
+<!-- One paragraph with a break: one unit -->
+<p>
+  Priya Sharma<br />
+  221B Green Street<br />
+  Indore, Madhya Pradesh
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/compare.html">
+<>
+<p>I woke up early today.</p>
+<p>Then I went for a long walk.</p>
+
+<p>
+  Priya Sharma<br />
+  221B Green Street<br />
+  Indore, Madhya Pradesh
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Look at the gaps. The two paragraphs have space between them. The address lines sit close together because they are one block of information.
+
+## Where Line Breaks Make Sense
+
+Use `<br />` when the **line ending itself is part of the content**.
+
+- **Postal addresses:** name, street, and city on separate lines
+- **Poems and verses:** each line has to stay where the poet put it
+- **Sign-offs:** "Thanks," then your name on the next line
+- **Short labeled lines:** for example, contact details in a footer
+
+```html title="signoff.html"
+<p>
+  Thanks for reading,<br />
+  Team CodeHarborHub
+</p>
+```
+
+## Where Line Breaks Do Not Belong
+
+### Do not use `<br />` to create space
+
+```html
+<!-- Please avoid -->
+<p>First idea.</p>
+<br /><br /><br />
+<p>Second idea.</p>
+```
+
+Stacking breaks is a layout trick, not meaning. It behaves differently on different screen sizes, and screen readers may announce the empty lines. Use CSS `margin` instead.
+
+```html
+<!-- Better -->
+<p style="margin-bottom: 3rem">First idea.</p>
+<p>Second idea.</p>
+```
+
+### Do not use `<br />` to split every sentence into a paragraph
+
+If your lines are separate ideas, write separate `<p>` elements. It makes the structure clear to search engines and assistive tools.
+
+### Do not use `<br />` inside lists or tables to fake layout
+
+There are proper elements for lists and tables. Reaching for `<br />` there is usually a sign that another tag fits better.
+
+:::warning Accessibility note
+Screen readers treat line breaks inside text as part of the reading flow. Real structure, like separate paragraphs or list items, gives users clearer signals than many `<br />` tags in a row.
+:::
+
+## Better Options with CSS
+
+Sometimes you have text that already contains line endings, like content from a database or a text box. Instead of adding `<br />` by hand, CSS can honor the line breaks for you.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="pre-line.html"
+<style>
+  .keep-lines {
+    white-space: pre-line;
+  }
+</style>
+
+<p class="keep-lines">
+Line one of my note
+Line two of my note
+Line three of my note
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/pre-line.html">
+<>
+<p style={{whiteSpace: 'pre-line'}}>
+Line one of my note
+Line two of my note
+Line three of my note
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+`white-space: pre-line` tells the browser: "keep the line breaks I typed, but still collapse extra spaces." It is handy for user-written text.
+
+| Need | Best tool |
+| :-- | :-- |
+| One or two deliberate line endings (address, poem) | `<br />` |
+| Many stored line endings in existing text | CSS `white-space: pre-line` |
+| Exact spaces and line breaks, like code | The `<pre>` element |
+| Extra space between blocks | CSS `margin` or `padding` |
+| A new idea | A new `<p>` |
+
+## Bonus: The `<wbr />` Tag
+
+`<br />` **forces** a break. Its quieter cousin, `<wbr />` (word break opportunity), only **suggests** one. The browser breaks the line there **only if it needs to**.
+
+That helps with very long words or URLs that could overflow a small screen.
+
+```html
+<p>
+  Read our guide at
+  https://codeharborhub.<wbr />github.<wbr />io/tutorial<wbr />/html<wbr />/text-content
+</p>
+```
+
+On a wide screen, the text looks normal. On a narrow phone, the browser can wrap at any `<wbr />` instead of overflowing.
+
+## Common Mistakes
+
+| Mistake | Why it is a problem | Fix |
+| :-- | :-- | :-- |
+| Writing `</br>` | It is not valid HTML | Use `<br />` |
+| Many `<br />` in a row for spacing | Layout trick, poor accessibility | Use CSS `margin` |
+| A `<br />` right after every sentence | Turns body text into a choppy list | Use real paragraphs |
+| Using `<br />` outside any text container | Can produce unpredictable spacing | Put it inside `<p>` or another text element |
+
+## Try It Yourself
+
+Practice with this small project.
+
+1. Create `contact-card.html`.
+2. Add an `<h2>` that says **Contact Us**.
+3. Inside one `<p>`, write your name, city, and email on **three lines** using `<br />`.
+4. Add a **second** `<p>` with a normal sentence, like "We reply within a day."
+5. Compare the spacing between the two blocks. Can you explain why the gaps look different?
+
+If you can explain it, you truly understand line breaks.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `<br />` do?</summary>
+
+It ends the current line and starts the text on a new line, without starting a new paragraph.
+
+</details>
+
+<details>
+<summary>2. Why does `<br />` have no closing tag?</summary>
+
+It is a void element. A line break has no content to wrap, so there is nothing to close.
+
+</details>
+
+<details>
+<summary>3. When should you choose `<p>` over `<br />`?</summary>
+
+When you are starting a new idea. Use `<br />` only when the lines belong together as one unit, like an address.
+
+</details>
+
+<details>
+<summary>4. Why is stacking several `<br />` tags a poor way to add space?</summary>
+
+It mixes layout with content, behaves inconsistently on different screens, and is not friendly to screen readers. CSS margin is better.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `<br />` and `<wbr />`?</summary>
+
+`<br />` always forces a break. `<wbr />` only allows a break if the text needs one, such as in a long word on a small screen.
+
+</details>
+
+## Key Takeaways
+
+- Pressing Enter in your code does not create a new line on the page. Use `<br />` for that.
+- `<br />` is a **void element**. It has no content and no closing tag.
+- Use `<br />` when the line ending is part of the content, such as addresses, poems, and sign-offs.
+- Use `<p>` for new ideas, and CSS for spacing.
+- `white-space: pre-line` keeps existing line breaks, and `<wbr />` suggests optional break points.
+
+Next, learn how to separate topics with a visual divider in [Horizontal Rule](./horizontal-rule).
