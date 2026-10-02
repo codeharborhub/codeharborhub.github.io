@@ -50,6 +50,7 @@ At CodeHarborHub, our mission is clear: to provide accessible and comprehensive 
 
 ---
 
+<!--
 ### 🏁 CodeHarborHub x Hacktoberfest 2025
 Celebrate open source with us this **Hacktoberfest 2025 (Oct 1 – Oct 31)**!  
 We’re hosting **CodeHarborHub x Hacktoberfest 2025**, empowering developers to contribute, collaborate, and showcase their skills.
@@ -65,7 +66,9 @@ We’re hosting **CodeHarborHub x Hacktoberfest 2025**, empowering developers to
 📅 **Event Start:** October 1, 2025  
 📅 **Event End:** October 31, 2025  
 
-<img alt="CodeHarborHub-X-Hacktoberfest Event Banner" src="https://github.com/user-attachments/assets/10e5f9e2-83c5-4bfe-9a4d-3fade91a1dbd" />
+-->
+
+<!-- <img alt="CodeHarborHub-X-Hacktoberfest Event Banner" src="https://github.com/user-attachments/assets/10e5f9e2-83c5-4bfe-9a4d-3fade91a1dbd" /> -->
 
 ---
 
@@ -75,8 +78,8 @@ CodeHarborHub is proud to participate in various open source and community-drive
 
 | Program | Year | Status | Highlights |
 |----------|------|---------|-------------|
-| **GirlScript Summer of Code (GSSoC)** | 2024 | ✅ Participated | Mentored & maintained open-source repos |
-| **Hacktoberfest** | 2024–2025 | 🟢 Active | Hosting events & beginner-friendly projects |
+| **GirlScript Summer of Code (GSSoC)** | 2024 to present | ✅ Participated | Mentored & maintained open-source repos |
+| **Hacktoberfest** | 2024 to present | 🟢 Active | Hosting events & beginner-friendly projects |
 | **Google Summer of Code (GSoC)** | Coming Soon | 🔜 Planned | Expanding community mentorship |
 
 ---
