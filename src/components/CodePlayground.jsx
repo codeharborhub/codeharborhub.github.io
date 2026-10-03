@@ -106,12 +106,13 @@ export default function CodePlayground({ language = 'javascript', initialCode = 
   const executeCSS = () => {
     try {
       if (iframeRef.current) {
-        const htmlContent = `
+        const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(`
           <!DOCTYPE html>
           <html>
           <head>
             <meta charset="UTF-8">
-            <style>${code}</style>
           </head>
           <body>
             <div class="card">
@@ -120,11 +121,13 @@ export default function CodePlayground({ language = 'javascript', initialCode = 
             </div>
           </body>
           </html>
-        `;
-        const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow.document;
-        iframeDoc.open();
-        iframeDoc.write(htmlContent);
+        `);
         iframeDoc.close();
+
+        const styleEl = iframeDoc.createElement('style');
+        styleEl.textContent = code;
+        iframeDoc.head.appendChild(styleEl);
+
         setOutput([{ type: 'info', message: 'CSS rendered successfully' }]);
       }
     } catch (err) {
