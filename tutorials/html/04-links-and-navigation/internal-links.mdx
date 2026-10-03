@@ -1,15 +1,410 @@
 ---
-id: internal-links
-title: "Internal Page Links and Anchor Jumps"
+id: html-internal-links
+title: "HTML Internal Links"
 sidebar_label: "Internal Links"
 sidebar_position: 5
 slug: /html/links-and-navigation/internal-links
-description: "Learn how to link to specific sections within the same webpage using element IDs, hash fragments, and smooth scrolling techniques."
+description: "Learn how to create internal links in HTML. Link between pages of your own site, jump to sections with id and fragment links, build a table of contents, add skip links and back-to-top links, and make them accessible. Explained clearly on CodeHarborHub."
 keywords:
-  - internal links HTML
-  - page jump anchors
-  - element ID linking
-  - hash fragment URL
+  - HTML internal links
+  - HTML page anchors
+  - HTML id attribute links
+  - HTML fragment identifier
+  - HTML table of contents
+  - HTML skip link
+  - HTML back to top link
+  - CSS scroll-behavior smooth
+  - CSS scroll-margin-top
+  - CSS target pseudo-class
+  - learn HTML internal links
   - CodeHarborHub HTML
-tags: [html, internal-links, anchors, navigation]
+tags: [html, web-development, beginner, links, internal-links, navigation, frontend]
 ---
+
+Open any good book and you will find two kinds of help for moving around. There is the **table of contents**, which sends you to a chapter, and the **page numbers** that tell you where you are. Websites have the same needs. Visitors want to move between your pages, and on a long page they want to jump straight to the part they care about.
+
+Both are done with **internal links**: links that stay inside your own website. In this lesson, you will learn the three kinds, from simple page-to-page links to a smooth table of contents and a "skip to content" link that makes your site friendlier for keyboard users.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What makes a link **internal**
+- How to link from one page of your site to another
+- How to give a section an `id` and jump to it
+- How to link to a section on **another** page
+- How to build a table of contents, a back-to-top link, and a skip link
+- How to add smooth scrolling and avoid hidden headings under sticky menus
+- Accessibility and global tips, plus common mistakes
+
+## Three Kinds of Internal Links
+
+| Kind | What it does | Example `href` |
+| :-- | :-- | :-- |
+| **Page to page** | Opens another page on your site | `about.html` or `/about` |
+| **Same-page jump** | Scrolls to a section of the current page | `#pricing` |
+| **Page and section** | Opens another page and scrolls to a section of it | `guide.html#install` |
+
+You already know how paths work from the [Relative URLs](./relative-urls) lesson. Internal links simply put those paths to work.
+
+## 1. Linking From Page to Page
+
+Use a relative URL to connect your own pages. The browser keeps the visitor on your site, and keeps the same scheme and host.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav>
+  <a href="index.html">Home</a>
+  <a href="courses.html">Courses</a>
+  <a href="blog/index.html">Blog</a>
+  <a href="contact.html">Contact</a>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<nav>
+  <a href="#">Home</a>{' | '}
+  <a href="#">Courses</a>{' | '}
+  <a href="#">Blog</a>{' | '}
+  <a href="#">Contact</a>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#` so they stay on this page. In your own project, each one would open the file named in `href`.
+
+:::tip Mark the current page
+In a menu, it helps visitors to show which page they are on. Add `aria-current="page"` to that link, and style it with CSS: `a[aria-current="page"] { font-weight: 700; }`. Screen readers will announce it as the current page.
+:::
+
+## 2. Jumping Within the Same Page
+
+On a long page, you can let visitors jump to a section in two steps.
+
+1. **Give the target an `id`.** This is the name of the spot.
+2. **Link to it with `#` and that name.** The `#` means "a place on this page."
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="jump.html"
+<p><a href="#install">Jump to Installation</a></p>
+
+<h2 id="intro">Introduction</h2>
+<p>Welcome to the guide...</p>
+
+<h2 id="install">Installation</h2>
+<p>First, download the tools...</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/jump.html">
+<>
+<p><a href="#demo-install">Jump to Installation</a></p>
+
+<h2 id="demo-intro">Introduction</h2>
+<p>Welcome to the guide. Scroll down, or click the link above.</p>
+
+<h2 id="demo-install">Installation</h2>
+<p>First, download the tools you need.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Clicking the link scrolls the page so that the element with `id="install"` comes into view. The address in the browser also changes to end with `#install`, which means a visitor can **bookmark or share** that exact spot.
+
+### Rules for Good `id` Values
+
+| Rule | Good | Avoid |
+| :-- | :-- | :-- |
+| Must be **unique** on the page | `install` once only | The same `id` used twice |
+| No spaces | `getting-started` | `getting started` |
+| Case matters | `Install` and `install` are different | Mixing capitals by accident |
+| Use simple, meaningful words | `pricing`, `faq` | `section1`, `a`, `x7` |
+| Prefer lowercase, numbers, and hyphens | `step-2-setup` | Symbols such as `#` and `&` |
+
+:::info What about the old `name` attribute?
+Older tutorials create targets with `<a name="install"></a>`. That is outdated. Put an `id` on the **element itself**, such as the heading, as shown above.
+:::
+
+## 3. Linking to a Section on Another Page
+
+Combine a page path with a fragment. The browser loads the page, then scrolls to the `id`.
+
+```html title="index.html"
+<a href="guide.html#install">See the installation steps</a>
+<a href="/docs/setup#requirements">Check the requirements</a>
+```
+
+This is very useful for a home page that points to specific parts of longer pages, and for search results that take readers straight to the answer.
+
+## Building a Table of Contents
+
+A table of contents is a list of same-page links. It saves readers time on long articles.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="toc.html"
+<nav aria-label="Table of contents">
+  <h2>On this page</h2>
+  <ol>
+    <li><a href="#what">What is HTML?</a></li>
+    <li><a href="#tags">Tags and elements</a></li>
+    <li><a href="#first-page">Your first page</a></li>
+  </ol>
+</nav>
+
+<h2 id="what">What is HTML?</h2>
+<p>...</p>
+
+<h2 id="tags">Tags and elements</h2>
+<p>...</p>
+
+<h2 id="first-page">Your first page</h2>
+<p>...</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/toc.html">
+<>
+<nav aria-label="Table of contents">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#demo-toc-what">What is HTML?</a></li>
+    <li><a href="#demo-toc-tags">Tags and elements</a></li>
+    <li><a href="#demo-toc-first">Your first page</a></li>
+  </ol>
+</nav>
+
+<h3 id="demo-toc-what">What is HTML?</h3>
+<p>HTML is the language that describes the structure of a web page.</p>
+
+<h3 id="demo-toc-tags">Tags and elements</h3>
+<p>Tags are the labels, and elements are the finished pieces.</p>
+
+<h3 id="demo-toc-first">Your first page</h3>
+<p>Create a file, add a heading and a paragraph, and open it.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Back-to-Top Links
+
+At the end of a long page, give readers a quick way back up.
+
+```html title="top.html"
+<body id="top">
+  <!-- ...a long page... -->
+  <p><a href="#top">Back to top</a></p>
+</body>
+```
+
+A link to just `#` or `#top` also scrolls to the top of the page. Giving the `<body>` or your main heading an `id="top"` makes your intention clear.
+
+## Skip Links: A Gift for Keyboard Users
+
+Imagine using only the <kbd>Tab</kbd> key. On a page with a big menu, you would have to press <kbd>Tab</kbd> through every menu item on **every page** before reaching the content. A **skip link** solves this. It is the first link on the page, and it jumps straight to the main content.
+
+```html title="skip-link.html"
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header>
+    <nav><!-- long menu --></nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <h1>Welcome</h1>
+  </main>
+</body>
+```
+
+```css
+.skip-link {
+  position: absolute;
+  left: -9999px;       /* hidden off-screen */
+}
+.skip-link:focus {
+  left: 1rem;          /* visible when focused */
+  top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 2px solid #2563eb;
+  z-index: 1000;
+}
+```
+
+The link stays out of sight for mouse users, then appears when a keyboard user reaches it. The `tabindex="-1"` on `<main>` lets the browser move focus there reliably after the jump.
+
+## Smooth Scrolling and Sticky Headers
+
+Two small CSS rules make same-page links feel polished.
+
+```css
+html {
+  scroll-behavior: smooth;
+}
+
+h2[id],
+h3[id] {
+  scroll-margin-top: 80px; /* the height of your sticky header */
+}
+```
+
+- **`scroll-behavior: smooth`** animates the jump instead of snapping.
+- **`scroll-margin-top`** leaves space above the target, so a fixed header does not cover the heading.
+
+Some visitors feel dizzy from animation. Respect them with a media query:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+```
+
+### Highlight the Target
+
+The `:target` pseudo-class matches the element that the current `#fragment` points to. It is a lovely way to show readers where they landed.
+
+```css
+:target {
+  background: #fef9c3;
+  outline: 2px solid #f59e0b;
+  outline-offset: 4px;
+}
+```
+
+## Accessibility and Global Readers
+
+- **Link text should name the destination.** "Jump to Installation" is better than "Click here."
+- **Test with the keyboard.** After activating a same-page link, focus should continue from the target. Add `tabindex="-1"` to non-interactive targets such as `<main>` or a `<div>` when needed.
+- **Keep `id` values simple.** HTML allows non-English letters in an `id`, but plain lowercase letters, numbers, and hyphens are safest across tools, servers, and sharing apps.
+- **Right-to-left pages work the same.** The `#fragment` is not affected by reading direction.
+- **Do not change the meaning of `<a>`.** Use a link when the visitor goes somewhere, and a button for actions such as opening a menu.
+- **Respect motion preferences** with `prefers-reduced-motion`, as shown above.
+
+:::note On this tutorial site
+Docusaurus creates an `id` for every heading automatically, so you can link to any heading in these lessons, such as `/html/links-and-navigation/internal-links#skip-links-a-gift-for-keyboard-users`. Hover over a heading to see its link.
+:::
+
+## Choosing the Right Internal Link
+
+| You want to... | Use |
+| :-- | :-- |
+| Open another page of your site | A relative URL, such as `contact.html` |
+| Scroll to a section of this page | `#id` of that section |
+| Open another page at a specific section | `page.html#id` |
+| Help keyboard users skip the menu | A skip link at the top of the page |
+| Return to the top of a long page | `#top` |
+| Show the visitor where they are | `aria-current="page"` and CSS |
+
+## Common Mistakes
+
+### Mistake 1: A link to an `id` that does not exist
+
+If the `id` is misspelled, the link does nothing. Check the spelling and the case: `#Install` is not `#install`.
+
+### Mistake 2: Duplicate `id` values
+
+Two elements with the same `id` confuse the browser, which jumps to the first one only.
+
+### Mistake 3: Spaces in an `id`
+
+`id="getting started"` is invalid. Use `getting-started`.
+
+### Mistake 4: Hiding headings under a sticky header
+
+If the heading lands behind a fixed menu, use `scroll-margin-top`.
+
+### Mistake 5: Using absolute URLs for your own pages
+
+`https://mysite.com/about.html` breaks when you move or test the site. Use relative URLs inside your own site.
+
+### Mistake 6: Forgetting the keyboard
+
+A skip link, visible focus styles, and sensible focus after a jump make your page usable without a mouse.
+
+## Try It Yourself
+
+Build a small long-form page.
+
+1. Create `guide.html` with an `<h1>` and **four** `<h2>` sections. Give each heading a meaningful `id`.
+2. Add a **table of contents** at the top, using a `<nav>` with an ordered list of same-page links.
+3. Add a **back-to-top** link after each section.
+4. Add a **skip link** as the first element in `<body>`. Style it so it appears only on focus.
+5. Add `scroll-behavior: smooth`, `scroll-margin-top`, and a `:target` highlight.
+6. Create a second file, `index.html`, with a link to `guide.html#` plus one of your section ids.
+7. Press <kbd>Tab</kbd> from the start of the page. Does the skip link appear first?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is an internal link?</summary>
+
+A link that stays inside your own website, such as a link to another page, or to a section of the current page.
+
+</details>
+
+<details>
+<summary>2. How do you make a link that scrolls to a section of the same page?</summary>
+
+Give the section an `id`, such as `id="install"`, then link to it with `href="#install"`.
+
+</details>
+
+<details>
+<summary>3. How do you link to a section on another page?</summary>
+
+Add the fragment to the page path, such as `guide.html#install`.
+
+</details>
+
+<details>
+<summary>4. What is a skip link and who needs it?</summary>
+
+A link at the very top of the page that jumps to the main content. Keyboard and screen reader users need it so they do not have to move through the whole menu on every page.
+
+</details>
+
+<details>
+<summary>5. Why use `scroll-margin-top` on headings?</summary>
+
+It leaves space above the target, so a sticky header does not hide the heading after a jump.
+
+</details>
+
+## Key Takeaways
+
+- **Internal links** keep visitors inside your site: page to page, same-page jumps, and page-plus-section links.
+- A fragment link needs two parts: an `id` on the target and `#id` in the `href`.
+- Every `id` must be unique, without spaces, and spelled the same in both places.
+- Add a table of contents, back-to-top links, and a skip link to make long pages easy to use.
+- Use `scroll-behavior`, `scroll-margin-top`, `:target`, and `prefers-reduced-motion` for a polished, kind experience.
+
+Now you can connect everything inside your own site. Next, learn how to send visitors to other websites with [External Links](./external-links).

@@ -1,15 +1,355 @@
 ---
-id: absolute-urls
-title: "Understanding Absolute URLs in HTML Links"
+id: html-absolute-urls
+title: "HTML Absolute URLs"
 sidebar_label: "Absolute URLs"
 sidebar_position: 3
 slug: /html/links-and-navigation/absolute-urls
-description: "Explore absolute URLs, including protocol definitions, domain names, port numbers, and when to use full external web paths in anchor tags."
+description: "Learn what absolute URLs are in HTML and when to use them. Understand the parts of a full web address, schemes like https, mailto and tel, URL encoding, international domain names, query strings, common mistakes, and best practices on CodeHarborHub."
 keywords:
-  - absolute URLs HTML
-  - full path URLs
-  - HTTP HTTPS protocols
-  - domain name linking
+  - HTML absolute URL
+  - absolute URL vs relative URL
+  - HTML full web address
+  - URL parts scheme host path
+  - https vs http links
+  - URL encoding percent
+  - internationalized domain names
+  - query string in links
+  - HTML link best practices
+  - learn HTML URLs
   - CodeHarborHub HTML
-tags: [html, urls, networking, beginner]
+tags: [html, web-development, beginner, links, urls, absolute-urls, frontend]
 ---
+
+Imagine you want to tell a friend how to reach your house. You could say, "Turn left at the corner," but that only works if they already know where they are standing. A far better way is to give the **full address**: house number, street, city, country. It works for anyone, starting from anywhere in the world.
+
+An **absolute URL** is exactly that: the full address of a page, image, or file on the web. It carries everything a browser needs to find the resource, with no guessing and no dependence on the page you are currently on.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What makes a URL **absolute**
+- Every part of a full web address, and what each one does
+- Which **schemes** you can use, such as `https`, `mailto`, and `tel`
+- How special characters, spaces, and international names are written in URLs
+- When absolute URLs are the right choice, and when they are not
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+An absolute URL always starts with a **scheme** (also called a protocol), followed by `://` and the location.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  Read the HTML guide on
+  <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">MDN Web Docs</a>.
+</p>
+<p>
+  See the official standard at
+  <a href="https://html.spec.whatwg.org/">the WHATWG website</a>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  Read the HTML guide on{' '}
+  <a href="#">MDN Web Docs</a>.
+</p>
+<p>
+  See the official standard at{' '}
+  <a href="#">the WHATWG website</a>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#` so they stay on this page. In your own file, they would go to the full addresses shown in the code.
+
+Because the address is complete, these links work **identically** on any page, in any folder, on any website.
+
+## Anatomy of an Absolute URL
+
+Let us take one long address apart.
+
+```text
+https://user@www.example.com:8080/courses/html/index.html?lang=en&level=1#links
+└─┬─┘   └─┬─┘└──────┬──────┘└─┬─┘└──────────┬───────────┘└────────┬─────┘└──┬─┘
+scheme  user      host       port          path                 query   fragment
+```
+
+| Part | Example | What it does |
+| :-- | :-- | :-- |
+| **Scheme** | `https` | The rule for how to talk to the resource |
+| **Authority** | `www.example.com:8080` | The host (server name) and an optional port |
+| **Path** | `/courses/html/index.html` | Which page or file on that server |
+| **Query** | `?lang=en&level=1` | Extra information, as name and value pairs |
+| **Fragment** | `#links` | A spot within the page, handled by the browser |
+
+Most links you write use only three of these: scheme, host, and path.
+
+:::info You rarely type everything
+The username (`user@`) and port (`:8080`) are uncommon on public websites. Browsers also hide default ports, which are 443 for `https` and 80 for `http`. You can safely ignore them in everyday links.
+:::
+
+## Common Schemes
+
+The scheme tells the browser what kind of resource this is and how to open it.
+
+| Scheme | Example | What happens |
+| :-- | :-- | :-- |
+| `https` | `https://example.com` | A secure web page. This is the standard today |
+| `http` | `http://example.com` | An unencrypted web page. Avoid for new links |
+| `mailto` | `mailto:hello@example.com` | Opens the email app |
+| `tel` | `tel:+911234567890` | Starts a phone call |
+| `sms` | `sms:+911234567890` | Opens a text message |
+| `ftp` | `ftp://files.example.com` | File transfer. Rare, and many browsers no longer support it |
+
+:::tip Use https
+`https` encrypts the connection, so nobody can read or change the page on its way to the visitor. Almost every site supports it, and browsers warn visitors about plain `http`. Link to the `https` version whenever it exists.
+:::
+
+You will meet `mailto:` and `tel:` links in detail in their own lessons later in this section.
+
+## Absolute URLs for Different Resources
+
+An absolute URL can point to anything on the web, not only pages.
+
+<Tabs>
+<TabItem value="page" label="A Page" default>
+
+```html
+<a href="https://www.w3.org/TR/html52/">HTML 5.2 specification</a>
+```
+
+</TabItem>
+<TabItem value="image" label="An Image">
+
+```html
+<img
+  src="https://images.example.com/photos/sunrise.jpg"
+  alt="Sunrise over a harbor, hosted on another site"
+  width="300"
+  height="200"
+/>
+```
+
+</TabItem>
+<TabItem value="file" label="A File">
+
+```html
+<a href="https://example.com/files/syllabus.pdf">Download the syllabus (PDF)</a>
+```
+
+</TabItem>
+<TabItem value="section" label="A Section">
+
+```html
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attributes">
+  Attributes of the anchor element
+</a>
+```
+
+</TabItem>
+</Tabs>
+
+:::warning Hot-linking other people's files
+Pointing an `<img>` or file link at someone else's server uses their bandwidth, and the file can change or disappear without warning. Only do it with permission, or when the host clearly offers files for that purpose.
+:::
+
+## Spaces, Symbols, and Other Languages
+
+URLs may contain only a limited set of characters. Anything else is written with a **percent sign** and a code. This is called **URL encoding**.
+
+| Character | In a URL | Note |
+| :-- | :-- | :-- |
+| Space | `%20` | Never type a raw space in a URL |
+| `&` in a value | `%26` | In HTML, also write `&amp;` between query parameters |
+| `#` in a value | `%23` | Otherwise it starts the fragment |
+| `é` in a value | `%C3%A9` | Non-English letters are encoded |
+| `/` in a value | `%2F` | Otherwise it separates path parts |
+
+<Tabs>
+<TabItem value="bad" label="Risky" default>
+
+```html
+<a href="https://example.com/my files/résumé.pdf">Résumé</a>
+```
+
+</TabItem>
+<TabItem value="good" label="Safe">
+
+```html
+<a href="https://example.com/my%20files/r%C3%A9sum%C3%A9.pdf">Résumé</a>
+```
+
+</TabItem>
+</Tabs>
+
+Modern browsers often fix simple cases for you, but encoding makes your links reliable everywhere. When you create your own files, an even better habit is to **avoid spaces and special letters in file names**. Use lowercase letters, numbers, and hyphens, like `my-resume.pdf`.
+
+### Query Strings
+
+A query string passes extra information to the page. Names and values are paired with `=`, and pairs are separated by `&`.
+
+```html title="query.html"
+<a href="https://example.com/search?topic=html&amp;level=beginner">
+  Beginner HTML results
+</a>
+```
+
+Notice `&amp;` instead of `&`. In HTML, the ampersand starts a character reference, so writing `&amp;` inside an attribute is the correct and safest form. The browser turns it back into `&` before it follows the link.
+
+## Web Addresses in Every Language
+
+The web is for everyone, and domain names do not have to be in English letters. An **internationalized domain name** (IDN) can contain letters from many scripts.
+
+```html title="idn.html"
+<a href="https://münchen.example/">München</a>
+<a href="https://例え.example/">例え</a>
+<a href="https://उदाहरण.example/">उदाहरण</a>
+```
+
+Behind the scenes, the browser converts these into a plain ASCII form that starts with `xn--`. You can write the readable form in your HTML, and visitors will see the readable form too.
+
+A few points for a global audience:
+
+- **Link text is separate from the address.** The visible words can be in any language, while the `href` stays a valid URL.
+- **Set `lang`** on link text in another language, as you learned in the [Anchor Element](./anchor-element) lesson.
+- **Test with real addresses.** If a site uses unusual characters, click the link yourself before publishing.
+- **Be careful with look-alike letters.** Some scripts have letters that look like Latin ones. Always check the address of a link you are given before sharing it.
+
+## When Should You Use Absolute URLs?
+
+Absolute URLs are right in these situations.
+
+| Situation | Why absolute works best |
+| :-- | :-- |
+| Linking to **another website** | There is no other way to name an outside address |
+| Content that **leaves your site**, such as emails, newsletters, and social posts | The reader is not on your site, so relative paths would break |
+| **Sitemaps, canonical links, and social preview tags** | Search engines and apps need the full address |
+| Linking to a **shared resource on a CDN** | The file lives on a different host |
+| **API requests** from your code to another service | The code must know exactly where to call |
+
+For links **inside your own site**, relative URLs are usually the better choice. That is the topic of the next lesson, [Relative URLs](./relative-urls).
+
+### Absolute vs Relative at a Glance
+
+| | Absolute URL | Relative URL |
+| :-- | :-- | :-- |
+| Example | `https://example.com/about.html` | `about.html` |
+| Includes the scheme and host? | Yes | No |
+| Works from any page? | Yes | Only from the right location |
+| Easy to move your site? | No, you must edit each link | Yes, links keep working |
+| Best for | Other websites | Your own pages |
+
+:::warning Do not hard-code your own domain everywhere
+If you write `https://mysite.com/about.html` in every internal link, then moving the site to a new domain, or testing it on your computer, breaks every link. Use relative URLs inside your own site.
+:::
+
+## Common Mistakes
+
+### Mistake 1: Forgetting the scheme
+
+```html
+<!-- Looks right, but the browser reads it as a file on YOUR site -->
+<a href="www.example.com">Visit Example</a>
+
+<!-- Correct -->
+<a href="https://www.example.com">Visit Example</a>
+```
+
+Without `https://`, the browser treats `www.example.com` as a relative path, and the visitor lands on a "not found" page.
+
+### Mistake 2: Using `http` when `https` exists
+
+Plain `http` links can trigger warnings, and a secure page that loads `http` images may have them blocked ("mixed content"). Use `https`.
+
+### Mistake 3: Raw spaces and special characters
+
+Encode them, or better, avoid them in file names.
+
+### Mistake 4: Typing `&` instead of `&amp;` in query strings
+
+Browsers usually forgive it, but `&amp;` is the correct form and avoids surprises, especially when a parameter name looks like a character reference.
+
+### Mistake 5: Copying very long, messy URLs
+
+Many shared addresses carry tracking parameters that you do not need, such as `?utm_source=...`. Remove what the page does not require, so your link stays short, clean, and private.
+
+### Mistake 6: Ignoring broken links
+
+Outside pages move and disappear. Check your external links from time to time, and prefer stable, official addresses.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `useful-sites.html`.
+2. Add an `<h1>` that says **Useful Sites for Learners**.
+3. Make a list of **four** absolute links to websites you trust. Use `https` for each.
+4. Add one link with a **query string**, and write the `&` as `&amp;`.
+5. Add one link to a file with a space in its name, and write the encoded version with `%20`.
+6. Try removing `https://` from one link, open the page, and click it. What happens? Fix it again.
+7. Bonus: add a link whose text is in another language, with the correct `lang` attribute.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What makes a URL absolute?</summary>
+
+It contains the full address, starting with a scheme such as `https://` and including the host, so it works from any page.
+
+</details>
+
+<details>
+<summary>2. What happens if you write `href="www.example.com"` with no scheme?</summary>
+
+The browser treats it as a relative path on your own site, so the link usually leads to a "not found" page.
+
+</details>
+
+<details>
+<summary>3. Which scheme should you choose for web pages, and why?</summary>
+
+`https`, because it encrypts the connection and avoids browser security warnings.
+
+</details>
+
+<details>
+<summary>4. How do you write a space inside a URL?</summary>
+
+As `%20`. Even better, avoid spaces in file names and use hyphens.
+
+</details>
+
+<details>
+<summary>5. When should you prefer a relative URL over an absolute one?</summary>
+
+For links between pages inside your own site, so the links keep working if you move the site to another domain or test it locally.
+
+</details>
+
+## Key Takeaways
+
+- An **absolute URL** is a complete address: scheme, host, and path.
+- Always include the scheme, and prefer `https`.
+- Use absolute URLs for other websites, emails, social posts, sitemaps, and shared resources.
+- Encode spaces and special characters, and write `&` as `&amp;` in query strings.
+- Use relative URLs for links inside your own site, and check external links regularly.
+
+You now know how to point to any place on the web. Next, learn how to link your own pages with shorter paths in [Relative URLs](./relative-urls).

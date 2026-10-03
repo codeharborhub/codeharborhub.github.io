@@ -1,15 +1,393 @@
 ---
-id: external-links
-title: "Linking to External Websites and Resources"
+id: html-external-links
+title: "HTML External Links"
 sidebar_label: "External Links"
 sidebar_position: 6
 slug: /html/links-and-navigation/external-links
-description: "Understand external links, best practices for outbound navigation, SEO implications, and domain authority preservation."
+description: "Learn how to create external links in HTML. Link to other websites with absolute URLs, show readers a link leaves your site, use rel values like nofollow and sponsored, link to the right language version, and keep outside links healthy. Explained on CodeHarborHub."
 keywords:
-  - external links HTML
-  - outbound hyperlinks
-  - linking to external sites
-  - SEO link practices
+  - HTML external links
+  - link to another website HTML
+  - HTML outbound links
+  - HTML rel nofollow
+  - HTML rel sponsored
+  - HTML rel ugc
+  - external link icon CSS
+  - broken links check
+  - link rot
+  - HTML link best practices
+  - learn HTML external links
   - CodeHarborHub HTML
-tags: [html, external-links, seo, web-standards]
+tags: [html, web-development, beginner, links, external-links, navigation, frontend]
 ---
+
+When a friend recommends a book, they might say, "The best explanation is in this one," and hand it to you. They are sending you somewhere else because it will help you more than they can. That is the heart of an **external link**: a link from your page to a page on **another website**.
+
+External links are what turn separate websites into one web. Used well, they make your page more trustworthy and more helpful. Used carelessly, they can send readers to broken pages, hurt your privacy, or confuse people. This lesson shows you how to do it well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What makes a link **external**, and how to write one
+- When linking out is a good idea, and when it is not
+- How to tell readers that a link leaves your site
+- The `rel` values `nofollow`, `sponsored`, and `ugc`, and when to use each
+- How to pick the right language version of a destination
+- How to keep external links healthy over time
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+An external link is an ordinary anchor element whose `href` is an **absolute URL** to someone else's website. That is the only way to name another site, which is why the [Absolute URLs](./absolute-urls) lesson came first.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  To learn how the web is built, read the
+  <a href="https://developer.mozilla.org/en-US/docs/Learn">MDN Learn Web Development guide</a>
+  or the
+  <a href="https://web.dev/learn/">web.dev Learn courses</a>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  To learn how the web is built, read the{' '}
+  <a href="#">MDN Learn Web Development guide</a>{' '}
+  or the{' '}
+  <a href="#">web.dev Learn courses</a>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#` so they stay on this page. In your own file, they go to the full addresses shown in the code.
+
+### Internal or External?
+
+| Link | Type | Why |
+| :-- | :-- | :-- |
+| `contact.html` | Internal | A file in your own site |
+| `/blog/` | Internal | A path on your own site |
+| `https://example.org/guide` | External | A different host |
+| `https://blog.yoursite.com` | Depends | A subdomain. Many teams treat it as part of their site, but browsers see it as a different origin |
+| `https://yoursite.com/about` written in full | Internal, but better as a relative link | It points to your own site |
+
+## Why Link Out?
+
+Linking to other sites is not a weakness. Good writers do it all the time.
+
+- **Give credit.** If an idea or a number came from somewhere, show where.
+- **Build trust.** Readers believe pages more when claims have sources.
+- **Save space.** Link to a full explanation instead of repeating it.
+- **Help readers.** Point to official documentation, tools, or deeper tutorials.
+- **Join the web.** Links are how search engines and people discover related content.
+
+### When to Think Twice
+
+- The page is likely to disappear or change meaning, such as a social post.
+- You have not read the destination yourself.
+- The site is not secure (`http` only) or looks untrustworthy.
+- You are linking only to be linked back.
+- The link leads to something your readers would not expect, such as an automatic download.
+
+:::tip Link to what you would recommend
+A quick rule: only link to pages you have opened and would be comfortable recommending to a friend. Your links are a promise to your readers.
+:::
+
+## Telling Readers a Link Leaves Your Site
+
+People like to know when a link will take them away. Good external links make that clear. There are three common ways.
+
+### 1. Say It in the Link Text
+
+```html
+<p>
+  Read the full standard on
+  <a href="https://html.spec.whatwg.org/">the WHATWG site (external)</a>.
+</p>
+```
+
+### 2. Add a Visual Icon With CSS
+
+CSS can find links that start with `http` and add a small symbol after them. This works without touching your HTML.
+
+```css
+a[href^="https://"]:not([href*="codeharborhub"])::after {
+  content: " ↗";
+  font-size: 0.85em;
+}
+```
+
+The selector reads: "links whose address starts with `https://`, except those that contain your own domain." Replace `codeharborhub` with your own domain name.
+
+### 3. Add Hidden Text for Screen Readers
+
+A CSS icon is often **not** read aloud. A tiny hidden phrase makes the meaning available to everyone.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="external-icon.html"
+<a href="https://developer.mozilla.org/">
+  MDN Web Docs
+  <span aria-hidden="true">↗</span>
+  <span class="visually-hidden">(external site)</span>
+</a>
+```
+
+```css
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/external-icon.html">
+<>
+<p>
+  <a href="#">
+    MDN Web Docs{' '}
+    <span aria-hidden="true">↗</span>
+    <span style={{position: 'absolute', width: '1px', height: '1px', margin: '-1px', padding: 0, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0}}>(external site)</span>
+  </a>
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Sighted readers see the arrow. Screen reader users hear "MDN Web Docs (external site)." The `aria-hidden="true"` stops the arrow itself from being read.
+
+## The `rel` Attribute: Describing the Relationship
+
+The `rel` attribute tells browsers and search engines **how your page relates to the destination**. You can give it several values separated by spaces.
+
+| Value | Meaning | Use it when |
+| :-- | :-- | :-- |
+| `nofollow` | "I do not vouch for this link" | You do not want to pass your page's authority to the destination |
+| `sponsored` | "This link is paid or an advertisement" | You were paid, or the link is an affiliate or sponsorship link |
+| `ugc` | "User-generated content" | The link was posted by a visitor, such as in a comment |
+| `noopener` | Stops the new page from controlling yours | You open a link in a new tab |
+| `noreferrer` | Does not tell the destination where the visitor came from | You want to keep the visit private |
+| `external` | "This is an external link" | A plain label, mostly useful for your own scripts or CSS |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="rel-examples.html"
+<!-- A normal, editorial link: no rel needed -->
+<a href="https://developer.mozilla.org/">MDN</a>
+
+<!-- A paid or affiliate link -->
+<a href="https://shop.example.com/book?ref=cohub" rel="sponsored">Buy the book</a>
+
+<!-- A link a visitor posted in a comment -->
+<a href="https://visitor-site.example" rel="ugc nofollow">visitor's site</a>
+
+<!-- A link you do not want to endorse -->
+<a href="https://example.org/opinion" rel="nofollow">an opposing opinion</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/rel-examples.html">
+<>
+<ul>
+  <li><a href="#">MDN</a> (editorial link)</li>
+  <li><a href="#" rel="sponsored">Buy the book</a> (paid link)</li>
+  <li><a href="#" rel="ugc nofollow">visitor's site</a> (comment link)</li>
+  <li><a href="#" rel="nofollow">an opposing opinion</a> (not endorsed)</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info Security values have their own lesson
+`noopener` and `noreferrer` protect your visitors and are closely tied to opening links in new tabs. You will study them properly in [Link Security](./link-security), after learning the [Target Attribute](./target-attribute).
+:::
+
+:::warning Be honest about paid links
+Search engines and, in many countries, advertising rules expect paid, affiliate, and sponsored links to be labeled. Use `rel="sponsored"` in your code **and** tell readers in plain words, such as "This page contains affiliate links."
+:::
+
+## Choosing the Right Language Version
+
+Many large sites have the same page in several languages. Send readers to the version they can read.
+
+```html
+<!-- Better for Hindi-speaking readers, if the page exists -->
+<a href="https://docs.example.org/hi/" hreflang="hi" lang="hi">दस्तावेज़ (हिन्दी)</a>
+
+<!-- Better for Spanish-speaking readers -->
+<a href="https://docs.example.org/es/" hreflang="es" lang="es">Documentación (Español)</a>
+```
+
+A few friendly habits for a global audience:
+
+- **Link to a version in your readers' language** when a good one exists, and say so in the link text.
+- **Warn when the destination is in another language**, for example "(in English)."
+- **Use `hreflang`** to describe the destination's language, and `lang` for the link text, as you learned in the [Anchor Element](./anchor-element) lesson.
+- **Prefer stable, official sources**, such as standards bodies and documentation sites, which usually keep their addresses for many years.
+
+## Keeping External Links Healthy
+
+The web changes. A page that exists today may move, change, or vanish. This is called **link rot**, and it is the biggest long-term problem of external links.
+
+| Problem | What readers see | What helps |
+| :-- | :-- | :-- |
+| The page was removed | A "404 not found" page | Check your links regularly, and replace dead ones |
+| The page moved without a redirect | A different or unrelated page | Link to stable, official addresses |
+| The content changed | Information that no longer matches your text | Quote or summarize what you need |
+| The site became unsafe | Browser warnings | Remove the link at once |
+| The site is slow or blocks visitors | A long wait or an error | Prefer reliable sources |
+
+### Simple Ways to Check Links
+
+- **Click them yourself** before you publish and now and then afterward.
+- **Use a link checker.** Many free tools and editor extensions scan a page and report broken links.
+- **Keep a list** of important outside sources, with the date you last checked them.
+- **Archive important sources.** Public web archives keep copies of many pages. Linking to an archived copy as a backup helps when a page disappears.
+- **Set a reminder.** For a tutorial site, review external links every few months.
+
+## Privacy Considerations
+
+When someone clicks a link, their browser may tell the destination **which page they came from**. This is the *referrer*. On most modern browsers, a safe default is already in place, but you can be explicit.
+
+```html
+<a href="https://example.org/" referrerpolicy="no-referrer">Private link</a>
+```
+
+Use this for sensitive pages, such as a private dashboard. For everyday public pages, the default is fine.
+
+Also, do not put private information in an outgoing link address. Addresses can be saved in logs and histories.
+
+## Choosing the Right Tool
+
+| Situation | What to do |
+| :-- | :-- |
+| An editorial link to a trusted source | A plain link, with clear text |
+| A paid, affiliate, or sponsored link | `rel="sponsored"` plus an honest note |
+| A link in a comment or forum post | `rel="ugc nofollow"` |
+| A link you do not want to vouch for | `rel="nofollow"` |
+| Showing a link leaves your site | An icon plus hidden text, or words in the link |
+| A page in your readers' language exists | Link to it, with `hreflang` |
+| A source that may disappear | Check often, and consider an archived copy |
+
+## Common Mistakes
+
+### Mistake 1: Forgetting `https://`
+
+`www.example.org` is read as a path on your own site. Always include the scheme.
+
+### Mistake 2: Linking only with "click here"
+
+Visitors who navigate by a list of links will not know where each one goes. Describe the destination.
+
+### Mistake 3: Linking without reading the destination
+
+Check that the page exists, says what you claim, and is safe for your readers.
+
+### Mistake 4: Hiding paid links
+
+Undisclosed paid links hurt trust and may break the rules. Use `rel="sponsored"` and tell readers.
+
+### Mistake 5: Never checking old links
+
+Pages from a few years ago often contain several dead links. Review them regularly.
+
+### Mistake 6: Opening every external link in a new tab
+
+Visitors should choose how they browse. You will learn when a new tab is helpful in the [Target Attribute](./target-attribute) lesson.
+
+### Mistake 7: Linking to content that is not stable
+
+Social media posts, temporary files, and search result pages often change or disappear. Link to a permanent page when possible.
+
+## Try It Yourself
+
+Here is a small project.
+
+1. Create a file called `resources.html` with the heading **Learning Resources**.
+2. Add **four** external links to trustworthy learning sites, with clear link text and `https`.
+3. For one link, add "(external)" in the link text.
+4. Add the CSS rule that adds a small arrow to external links.
+5. Add one **sponsored** example link, with `rel="sponsored"`, and a short sentence that explains it is an example of a paid link.
+6. Add a hidden "(external site)" phrase to one link, and test it by turning on a screen reader if you can.
+7. Click every link. Write down any that fail, and replace them.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is an external link, and what must its `href` contain?</summary>
+
+A link to a page on a different website. Its `href` must be an absolute URL, starting with a scheme such as `https://`.
+
+</details>
+
+<details>
+<summary>2. When should you use `rel="sponsored"`?</summary>
+
+For paid links, advertisements, and affiliate links, so search engines and readers know the link was not given freely.
+
+</details>
+
+<details>
+<summary>3. What does `rel="ugc"` mean?</summary>
+
+The link was posted by a visitor, such as in a comment, so you cannot vouch for it. It is usually combined with `nofollow`.
+
+</details>
+
+<details>
+<summary>4. How can you tell screen reader users that a link goes to another site?</summary>
+
+Add hidden text such as "(external site)" inside the link, and hide a decorative icon with `aria-hidden="true"`.
+
+</details>
+
+<details>
+<summary>5. What is link rot, and how can you reduce it?</summary>
+
+Link rot is when outside pages move or disappear. Check links regularly, use stable official sources, and consider archived copies.
+
+</details>
+
+## Key Takeaways
+
+- An **external link** is an anchor with an absolute URL that leads to another website.
+- Link out to give credit, build trust, and help readers, and only to pages you have checked.
+- Show readers when a link leaves your site, in words, an icon, or both, and make it accessible.
+- Use `rel="sponsored"`, `rel="ugc"`, and `rel="nofollow"` honestly to describe the relationship.
+- Link to your readers' language when possible, and check external links regularly.
+
+Now you know how to point readers to the rest of the web. Next, learn how to choose **where** a link opens with the [Target Attribute](./target-attribute).

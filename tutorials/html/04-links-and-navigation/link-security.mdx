@@ -1,15 +1,367 @@
 ---
-id: link-security
-title: "Link Security and Privacy: rel='noopener noreferrer'"
+id: html-link-security
+title: "HTML Link Security"
 sidebar_label: "Link Security"
-sidebar_position: 11
+sidebar_position: 8
 slug: /html/links-and-navigation/link-security
-description: "Protect your users from reverse tabnabbing and window.opener vulnerabilities using rel='noopener noreferrer' and rel='nofollow'."
+description: "Learn how to keep HTML links safe. Understand reverse tabnabbing, rel noopener and noreferrer, referrer policy, dangerous javascript and data URLs, user-submitted links, look-alike addresses, HTTPS, and how to protect your visitors on CodeHarborHub."
 keywords:
-  - rel noopener noreferrer
-  - tabnabbing vulnerability
   - HTML link security
-  - rel nofollow SEO
+  - rel noopener noreferrer
+  - reverse tabnabbing
+  - target blank security
+  - HTML referrerpolicy
+  - javascript URL XSS
+  - validate user links
+  - HTTPS links mixed content
+  - phishing links look-alike domains
+  - safe external links
+  - learn web security HTML
   - CodeHarborHub HTML
-tags: [html, security, rel-attribute, web-safety]
+tags: [html, web-development, beginner, links, security, rel, frontend]
 ---
+
+A link feels harmless. It is just an underlined word. But every link is also a **door**, and when you open a door you should know what is on the other side, and what might walk through in return.
+
+The good news is that safe linking is not difficult. A handful of small habits, mostly one-line attributes, protect both you and your visitors. In this lesson, you will learn what can go wrong, and the simple, practical steps that prevent it.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Why links can be a security and privacy risk
+- What **reverse tabnabbing** is, and how `noopener` prevents it
+- What `noreferrer` and `referrerpolicy` do for privacy
+- Why `javascript:` and `data:` links are dangerous
+- How to handle links submitted by visitors
+- How to spot look-alike and misleading links
+- A practical security checklist for every site
+
+:::info Where this fits
+This lesson builds on [External Links](./external-links) and the [Target Attribute](./target-attribute). If you have not read them, a quick look will make this one easier.
+:::
+
+## The Risks at a Glance
+
+| Risk | What could happen | Main defense |
+| :-- | :-- | :-- |
+| **Reverse tabnabbing** | A page you opened in a new tab changes your original tab | `rel="noopener"` |
+| **Referrer leakage** | The destination learns which page the visitor came from, or even private parts of the address | `rel="noreferrer"` or `referrerpolicy` |
+| **Script links** | A link runs code instead of loading a page | Never use `javascript:`, and filter user links |
+| **Untrusted user links** | Visitors post links to scams or spam | `rel="ugc nofollow"` and validation |
+| **Look-alike addresses** | A link seems to go to one site but goes to another | Check the real address, and use `https` |
+| **Insecure connections** | Someone on the network can read or change the page | Use `https` |
+
+## 1. Reverse Tabnabbing and `noopener`
+
+When a link opens a new tab with `target="_blank"`, the new page can sometimes reach back to the page that opened it, through a browser feature called `window.opener`. A malicious page could use that to quietly replace your original tab with a fake page, such as a copy of your login screen, while the visitor is busy reading in the new tab. This attack is called **reverse tabnabbing**.
+
+The fix is one word.
+
+<Tabs>
+<TabItem value="risky" label="Risky" default>
+
+```html
+<a href="https://unknown-site.example/" target="_blank">Read more</a>
+```
+
+</TabItem>
+<TabItem value="safe" label="Safe">
+
+```html
+<a href="https://unknown-site.example/" target="_blank" rel="noopener">Read more</a>
+```
+
+</TabItem>
+</Tabs>
+
+`rel="noopener"` cuts the connection, so the new page gets no access to your page.
+
+:::note Modern browsers help, but do not depend on it
+Current versions of major browsers treat `target="_blank"` links as if they had `noopener`. Older browsers, embedded browsers in some apps, and some tools do not. Adding `rel="noopener"` yourself costs nothing, and it makes your intention clear to every reader of your code.
+:::
+
+## 2. Privacy and `noreferrer`
+
+When a visitor clicks a link, the browser usually tells the destination **where they came from**. This information is called the **referrer**. It can be useful for analytics. It can also leak things you would rather keep private, such as the address of an internal page, or a private token placed in a URL.
+
+| Attribute | What it does |
+| :-- | :-- |
+| `rel="noreferrer"` | Does not send the referrer. Also implies `noopener` |
+| `referrerpolicy="no-referrer"` | The same privacy effect, set as its own attribute |
+| `referrerpolicy="origin"` | Sends only the site name, not the full path |
+| `referrerpolicy="strict-origin-when-cross-origin"` | A balanced default in modern browsers |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="privacy.html"
+<!-- Do not tell the destination where the visitor came from -->
+<a href="https://partner.example/" target="_blank" rel="noopener noreferrer">
+  Partner site
+</a>
+
+<!-- Share only the site name, never the page path -->
+<a href="https://partner.example/" referrerpolicy="origin">Partner site</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/privacy.html">
+<>
+<ul>
+  <li><a href="#" rel="noopener noreferrer">Partner site</a> (no referrer, new tab)</li>
+  <li><a href="#" referrerPolicy="origin">Partner site</a> (site name only)</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::warning Never put secrets in a URL
+Web addresses are stored in browser history, server logs, and shared screenshots. Do not place passwords, private tokens, or personal data in a link. If you must pass something sensitive, use a secure method such as a form submitted with `POST`.
+:::
+
+If you need analytics about where your visitors come from, `noreferrer` also removes that information from the *destination's* point of view. Choose privacy or measurement based on the link, not by habit.
+
+## 3. Dangerous Schemes: `javascript:` and `data:`
+
+The part of a URL before the colon is the **scheme**. Most schemes you will use are safe: `https`, `mailto`, and `tel`. Two deserve special care.
+
+| Scheme | What it does | Why it is risky |
+| :-- | :-- | :-- |
+| `javascript:` | Runs code when clicked | If an attacker can put one into your page, they can run code as your visitor |
+| `data:` | Holds the whole document inside the link | Can be used to hide harmful pages or scripts |
+| `file:` | Points to a file on the visitor's computer | Almost never useful on a public site |
+
+```html
+<!-- Avoid this pattern. It mixes behavior into a link. -->
+<a href="javascript:openMenu()">Menu</a>
+```
+
+If you want a click to run code, use a real `<button>` and attach the behavior in JavaScript. If you want navigation, use a real URL. This is better for security and better for accessibility.
+
+## 4. Links Submitted by Visitors
+
+If your site lets people post comments, profiles, or forum messages, they can include links. You cannot trust those links.
+
+Do these three things.
+
+1. **Allow only safe schemes.** Accept `https`, `http`, `mailto`, and `tel`, and reject everything else.
+2. **Mark the links as user content.** Add `rel="ugc nofollow noopener"` so search engines know you do not endorse them.
+3. **Escape and sanitize text.** Never place visitor text into HTML directly. Use your framework's safe output, or a trusted sanitizing library.
+
+Here is a simple scheme check you could run before showing a visitor-provided link.
+
+```js title="safe-url.js"
+function toSafeUrl(input) {
+  try {
+    const url = new URL(input, "https://example.com");
+    const allowed = ["https:", "http:", "mailto:", "tel:"];
+    return allowed.includes(url.protocol) ? url.href : null;
+  } catch {
+    return null; // not a valid URL at all
+  }
+}
+
+toSafeUrl("https://example.org/page");   // "https://example.org/page"
+toSafeUrl("javascript:alert(1)");        // null
+toSafeUrl("not a url at all");           // resolved against the base, still safe
+```
+
+:::tip Allow lists beat block lists
+Do not try to list every bad scheme. List the few good ones and reject everything else. New tricks appear all the time, but a short allow list stays safe.
+:::
+
+## 5. Look-alike and Misleading Links
+
+Links can lie. The words people see do not have to match the real destination.
+
+```html
+<!-- The text says one site, the link goes to another -->
+<a href="https://phishing-site.example/">https://yourbank.example/login</a>
+```
+
+Some tricks to know about:
+
+- **Mismatched text.** The visible words show one address while `href` is another.
+- **Look-alike domains.** `examp1e.com` uses the number 1 in place of a letter `l`. Other lookalikes use letters from different alphabets that appear almost identical, which is called a **homograph attack**.
+- **Extra words around the real name.** `yourbank.example.login-help.net` actually belongs to `login-help.net`, not to `yourbank.example`.
+- **Shortened links.** Services that shorten addresses hide where a link really goes.
+
+### For Your Visitors
+
+- **Hover (or long-press) a link** to see its real address in the browser's status bar.
+- Read the address **from right to left** at the first slash: the last part before the first single `/` is the real site.
+- **Be careful with emails and messages.** Go to the website by typing its address, not by following a link someone sent.
+- **Look for the padlock**, but remember it only means the connection is private, not that the site is honest.
+
+### For You as a Developer
+
+- Never write link text that looks like a different address than the real one.
+- Avoid link shorteners in your own pages. Use the full destination.
+- Be careful about **open redirects**: pages like `/go?url=...` that send visitors to any address they are given. Attackers use them to make a bad link look like it belongs to your site. If you need redirects, allow only a fixed list of destinations.
+
+## 6. Use HTTPS Everywhere
+
+`https` encrypts the connection between the visitor and the site. Without it, anyone on the same network, such as a café Wi-Fi, may read or change what is sent.
+
+| Do | Why |
+| :-- | :-- |
+| Link to `https://` addresses | Protects visitors on the way to the destination |
+| Load images, scripts, and styles over `https` | Browsers block or warn about "mixed content" on secure pages |
+| Serve your own site over `https` | Browsers mark plain `http` pages as "Not secure" |
+
+```html
+<!-- Not secure: may be blocked on an https page -->
+<img src="http://images.example.com/photo.jpg" alt="Photo" width="300" height="200" />
+
+<!-- Secure -->
+<img src="https://images.example.com/photo.jpg" alt="Photo" width="300" height="200" />
+```
+
+## A Safe External Link, Step by Step
+
+Put it all together. For a typical link to another site, this is a good, safe pattern.
+
+```html
+<a
+  href="https://trusted-site.example/guide"
+  target="_blank"
+  rel="noopener noreferrer">
+  Read the guide
+  <span class="visually-hidden">(opens in a new tab)</span>
+</a>
+```
+
+For a link that you do not control or endorse, such as a comment, add more:
+
+```html
+<a
+  href="https://visitors-site.example/"
+  target="_blank"
+  rel="ugc nofollow noopener noreferrer">
+  visitor's site
+</a>
+```
+
+## Beyond Links: Extra Protection
+
+A few site-wide settings add another layer. You do not need them on day one, but it helps to know they exist.
+
+| Setting | What it does |
+| :-- | :-- |
+| **Content Security Policy (CSP)** | A rule set, sent by the server, that restricts which scripts, images, and frames may load. It can block injected scripts |
+| **Referrer-Policy header** | Sets a site-wide default for the referrer, so you do not repeat `referrerpolicy` on every link |
+| **Cross-Origin-Opener-Policy** | Isolates your pages from windows that open them |
+| **HSTS** | Tells browsers to always use `https` for your site |
+
+## Security Checklist
+
+Before you publish, check each point.
+
+- [ ] Every `target="_blank"` link has `rel="noopener"` (and usually `noreferrer`)
+- [ ] All outside links use `https`
+- [ ] No link uses `javascript:` or `data:`
+- [ ] Links submitted by visitors are validated and marked `ugc nofollow`
+- [ ] Paid links are marked `sponsored`
+- [ ] No secrets or personal data appear in any URL
+- [ ] Link text matches the real destination
+- [ ] Your own site is served over `https`
+
+## Common Mistakes
+
+### Mistake 1: `target="_blank"` with no `rel`
+
+The most common mistake. Add `rel="noopener"` every time.
+
+### Mistake 2: Trusting visitor input
+
+A link or text posted by a visitor can contain anything. Validate it and sanitize it.
+
+### Mistake 3: Using `javascript:` links
+
+Use a `<button>` for actions and a real URL for navigation.
+
+### Mistake 4: Putting private data in the address
+
+Addresses leak through history, logs, and referrers.
+
+### Mistake 5: Mixing `http` and `https`
+
+A single insecure image or script on a secure page can trigger browser warnings or be blocked.
+
+### Mistake 6: Believing the padlock means the site is safe
+
+It only means the connection is encrypted. A fake site can have a padlock too.
+
+### Mistake 7: Copying security attributes without knowing why
+
+Understand what each value does, so you use the right one in the right place.
+
+## Try It Yourself
+
+Here is a short exercise.
+
+1. Create a file called `security-check.html` with **five** external links.
+2. Make three open in a new tab. Add `rel="noopener noreferrer"` to each.
+3. Add `rel="sponsored"` to one pretend affiliate link.
+4. Add one link as if a visitor posted it, with `rel="ugc nofollow noopener noreferrer"`.
+5. Replace one `javascript:` link, if you have one, with a proper `<button>`.
+6. Look at every address. Is each one `https`? Change any that are not.
+7. Bonus: write the `toSafeUrl` function and test it with five different inputs, including one that should be rejected.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is reverse tabnabbing, and how do you prevent it?</summary>
+
+It is an attack where a page opened with `target="_blank"` changes the original tab. Prevent it with `rel="noopener"`.
+
+</details>
+
+<details>
+<summary>2. What does `rel="noreferrer"` do?</summary>
+
+It stops the browser from telling the destination which page the visitor came from, and it also implies `noopener`.
+
+</details>
+
+<details>
+<summary>3. Why should you avoid `javascript:` links?</summary>
+
+They run code from the link, which can be abused if an attacker controls the link. Use a `<button>` for actions.
+
+</details>
+
+<details>
+<summary>4. Which `rel` values suit a link posted in a comment?</summary>
+
+`ugc` and `nofollow`, plus `noopener` (and often `noreferrer`) if it opens in a new tab.
+
+</details>
+
+<details>
+<summary>5. Does a padlock in the browser prove a website is trustworthy?</summary>
+
+No. It only shows that the connection is encrypted. A harmful site can use `https` too.
+
+</details>
+
+## Key Takeaways
+
+- Every link is a door. A few attributes keep it safe.
+- Add `rel="noopener"` to `target="_blank"` links, and `noreferrer` when privacy matters.
+- Never use `javascript:` or `data:` links, and validate any link a visitor provides with an allow list.
+- Mark visitor and paid links with `ugc`, `nofollow`, and `sponsored`.
+- Use `https` everywhere, keep secrets out of URLs, and make sure link text honestly matches its destination.
+
+Safe links are happy links. Next, learn how to start an email from a link with [Email Links](./email-links).
