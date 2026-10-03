@@ -1,15 +1,361 @@
 ---
-id: subscript-and-superscript
-title: "Subscript and Superscript: Working with sub and sup Tags"
-sidebar_label: "Subscript & Superscript"
+id: html-subscript-and-superscript
+title: "HTML Subscript and Superscript"
+sidebar_label: "Subscript and Superscript"
 sidebar_position: 12
 slug: /html/text-content/subscript-and-superscript
-description: "Format mathematical formulas, chemical equations, footnotes, and ordinal indicators using HTML sub and sup tags."
+description: "Learn how to write chemical formulas, math exponents, footnotes, and ordinals with the HTML sub and sup tags. Understand when to use them, how to fix line spacing with CSS, accessibility, MathML, and global conventions on CodeHarborHub."
 keywords:
+  - HTML subscript
+  - HTML superscript
   - HTML sub tag
   - HTML sup tag
-  - subscript and superscript
-  - chemical formulas HTML
+  - chemical formulas in HTML
+  - exponents in HTML
+  - HTML footnotes
+  - HTML sub sup CSS line-height
+  - MathML basics
+  - learn HTML sub and sup
   - CodeHarborHub HTML
-tags: [html, math, formatting, typography]
+tags: [html, web-development, beginner, subscript, superscript, text, frontend]
 ---
+
+Water is H<sub>2</sub>O. The area of a square is side<sup>2</sup>. A famous scientist's notes have a small number after a sentence that sends you to the bottom of the page.
+
+In all these cases, a few characters sit slightly **below** or **above** the normal line. This is not decoration. In chemistry, mathematics, and writing, the position of the character changes the meaning: H<sub>2</sub>O is water, but H2O is just letters and a number. HTML gives you two tags for this, `<sub>` and `<sup>`, and in this lesson you will learn how to use them well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **subscript** and **superscript** mean
+- How to write chemical formulas, exponents, footnotes, and ordinals
+- How to fix the extra line spacing these tags can cause
+- When Unicode characters or **MathML** are a better choice
+- How these tags work for readers in different languages
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+| Tag | Name | Position | Example |
+| :-- | :-- | :-- | :-- |
+| `<sub>` | Subscript | Below the baseline | H<sub>2</sub>O |
+| `<sup>` | Superscript | Above the baseline | x<sup>2</sup> |
+
+Both tags are **inline**, so they sit inside a sentence. Browsers show the text in a smaller size and move it down (`<sub>`) or up (`<sup>`).
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>Water is H<sub>2</sub>O and carbon dioxide is CO<sub>2</sub>.</p>
+<p>The area of a square is side<sup>2</sup>, and 10<sup>3</sup> is 1000.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>Water is H<sub>2</sub>O and carbon dioxide is CO<sub>2</sub>.</p>
+<p>The area of a square is side<sup>2</sup>, and 10<sup>3</sup> is 1000.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A simple way to remember: **sub** is like a **sub**marine, going under. **Sup** is like **sup**er, going up.
+
+## Where to Use `<sub>`
+
+Subscript is common in science and mathematics.
+
+- **Chemical formulas:** H<sub>2</sub>O, CO<sub>2</sub>, C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>
+- **Sequence indexes:** x<sub>1</sub>, x<sub>2</sub>, a<sub>n</sub>
+- **Logarithm bases:** log<sub>10</sub>(100)
+- **Number bases:** 101<sub>2</sub> (binary)
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="sub.html"
+<p>Glucose has the formula C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>.</p>
+<p>The sequence is x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub>.</p>
+<p>The binary number 101<sub>2</sub> equals 5 in decimal.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/sub.html">
+<>
+<p>Glucose has the formula C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>.</p>
+<p>The sequence is x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub>.</p>
+<p>The binary number 101<sub>2</sub> equals 5 in decimal.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Where to Use `<sup>`
+
+Superscript appears in math, units, footnotes, and in some languages' ordinals.
+
+- **Exponents:** x<sup>2</sup>, 2<sup>10</sup>, e<sup>x</sup>
+- **Units:** m<sup>2</sup> (square meters), km<sup>3</sup>
+- **Footnote markers:** a small number that points to a note
+- **Ordinals in some languages:** 1<sup>er</sup> in French, 2<sup>nd</sup> in English
+- **Isotopes:** <sup>14</sup>C, <sup>235</sup>U (the number goes before the symbol)
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="sup.html"
+<p>Einstein's equation is E = mc<sup>2</sup>.</p>
+<p>The room is 20 m<sup>2</sup>, and the tank holds 5 m<sup>3</sup>.</p>
+<p>Carbon dating uses <sup>14</sup>C.</p>
+<p lang="fr">Le 1<sup>er</sup> janvier est un jour férié.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/sup.html">
+<>
+<p>Einstein's equation is E = mc<sup>2</sup>.</p>
+<p>The room is 20 m<sup>2</sup>, and the tank holds 5 m<sup>3</sup>.</p>
+<p>Carbon dating uses <sup>14</sup>C.</p>
+<p lang="fr">Le 1<sup>er</sup> janvier est un jour férié.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Footnotes with `<sup>`
+
+A footnote has two parts: a small marker in the text, and the note itself at the bottom. You can connect them with links.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="footnote.html"
+<p>
+  The first website went online in 1991.<sup><a href="#note1" id="ref1" aria-label="Footnote 1">1</a></sup>
+</p>
+
+<hr />
+
+<ol>
+  <li id="note1">
+    This was a simple page at CERN that explained the project.
+    <a href="#ref1" aria-label="Back to text">↩</a>
+  </li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/footnote.html">
+<>
+<p>
+  The first website went online in 1991.<sup><a href="#note1" id="ref1" aria-label="Footnote 1">1</a></sup>
+</p>
+
+<hr />
+
+<ol>
+  <li id="note1">
+    This was a simple page at CERN that explained the project.
+    <a href="#ref1" aria-label="Back to text">↩</a>
+  </li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip Make footnote links friendly
+A link that says only "1" is hard to understand when read alone. The `aria-label="Footnote 1"` gives screen reader users a clear description. A small arrow link back to the text also helps everyone return to where they were reading.
+:::
+
+## Fixing Uneven Line Spacing
+
+You may notice that a line containing `<sub>` or `<sup>` can look slightly taller than its neighbors. The small text pushes the line open. A popular CSS fix keeps your paragraph spacing even.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="fix-line-height.html"
+<style>
+  sub, sup {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+  sup { top: -0.5em; }
+  sub { bottom: -0.25em; }
+</style>
+
+<p>Water is H<sub>2</sub>O and E = mc<sup>2</sup>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/fix-line-height.html">
+<>
+<p>
+  Water is H<sub style={{fontSize: '0.75em', lineHeight: 0, position: 'relative', verticalAlign: 'baseline', bottom: '-0.25em'}}>2</sub>O and E = mc<sup style={{fontSize: '0.75em', lineHeight: 0, position: 'relative', verticalAlign: 'baseline', top: '-0.5em'}}>2</sup>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The idea is simple. Instead of letting the browser change the line height, we use `position: relative` to move the small text up or down visually, and `line-height: 0` stops it from stretching the line.
+
+## Tags, Unicode, or MathML?
+
+There are three ways to show small raised or lowered characters. Each has a place.
+
+| Method | Example | Good for | Limits |
+| :-- | :-- | :-- | :-- |
+| `<sub>` and `<sup>` | H<sub>2</sub>O | Most formulas, footnotes, and exponents | Complex layouts get messy |
+| Unicode characters | H₂O, x² | Short text such as titles and plain text emails | Few characters exist, and fonts may miss them |
+| MathML | `<math>` elements | Real math: fractions, roots, matrices | More code to write |
+
+For basic needs, `<sub>` and `<sup>` are the right choice. For complex math, MathML, which modern browsers support, describes the structure of an equation so that screen readers can read it properly.
+
+```html title="mathml.html"
+<p>
+  The Pythagorean theorem:
+  <math>
+    <msup><mi>a</mi><mn>2</mn></msup>
+    <mo>+</mo>
+    <msup><mi>b</mi><mn>2</mn></msup>
+    <mo>=</mo>
+    <msup><mi>c</mi><mn>2</mn></msup>
+  </math>
+</p>
+```
+
+## Accessibility and Global Readers
+
+- **Screen readers may not announce position.** Many read H<sub>2</sub>O as "H two O," which is often fine. For formulas where the position changes the meaning, such as exponents, add a clear explanation in the text, for example "x squared."
+- **Chemistry and math notation is international.** Formulas like CO<sub>2</sub> and m<sup>2</sup> are understood in almost every country, which makes `<sub>` and `<sup>` very good tools for a global audience.
+- **Ordinals depend on the language.** French uses 1<sup>er</sup> and 2<sup>e</sup>. English often uses 1st and 2nd, with the letters raised or not. Spanish and Portuguese use forms like 1.º. Always follow the style of the language you write in, and set the `lang` attribute.
+- **Do not make tiny text unreadable.** Very small superscripts are hard to read for low-vision users. Keep a sensible size and good color contrast.
+- **Give footnote links room.** A one-character link is a small tap target on a phone. A little CSS `padding` makes it easier to press.
+
+## Choosing the Right Tool
+
+| You want to write | Use |
+| :-- | :-- |
+| H<sub>2</sub>O, x<sub>1</sub> | `<sub>` |
+| x<sup>2</sup>, m<sup>2</sup>, footnote number | `<sup>` |
+| A degree sign in 25°C | The `°` character, not `<sup>` |
+| A trademark symbol | The `™` character, or `<sup>` if needed |
+| Fractions, roots, long equations | MathML |
+| Small text with no meaning | CSS `font-size` |
+
+## Common Mistakes
+
+### Mistake 1: Using `<sup>` or `<sub>` only to shrink text
+
+If the text is not really raised or lowered, use CSS `font-size`. These tags carry meaning.
+
+### Mistake 2: Typing the number on the baseline
+
+Writing `H2O` or `m2` changes the meaning. Use the tags, or an accurate Unicode character.
+
+### Mistake 3: Using them for a whole word or sentence
+
+```html
+<!-- Hard to read -->
+<p>Please read the <sup>following instructions carefully</sup>.</p>
+```
+
+Keep them to a few characters. For longer notes, use a footnote or a separate paragraph.
+
+### Mistake 4: Putting `<sup>` after the isotope symbol
+
+The mass number goes **before** the element: <sup>14</sup>C, not C<sup>14</sup>.
+
+### Mistake 5: Using `<sup>` for the degree symbol
+
+Write 25°C with the real `°` character. A superscript letter "o" is not the same thing.
+
+### Mistake 6: Ignoring line spacing
+
+If your paragraphs look uneven, apply the CSS fix from earlier.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `science-notes.html`.
+2. Write three lines about water, carbon dioxide, and glucose, using `<sub>` for each formula.
+3. Write a line about the area of a room in m<sup>2</sup> and a sentence with an exponent like 2<sup>10</sup>.
+4. Add a footnote marker to one sentence, link it to a note at the bottom, and give the link an `aria-label`.
+5. Add the CSS fix with `line-height: 0` and check whether your lines stay even.
+6. Bonus: write the Pythagorean theorem with MathML.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which tag lowers text, and which one raises it?</summary>
+
+`<sub>` lowers text below the baseline, and `<sup>` raises text above it.
+
+</details>
+
+<details>
+<summary>2. Name two common uses of `<sub>` and two of `<sup>`.</summary>
+
+`<sub>` is used for chemical formulas like H<sub>2</sub>O and for indexes like x<sub>1</sub>. `<sup>` is used for exponents like x<sup>2</sup> and for footnote markers.
+
+</details>
+
+<details>
+<summary>3. How can you stop `<sub>` and `<sup>` from making a line taller?</summary>
+
+Use CSS with `line-height: 0`, `position: relative`, `vertical-align: baseline`, and a small `top` or `bottom` offset.
+
+</details>
+
+<details>
+<summary>4. Why does a footnote link need an `aria-label`?</summary>
+
+A link that says only "1" is unclear to screen reader users. An `aria-label` such as "Footnote 1" describes it.
+
+</details>
+
+<details>
+<summary>5. When is MathML a better choice than `<sup>` and `<sub>`?</summary>
+
+For complex math such as fractions, roots, and matrices, where structure matters and screen readers need to understand the equation.
+
+</details>
+
+## Key Takeaways
+
+- `<sub>` writes text **below** the line, and `<sup>` writes it **above**.
+- Position changes meaning in formulas, exponents, and footnotes, so do not type them on the baseline.
+- Fix uneven lines with `line-height: 0` and `position: relative`.
+- Use Unicode for short plain text, and MathML for complex equations.
+- Follow the ordinal style of each language, set `lang`, and make footnote links clear and easy to tap.
+
+You now know how to place small text exactly where it belongs. Next, learn when to underline text, and when not to, in [Underline](./underline).

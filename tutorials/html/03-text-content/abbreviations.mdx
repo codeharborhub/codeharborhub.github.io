@@ -1,15 +1,362 @@
 ---
-id: abbreviations
-title: "Defining Abbreviations and Acronyms with abbr"
+id: html-abbreviations
+title: "HTML Abbreviations"
 sidebar_label: "Abbreviations"
 sidebar_position: 10
 slug: /html/text-content/abbreviations
-description: "Use the abbr element with title attributes to provide tooltips and clear expansion definitions for acronyms and abbreviations."
+description: "Learn how to use the HTML abbr tag to explain abbreviations, acronyms, and initialisms. Understand the title attribute, first-use best practices, accessibility on touch and keyboard, styling with CSS, and global language tips on CodeHarborHub."
 keywords:
   - HTML abbr tag
-  - abbreviations in HTML
-  - acronym expansion HTML
-  - title attribute tooltip
+  - HTML abbreviations
+  - HTML acronym
+  - HTML abbr title attribute
+  - HTML initialism
+  - style abbr with CSS
+  - HTML abbr accessibility
+  - HTML dfn tag
+  - learn HTML abbr
   - CodeHarborHub HTML
-tags: [html, accessibility, semantics, typography]
+tags: [html, web-development, beginner, abbreviations, abbr, text, frontend]
 ---
+
+Have you ever read a message full of short forms and felt lost? "The WHO released a new SDK for the API." If you work in tech every day, that may be clear. If you are new, it looks like alphabet soup.
+
+Short forms save space, but they can leave readers behind. HTML gives you a gentle fix: the `<abbr>` tag. It lets you attach the full meaning to a short form, so everyone, from beginners to experts, can follow your page.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to mark an abbreviation with `<abbr>`
+- How to give its full meaning with the `title` attribute
+- The difference between an abbreviation, an acronym, and an initialism
+- Why you should **not** rely on the tooltip alone
+- How to style abbreviations and handle different languages
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+Wrap the short form in `<abbr>` and put the full meaning in the `title` attribute.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  I am learning <abbr title="HyperText Markup Language">HTML</abbr>
+  and <abbr title="Cascading Style Sheets">CSS</abbr>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  I am learning <abbr title="HyperText Markup Language">HTML</abbr>
+  and <abbr title="Cascading Style Sheets">CSS</abbr>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Most browsers show a dotted underline under the abbreviation. When you hover your mouse over it, a small tooltip appears with the full text from the `title` attribute. Try it in the example above.
+
+## Abbreviation, Acronym, or Initialism?
+
+People often use these words as if they mean the same thing. They are close, but not identical.
+
+| Type | How you say it | Example |
+| :-- | :-- | :-- |
+| **Abbreviation** | Shortened word, often said in full | Dr. (Doctor), kg (kilogram), etc. |
+| **Acronym** | Read as a **word** | NASA, UNESCO, RAM |
+| **Initialism** | Read **letter by letter** | HTML, CSS, API, FBI |
+
+Here is the good news: in HTML, you use `<abbr>` for **all three**. The older `<acronym>` tag is obsolete and removed from the standard. If you see it in old tutorials, replace it with `<abbr>`.
+
+## The Golden Rule: Say It in Full the First Time
+
+The tooltip is helpful, but it has limits. Phone and tablet users cannot hover. Keyboard users often cannot reach it. Some screen readers ignore the `title` attribute. So a tooltip alone is not enough.
+
+The most reliable approach is to **write the full form in your text the first time**, then use the short form afterward.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="first-use.html"
+<p>
+  The World Wide Web Consortium (<abbr title="World Wide Web Consortium">W3C</abbr>)
+  creates web standards. Many developers follow the <abbr title="World Wide Web Consortium">W3C</abbr>
+  guidelines when they build accessible sites.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/first-use.html">
+<>
+<p>
+  The World Wide Web Consortium (<abbr title="World Wide Web Consortium">W3C</abbr>)
+  creates web standards. Many developers follow the <abbr title="World Wide Web Consortium">W3C</abbr>
+  guidelines when they build accessible sites.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip A friendly habit
+Think of it like introducing a new friend. The first time, you say the full name. After that, the nickname is enough.
+:::
+
+## When to Use `<abbr>`
+
+Use it when a short form could confuse your reader.
+
+- **Technical terms:** API, SDK, URL, SQL
+- **Organizations:** UNESCO, NASA, WHO
+- **Units and titles:** kg, km, Dr., Prof.
+- **Slang and jargon** that newcomers may not know
+
+You do not need it for very common short forms such as "TV" or "OK" when your audience clearly knows them. Use judgment, and ask: "Would a beginner understand this?"
+
+## Plurals and Longer Phrases
+
+When the abbreviation is plural, make the `title` plural too.
+
+```html
+<p>
+  Good <abbr title="Application Programming Interfaces">APIs</abbr> are easy to read
+  and well documented.
+</p>
+```
+
+The `title` can also explain a short form in a helpful way, not only by spelling it out. For example:
+
+```html
+<p>
+  Dial <abbr title="Emergency number, varies by country">112</abbr> in an emergency.
+</p>
+```
+
+## Making Abbreviations Easier to Find
+
+Browsers add a dotted underline by default. This small hint tells readers, "there is more information here." Some designers remove it, but that makes the abbreviation harder to discover.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="styled-abbr.html"
+<style>
+  abbr[title] {
+    text-decoration: underline dotted #2563eb;
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+</style>
+
+<p>Learn <abbr title="Application Programming Interface">API</abbr> basics today.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/styled-abbr.html">
+<>
+<p>Learn <abbr title="Application Programming Interface" style={{textDecoration: 'underline dotted #2563eb', textUnderlineOffset: '3px', cursor: 'help'}}>API</abbr> basics today.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The selector `abbr[title]` targets only abbreviations that actually have a `title`. The `cursor: help` property shows a question-mark pointer when hovering, which signals that more information is available.
+
+## Accessibility: Working for Everyone
+
+A good page works for many kinds of readers.
+
+| Reader | Challenge | What helps |
+| :-- | :-- | :-- |
+| Touch device user | Cannot hover | Write the full form in the text on first use |
+| Keyboard user | Tooltip may not appear | Provide the meaning in the text, or a glossary |
+| Screen reader user | `title` may not be announced | Use the full form in the sentence at least once |
+| Low-vision user | Small dotted underline is hard to see | Keep strong color contrast and readable size |
+
+For pages with many abbreviations, consider adding a **glossary** section at the end that lists them all in one place. It helps every reader.
+
+```html title="glossary.html"
+<h2>Glossary</h2>
+<dl>
+  <dt>API</dt>
+  <dd>Application Programming Interface</dd>
+  <dt>URL</dt>
+  <dd>Uniform Resource Locator</dd>
+</dl>
+```
+
+## Abbreviations Around the World
+
+The same organization can have different short forms in different languages. This matters for global readers.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="global-abbr.html"
+<p lang="en">
+  The <abbr title="United Nations">UN</abbr> meets in New York.
+</p>
+<p lang="fr">
+  L'<abbr title="Organisation des Nations unies">ONU</abbr> se réunit à New York.
+</p>
+<p lang="es">
+  La <abbr title="Organización de las Naciones Unidas">ONU</abbr> se reúne en Nueva York.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/global-abbr.html">
+<>
+<p lang="en">
+  The <abbr title="United Nations">UN</abbr> meets in New York.
+</p>
+<p lang="fr">
+  L'<abbr title="Organisation des Nations unies">ONU</abbr> se réunit à New York.
+</p>
+<p lang="es">
+  La <abbr title="Organización de las Naciones Unidas">ONU</abbr> se reúne en Nueva York.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A few tips for a worldwide audience:
+
+- **Write the `title` in the language of the page.** A French reader should see the full form in French.
+- **Do not translate the abbreviation itself** unless the language has its own established short form, as with UN and ONU above.
+- **Set the `lang` attribute** on the page and on text in another language, so tools can pronounce things correctly.
+- **Check cultural meaning.** A short form can mean different things in different countries, which is why a full form on first use is so helpful.
+
+## Choosing the Right Tool
+
+| You want to... | Use |
+| :-- | :-- |
+| Explain a short form | `<abbr title="...">` |
+| Define a new term when first introduced | `<dfn>` |
+| Mark a foreign word or technical term in a different voice | `<i>` |
+| List many terms with meanings | A glossary with `<dl>` |
+| Mark the title of a book or film | `<cite>` |
+
+The `<dfn>` tag marks the **defining instance** of a term, which is the place where you introduce and explain it. You can use it together with `<abbr>`.
+
+```html
+<p>
+  The <dfn><abbr title="Search Engine Optimization">SEO</abbr></dfn> process helps
+  people find your website.
+</p>
+```
+
+## Common Mistakes
+
+### Mistake 1: Using `<abbr>` without a `title`
+
+An `<abbr>` with no `title` gives readers no information. If you do not have a meaning to add, you do not need the tag.
+
+### Mistake 2: Repeating the tooltip text next to every abbreviation
+
+```html
+<!-- Too much -->
+<p><abbr title="HyperText Markup Language">HTML</abbr> (HyperText Markup Language)
+and <abbr title="HyperText Markup Language">HTML</abbr> (HyperText Markup Language)</p>
+```
+
+Explain it in full once, then use the short form.
+
+### Mistake 3: Wrapping every single occurrence
+
+You can wrap each one, but on long pages it can clutter the code and the page. Wrapping the first use in each section is usually enough.
+
+### Mistake 4: Relying on the tooltip alone
+
+Remember that touch and keyboard users may never see it. Always give the meaning in the text at least once.
+
+### Mistake 5: Using the old `<acronym>` tag
+
+It was removed from HTML. Use `<abbr>` for abbreviations, acronyms, and initialisms.
+
+### Mistake 6: Removing the dotted underline
+
+Without a visible hint, readers do not know there is extra information. Keep a subtle style such as a dotted underline.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `tech-glossary.html`.
+2. Write a short paragraph about a web topic that uses at least **three** short forms, for example HTML, CSS, and API.
+3. On the first use of each, write the full form in the text, then wrap the short form in `<abbr>` with a `title`.
+4. Use one **plural** short form and write its `title` in the plural.
+5. Add a small glossary at the bottom with `<dl>`, `<dt>`, and `<dd>`.
+6. Add a CSS rule for `abbr[title]` with a dotted underline in your favorite color.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which tag explains a short form in HTML?</summary>
+
+The `<abbr>` tag, with the full meaning in the `title` attribute.
+
+</details>
+
+<details>
+<summary>2. What is the difference between an acronym and an initialism?</summary>
+
+An acronym is read as a word, like NASA. An initialism is read letter by letter, like HTML. In HTML, both use `<abbr>`.
+
+</details>
+
+<details>
+<summary>3. Why is the tooltip alone not enough?</summary>
+
+Touch users cannot hover, keyboard users may not reach it, and some screen readers ignore `title`. Write the full form in the text on first use.
+
+</details>
+
+<details>
+<summary>4. What happened to the `<acronym>` tag?</summary>
+
+It is obsolete and was removed from HTML. Use `<abbr>` instead.
+
+</details>
+
+<details>
+<summary>5. In which language should the `title` be written?</summary>
+
+In the language of the page or the surrounding text, so readers of that language understand it.
+
+</details>
+
+## Key Takeaways
+
+- Use `<abbr title="...">` for abbreviations, acronyms, and initialisms.
+- Write the **full form in the text** the first time, because tooltips are not available to everyone.
+- Keep the dotted underline, or another clear hint, so readers know more information exists.
+- Write the `title` in the language of the page, and set the `lang` attribute.
+- Use a glossary for pages with many short forms, and use `<dfn>` to mark where you define a term.
+
+Now you can make short forms friendly for every reader. Next, learn how to show code in your text in [Code Text](./code-text).

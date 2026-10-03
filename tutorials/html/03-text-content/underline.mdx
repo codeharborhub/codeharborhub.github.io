@@ -1,15 +1,398 @@
 ---
-id: underline
-title: "The u Tag: Representing Unarticulated Annotations"
+id: html-underline
+title: "HTML Underline"
 sidebar_label: "Underline"
 sidebar_position: 13
 slug: /html/text-content/underline
-description: "Learn how and when to use the u element for unarticulated non-textual annotations such as misspelling indicators or proper name offsets."
+description: "Learn when to use the HTML u tag and when to use CSS text-decoration instead. Understand why underlined text is confused with links, how to style underlines with CSS, accessibility and global script tips, and common mistakes on CodeHarborHub."
 keywords:
+  - HTML underline
   - HTML u tag
-  - underline tag HTML
-  - text annotation HTML
-  - semantic underline
+  - CSS text-decoration underline
+  - text-underline-offset
+  - text-decoration-style wavy
+  - underline vs link
+  - HTML u tag spelling error
+  - underline accessibility
+  - learn HTML underline
   - CodeHarborHub HTML
-tags: [html, typography, formatting, beginner]
+tags: [html, web-development, beginner, underline, text, frontend]
 ---
+
+Underlining feels like the most natural way to make text stand out. We learned it with pens and paper: to mark something important, draw a line under it. But on the web, an underline has a very different meaning. For almost every internet user in the world, **underlined text means "this is a link."**
+
+That one fact changes how you should think about underlines in HTML. In this lesson, you will learn what the `<u>` tag is really for, why most underlines should be written with CSS, and how to keep your pages clear for readers everywhere.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<u>` tag means in modern HTML
+- Why underlined text is easily confused with links
+- The few cases where `<u>` is the correct choice
+- How to style underlines with CSS `text-decoration`
+- How to remove or keep link underlines responsibly
+- Accessibility and global script considerations
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+The `<u>` tag draws a line under its content. It is an inline element, so it sits inside a sentence.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>This word is <u>underlined</u> with the u tag.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>This word is <u>underlined</u> with the u tag.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Simple so far. But the interesting part is not **how** the tag draws a line. It is **what the tag means**.
+
+## A Tag With a Changed Meaning
+
+In older HTML, `<u>` meant "underline this text," which is purely about looks. That was deprecated because HTML is meant to describe **meaning**, and styling belongs to CSS.
+
+Modern HTML brought `<u>` back, but with a new definition: **a span of text with an unarticulated, non-textual annotation.** That sounds complicated, so here it is in plain words:
+
+> Text that is marked in a way the reader will understand, but where the reason is not stated in words.
+
+The two classic examples are:
+
+1. **A spelling mistake**, like the red wavy line in a word processor
+2. **A proper name in Chinese text**, where a straight line under the name is a traditional mark
+
+| Old idea | Modern idea |
+| :-- | :-- |
+| "Make this text underlined" | "This text carries a special mark" |
+| About appearance | About meaning |
+| Used for emphasis | Not for emphasis |
+
+:::info Why the change?
+The standard authors noticed that people still wanted a tag for these special marks, and `<u>` was already there. So they gave it a clear, narrow job instead of deleting it.
+:::
+
+## Where `<u>` Is the Right Choice
+
+### 1. Marking a misspelling
+
+When you show text with an error, for example in a spelling lesson, `<u>` marks the problem word.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="spelling.html"
+<p>Find the mistake: I will <u>recieve</u> the parcel tomorrow.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/spelling.html">
+<>
+<p>Find the mistake: I will <u>recieve</u> the parcel tomorrow.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+To make it look like a spell checker, add a wavy red underline with CSS.
+
+```css
+u.error {
+  text-decoration: underline wavy #dc2626;
+  text-underline-offset: 3px;
+}
+```
+
+### 2. Proper-name marks in Chinese
+
+In Chinese writing, a straight line under a person's name or a place name is a traditional proper-name mark. In this case, `<u>` carries real meaning.
+
+```html title="proper-name.html"
+<p lang="zh-Hans">
+  <u>李白</u>是唐代著名的诗人。
+</p>
+```
+
+In both cases, the line tells the reader something specific. That is the key test.
+
+## Where `<u>` Is the Wrong Choice
+
+Most of the underlines you see on the web should **not** use `<u>`.
+
+| You want to... | Do not use `<u>`. Use this instead |
+| :-- | :-- |
+| Show importance | `<strong>` |
+| Stress a word | `<em>` |
+| Draw attention to a keyword | `<b>` |
+| Mark a title of a work | `<cite>` |
+| Make a link | `<a href="...">` |
+| Highlight text | `<mark>` |
+| Add a decorative line | CSS `text-decoration` or `border-bottom` |
+
+The `<mark>` tag, which highlights text like a yellow marker pen, is a good example. It is meant for text that is relevant in the current context, such as a search match.
+
+```html title="mark.html"
+<p>Search results for "HTML": Learning <mark>HTML</mark> is a great first step.</p>
+```
+
+## The Big Problem: Underlines Look Like Links
+
+Imagine a visitor sees an underlined phrase on your page and clicks it. Nothing happens. They feel confused, and maybe a little annoyed. This happens because the web has trained people for decades: **underline equals link.**
+
+This is why design guidelines say to avoid underlining anything that is not a link. Here is the reverse problem, too: if you remove the underline from real links, some readers cannot tell what is clickable.
+
+<Tabs>
+<TabItem value="bad" label="Confusing" default>
+
+```html
+<p>
+  Read our <u>important notice</u> before you begin.
+  Visit <a href="/guide" style="text-decoration: none; color: inherit;">the guide</a>.
+</p>
+```
+
+The notice looks like a link but is not. The real link looks like normal text.
+
+</TabItem>
+<TabItem value="good" label="Clear">
+
+```html
+<p>
+  Read our <strong>important notice</strong> before you begin.
+  Visit <a href="/guide">the guide</a>.
+</p>
+```
+
+The important text is bold, and the link keeps its default underline.
+
+</TabItem>
+</Tabs>
+
+:::warning Keep link underlines unless you have a strong replacement
+If you remove the underline from links, make sure they still stand out in another way: a clear color with enough contrast, bold weight, or a visible style on hover **and** focus. People who cannot tell colors apart need more than color alone.
+:::
+
+## Styling Underlines with CSS
+
+CSS gives you far more control than the `<u>` tag. The property is `text-decoration`, and it works on any element, including links.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="underline-styles.html"
+<style>
+  .fancy {
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: #2563eb;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+</style>
+
+<p>This text has a <span class="fancy">custom underline</span>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/underline-styles.html">
+<>
+<p>This text has a <span style={{textDecorationLine: 'underline', textDecorationStyle: 'wavy', textDecorationColor: '#2563eb', textDecorationThickness: '2px', textUnderlineOffset: '4px'}}>custom underline</span>.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here are the useful properties.
+
+| Property | What it controls | Example values |
+| :-- | :-- | :-- |
+| `text-decoration-line` | Which line to draw | `underline`, `overline`, `line-through`, `none` |
+| `text-decoration-style` | The line style | `solid`, `double`, `dotted`, `dashed`, `wavy` |
+| `text-decoration-color` | The line color | `#2563eb`, `red` |
+| `text-decoration-thickness` | How thick the line is | `2px`, `0.1em`, `from-font` |
+| `text-underline-offset` | Distance from the text | `3px`, `0.2em` |
+| `text-decoration-skip-ink` | Whether the line skips letter tails like g and y | `auto`, `none` |
+
+You can also write it in one short line.
+
+```css
+a {
+  text-decoration: underline dotted #2563eb 2px;
+}
+```
+
+### Strikethrough and Overline
+
+The same property can draw other lines.
+
+<Tabs>
+<TabItem value="strike" label="Strikethrough" default>
+
+```css
+.old-price {
+  text-decoration: line-through;
+}
+```
+
+For a deleted price or a correction, HTML has meaningful tags too: `<del>` for removed text and `<s>` for content that is no longer accurate.
+
+</TabItem>
+<TabItem value="over" label="Overline">
+
+```css
+.top-line {
+  text-decoration: overline;
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Hover Effects for Links
+
+A common pattern is to keep links underlined and thicken the line on hover.
+
+```css
+a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+a:hover,
+a:focus-visible {
+  text-decoration-thickness: 3px;
+}
+```
+
+Notice `:focus-visible`. It gives keyboard users the same visual feedback that mouse users get on hover.
+
+## Accessibility and Global Readers
+
+Good pages work for everyone, so keep these points in mind.
+
+- **Do not rely on color alone** to show a link. An underline is one of the clearest extra signals, and accessibility guidelines recommend it.
+- **Underlines can reduce readability for some readers.** For people with dyslexia, long underlined passages are hard to read. Keep underlined text short.
+- **Underlines can clash with some scripts.** In languages such as Thai, Hindi (Devanagari), and Arabic, underlines can cut through marks and joined letters. The `text-decoration-skip-ink: auto` setting, which is the default, helps the line avoid these parts. If your underline looks messy, test it with your real content.
+- **Vertical writing needs care.** In vertical Japanese or Chinese text, the underline appears on a side of the text. Use `text-underline-position` when you need to choose it.
+- **Screen readers usually do not announce `<u>`.** If the mark has a meaning, such as a spelling error, say it in words, for example "misspelled word."
+- **Set the `lang` attribute**, especially for traditional proper-name marks, so tools handle the text correctly.
+
+## Choosing the Right Tool
+
+| Goal | Best choice |
+| :-- | :-- |
+| A link | `<a>` |
+| Important text | `<strong>` |
+| Stressed word | `<em>` |
+| Attention to a keyword | `<b>` |
+| Highlighted, relevant text | `<mark>` |
+| A misspelled word or proper-name mark | `<u>` |
+| Deleted or corrected text | `<del>` or `<s>` |
+| A decorative or custom line | CSS `text-decoration` or `border-bottom` |
+
+## Common Mistakes
+
+### Mistake 1: Underlining text for emphasis
+
+Readers will think it is a link. Use `<strong>` or `<em>` instead.
+
+### Mistake 2: Using `<u>` just for a visual effect
+
+If there is no special meaning, style the text with CSS and use a neutral element like `<span>`.
+
+### Mistake 3: Removing underlines from all links
+
+Without a clear signal, links become hard to find. If you remove them, add another strong visual cue.
+
+### Mistake 4: Underlining a long paragraph
+
+Long underlined text is tiring to read and looks like a wall of links.
+
+### Mistake 5: Using the deprecated `text-decoration` attributes
+
+Old HTML attributes and tags such as `<font>` and `<strike>` are obsolete. Use CSS.
+
+### Mistake 6: Forgetting keyboard focus
+
+A hover style with no focus style leaves keyboard users without feedback. Always pair `:hover` with `:focus-visible`.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `proofreading.html`.
+2. Write a short paragraph that contains two intentional spelling mistakes.
+3. Mark each mistake with `<u class="error">` and add a CSS rule that gives it a wavy red underline.
+4. Add one real link to any site, and keep it underlined with a custom `text-decoration-thickness` and `text-underline-offset`.
+5. Use `<strong>` for one important instruction, instead of an underline.
+6. Add a `:hover` and `:focus-visible` style for the link, then test it with the Tab key.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `<u>` tag mean in modern HTML?</summary>
+
+Text with an unarticulated, non-textual annotation, such as a spelling error or a proper-name mark in Chinese text. It is not for emphasis.
+
+</details>
+
+<details>
+<summary>2. Why should you avoid underlining normal text?</summary>
+
+Readers expect underlined text to be a link, so they may click it and become confused.
+
+</details>
+
+<details>
+<summary>3. Which CSS property controls the style, color, and thickness of an underline?</summary>
+
+`text-decoration`, including the longer properties `text-decoration-style`, `text-decoration-color`, and `text-decoration-thickness`.
+
+</details>
+
+<details>
+<summary>4. What should you use instead of `<u>` to show importance?</summary>
+
+`<strong>` for importance, `<em>` for stress, or `<b>` to draw attention.
+
+</details>
+
+<details>
+<summary>5. Why should a hover style on a link also have a `:focus-visible` style?</summary>
+
+Keyboard users do not use a mouse hover. The focus style gives them the same visual feedback.
+
+</details>
+
+## Key Takeaways
+
+- Underlined text means **link** to almost every web user, so use underlines carefully.
+- Modern `<u>` marks text with a special annotation, like a misspelling, not simple emphasis.
+- Use `<strong>`, `<em>`, `<b>`, or `<mark>` for emphasis and highlighting.
+- Use CSS `text-decoration` for style, color, thickness, and offset.
+- Keep link underlines, or give links another strong cue, and always style `:focus-visible`.
+
+You are almost at the end of the Text Content section. The last lesson brings everything together with [Semantic Text](./semantic-text).
