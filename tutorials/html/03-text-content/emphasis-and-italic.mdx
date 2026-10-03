@@ -1,15 +1,351 @@
 ---
-id: emphasis-and-italic
-title: "Emphasized Text vs Italics: em vs i Tags"
-sidebar_label: "Emphasis & Italic"
+id: html-emphasis-and-italic
+title: "HTML Emphasis and Italic"
+sidebar_label: "Emphasis and Italic"
 sidebar_position: 7
 slug: /html/text-content/emphasis-and-italic
-description: "Compare the semantic em tag for stress emphasis with the visual i tag for technical terms, idiomatic phrases, and alternate voices."
+description: "Learn the difference between the HTML em and i tags. Understand stress emphasis vs alternate voice, accessibility, CSS font-style, italic challenges in global scripts, and best practices, explained in simple language on CodeHarborHub."
 keywords:
-  - em vs i tag
-  - italic text HTML
-  - semantic emphasis tag
-  - stress emphasis HTML
+  - HTML em tag
+  - HTML i tag
+  - HTML em vs i
+  - HTML italic text
+  - HTML emphasis
+  - CSS font-style italic
+  - HTML semantic tags
+  - HTML lang attribute
+  - learn HTML italic
   - CodeHarborHub HTML
-tags: [html, typography, semantics, beginner]
+tags: [html, web-development, beginner, emphasis, italic, text, frontend]
 ---
+
+Say this sentence out loud: "I did not say **he** stole the money." Now say it again, but this time stress a different word: "I did not **say** he stole the money." Same words, completely different meaning.
+
+When we speak, we change our voice to show what matters. In writing, we cannot change our voice, so we use **emphasis**. HTML gives you two tags that look the same on screen, both slanted, but do very different jobs: `<em>` and `<i>`. In this lesson, you will learn which one to use and why.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to make text italic with `<em>` and `<i>`
+- The difference between **stress emphasis** and **alternate voice**
+- When each tag is the right choice
+- How to control italics with CSS
+- Why italics do not work the same way in every language
+- Common mistakes, including the famous icon habit
+
+:::info Connection to the last lesson
+In [Strong and Bold](./strong-and-bold), you learned that `<strong>` shows importance and `<b>` draws attention. This lesson follows the same idea for slanted text: one tag has **meaning**, and the other is mostly about **style and voice**.
+:::
+
+## The Quick Answer
+
+| Tag | Full meaning | Use it when |
+| :-- | :-- | :-- |
+| `<em>` | Emphasis | A word needs stress, and the stress changes the meaning |
+| `<i>` | Idiomatic text | Text is in a different voice, mood, or language |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>I <em>really</em> want to learn HTML.</p>
+<p>The word <i>schadenfreude</i> comes from German.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>I <em>really</em> want to learn HTML.</p>
+<p>The word <i>schadenfreude</i> comes from German.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Both are slanted in the browser. The first one says "stress this word when reading." The second one says "this text is a little different from the surrounding text."
+
+## The `<em>` Tag: Stress Emphasis
+
+Use `<em>` when changing the stressed word **changes the meaning** of the sentence. Look at how the point moves in this example.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="em-stress.html"
+<p><em>I</em> did not take your pen.</p>
+<p>I did not <em>take</em> your pen.</p>
+<p>I did not take <em>your</em> pen.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/em-stress.html">
+<>
+<p><em>I</em> did not take your pen.</p>
+<p>I did not <em>take</em> your pen.</p>
+<p>I did not take <em>your</em> pen.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+- The first line suggests someone else took it.
+- The second suggests you borrowed it, but did not take it.
+- The third suggests you took a different pen.
+
+That is the real power of `<em>`. The tag carries the **stress**, not just the slant.
+
+### Nesting for Stronger Stress
+
+You can nest `<em>` inside `<em>` to show a higher level of stress.
+
+```html
+<p>You must <em>never <em>ever</em></em> share your password.</p>
+```
+
+Use this sparingly. It works best in short, clear sentences.
+
+## The `<i>` Tag: A Different Voice
+
+The `<i>` tag marks text that is **set apart from normal text** in voice, mood, or language. It does not add stress. Think of it as changing the tone of the page, like a narrator quietly switching voices.
+
+Good uses for `<i>`:
+
+- **Foreign words and phrases** that are not part of the surrounding language
+- **Technical terms**, the first time you introduce them
+- **Thoughts** of a character in a story
+- **Scientific names** of species
+- **Names of ships and vehicles**, in styles that use italics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="i-examples.html"
+<p>The French say <i lang="fr">c'est la vie</i> when things go wrong.</p>
+<p>The <i>HTML parser</i> reads your code from top to bottom.</p>
+<p>She smiled. <i>I can do this,</i> she thought.</p>
+<p>The red panda, <i>Ailurus fulgens</i>, lives in forests.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/i-examples.html">
+<>
+<p>The French say <i lang="fr">c'est la vie</i> when things go wrong.</p>
+<p>The <i>HTML parser</i> reads your code from top to bottom.</p>
+<p>She smiled. <i>I can do this,</i> she thought.</p>
+<p>The red panda, <i>Ailurus fulgens</i>, lives in forests.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip The lang attribute
+Notice `lang="fr"` on the French phrase. It tells browsers, translation tools, and screen readers that this part is in a different language, so they can choose the right pronunciation and fonts. This is a small habit with a big benefit for global readers.
+:::
+
+## Side by Side: em, i, strong, and b
+
+| Tag | Shows | Best for | Example |
+| :-- | :-- | :-- | :-- |
+| `<em>` | Stress | A word you would say louder or longer | "I *really* mean it." |
+| `<i>` | Alternate voice | Foreign words, terms, thoughts | "*Carpe diem*" |
+| `<strong>` | Importance | Warnings and key facts | "**Do not** touch." |
+| `<b>` | Attention | Keywords and product names | "**Nova X1** review" |
+
+## How to Choose
+
+Ask yourself two quick questions.
+
+1. **"If I read this aloud, would I stress this word?"** Yes means `<em>`.
+2. **"Is this text in a different voice or language from the sentence around it?"** Yes means `<i>`.
+
+If neither is true and you only want a slanted look, use CSS.
+
+## Controlling Italics with CSS
+
+Browsers show both tags as italic using `font-style: italic`. You can change this, and the tag keeps its meaning.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="font-style.html"
+<style>
+  em {
+    font-style: normal;
+    font-weight: 700;
+    color: #b45309;
+  }
+  .note {
+    font-style: italic;
+    color: #475569;
+  }
+</style>
+
+<p>This is <em>very</em> important to understand.</p>
+<p class="note">This note is slanted only with CSS.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/font-style.html">
+<>
+<p>This is <em style={{fontStyle: 'normal', fontWeight: 700, color: '#b45309'}}>very</em> important to understand.</p>
+<p style={{fontStyle: 'italic', color: '#475569'}}>This note is slanted only with CSS.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the first line, the stressed word is now bold and orange instead of slanted, but it is still an `<em>` tag, so the meaning remains. That is the benefit of semantic HTML: your design can change without losing what the text means.
+
+| Value | Result |
+| :-- | :-- |
+| `font-style: italic` | Uses the font's true italic design, if it has one |
+| `font-style: oblique` | Slants the regular letters by an angle |
+| `font-style: normal` | Removes the slant |
+
+## Italics Around the World
+
+English readers are used to italics, but not every writing system uses them. This is useful to know if your site reaches readers in many countries.
+
+- **Many scripts have no italic tradition.** Chinese, Japanese, Korean, Arabic, Hebrew, and many Indian scripts do not usually use slanted text. If a font has no italic design, the browser creates a **fake slant**, which can look uneven or harder to read.
+- **Other writing systems use other methods.** Depending on the language, emphasis might be shown with bold, a different color, extra spacing, or special punctuation.
+- **Test with your real content.** If your page is in Hindi or Japanese, preview how `<em>` looks and consider changing it with CSS.
+
+```css
+/* Better emphasis for languages where fake italics look poor */
+:lang(ja) em,
+:lang(hi) em,
+:lang(ar) em {
+  font-style: normal;
+  font-weight: 700;
+}
+```
+
+The `:lang()` selector applies the style only to content marked with the right `lang` attribute, so each language gets a suitable look.
+
+## Accessibility Notes
+
+- Many screen readers **do not change their voice** for `<em>` by default, so do not rely on tone alone. Write clear sentences that make sense even without the stress.
+- Because `<em>` is semantic, users and assistive tools can configure how it is announced. A plain CSS slant carries no such meaning.
+- **Long passages in italics are hard to read**, especially for people with dyslexia or low vision. Keep italics to a few words.
+- Keep color contrast high when you restyle emphasis.
+
+## Common Mistakes
+
+### Mistake 1: Using `<i>` for icons
+
+You may have seen code like this in older tutorials.
+
+```html
+<!-- Common, but not ideal -->
+<i class="fa fa-home"></i>
+```
+
+Some icon libraries used `<i>` as a convenient empty tag. Since `<i>` has meaning, a better habit is `<span>` with an `aria-hidden="true"` attribute, or an inline SVG. If you are using a library that does this, it still works, but avoid copying it into your own semantic text.
+
+### Mistake 2: Using `<em>` only to get a slant
+
+```html
+<!-- Not ideal: there is no real stress here -->
+<p><em>Welcome to our website</em></p>
+```
+
+If you only want a slanted look, use CSS `font-style: italic`.
+
+### Mistake 3: Italicizing whole paragraphs
+
+```html
+<!-- Hard to read -->
+<p><em>This long paragraph is entirely in italics, so nothing stands out and the
+text becomes tiring to read.</em></p>
+```
+
+Emphasis works because it is rare. Use it on a word or a short phrase.
+
+### Mistake 4: Mixing up `<em>` and `<strong>`
+
+`<em>` is about **how you would say** something. `<strong>` is about **how serious** it is. A sentence can use both.
+
+```html
+<p><strong>Warning:</strong> you must <em>save</em> your work first.</p>
+```
+
+### Mistake 5: Using `<i>` for titles of works
+
+A book, film, or album title is a creative work. HTML has a better tag for it, `<cite>`, which you will see in the [Citations](./citations) lesson.
+
+## Try It Yourself
+
+Practice with a short project.
+
+1. Create a file named `language-notes.html`.
+2. Write three sentences about a language or place you like.
+3. Use `<em>` to stress **one word** whose stress changes the meaning.
+4. Use `<i>` with a `lang` attribute for **one foreign word**.
+5. Add a CSS rule that makes `<em>` bold and dark orange instead of slanted.
+6. Read your sentences aloud. Does the stress feel natural?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. When should you use `<em>`?</summary>
+
+When a word needs stress, especially if changing the stress changes the meaning of the sentence.
+
+</details>
+
+<details>
+<summary>2. Name two good uses of `<i>`.</summary>
+
+Foreign words or phrases, technical terms, a character's thoughts, and scientific names are all good uses.
+
+</details>
+
+<details>
+<summary>3. Why add `lang="fr"` to a French phrase inside an English page?</summary>
+
+It helps browsers, translation tools, and screen readers handle that phrase correctly, including pronunciation and font choice.
+
+</details>
+
+<details>
+<summary>4. How can you remove the slant from an `<em>` tag?</summary>
+
+Use CSS: `em { font-style: normal; }`. You can add bold or color instead.
+
+</details>
+
+<details>
+<summary>5. Why can italics be a problem in some languages?</summary>
+
+Many scripts have no italic design, so browsers fake a slant that may look uneven or be harder to read.
+
+</details>
+
+## Key Takeaways
+
+- `<em>` shows **stress emphasis**. `<i>` shows **a different voice, term, or language**.
+- Both are italic by default, but their meanings are different.
+- Use CSS `font-style` when you only want a visual change.
+- Mark foreign text with the `lang` attribute.
+- Keep italics short, and check that they work in the languages your readers use.
+
+You now know how to add stress and voice to your text. Next, learn how to display quoted words properly in [Quotations](./quotations).

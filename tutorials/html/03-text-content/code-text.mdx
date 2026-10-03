@@ -1,15 +1,422 @@
 ---
-id: code-text
-title: "Displaying Code Snippets, Keyboard Input, and Preformatted Text"
-sidebar_label: "Code & Computer Text"
+id: html-code-text
+title: "HTML Code and Preformatted Text"
+sidebar_label: "Code Text"
 sidebar_position: 11
 slug: /html/text-content/code-text
-description: "Explore computer text elements including code, pre, kbd, samp, and var to format inline code snippets, terminal output, and user inputs."
+description: "Learn how to show code in HTML with the code, pre, kbd, samp, and var tags. Understand whitespace, escaping special characters, styling with CSS, accessibility, and global tips like translate=no, explained clearly on CodeHarborHub."
 keywords:
   - HTML code tag
-  - pre tag HTML
-  - kbd tag HTML
-  - computer text formatting
+  - HTML pre tag
+  - HTML preformatted text
+  - HTML kbd tag
+  - HTML samp tag
+  - HTML var tag
+  - escape HTML characters
+  - HTML entities lt gt amp
+  - show code in HTML
+  - style code blocks with CSS
+  - learn HTML code text
   - CodeHarborHub HTML
-tags: [html, code-snippets, pre-tag, typography]
+tags: [html, web-development, beginner, code, pre, text, frontend]
 ---
+
+If you have ever followed a tutorial, you have already seen this tag at work. A command like `npm install`, a line of JavaScript, a keyboard shortcut. Code looks different from normal writing, and it **has to be exact**. One missing space or one wrong letter can break everything.
+
+HTML gives you a small family of tags to show computer-related text clearly and correctly. In this lesson, you will learn how to display code, keep its spacing, show keyboard keys, and avoid the classic mistake that makes your code disappear from the page.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to show short code with `<code>`
+- How to keep spacing and line breaks with `<pre>`
+- How to show **keyboard keys**, **program output**, and **variables**
+- How to display `<` and `>` characters safely
+- How to style code blocks and make them readable for everyone
+- A global tip: stopping translation tools from changing your code
+
+## Meet the Code Family
+
+| Tag | Meaning | Example |
+| :-- | :-- | :-- |
+| `<code>` | A piece of computer code | `console.log("Hi")` |
+| `<pre>` | Preformatted text, keeps spaces and line breaks | A whole code block |
+| `<kbd>` | Keyboard input | Ctrl + C |
+| `<samp>` | Sample output from a program | `Hello, world!` |
+| `<var>` | A variable or placeholder name | `username` |
+
+## The `<code>` Tag: Inline Code
+
+Use `<code>` for a **short piece of code inside a sentence**. Browsers show it in a **monospace** font, where every character has the same width, which makes code easier to read.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>Use the <code>console.log()</code> method to print a message.</p>
+<p>Run <code>npm start</code> to open your project.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>Use the <code>console.log()</code> method to print a message.</p>
+<p>Run <code>npm start</code> to open your project.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+By itself, `<code>` does **not** keep line breaks or extra spaces. Like normal text, the browser collapses them. That is where `<pre>` comes in.
+
+## The `<pre>` Tag: Keep the Spacing
+
+`<pre>` stands for **preformatted**. It shows text exactly as you typed it, including spaces, tabs, and line breaks. This is perfect for blocks of code, poems in a fixed layout, or text diagrams.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="pre.html"
+<pre>
+function greet(name) {
+  console.log("Hello, " + name);
+}
+</pre>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/pre.html">
+<>
+<pre>{"function greet(name) {\n  console.log(\"Hello, \" + name);\n}"}</pre>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Compare this to a normal paragraph, where all the spacing would collapse into one line. Here, the indentation stays.
+
+## The Best Pair: `<pre>` and `<code>` Together
+
+For a block of code, the standard pattern is to put `<code>` **inside** `<pre>`. The `<pre>` keeps the layout, and the `<code>` tells everyone "this is code."
+
+```html title="pre-code.html"
+<pre><code>
+let total = 0;
+for (let i = 1; i <= 3; i++) {
+  total += i;
+}
+console.log(total);
+</code></pre>
+```
+
+:::warning Wait, this has a problem
+Look at `i <= 3` in the code above. The `<` symbol can confuse the browser, because it thinks a tag is starting. In real HTML, you must **escape** it. The next section shows how.
+:::
+
+## Showing `<` and `>` Safely: Escaping
+
+Characters like `<`, `>`, and `&` have special meaning in HTML. If you want to **show** them as text, replace them with **character entities**.
+
+| You want to show | Write this | Name |
+| :-- | :-- | :-- |
+| `<` | `&lt;` | less than |
+| `>` | `&gt;` | greater than |
+| `&` | `&amp;` | ampersand |
+| `"` | `&quot;` | double quote |
+
+Here is the correct way to show an HTML tag inside a page.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="escape.html"
+<p>The paragraph tag looks like <code>&lt;p&gt;Hello&lt;/p&gt;</code>.</p>
+
+<pre><code>
+for (let i = 1; i &lt;= 3; i++) {
+  console.log(i);
+}
+</code></pre>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/escape.html">
+<>
+<p>The paragraph tag looks like <code>{'<p>Hello</p>'}</code>.</p>
+
+<pre><code>{"for (let i = 1; i <= 3; i++) {\n  console.log(i);\n}"}</code></pre>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If you forget to escape, the browser may treat your example as a **real tag**. It will run it or hide it instead of showing it, and your readers will see nothing.
+
+:::tip Writing in Markdown or MDX?
+In Markdown, code between backticks or inside a fenced block is escaped for you. You only need entities when you write raw HTML like the examples above.
+:::
+
+## Keyboard Keys with `<kbd>`
+
+Use `<kbd>` when you tell readers which keys to press. It is perfect for shortcuts and instructions.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="kbd.html"
+<p>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy.</p>
+<p>Press <kbd>Cmd</kbd> + <kbd>V</kbd> on a Mac to paste.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/kbd.html">
+<>
+<p>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy.</p>
+<p>Press <kbd>Cmd</kbd> + <kbd>V</kbd> on a Mac to paste.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Program Output with `<samp>`
+
+Use `<samp>` for the **result** a program prints. This separates what you type from what the computer answers.
+
+```html title="samp.html"
+<p>After you run the program, you will see <samp>Hello, world!</samp></p>
+```
+
+## Variables with `<var>`
+
+Use `<var>` for a **variable name or a placeholder** in explanations. Browsers show it in italics by default.
+
+```html title="var.html"
+<p>The area of a rectangle is <var>width</var> × <var>height</var>.</p>
+<p>Replace <var>your-name</var> with your own name.</p>
+```
+
+### All Together
+
+A short tutorial step often uses several of these tags at once.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="together.html"
+<p>
+  Open the terminal and type <kbd>node app.js</kbd>, then press <kbd>Enter</kbd>.
+  You should see <samp>Server running on port 3000</samp>.
+  If the port is busy, change <var>port</var> in <code>app.js</code>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/together.html">
+<>
+<p>
+  Open the terminal and type <kbd>node app.js</kbd>, then press <kbd>Enter</kbd>.
+  You should see <samp>Server running on port 3000</samp>.
+  If the port is busy, change <var>port</var> in <code>app.js</code>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Styling Code with CSS
+
+The default look is plain, but a little CSS makes code far easier to scan.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="styled-code.html"
+<style>
+  code, kbd, samp {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.95em;
+  }
+  code {
+    background: #eef2f7;
+    color: #1e293b;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+</style>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/styled-code.html">
+<>
+<p>Inline code looks like <code style={{background: '#eef2f7', color: '#1e293b', padding: '2px 6px', borderRadius: '4px'}}>npm start</code>.</p>
+<pre style={{background: '#0f172a', color: '#e2e8f0', padding: '1rem', borderRadius: '8px', overflowX: 'auto'}}>{"function greet() {\n  console.log(\"Hello\");\n}"}</pre>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here is what the important rules do:
+
+| Rule | Why it helps |
+| :-- | :-- |
+| `font-family` with monospace fallbacks | Characters line up and look like code |
+| `overflow-x: auto` on `pre` | Long lines scroll instead of breaking the page |
+| `pre code { background: none }` | Avoids a box inside a box |
+| `padding` and `border-radius` | Gives the code room to breathe |
+
+:::info Syntax highlighting
+Colored code, like in the examples on this site, is created by a JavaScript library such as Prism or Shiki. The HTML underneath is still `<pre>` and `<code>`, so everything you learned here still applies.
+:::
+
+## Accessibility and Global Readers
+
+Code is read by many different people, so a few small habits help a lot.
+
+- **Do not use color alone** to carry meaning in code samples. Some readers cannot tell colors apart.
+- **Make scrollable blocks reachable.** If a `<pre>` scrolls horizontally, keyboard users should be able to reach it. Adding `tabindex="0"` lets them focus it and scroll with the arrow keys.
+- **Keep lines reasonably short.** Very long lines are hard to read on phones.
+- **Stop translation tools from changing code.** Browser translation can turn `print` into a word in another language and break your example. Add `translate="no"` to the code, so it stays exactly as written.
+
+```html title="translate-no.html"
+<p>
+  Type <code translate="no">npm install</code> in the terminal.
+</p>
+
+<pre translate="no"><code>
+console.log("Hello");
+</code></pre>
+```
+
+- **Set `lang` for human text, not for code.** Your explanations can be in Hindi, Spanish, or Arabic, while the code stays in its standard form.
+
+## Choosing the Right Tool
+
+| You want to show | Use |
+| :-- | :-- |
+| A short command or function name in a sentence | `<code>` |
+| A block of code with spacing | `<pre><code>...</code></pre>` |
+| A key or shortcut to press | `<kbd>` |
+| What a program prints | `<samp>` |
+| A placeholder or variable in an explanation | `<var>` |
+| A poem or ASCII art with fixed spacing | `<pre>` |
+
+## Common Mistakes
+
+### Mistake 1: Forgetting to escape `<` and `>`
+
+Your example tag may run or vanish. Use `&lt;` and `&gt;`, or write in Markdown code blocks.
+
+### Mistake 2: Using `<code>` for multi-line blocks without `<pre>`
+
+Without `<pre>`, line breaks and indentation collapse and your code becomes one long line.
+
+### Mistake 3: Using `<pre>` for page layout
+
+`<pre>` is for text that must keep its spacing. For layout, use CSS.
+
+### Mistake 4: Extra blank lines at the start of `<pre>`
+
+A newline right after `<pre>` is ignored, but other blank lines and indentation are not. If your code starts with extra spaces, they will show.
+
+### Mistake 5: Using `<code>` just for a font
+
+If the text is not computer code, use CSS `font-family` instead.
+
+### Mistake 6: Letting translation tools rewrite your code
+
+Add `translate="no"` to code samples when your page may be translated.
+
+## Try It Yourself
+
+Here is a small exercise.
+
+1. Create a file called `how-to-run.html`.
+2. Write a short instruction with a command inside `<code>`.
+3. Add a code block using `<pre><code>`, and **escape** at least one `<` character.
+4. Add a shortcut with `<kbd>` and a result with `<samp>`.
+5. Mention one variable with `<var>`.
+6. Style `pre` with a dark background, `padding`, and `overflow-x: auto`, and add `translate="no"` to your code.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which tag shows a short piece of code inside a sentence?</summary>
+
+The `<code>` tag.
+
+</details>
+
+<details>
+<summary>2. What does `<pre>` do that `<code>` does not?</summary>
+
+It keeps spaces and line breaks exactly as typed, so blocks of code keep their layout.
+
+</details>
+
+<details>
+<summary>3. How do you show the `<` symbol as text in HTML?</summary>
+
+Write `&lt;`. For `>` write `&gt;`, and for `&` write `&amp;`.
+
+</details>
+
+<details>
+<summary>4. What are `<kbd>`, `<samp>`, and `<var>` used for?</summary>
+
+`<kbd>` shows keys to press, `<samp>` shows program output, and `<var>` shows a variable or placeholder.
+
+</details>
+
+<details>
+<summary>5. Why add `translate="no"` to code samples?</summary>
+
+Translation tools may change words inside code and break it. The attribute keeps the code exactly as written.
+
+</details>
+
+## Key Takeaways
+
+- `<code>` is for **inline code**, and `<pre>` keeps **spacing and line breaks**.
+- For code blocks, put `<code>` inside `<pre>`.
+- Escape `<`, `>`, and `&` with `&lt;`, `&gt;`, and `&amp;` when you write raw HTML.
+- `<kbd>`, `<samp>`, and `<var>` give extra meaning to keys, output, and placeholders.
+- Style with monospace fonts, `overflow-x: auto`, and good contrast, and use `translate="no"` to protect your code.
+
+Great work. You can now show code clearly and safely. Next, learn how to write small raised and lowered text like H<sub>2</sub>O and x<sup>2</sup> in [Subscript and Superscript](./subscript-and-superscript).

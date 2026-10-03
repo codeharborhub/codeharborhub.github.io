@@ -1,15 +1,370 @@
 ---
-id: quotations
-title: "Blockquotes and Inline Quotations in HTML"
+id: html-quotations
+title: "HTML Quotations"
 sidebar_label: "Quotations"
 sidebar_position: 8
 slug: /html/text-content/quotations
-description: "Master blockquote and q elements in HTML for long-form quotes and inline text quotations, including cite attributes for source tracking."
+description: "Learn how to mark up quotations in HTML with the blockquote and q tags. Understand the cite attribute, figure and figcaption for attribution, quotation marks in different languages, CSS styling, and common mistakes on CodeHarborHub."
 keywords:
+  - HTML quotations
   - HTML blockquote tag
-  - q tag HTML
-  - quote elements HTML
-  - block vs inline quotation
+  - HTML q tag
+  - HTML cite attribute
+  - HTML figure figcaption quote
+  - HTML inline quotation
+  - style blockquote with CSS
+  - HTML quotes by language
+  - learn HTML quotes
   - CodeHarborHub HTML
-tags: [html, quotations, markup, semantics]
+tags: [html, web-development, beginner, quotations, blockquote, text, frontend]
 ---
+
+Every day we repeat the words of other people. A teacher's advice, a line from a book, a sentence from a report. When you share those words on a web page, two things matter: the reader should know **these are someone else's words**, and the browser should know it too.
+
+HTML gives you two tags for this, `<blockquote>` for longer quotes and `<q>` for short ones. In this lesson, you will learn how each one works, how to give credit to the source, and how to display quotations correctly for readers in different countries.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The difference between `<blockquote>` and `<q>`
+- How the `cite` attribute stores a source link
+- How to show a visible source with `<figure>` and `<figcaption>`
+- How quotation marks change by language
+- How to style quotes with CSS
+- Common mistakes, and what to do instead
+
+## The Quick Answer
+
+| Tag | Type | Best for | Quotation marks |
+| :-- | :-- | :-- | :-- |
+| `<blockquote>` | Block-level | Longer quotes, one or more sentences or paragraphs | Not added. The block is indented instead |
+| `<q>` | Inline | Short quotes inside a sentence | Added automatically by the browser |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>My teacher always says <q>practice makes progress</q> when I feel stuck.</p>
+
+<blockquote>
+  Learning to code is like learning a language. At first, every sentence takes
+  effort. Soon, you start thinking in it.
+</blockquote>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>My teacher always says <q>practice makes progress</q> when I feel stuck.</p>
+
+<blockquote>
+  Learning to code is like learning a language. At first, every sentence takes
+  effort. Soon, you start thinking in it.
+</blockquote>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice that the `<q>` tag added quotation marks by itself, and the `<blockquote>` was indented without any marks.
+
+## The `<blockquote>` Tag: Longer Quotes
+
+Use `<blockquote>` when the quoted text is long enough to stand on its own, or when it has several sentences or paragraphs. It is a **block-level** element, so it starts on a new line.
+
+By default, browsers indent it with left and right margins (usually about 40px) so it stands out from your own writing.
+
+You can place paragraphs inside a blockquote.
+
+```html title="blockquote-paragraphs.html"
+<blockquote>
+  <p>First paragraph of the quoted text.</p>
+  <p>Second paragraph of the quoted text.</p>
+</blockquote>
+```
+
+:::warning Not for indentation
+Never use `<blockquote>` just to push text to the right. It means "this is a quotation." If you only want spacing, use CSS `margin` or `padding`. Screen readers may announce a blockquote, which confuses users when no quote exists.
+:::
+
+## The `<q>` Tag: Short Inline Quotes
+
+Use `<q>` for a short quote inside a sentence. It is an **inline** element, so it stays in the flow of your paragraph.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="q-tag.html"
+<p>The sign at the entrance said <q>please keep the door closed</q>.</p>
+<p>She replied, <q>I will remember that</q>, and smiled.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/q-tag.html">
+<>
+<p>The sign at the entrance said <q>please keep the door closed</q>.</p>
+<p>She replied, <q>I will remember that</q>, and smiled.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Do Not Add Quotation Marks Yourself
+
+The browser already adds them. If you type your own, you will get double marks.
+
+```html
+<!-- Wrong: double quotation marks -->
+<p>He said <q>"hello"</q>.</p>
+
+<!-- Right -->
+<p>He said <q>hello</q>.</p>
+```
+
+## Giving Credit: The `cite` Attribute
+
+Both `<blockquote>` and `<q>` accept a `cite` attribute. It holds the **web address** of the source.
+
+```html
+<blockquote cite="https://example.com/learning-to-code">
+  Learning to code is like learning a language.
+</blockquote>
+```
+
+Here is the important part: the `cite` attribute is **not shown** on the page. It is for browsers, search tools, and other software. Most readers never see it.
+
+So if you want people to see where a quote came from, show the source in the page itself. The best way is with `<figure>` and `<figcaption>`.
+
+## Showing the Source: `<figure>` and `<figcaption>`
+
+Wrap the blockquote in a `<figure>`, and put the source name in a `<figcaption>`. This links the quote and its source in a meaningful way.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="figure-quote.html"
+<figure>
+  <blockquote cite="https://example.com/learning-to-code">
+    Learning to code is like learning a language. At first, every sentence
+    takes effort. Soon, you start thinking in it.
+  </blockquote>
+  <figcaption>
+    Amara Okafor, <cite>A Beginner's Guide to Programming</cite>
+  </figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/figure-quote.html">
+<>
+<figure>
+  <blockquote cite="https://example.com/learning-to-code">
+    Learning to code is like learning a language. At first, every sentence
+    takes effort. Soon, you start thinking in it.
+  </blockquote>
+  <figcaption>
+    Amara Okafor, <cite>A Beginner's Guide to Programming</cite>
+  </figcaption>
+</figure>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info About the cite element
+The `<cite>` element inside the caption marks the **title of the work**. You will learn it in detail in the next lessons, and the [Citations](./citations) page covers it fully. The example above uses an invented author and book for practice.
+:::
+
+## Quotation Marks Around the World
+
+This is one of the nicest features of `<q>`. The browser chooses the correct quotation marks based on the language, so you do not need to remember them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="q-languages.html"
+<p lang="en">English: <q>Good morning</q></p>
+<p lang="fr">Français : <q>Bonjour</q></p>
+<p lang="de">Deutsch: <q>Guten Morgen</q></p>
+<p lang="ja">日本語：<q>おはようございます</q></p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/q-languages.html">
+<>
+<p lang="en">English: <q>Good morning</q></p>
+<p lang="fr">Français : <q>Bonjour</q></p>
+<p lang="de">Deutsch: <q>Guten Morgen</q></p>
+<p lang="ja">日本語：<q>おはようございます</q></p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each language gets its own style. English uses curly double marks, French uses angle marks, German uses low and high marks, and Japanese uses corner brackets. The exact result depends on the browser and the fonts available, but the `lang` attribute is what gives the browser the information it needs.
+
+This is another reason to **always set the `lang` attribute** on your page and on any text in a different language.
+
+### Customizing Quotation Marks with CSS
+
+You can choose the marks yourself with the `quotes` property.
+
+```css
+q {
+  quotes: "«" "»" "‹" "›";
+}
+```
+
+The first pair is for the outer quote and the second pair is for a quote inside a quote.
+
+## Styling Blockquotes with CSS
+
+The default indent works, but a little CSS makes quotes easier to notice and more pleasant to read.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="styled-quote.html"
+<style>
+  blockquote {
+    margin: 1.5rem 0;
+    padding: 0.75rem 1.25rem;
+    border-left: 4px solid #2563eb;
+    background: #f1f5f9;
+    color: #1e293b;
+    font-size: 1.1rem;
+  }
+</style>
+
+<blockquote>
+  Small steps every day beat big steps once a month.
+</blockquote>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/styled-quote.html">
+<>
+<blockquote style={{margin: '1.5rem 0', padding: '0.75rem 1.25rem', borderLeft: '4px solid #2563eb', background: '#f1f5f9', color: '#1e293b', fontSize: '1.1rem'}}>
+  Small steps every day beat big steps once a month.
+</blockquote>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip Right-to-left languages
+For Arabic, Hebrew, and other right-to-left languages, use `border-inline-start` instead of `border-left`. It automatically puts the line on the correct side for each reading direction.
+:::
+
+## Choosing the Right Tool
+
+| Situation | Use |
+| :-- | :-- |
+| A short phrase inside a sentence | `<q>` |
+| A longer quote or several paragraphs | `<blockquote>` |
+| A quote with a visible source | `<figure>` with `<blockquote>` and `<figcaption>` |
+| The title of a book, film, or article | `<cite>` |
+| A note or advice box that is not a quote | A `<div>` or `<aside>` with CSS |
+| Extra space on the left | CSS `margin` or `padding` |
+
+## Common Mistakes
+
+### Mistake 1: Using `<blockquote>` for any highlighted text
+
+Callouts, tips, and notes are not quotations. Use a different element and style it with CSS.
+
+### Mistake 2: Typing quotation marks inside `<q>`
+
+The browser adds them, so you would see them twice.
+
+### Mistake 3: Believing `cite` shows on the page
+
+The `cite` attribute is hidden. Add a visible source with `<figcaption>`, or write the name in the text.
+
+### Mistake 4: Copying text without credit
+
+Quoting someone else's words without naming them is unfair and can cause copyright and trust problems. Always show where the words came from, and keep quotes to a reasonable length.
+
+### Mistake 5: Forgetting the `lang` attribute
+
+Without it, the browser may use the wrong quotation marks for non-English text.
+
+## Try It Yourself
+
+Here is a small exercise.
+
+1. Create a file named `favorite-quotes.html`.
+2. Write a sentence that includes a short quote with `<q>`.
+3. Add a longer quote in a `<blockquote>` inside a `<figure>`, and write the source in a `<figcaption>`.
+4. Add a `cite` attribute with a web address for the source.
+5. Add a CSS rule for `blockquote` with a colored left border.
+6. Add one quote in another language with the correct `lang` attribute, and see how the quotation marks change.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. When should you use `<blockquote>` instead of `<q>`?</summary>
+
+When the quote is longer, such as several sentences or paragraphs. `<q>` is for short quotes inside a sentence.
+
+</details>
+
+<details>
+<summary>2. Do you need to type quotation marks inside a `<q>` tag?</summary>
+
+No. The browser adds them automatically, and typing your own would show them twice.
+
+</details>
+
+<details>
+<summary>3. Is the `cite` attribute visible to readers?</summary>
+
+No. It is stored in the code for software. To show the source to readers, use `<figcaption>` or write it in the text.
+
+</details>
+
+<details>
+<summary>4. Why is the `lang` attribute useful with `<q>`?</summary>
+
+Browsers use it to pick the right quotation marks for each language.
+
+</details>
+
+<details>
+<summary>5. Why should you not use `<blockquote>` just to indent text?</summary>
+
+It means "this is a quotation," and screen readers may announce it. For spacing, use CSS `margin` or `padding`.
+
+</details>
+
+## Key Takeaways
+
+- `<q>` is for short, inline quotes, and `<blockquote>` is for longer, block-level quotes.
+- Browsers add quotation marks for `<q>`, so do not type them.
+- The `cite` attribute stores a source address, but it is not visible.
+- Use `<figure>` and `<figcaption>` to show who said it and where it came from.
+- Set the `lang` attribute so quotation marks match each language, and style quotes with CSS.
+
+Now you know how to share other people's words correctly. Next, learn how to name the sources themselves in [Citations](./citations).

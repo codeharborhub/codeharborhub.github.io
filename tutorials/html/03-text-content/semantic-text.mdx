@@ -1,15 +1,438 @@
 ---
-id: semantic-text
-title: "Semantic Text Elements: mark, small, time, and data Tags"
+id: html-semantic-text
+title: "HTML Semantic Text Elements"
 sidebar_label: "Semantic Text"
 sidebar_position: 14
 slug: /html/text-content/semantic-text
-description: "Discover utility semantic text tags including mark for highlighted text, small for fine print, time for machine-readable dates, and data for values."
+description: "Learn how HTML semantic text elements such as mark, time, small, del, ins, s, dfn, bdi, bdo, data, and ruby add meaning to your content. Improve accessibility, SEO, and global readability with CodeHarborHub."
 keywords:
-  - HTML semantic text
-  - mark tag HTML
-  - time tag datetime
-  - small tag fine print
+  - HTML semantic text elements
+  - HTML semantic tags
+  - HTML mark tag
+  - HTML time tag
+  - HTML del and ins tags
+  - HTML small tag
+  - HTML dfn tag
+  - HTML bdi and bdo
+  - HTML ruby annotations
+  - HTML accessibility SEO
+  - learn semantic HTML
   - CodeHarborHub HTML
-tags: [html, semantics, accessibility, frontend]
+tags: [html, web-development, beginner, semantic-html, text, frontend]
 ---
+
+Two people can write the same sentence and mean very different things. A teacher circles a word because it is a mistake. A shopper circles a word because it is a bargain. The pen mark looks the same. The **meaning** is completely different.
+
+HTML faces this problem every day. A browser can draw text in bold or italic, but it cannot guess **why**. Semantic elements solve this. They wrap your text in a tag that says what the text **is**, not only what it looks like. You have already met several of them in this section. This final lesson brings the idea together and introduces the remaining ones.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What "semantic" means, in plain language
+- Why semantic text helps accessibility, SEO, and maintenance
+- How to use `<mark>`, `<time>`, `<small>`, `<del>`, `<ins>`, and `<s>`
+- How to define terms with `<dfn>` and attach machine values with `<data>`
+- How to handle mixed-direction and East Asian text with `<bdi>`, `<bdo>`, and `<ruby>`
+- How to review a page and pick the right element
+
+## What Does "Semantic" Mean?
+
+**Semantic** comes from a Greek word for "meaning." A semantic element describes its content. A non-semantic element, such as `<span>`, describes nothing.
+
+| Non-semantic (look only) | Semantic (look and meaning) |
+| :-- | :-- |
+| `<span style="font-weight:bold">` | `<strong>` |
+| `<span style="font-style:italic">` | `<em>` |
+| `<span style="background:yellow">` | `<mark>` |
+| `<span class="date">3 Oct 2026</span>` | `<time datetime="2026-10-03">3 Oct 2026</time>` |
+
+Both columns can look identical on screen. Only the right column tells software what the text means.
+
+### Why It Matters
+
+- **Accessibility:** Assistive technology can use the meaning to help people who cannot see the page.
+- **SEO:** Search engines understand your content better when it is clearly labeled.
+- **Maintenance:** A developer who reads `<time>` or `<del>` understands your intention at once.
+- **Flexibility:** You can change the design later by editing CSS, without touching the meaning.
+- **Machines and tools:** Browsers, reader modes, translators, and calendar tools can use well-labeled text.
+
+## Elements You Already Know
+
+You learned these in earlier lessons. Here is a quick map.
+
+| Element | Meaning | Lesson |
+| :-- | :-- | :-- |
+| `<h1>` to `<h6>` | Headings of different rank | [Headings](./headings) |
+| `<p>` | A paragraph | [Paragraphs](./paragraphs) |
+| `<strong>` / `<b>` | Importance / attention | [Strong and Bold](./strong-and-bold) |
+| `<em>` / `<i>` | Stress / alternate voice | [Emphasis and Italic](./emphasis-and-italic) |
+| `<blockquote>` / `<q>` | Quotations | [Quotations](./quotations) |
+| `<cite>` | Title of a work | [Citations](./citations) |
+| `<abbr>` | Abbreviation | [Abbreviations](./abbreviations) |
+| `<code>`, `<kbd>`, `<samp>`, `<var>` | Computer text | [Code Text](./code-text) |
+| `<sub>` / `<sup>` | Lowered / raised text | [Subscript and Superscript](./subscript-and-superscript) |
+| `<u>` | Special annotation | [Underline](./underline) |
+
+Now let us meet the rest.
+
+## `<mark>`: Highlight What Is Relevant
+
+Use `<mark>` for text that is **relevant right now**, like a search match or a passage you want the reader to notice in context. Browsers show a yellow background by default.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="mark.html"
+<p>Search results for "semantic":</p>
+<p>Using <mark>semantic</mark> HTML makes your pages easier to understand.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/mark.html">
+<>
+<p>Search results for "semantic":</p>
+<p>Using <mark>semantic</mark> HTML makes your pages easier to understand.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip Mark vs strong
+`<strong>` says the text is important **in itself**. `<mark>` says the text is relevant **to what the reader is doing now**, like a search. If the reader searches for something else, the marks change. The importance of a warning does not.
+:::
+
+## `<time>`: Dates and Times for Machines
+
+People write dates in many ways: 3 October 2026, 03/10/2026, 10/3/26. These can confuse both people and software. The `<time>` element lets you show the date in a friendly way while giving a clear, standard value in the `datetime` attribute.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="time.html"
+<p>
+  The workshop starts on
+  <time datetime="2026-10-03">3 October 2026</time>
+  at <time datetime="14:30">2:30 PM</time>.
+</p>
+<p>The full event runs for <time datetime="PT2H30M">2 hours 30 minutes</time>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/time.html">
+<>
+<p>
+  The workshop starts on
+  <time dateTime="2026-10-03">3 October 2026</time>
+  at <time dateTime="14:30">2:30 PM</time>.
+</p>
+<p>The full event runs for <time dateTime="PT2H30M">2 hours 30 minutes</time>.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The `datetime` value uses the international standard format, which is year first, then month, then day. This avoids the "is 03/10 March or October?" confusion that readers face around the world.
+
+| Kind of value | `datetime` format | Example |
+| :-- | :-- | :-- |
+| Date | `YYYY-MM-DD` | `2026-10-03` |
+| Time | `HH:MM` | `14:30` |
+| Date and time | `YYYY-MM-DDTHH:MM` | `2026-10-03T14:30` |
+| With time zone | add `Z` or `+05:30` | `2026-10-03T14:30+05:30` |
+| Duration | `PT` plus hours and minutes | `PT2H30M` |
+
+## `<small>`: The Fine Print
+
+Use `<small>` for side comments and small print: copyright lines, legal notes, disclaimers. It is not just "make this smaller."
+
+```html title="small.html"
+<p>Join the course today for free.</p>
+<p><small>Certificate fees may apply. Terms and conditions apply.</small></p>
+```
+
+## `<del>` and `<ins>`: Show Changes
+
+Use `<del>` for text that was **removed** and `<ins>` for text that was **added**. Together, they show how a document changed. Browsers draw a line through `<del>` text and underline `<ins>` text.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="del-ins.html"
+<p>
+  The class starts at <del datetime="2026-10-01">9:00 AM</del>
+  <ins datetime="2026-10-01">10:00 AM</ins>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/del-ins.html">
+<>
+<p>
+  The class starts at <del dateTime="2026-10-01">9:00 AM</del>{' '}
+  <ins dateTime="2026-10-01">10:00 AM</ins>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Both accept optional `cite` and `datetime` attributes to record who or what caused the change and when.
+
+## `<s>`: No Longer Accurate
+
+The `<s>` element is different from `<del>`. It marks content that is **no longer correct or relevant**, but was not removed from the document. A classic example is an old price.
+
+```html title="s.html"
+<p><s>Price: $99</s> Now only $59 until Sunday.</p>
+```
+
+| Element | Meaning | Use for |
+| :-- | :-- | :-- |
+| `<del>` | Text removed from the document | Edits and revisions |
+| `<ins>` | Text added to the document | Edits and revisions |
+| `<s>` | Content that is no longer accurate | Old prices, expired offers |
+
+:::warning A line through text is not always `<s>`
+Do not use `<s>` for fun or decoration. If you only want a line through text visually, use CSS `text-decoration: line-through`.
+:::
+
+## `<dfn>`: Define a Term
+
+Use `<dfn>` at the **place where you introduce and explain** a term. The sentence or paragraph that contains it should give the definition.
+
+```html title="dfn.html"
+<p>
+  A <dfn>void element</dfn> is an HTML element that has no content and no closing tag.
+</p>
+```
+
+It works well with `<abbr>`.
+
+```html
+<p>
+  <dfn><abbr title="Search Engine Optimization">SEO</abbr></dfn> is the practice of
+  helping people find your website through search engines.
+</p>
+```
+
+## `<data>`: A Value for Machines
+
+Use `<data>` to link visible text with a **machine-readable value**. It is like `<time>`, but for things that are not dates.
+
+```html title="data.html"
+<ul>
+  <li><data value="101">Beginner HTML</data></li>
+  <li><data value="201">Intermediate CSS</data></li>
+</ul>
+```
+
+The reader sees the course names. A script or tool can read the code numbers.
+
+## Text for Every Language
+
+The web is global. HTML has three elements to handle text from different writing systems.
+
+### `<bdi>`: Isolate Text of Unknown Direction
+
+Most languages are written left to right. Arabic and Hebrew are written right to left. When you put user-provided text, like a name, into a sentence, its direction can mix with the surrounding text and break the layout. `<bdi>` (bidirectional isolate) protects the sentence.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="bdi.html"
+<ul>
+  <li>User <bdi>Amara</bdi>: 120 points</li>
+  <li>User <bdi>إيمان</bdi>: 95 points</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/bdi.html">
+<>
+<ul>
+  <li>User <bdi>Amara</bdi>: 120 points</li>
+  <li>User <bdi>إيمان</bdi>: 95 points</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Without `<bdi>`, the colon and the score after an Arabic name could jump to the wrong side.
+
+### `<bdo>`: Override the Direction
+
+`<bdo>` (bidirectional override) forces text to display in a chosen direction, using `dir="ltr"` or `dir="rtl"`. It is rare, but it helps in special cases like demonstrations.
+
+```html title="bdo.html"
+<p><bdo dir="rtl">This sentence is shown backwards.</bdo></p>
+```
+
+### `<ruby>`: Pronunciation Guides
+
+In Japanese, Chinese, and Korean, small characters are sometimes placed above or beside a character to show how to read it. The `<ruby>` element makes this possible. `<rt>` holds the guide, and `<rp>` provides brackets for browsers that do not support ruby.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="ruby.html"
+<p lang="ja">
+  <ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>
+  は難しいですか?
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/ruby.html">
+<>
+<p lang="ja">
+  <ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>
+  は難しいですか?
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info Always set the language
+All of these elements work best when your page and your foreign text have the correct `lang` attribute, and when you set `dir` for right-to-left content. For example, `<html lang="ar" dir="rtl">` for an Arabic page.
+:::
+
+## Semantic Text Cheat Sheet
+
+| You want to show... | Use |
+| :-- | :-- |
+| Importance | `<strong>` |
+| Stress | `<em>` |
+| Relevant or searched text | `<mark>` |
+| A date, time, or duration | `<time datetime="...">` |
+| Fine print or a side comment | `<small>` |
+| Removed or added text | `<del>` / `<ins>` |
+| No longer accurate content | `<s>` |
+| A term being defined | `<dfn>` |
+| A code number for a label | `<data value="...">` |
+| User text of unknown direction | `<bdi>` |
+| Pronunciation help | `<ruby>`, `<rt>`, `<rp>` |
+| A misspelling or special annotation | `<u>` |
+| Plain styling with no meaning | `<span>` plus CSS |
+
+## When `<span>` Is the Right Answer
+
+Not every piece of text needs a special meaning. If you only need to style a few words, a `<span>` with a class is the correct, honest choice.
+
+```html
+<p>Our course is <span class="brand-color">fun and friendly</span>.</p>
+```
+
+The best rule is simple: **first ask what the text means. If it means something, use the matching element. If it means nothing special, use `<span>` and CSS.**
+
+## Common Mistakes
+
+### Mistake 1: Choosing a tag for its look
+
+Picking `<mark>` or `<small>` only because of the default style is a trap. Choose by meaning and style with CSS.
+
+### Mistake 2: Writing `<time>` without a `datetime` value
+
+When the visible text is not already in a machine-friendly format, like "next Friday," the `datetime` attribute is what gives the element its value.
+
+### Mistake 3: Mixing up `<del>` and `<s>`
+
+`<del>` records an edit. `<s>` marks something that is out of date but still part of the page.
+
+### Mistake 4: Skipping `<bdi>` for user content
+
+Names and comments from users can be in any language. Wrap them so the layout stays correct.
+
+### Mistake 5: Using too many semantic tags
+
+More tags do not mean better HTML. Use each one when it adds real meaning.
+
+### Mistake 6: Forgetting accessibility testing
+
+Try your page with only the keyboard, zoom it to 200 percent, and listen to it with a screen reader if you can. Meaning in the code should match the experience.
+
+## Try It Yourself
+
+Here is a capstone project for the whole section.
+
+1. Create a file called `event-notice.html`.
+2. Write an `<h1>` for an event title and two `<h2>` headings: **Details** and **Changes**.
+3. In **Details**, write a paragraph with a `<time>` element for the date and another for the start time. Use `<strong>` for one important rule.
+4. In **Changes**, show a changed time using `<del>` and `<ins>`, and an old ticket price using `<s>`.
+5. Add a `<dfn>` to define one term, and a `<small>` line for the fine print.
+6. Add one `<mark>` around a word that matches a search.
+7. Bonus: add a name list with `<bdi>` and one name in another script.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does "semantic" mean in HTML?</summary>
+
+It means the tag describes the **meaning** of the content, not just how it looks.
+
+</details>
+
+<details>
+<summary>2. What is the difference between `<mark>` and `<strong>`?</summary>
+
+`<strong>` marks text as important in itself. `<mark>` highlights text that is relevant to what the reader is doing now, like a search result.
+
+</details>
+
+<details>
+<summary>3. Why should you add a `datetime` attribute to `<time>`?</summary>
+
+It gives software a standard, unambiguous value, even if the visible date is written in a friendly or local format.
+
+</details>
+
+<details>
+<summary>4. What is the difference between `<del>` and `<s>`?</summary>
+
+`<del>` marks text removed in an edit. `<s>` marks content that is no longer accurate but is still part of the page, like an old price.
+
+</details>
+
+<details>
+<summary>5. When would you use `<bdi>`?</summary>
+
+When you insert text of unknown direction, such as a user's name in Arabic or Hebrew, into a sentence, so it does not disturb the surrounding layout.
+
+</details>
+
+## Key Takeaways
+
+- Semantic elements describe **what text means**, which helps accessibility, SEO, and maintenance.
+- `<mark>`, `<time>`, `<small>`, `<del>`, `<ins>`, `<s>`, `<dfn>`, and `<data>` each carry a specific meaning.
+- `<bdi>`, `<bdo>`, and `<ruby>` help you write for readers of many languages and scripts.
+- Always ask "what does this text mean?" before choosing an element, and use `<span>` plus CSS when it means nothing special.
+- Set `lang` and `dir` so your content works for readers everywhere.
+
+## Congratulations!
+
+You have finished the **HTML Text Content** section. You can now structure a page with headings and paragraphs, control lines and breaks, add meaning with strong, emphasis, quotes, citations, and abbreviations, show code and small text, and choose the right semantic element for almost any text on a page.
+
+Want to review? Go back to the [Text Content overview](./) and try the practice task in each lesson. When you feel ready, move on to the next section of the HTML tutorial.

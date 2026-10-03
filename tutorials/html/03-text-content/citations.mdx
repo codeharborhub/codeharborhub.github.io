@@ -1,15 +1,349 @@
 ---
-id: citations
-title: "Citing Work and Titles using the cite Tag"
+id: html-citations
+title: "HTML Citations"
 sidebar_label: "Citations"
 sidebar_position: 9
 slug: /html/text-content/citations
-description: "Learn how to correctly use the cite tag to reference creative works, books, research papers, movies, and external articles."
+description: "Learn how to use the HTML cite element to mark the title of a creative work such as a book, film, song, or article. Understand cite vs the cite attribute, what not to wrap, reference lists, styling with CSS, and global considerations on CodeHarborHub."
 keywords:
   - HTML cite tag
-  - citing work HTML
-  - creative work citations
-  - semantic cite tag
+  - HTML cite element
+  - HTML citations
+  - HTML cite vs blockquote
+  - HTML cite attribute difference
+  - HTML title of a work
+  - style cite with CSS
+  - HTML references list
+  - learn HTML cite
   - CodeHarborHub HTML
-tags: [html, citations, semantics, web-standards]
+tags: [html, web-development, beginner, citations, cite, text, frontend]
 ---
+
+Think about the last time you recommended a book, a movie, or an article to a friend. You probably said the title and maybe where you found it. Giving credit to the work that inspired you is a simple, honest habit, and it makes your writing more trustworthy.
+
+HTML has a small tag for this called `<cite>`. It marks the **title of a creative work** so that browsers, search tools, and assistive technology know "this is the name of something someone made." In this lesson, you will learn exactly what belongs inside it, and what does not.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<cite>` element is, and what it marks
+- What **not** to put inside `<cite>`, such as a person's name
+- The difference between the `<cite>` element and the `cite` attribute
+- How to combine `<cite>` with quotes, links, and reference lists
+- How to style citations and handle titles in other languages
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+The `<cite>` element wraps the **title of a work**. It is an inline element, so it sits inside a sentence or a paragraph. Browsers show it in italics by default.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>I just finished reading <cite>Pride and Prejudice</cite> and loved it.</p>
+<p>My favorite film from childhood is <cite>Spirited Away</cite>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>I just finished reading <cite>Pride and Prejudice</cite> and loved it.</p>
+<p>My favorite film from childhood is <cite>Spirited Away</cite>.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Counts as a "Creative Work"?
+
+A creative work is something a person or a team made and gave a title. Here are examples that belong inside `<cite>`.
+
+| Type of work | Example |
+| :-- | :-- |
+| Book | `<cite>Don Quixote</cite>` |
+| Film or TV show | `<cite>Spirited Away</cite>` |
+| Song or album | `<cite>Abbey Road</cite>` |
+| Painting or sculpture | `<cite>The Starry Night</cite>` |
+| Play or poem | `<cite>Hamlet</cite>` |
+| Article or research paper | `<cite>A Study of Web Accessibility</cite>` |
+| Video game | `<cite>Minecraft</cite>` |
+| Website or web page title | `<cite>MDN Web Docs</cite>` |
+
+## What Does NOT Go Inside `<cite>`
+
+This is the part many tutorials get wrong, so read it carefully.
+
+:::warning A person's name is not a title
+The HTML standard says `<cite>` is for the **title of a work**, not for the name of the person who made it. Writing `<cite>Jane Austen</cite>` is not correct. Wrap the book title instead, and write the author's name as normal text.
+:::
+
+<Tabs>
+<TabItem value="wrong" label="Wrong" default>
+
+```html
+<p>
+  Written by <cite>Jane Austen</cite>.
+</p>
+```
+
+</TabItem>
+<TabItem value="right" label="Right">
+
+```html
+<p>
+  <cite>Pride and Prejudice</cite>, written by Jane Austen.
+</p>
+```
+
+</TabItem>
+</Tabs>
+
+Also avoid wrapping these in `<cite>`:
+
+- The text of a quote (use `<blockquote>` or `<q>`)
+- Your own name or your own page title
+- Brand names, company names, and general topics
+- Dates, page numbers, and other reference details
+
+## Two Different Things: The Element and the Attribute
+
+In the [Quotations](./quotations) lesson, you met the `cite` **attribute**. The names are the same, but they work differently.
+
+| | `cite` element | `cite` attribute |
+| :-- | :-- | :-- |
+| Looks like | `<cite>Hamlet</cite>` | `<blockquote cite="https://example.com">` |
+| Contains | The title of a work | A web address of a source |
+| Visible on the page? | Yes | No |
+| Used on | Any text | `<blockquote>` and `<q>` only |
+
+You can use both together to give a quote proper credit.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="credit.html"
+<figure>
+  <blockquote cite="https://example.com/hamlet">
+    To be, or not to be, that is the question.
+  </blockquote>
+  <figcaption>
+    From <cite>Hamlet</cite>, by William Shakespeare
+  </figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/credit.html">
+<>
+<figure>
+  <blockquote cite="https://example.com/hamlet">
+    To be, or not to be, that is the question.
+  </blockquote>
+  <figcaption>
+    From <cite>Hamlet</cite>, by William Shakespeare
+  </figcaption>
+</figure>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The attribute holds the hidden web address, and the element shows the title to the reader. The quote above is from a play published more than four hundred years ago, so it is in the public domain.
+
+## Linking to the Source
+
+If the work is online, wrap the title in a link, or put the `<cite>` inside the link. Both patterns are fine, and readers can then open the source directly.
+
+```html title="cite-link.html"
+<p>
+  I learned this from
+  <cite><a href="https://developer.mozilla.org/">MDN Web Docs</a></cite>.
+</p>
+```
+
+## Building a Reference List
+
+At the end of an article, you can list the works you used. An ordered list is a natural fit.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="references.html"
+<h2>References</h2>
+<ol>
+  <li>Jane Austen, <cite>Pride and Prejudice</cite>, 1813.</li>
+  <li>William Shakespeare, <cite>Hamlet</cite>, c. 1600.</li>
+  <li>Miguel de Cervantes, <cite lang="es">Don Quijote de la Mancha</cite>, 1605.</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/references.html">
+<>
+<h2>References</h2>
+<ol>
+  <li>Jane Austen, <cite>Pride and Prejudice</cite>, 1813.</li>
+  <li>William Shakespeare, <cite>Hamlet</cite>, c. 1600.</li>
+  <li>Miguel de Cervantes, <cite lang="es">Don Quijote de la Mancha</cite>, 1605.</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info HTML does not format citations for you
+Styles such as APA, MLA, and Chicago have their own rules about order and punctuation. HTML does not enforce any of them. The `<cite>` tag only says "this is a title." You are responsible for following the citation style your school or publisher asks for.
+:::
+
+## Styling Citations with CSS
+
+Italic is only the default. If you prefer a different look, CSS can change it, and the meaning stays.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="styled-cite.html"
+<style>
+  cite {
+    font-style: normal;
+    font-weight: 600;
+    color: #1d4ed8;
+  }
+</style>
+
+<p>Try reading <cite>The Pragmatic Programmer</cite> this month.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/styled-cite.html">
+<>
+<p>Try reading <cite style={{fontStyle: 'normal', fontWeight: 600, color: '#1d4ed8'}}>The Pragmatic Programmer</cite> this month.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Titles Around the World
+
+Readers come from many countries, so a few points are worth knowing.
+
+- **Mark the language.** If a title is in another language, add `lang`, for example `<cite lang="ja">千と千尋の神隠し</cite>`. This helps screen readers pronounce it and helps browsers choose a suitable font.
+- **Italics are not universal.** Many languages and scripts do not use italics for titles. Some use quotation marks or corner brackets. If your readers use such a language, restyle `<cite>` with CSS, as you saw in the [Emphasis and Italic](./emphasis-and-italic) lesson.
+- **Use the title people recognize.** If a work has different titles in different countries, choose the one your readers will know, and consider adding the original title in brackets.
+
+## Choosing the Right Tool
+
+| You want to mark | Best choice |
+| :-- | :-- |
+| The title of a book, film, or article | `<cite>` |
+| Words someone else said or wrote | `<blockquote>` or `<q>` |
+| A foreign word or technical term | `<i>` |
+| A stressed word in your own sentence | `<em>` |
+| An author's name | Plain text, or a link to their page |
+| A hidden source link for a quote | The `cite` **attribute** |
+
+## Common Mistakes
+
+### Mistake 1: Putting a person's name in `<cite>`
+
+The standard says this tag is for titles. Keep names as normal text.
+
+### Mistake 2: Confusing the element with the attribute
+
+The **element** is visible and holds a title. The **attribute** is hidden and holds a link. Using one when you mean the other will not give the result you expect.
+
+### Mistake 3: Using `<cite>` just to get italics
+
+If you only want slanted text, use CSS `font-style`. Use `<cite>` when the text really is the title of a work.
+
+### Mistake 4: Putting the whole sentence inside `<cite>`
+
+```html
+<!-- Too much -->
+<p><cite>I recently finished reading Pride and Prejudice.</cite></p>
+
+<!-- Right -->
+<p>I recently finished reading <cite>Pride and Prejudice</cite>.</p>
+```
+
+### Mistake 5: Forgetting to give credit at all
+
+Whenever you borrow ideas or words, name the source. It respects the creator and helps your reader find more.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `reading-list.html`.
+2. Add an `<h1>` that says **My Reading and Watching List**.
+3. Write a short paragraph about a book, a film, or an article that inspired you.
+4. Wrap the title of each work in `<cite>`, and write the creator's name as normal text.
+5. Add one `<blockquote>` with a short, original quote, and give it a `<figcaption>` that names the source.
+6. Add a CSS rule that makes `<cite>` normal weight and dark blue instead of italic.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `<cite>` element mark?</summary>
+
+The title of a creative work, such as a book, film, song, painting, or article.
+
+</details>
+
+<details>
+<summary>2. Should you put an author's name inside `<cite>`?</summary>
+
+No. The standard says `<cite>` is for the title of a work, not a person's name.
+
+</details>
+
+<details>
+<summary>3. What is the difference between the `cite` element and the `cite` attribute?</summary>
+
+The element is visible and holds a title. The attribute is hidden and holds a web address, and it works only on `<blockquote>` and `<q>`.
+
+</details>
+
+<details>
+<summary>4. How can you help screen readers handle a title in another language?</summary>
+
+Add the `lang` attribute, for example `<cite lang="es">Don Quijote de la Mancha</cite>`.
+
+</details>
+
+<details>
+<summary>5. Does HTML format citations in APA or MLA style?</summary>
+
+No. HTML only marks the title. You must follow the style rules yourself.
+
+</details>
+
+## Key Takeaways
+
+- `<cite>` marks the **title of a creative work**, and is shown in italics by default.
+- Do not put a person's name or a quote inside it.
+- The `cite` element is visible, and the `cite` attribute is a hidden source link.
+- Combine `<cite>` with `<blockquote>`, `<figcaption>`, links, and lists to give clear credit.
+- Use `lang` for titles in other languages, and restyle with CSS when italics do not suit the script.
+
+You can now give proper credit in your writing. Next, learn how to explain short forms like HTML and NASA with [Abbreviations](./abbreviations).
