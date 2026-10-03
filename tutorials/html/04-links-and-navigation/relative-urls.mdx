@@ -1,15 +1,352 @@
 ---
-id: relative-urls
-title: "Working with Relative URLs and File Paths"
+id: html-relative-urls
+title: "HTML Relative URLs"
 sidebar_label: "Relative URLs"
 sidebar_position: 4
 slug: /html/links-and-navigation/relative-urls
-description: "Master relative path navigation using root-relative paths, parent directories (..), and current directory references in HTML."
+description: "Learn how relative URLs work in HTML. Understand file paths, same-folder links, subfolders, the parent folder with ../, root-relative paths, the base element, case sensitivity, and common mistakes, explained step by step on CodeHarborHub."
 keywords:
-  - relative URLs HTML
-  - relative file paths
-  - directory traversal dot notation
-  - site path structure
+  - HTML relative URL
+  - HTML file paths
+  - relative path in HTML
+  - HTML parent folder dot dot slash
+  - root relative URL
+  - HTML base element
+  - relative vs absolute URL
+  - HTML folder structure
+  - broken link fix
+  - learn HTML paths
   - CodeHarborHub HTML
-tags: [html, paths, relative-urls, beginner]
+tags: [html, web-development, beginner, links, urls, relative-urls, file-paths, frontend]
 ---
+
+Suppose you are in a library and someone asks, "Where is the dictionary?" You could answer with a full postal address, but that would be silly. You are already inside the building. It is much easier to say, "Go straight, then second shelf on your left."
+
+That is a **relative URL**. Instead of the complete web address, it gives directions **starting from where you are now**. For links between pages on your own website, it is the tool professional developers reach for most often. Once you understand it, you will stop seeing "page not found" errors caused by a wrong path.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a relative URL is and how it differs from an absolute URL
+- How to link to a file in the **same folder**, a **subfolder**, and the **parent folder**
+- What `./`, `../`, and a leading `/` mean
+- How to read a folder structure like a map
+- Why file names and letter case matter
+- Common mistakes and a simple way to debug a broken path
+
+## The Basics
+
+A relative URL leaves out the scheme and the host. The browser fills them in using the address of the **current page**.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav>
+  <a href="about.html">About</a>
+  <a href="contact.html">Contact</a>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<nav>
+  <a href="#">About</a>{' '}
+  <a href="#">Contact</a>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#` so they stay on this page. In your own project, the browser would turn `about.html` into the full address, using the folder that `index.html` lives in.
+
+For example, if the current page is `https://example.com/site/index.html`, then:
+
+| Relative URL | The browser builds |
+| :-- | :-- |
+| `about.html` | `https://example.com/site/about.html` |
+| `contact.html` | `https://example.com/site/contact.html` |
+
+## Read Your Folder Like a Map
+
+Every path in a relative URL is a set of directions through your project folders. Here is a small website we will use for all the examples.
+
+```text
+my-website/
+├── index.html
+├── about.html
+├── css/
+│   └── style.css
+├── images/
+│   ├── logo.png
+│   └── team/
+│       └── photo.jpg
+└── blog/
+    ├── index.html
+    ├── first-post.html
+    └── 2026/
+        └── october.html
+```
+
+Each example below tells you **which file you are writing in**. That is the starting point for the directions.
+
+## 1. Same Folder
+
+If the target file is in the **same folder** as the current page, use just the file name.
+
+```html title="my-website/index.html"
+<a href="about.html">About us</a>
+```
+
+You may also write `./about.html`. The `./` means "this folder," and it gives the same result. Most people leave it out.
+
+## 2. Going Down Into a Subfolder
+
+To enter a folder, write its name followed by a forward slash `/`.
+
+```html title="my-website/index.html"
+<link rel="stylesheet" href="css/style.css" />
+<img src="images/logo.png" alt="CodeHarborHub logo" width="120" height="40" />
+<a href="blog/first-post.html">Read our first post</a>
+```
+
+You can go several levels down by chaining folder names.
+
+```html title="my-website/index.html"
+<img src="images/team/photo.jpg" alt="Our team" width="400" height="300" />
+<a href="blog/2026/october.html">October 2026 notes</a>
+```
+
+## 3. Going Up to the Parent Folder
+
+To go **up one level**, write `../`. Think of `..` as "the folder above me."
+
+Suppose you are writing inside `blog/first-post.html` and want to link back to the home page, which is one level up.
+
+```html title="my-website/blog/first-post.html"
+<a href="../index.html">Back to home</a>
+<a href="../about.html">About us</a>
+<img src="../images/logo.png" alt="CodeHarborHub logo" width="120" height="40" />
+```
+
+Going up two levels? Repeat it: `../../`.
+
+```html title="my-website/blog/2026/october.html"
+<a href="../../index.html">Home</a>
+<a href="../first-post.html">Previous post</a>
+<img src="../../images/logo.png" alt="CodeHarborHub logo" width="120" height="40" />
+```
+
+:::tip A trick to remember
+Each `../` is one step up the folder tree. Count how many folders deep you are, then climb that many times before walking down to your target.
+:::
+
+## Putting It All Together
+
+This table shows the exact `href` for many moves in the sample site.
+
+| You are writing in | You want to reach | Write |
+| :-- | :-- | :-- |
+| `index.html` | `about.html` | `about.html` |
+| `index.html` | `css/style.css` | `css/style.css` |
+| `index.html` | `images/team/photo.jpg` | `images/team/photo.jpg` |
+| `blog/first-post.html` | `index.html` (home) | `../index.html` |
+| `blog/first-post.html` | `blog/2026/october.html` | `2026/october.html` |
+| `blog/first-post.html` | `images/logo.png` | `../images/logo.png` |
+| `blog/2026/october.html` | `about.html` | `../../about.html` |
+| `blog/2026/october.html` | `blog/first-post.html` | `../first-post.html` |
+
+## 4. Root-Relative URLs
+
+A path that starts with a **single slash** is measured from the **root of the website**, not from the current page.
+
+```html
+<a href="/about.html">About</a>
+<link rel="stylesheet" href="/css/style.css" />
+```
+
+No matter which page contains this link, `/about.html` always means "the file `about.html` at the top of the site." That makes root-relative links handy when a menu is shared by pages in many folders.
+
+| Type | Starts with | Measured from | Example |
+| :-- | :-- | :-- | :-- |
+| Document-relative | A name, `./`, or `../` | The current page's folder | `../images/logo.png` |
+| Root-relative | `/` | The root of the website | `/images/logo.png` |
+| Absolute | A scheme like `https://` | Nowhere. It is complete | `https://example.com/images/logo.png` |
+
+:::warning Root-relative paths need a real server root
+If your site lives in a subfolder, such as `https://username.github.io/my-website/`, then `/about.html` points to `https://username.github.io/about.html`, which is **not** your page. For project sites like this, use document-relative paths, or add the folder name to the path.
+:::
+
+## Folders and Default Files
+
+When a link points to a **folder** instead of a file, the server usually serves that folder's `index.html`.
+
+```html
+<!-- These usually go to the same page -->
+<a href="blog/">Blog</a>
+<a href="blog/index.html">Blog</a>
+```
+
+Using the folder form gives you cleaner addresses, because visitors see `/blog/` and not `/blog/index.html`.
+
+## Rules That Trip Up Beginners
+
+### Always use forward slashes
+
+On Windows, folders in File Explorer are separated by a backslash (`\`). URLs **always** use a forward slash (`/`), on every system.
+
+```html
+<!-- Wrong: backslashes -->
+<img src="images\logo.png" alt="Logo" />
+
+<!-- Right: forward slashes -->
+<img src="images/logo.png" alt="Logo" />
+```
+
+### Letter case can matter
+
+Many web servers run on Linux, where `Logo.png` and `logo.png` are **different files**. A link that works on your laptop may break after you publish. The safest habit is to name every file in lowercase.
+
+### Keep file names simple
+
+Avoid spaces, accents, and special symbols in file names. Use lowercase letters, numbers, and hyphens: `my-resume.pdf`, not `My Résumé (final).pdf`. This avoids encoding problems and works on every system and in every country.
+
+### Never link to files on your own computer
+
+```html
+<!-- Works only on your computer, nobody else's -->
+<img src="C:\Users\yourname\Pictures\logo.png" alt="Logo" />
+<a href="file:///Users/yourname/site/about.html">About</a>
+```
+
+These addresses point to your hard drive. Put the file inside your project folder and use a relative path.
+
+## The `<base>` Element
+
+HTML has one special element that changes how **every** relative URL on a page is measured. It goes in the `<head>` and takes an `href`.
+
+```html title="base.html"
+<head>
+  <base href="https://example.com/site/" />
+</head>
+<body>
+  <!-- Now this means https://example.com/site/about.html -->
+  <a href="about.html">About</a>
+</body>
+```
+
+It is powerful, and also risky. It affects **all** links on the page, including `#section` links, and it can surprise you. Most projects do not need it, so use it only when you understand its effect.
+
+## Why Relative URLs Are Worth Using
+
+- **Portable:** Move the whole project to a new domain, and every link still works.
+- **Testable:** The same links work on your computer, on a test server, and on the live site.
+- **Short:** They are easier to read and type.
+- **Consistent:** The browser handles the details, so you do not repeat the domain.
+
+## Debugging a Broken Path
+
+When an image does not appear or a link shows "not found," follow these steps.
+
+1. **Find where the current file is.** Write down its folder.
+2. **Find where the target is.** Write down its folder and its exact name.
+3. **Walk from the first to the second.** Count the `../` steps up, then the folder names down.
+4. **Check the spelling and the case.** `Logo.PNG` is not `logo.png`.
+5. **Look at the extension.** Is it `.jpg` or `.jpeg`? Is it `.html` or `.htm`?
+6. **Open your browser's developer tools.** The Network tab marks a missing file with a red "404" status.
+
+## Common Mistakes
+
+### Mistake 1: Forgetting `../` from inside a subfolder
+
+A page in `blog/` that uses `images/logo.png` looks for `blog/images/logo.png`, which does not exist. It needs `../images/logo.png`.
+
+### Mistake 2: Starting with a slash by accident
+
+`/images/logo.png` starts from the root of the website. If your site lives in a subfolder, it will miss the file.
+
+### Mistake 3: Using backslashes
+
+Always write `/`, never `\`.
+
+### Mistake 4: Wrong letter case or extension
+
+`Photo.JPG`, `photo.jpg`, and `photo.jpeg` are three different names.
+
+### Mistake 5: Moving a file without updating its links
+
+If you rename or move a file, every relative link that points to it, and every link inside it, may need a new path.
+
+### Mistake 6: Writing an outside address without `https://`
+
+`www.example.com` is read as a relative path on your own site. Outside links need the full absolute form, as you saw in [Absolute URLs](./absolute-urls).
+
+## Try It Yourself
+
+Build the sample site and prove you understand the paths.
+
+1. Create a folder called `my-website` with the structure shown earlier. Empty pages with a heading are fine.
+2. In `index.html`, add links to `about.html` and `blog/first-post.html`, and show `images/logo.png`.
+3. In `blog/first-post.html`, add a link back to the home page with `../index.html`.
+4. In `blog/2026/october.html`, show the logo using `../../images/logo.png`.
+5. Rename `logo.png` to `Logo.png` and refresh a page. Can you see why capital letters can break a link? Rename it back.
+6. Bonus: change the links in step 2 to root-relative paths. Then explain when that would stop working.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a relative URL?</summary>
+
+A path that is measured from the current page's location, without the scheme and host.
+
+</details>
+
+<details>
+<summary>2. What does `../` mean?</summary>
+
+Go up one folder, to the parent of the current folder.
+
+</details>
+
+<details>
+<summary>3. A page in `blog/` needs `images/logo.png` from the site's top level. What should it write?</summary>
+
+`../images/logo.png`, which goes up one level and then down into `images`.
+
+</details>
+
+<details>
+<summary>4. What is the difference between `images/logo.png` and `/images/logo.png`?</summary>
+
+The first is measured from the current page's folder. The second is measured from the root of the website.
+
+</details>
+
+<details>
+<summary>5. Why should you name files in lowercase with no spaces?</summary>
+
+Many servers are case-sensitive, and spaces or special characters need encoding. Simple lowercase names work everywhere.
+
+</details>
+
+## Key Takeaways
+
+- A **relative URL** gives directions from the current page, without the scheme and host.
+- Use a file name for the same folder, `folder/file` to go down, and `../` to go up.
+- A leading `/` measures from the root of the site, which can break on sites in subfolders.
+- Always use forward slashes, and name files in lowercase with hyphens.
+- Use relative URLs inside your own site and absolute URLs for other websites.
+
+You can now find your way around any project folder. Next, learn how to connect your own pages and jump to sections of a page with [Internal Links](./internal-links).

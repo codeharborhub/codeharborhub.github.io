@@ -1,15 +1,395 @@
 ---
-id: email-links
-title: "Creating Mailto Links for Email Integration"
-sidebar_label: "Email Links (mailto)"
-sidebar_position: 7
+id: html-email-links
+title: "HTML Email Links"
+sidebar_label: "Email Links"
+sidebar_position: 9
 slug: /html/links-and-navigation/email-links
-description: "Learn how to build interactive mailto anchor links with pre-filled subject lines, body content, CC, and BCC parameters."
+description: "Learn how to create email links in HTML with mailto. Add recipients, cc, bcc, subject and body text, encode special characters and line breaks, protect addresses from spam, write accessible link text, and know when a contact form is better. Explained on CodeHarborHub."
 keywords:
-  - HTML mailto links
-  - email hyperlinks
-  - mailto subject parameter
-  - email action HTML
+  - HTML email link
+  - HTML mailto
+  - mailto subject body
+  - mailto cc bcc
+  - mailto multiple recipients
+  - encodeURIComponent mailto
+  - URL encoding line break mailto
+  - protect email address from spam
+  - contact link accessibility
+  - contact form vs mailto
+  - learn HTML email links
   - CodeHarborHub HTML
-tags: [html, mailto, email-links, forms]
+tags: [html, web-development, beginner, links, email, mailto, navigation, frontend]
 ---
+
+Sometimes the best place to send a visitor is not another page at all. It is a conversation. A student with a question, a reader who found a typo, a company that wants to work with you: all of them need a quick way to write to you.
+
+HTML has a special kind of link for that. Instead of opening a page, it opens the visitor's **email app** with your address already filled in. It is called a `mailto:` link, and it takes only a few seconds to write. In this lesson, you will learn the basics, how to prepare the subject and message in advance, how to avoid common problems, and when something else is a better choice.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to write a basic `mailto:` link
+- How to add several recipients, **cc**, **bcc**, a **subject**, and a **body**
+- How to encode spaces, line breaks, and special characters
+- How to write email text in any language
+- How to reduce spam and keep visitors' privacy
+- How to make email links accessible and clear
+- When a contact form or another approach is better
+
+## The Basics
+
+Use the `mailto:` scheme, followed by the email address, in the `href` attribute.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  Questions about the course? Write to us at
+  <a href="mailto:hello@example.com">hello@example.com</a>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  Questions about the course? Write to us at{' '}
+  <a href="mailto:hello@example.com">hello@example.com</a>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try clicking the demo link. If you have an email app set up, it opens a new message addressed to `hello@example.com`. The address is a placeholder from the reserved `example.com` domain, so please do not send anything.
+
+:::info How it works
+A `mailto:` link does not send an email. It only asks the visitor's device to open its default email program with a draft. The visitor still reads, edits, and presses **Send** themselves.
+:::
+
+## Link Text: Show the Address or Describe the Action
+
+You have two good options for the words inside the link.
+
+| Style | Example | Best when |
+| :-- | :-- | :-- |
+| Show the address | `<a href="mailto:hello@example.com">hello@example.com</a>` | Visitors may want to copy the address or write it down |
+| Describe the action | `<a href="mailto:hello@example.com">Email our support team</a>` | You want a clear, friendly call to action |
+
+A link that says only "Email" or "Click here" is hard to understand out of context. Be specific about who will receive the message.
+
+## Adding Details: Parameters
+
+After the address, add a question mark `?` and then one or more **parameters**. Separate parameters with an ampersand `&`. In HTML, write that ampersand as `&amp;` inside the attribute.
+
+| Parameter | What it fills in | Example |
+| :-- | :-- | :-- |
+| `subject` | The subject line | `subject=Course%20question` |
+| `body` | The message text | `body=Hello%2C%20I%20have%20a%20question.` |
+| `cc` | People who get a copy | `cc=teacher@example.com` |
+| `bcc` | People who get a hidden copy | `bcc=records@example.com` |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="mailto-params.html"
+<a href="mailto:hello@example.com?subject=Course%20question&amp;body=Hello%2C%20I%20have%20a%20question%20about%20the%20HTML%20course.">
+  Ask about the HTML course
+</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/mailto-params.html">
+<>
+<p>
+  <a href={"mailto:hello@example.com?subject=Course%20question&body=Hello%2C%20I%20have%20a%20question%20about%20the%20HTML%20course."}>
+    Ask about the HTML course
+  </a>
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The visitor's email app opens with the subject and the first sentence already written. That saves them effort and helps you receive messages in a predictable format.
+
+### Several Recipients, Cc, and Bcc
+
+Separate several addresses with commas. Do not add spaces between them.
+
+```html title="recipients.html"
+<!-- Two main recipients -->
+<a href="mailto:hello@example.com,support@example.com">Email both teams</a>
+
+<!-- One main recipient, plus a visible copy and a hidden copy -->
+<a href="mailto:hello@example.com?cc=manager@example.com&amp;bcc=archive@example.com">
+  Send with copies
+</a>
+```
+
+:::warning Be careful with bcc
+Hidden copies are fine for internal records, but a visitor can see and change every field before sending. Never rely on `bcc` for anything secret or important.
+:::
+
+## Spaces, Line Breaks, and Special Characters
+
+A `mailto:` link is still a URL, so characters with special meaning must be **percent-encoded**. Here are the ones you will use most.
+
+| Character | Write | Notes |
+| :-- | :-- | :-- |
+| Space | `%20` | Never leave a raw space |
+| New line | `%0D%0A` | Starts a new line in the body |
+| Comma | `%2C` | Optional in the body, but safe |
+| Question mark | `%3F` | A raw `?` starts the parameters |
+| Ampersand `&` | `%26` | A raw `&` starts the next parameter |
+| Percent `%` | `%25` | The escape character itself |
+| `é`, `ñ`, `ह`, `日` | Encoded as UTF-8 | For example `é` becomes `%C3%A9` |
+
+A body with two lines looks like this.
+
+```html title="multiline.html"
+<a href="mailto:hello@example.com?subject=Registration&amp;body=Name%3A%0D%0ACourse%3A%0D%0AQuestion%3A">
+  Request a registration
+</a>
+```
+
+When opened, the body reads:
+
+```text
+Name:
+Course:
+Question:
+```
+
+### Let JavaScript Do the Encoding
+
+Typing percent codes by hand is easy to get wrong. If you build links with JavaScript, use `encodeURIComponent`, which does it for you.
+
+```js title="build-mailto.js"
+function buildMailto({ to, subject, body }) {
+  const params = new URLSearchParams();
+  if (subject) params.set("subject", subject);
+  if (body) params.set("body", body);
+
+  // URLSearchParams uses "+" for spaces, but mailto expects "%20".
+  const query = params.toString().replace(/\+/g, "%20");
+  return `mailto:${to}${query ? "?" + query : ""}`;
+}
+
+const link = document.querySelector("#contact-link");
+link.href = buildMailto({
+  to: "hello@example.com",
+  subject: "Course question",
+  body: "Hello,\nI have a question about the HTML course.",
+});
+```
+
+The tool turns the `\n` into a proper encoded line break, and handles accents and symbols too.
+
+## Email in Every Language
+
+Email is global, and a link can prepare a message in any language. Write the subject and body in the language of your page, and encode them as UTF-8.
+
+<Tabs>
+<TabItem value="en" label="English" default>
+
+```html
+<a href="mailto:hello@example.com?subject=Course%20question">Ask a question</a>
+```
+
+</TabItem>
+<TabItem value="es" label="Español">
+
+```html
+<a href="mailto:hola@example.com?subject=Pregunta%20sobre%20el%20curso" lang="es">
+  Hacer una pregunta
+</a>
+```
+
+</TabItem>
+<TabItem value="hi" label="हिन्दी">
+
+```html
+<a href="mailto:hello@example.com?subject=%E0%A4%AA%E0%A4%BE%E0%A4%A0%E0%A5%8D%E0%A4%AF%E0%A4%95%E0%A5%8D%E0%A4%B0%E0%A4%AE%20%E0%A4%95%E0%A5%87%20%E0%A4%AC%E0%A4%BE%E0%A4%B0%E0%A5%87%20%E0%A4%AE%E0%A5%87%E0%A4%82" lang="hi">
+  प्रश्न पूछें
+</a>
+```
+
+</TabItem>
+</Tabs>
+
+A few global tips:
+
+- **Set `lang`** on the link text, so screen readers pronounce it properly.
+- **Write the prepared text in the visitor's language**, so the message arrives in a language you can read.
+- **Use plain ASCII for the email address itself** when you can. Internationalized addresses exist, but they are not supported everywhere yet.
+- **Test with your own email app.** Different programs handle accents and long bodies differently.
+
+## Protecting Your Address From Spam
+
+Programs that crawl the web look for text like `name@domain.com` and add it to spam lists. A plain address in your HTML is easy for them to find. No method is perfect, but these help.
+
+| Method | How it helps | Trade-off |
+| :-- | :-- | :-- |
+| **Use a role address** such as `hello@` or `contact@` | If it is flooded with spam, you can replace it | The address is still public |
+| **Build the link with JavaScript** | Simple crawlers do not run scripts | Visitors without JavaScript see no link |
+| **Write the address in words**, like "hello at example dot com" | Hard for simple crawlers to read | Visitors must retype it |
+| **Use a contact form** | The address never appears on the page | More work to set up |
+| **Use a good spam filter** | Cleans the inbox, whatever the source | Does not stop the spam from arriving |
+
+A simple scripted approach looks like this.
+
+```html title="scripted-email.html"
+<p>Email us: <a id="email" href="#">(enable JavaScript to see the address)</a></p>
+
+<script>
+  const user = "hello";
+  const domain = "example.com";
+  const address = user + "@" + domain;
+  const link = document.getElementById("email");
+  link.href = "mailto:" + address;
+  link.textContent = address;
+</script>
+```
+
+:::tip Always give a fallback
+Whatever method you choose, think about visitors who use screen readers, have scripts blocked, or have no email app. A short note such as "Or use our contact form" makes your page more welcoming to all.
+:::
+
+## Accessibility and Clarity
+
+- **Name the action and the person.** "Email the support team" is clearer than "Contact."
+- **Warn that an app will open.** Some people are surprised when a mail program starts. A short phrase such as "(opens your email app)" helps, especially on shared computers.
+- **Show the address as text too,** or make the address the link text, so visitors who use web mail can copy it.
+- **Do not hide the address in an image.** Screen readers cannot read it, and no one can copy it.
+- **Keep the focus visible** and the link easy to tap on phones, with enough padding.
+
+## Limits of `mailto:` Links
+
+A `mailto:` link depends on the visitor's device, so it does not always work smoothly.
+
+| Situation | What happens |
+| :-- | :-- |
+| No email app set up, common on shared or school computers | The link seems to do nothing, or asks the visitor to choose an app |
+| Visitor uses Gmail or another web mail in a browser | It works only if the browser is set to handle mail links |
+| Very long bodies | Some apps cut the text off, so keep it short |
+| Attachments | Not possible with `mailto:` |
+| Privacy | The visitor's message is sent from their own account |
+
+### When to Use Something Else
+
+| You need... | Better choice |
+| :-- | :-- |
+| Messages from visitors who have no email app | A **contact form** that sends to your server |
+| Attachments or structured questions | A **form** with fields and file upload |
+| To hide your address | A form, or a service that forwards messages |
+| Proof that the message was received | A form with a confirmation message |
+| A quick, informal way to write | `mailto:` is fine |
+
+## Common Mistakes
+
+### Mistake 1: Raw spaces in the subject or body
+
+Write `%20` for a space, or let JavaScript do the encoding.
+
+### Mistake 2: Using `&` instead of `&amp;` in HTML
+
+It often works, but `&amp;` is the correct form in an attribute.
+
+### Mistake 3: Spaces around the commas between addresses
+
+Write `a@example.com,b@example.com` with no spaces.
+
+### Mistake 4: A very long prepared body
+
+Many apps limit the length, and long links are fragile. Keep it to a few lines.
+
+### Mistake 5: Putting private information in the link
+
+The subject and body are visible in the page's code. Never include passwords, tokens, or personal data.
+
+### Mistake 6: Writing `mailto` without the colon
+
+The scheme is `mailto:`, with a colon. Without it, the browser treats the text as a relative path.
+
+### Mistake 7: Vague link text
+
+"Click here" does not say who gets the message. Be specific.
+
+### Mistake 8: Using the address in an image
+
+Text can be copied and read aloud. A picture cannot.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `contact.html` with a heading **Contact Us**.
+2. Add a basic `mailto:` link that shows the address as its text.
+3. Add a second link with a **subject** and a short **body**.
+4. Add a third link with a **cc** and the body on **three lines** using `%0D%0A`.
+5. Add a fourth link in another language, with the correct `lang` attribute.
+6. Write the JavaScript version that builds the link, and test it with an accent in the subject.
+7. Click every link. Does your email app open each draft correctly?
+8. Bonus: add a sentence that offers a contact form as an alternative.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which scheme opens the visitor's email app?</summary>
+
+`mailto:`, as in `mailto:hello@example.com`.
+
+</details>
+
+<details>
+<summary>2. How do you add a subject line to a `mailto:` link?</summary>
+
+Add `?subject=` after the address, with spaces written as `%20`, such as `mailto:hello@example.com?subject=Course%20question`.
+
+</details>
+
+<details>
+<summary>3. How do you separate several parameters, and how is that written in HTML?</summary>
+
+With an ampersand, written as `&amp;` inside the HTML attribute.
+
+</details>
+
+<details>
+<summary>4. What code starts a new line in the body of a `mailto:` link?</summary>
+
+`%0D%0A`.
+
+</details>
+
+<details>
+<summary>5. Name two cases where a contact form is better than a `mailto:` link.</summary>
+
+When visitors may not have an email app, when you want to hide your address, or when you need attachments or structured information.
+
+</details>
+
+## Key Takeaways
+
+- A `mailto:` link opens the visitor's email app with a prepared draft. It never sends anything by itself.
+- Add `subject`, `body`, `cc`, and `bcc` after a `?`, separated by `&` (written `&amp;` in HTML).
+- Percent-encode spaces, line breaks, and special characters, or build the link with JavaScript.
+- Write the prepared text in your page's language, and set `lang` on the link.
+- Protect against spam, write clear link text, and offer a contact form for visitors without an email app.
+
+Next, learn a similar idea for phones, where one tap can start a call, with [Telephone Links](./telephone-links).

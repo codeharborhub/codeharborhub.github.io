@@ -1,15 +1,547 @@
 ---
-id: navigation-menus
-title: "Building Accessible Navigation Menus with nav"
+id: html-navigation-menus
+title: "HTML Navigation Menus"
 sidebar_label: "Navigation Menus"
 sidebar_position: 12
 slug: /html/links-and-navigation/navigation-menus
-description: "Learn how to combine semantic nav elements, unordered lists, and links to build clean, accessible website navigation menus."
+description: "Learn how to build accessible HTML navigation menus. Use the nav element with lists, mark the current page, style a horizontal menu with CSS, add a mobile toggle button, create breadcrumbs, dropdown safely, and support right-to-left languages on CodeHarborHub."
 keywords:
+  - HTML navigation menu
   - HTML nav element
-  - navigation menu HTML
-  - semantic site navigation
-  - accessible nav bar
+  - accessible navigation menu
+  - aria-current page
+  - responsive menu HTML CSS
+  - mobile menu toggle aria-expanded
+  - HTML breadcrumb navigation
+  - dropdown menu accessibility
+  - skip link navigation
+  - right to left menu CSS logical properties
+  - learn HTML navigation
   - CodeHarborHub HTML
-tags: [html, navigation, nav-tag, accessibility]
+tags: [html, web-development, beginner, navigation, nav, menus, accessibility, frontend]
 ---
+
+Think about a big building, like an airport. You can find your gate because of the signs: clear, consistent, always in the same place. Without them, even a small building feels like a maze.
+
+A website's **navigation menu** is the signage. It tells visitors where they are, where they can go, and how to get back. You have learned how to build every kind of link. This final lesson brings them together into one of the most important parts of any site: a menu that is clear, comfortable on a phone, and usable by everyone, including people who cannot use a mouse.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to mark up a menu with `<nav>` and a list of links
+- How to label several navigation areas, and show the current page
+- How to style a horizontal menu with CSS
+- How to build a small-screen menu with a toggle button
+- How to create breadcrumbs, a footer menu, and next/previous links
+- Why dropdown menus need extra care, and a safe way to build them
+- How to support keyboard users and right-to-left languages
+
+## The Foundation: `<nav>` and a List
+
+A menu is a **list of links**. HTML gives you two elements that do the job together:
+
+- `<nav>` tells browsers and assistive technology: "this is a block of main navigation links."
+- `<ul>` and `<li>` group the links into a list, so a screen reader can announce "list of 4 items."
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="menu.html"
+<header>
+  <a href="/">CodeHarborHub</a>
+
+  <nav aria-label="Main">
+    <ul>
+      <li><a href="/" aria-current="page">Home</a></li>
+      <li><a href="/courses">Courses</a></li>
+      <li><a href="/blog">Blog</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/menu.html">
+<>
+<header>
+  <a href="#">CodeHarborHub</a>
+
+  <nav aria-label="Main">
+    <ul>
+      <li><a href="#" aria-current="page"><strong>Home</strong></a></li>
+      <li><a href="#">Courses</a></li>
+      <li><a href="#">Blog</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#`. In your project, each `href` would be a real page.
+
+### Why Each Part Matters
+
+| Part | Why it is there |
+| :-- | :-- |
+| `<nav>` | Lets screen reader users jump straight to the navigation, using a list of landmarks |
+| `aria-label="Main"` | Names this navigation, so it is not confused with others on the page |
+| `<ul>` and `<li>` | Announces how many links there are, and groups them |
+| `aria-current="page"` | Tells assistive technology which link is the page you are on |
+
+:::tip Not every group of links needs `<nav>`
+Use `<nav>` for the **major** navigation blocks: the main menu, a table of contents, breadcrumbs, a footer menu. A few links inside a paragraph do not need it.
+:::
+
+## Showing the Current Page
+
+Visitors should always know where they are. Add `aria-current="page"` to the link of the page you are on, then style it with CSS.
+
+```css
+nav a[aria-current="page"] {
+  font-weight: 700;
+  border-bottom: 3px solid #2563eb;
+}
+```
+
+Using the attribute for styling keeps your CSS and your accessibility information **in sync**. A class like `.active` only changes the look. `aria-current` changes the look and tells screen readers.
+
+## Styling a Horizontal Menu
+
+By default, a list is vertical with bullets. With a few lines of CSS (using Flexbox), it becomes a tidy menu bar.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="horizontal-menu.html"
+<style>
+  .site-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .site-nav a {
+    display: block;
+    padding: 0.75rem 1rem;       /* big, easy-to-tap area */
+    color: #1e293b;
+    text-decoration: none;
+    border-radius: 6px;
+  }
+  .site-nav a:hover {
+    background: #e2e8f0;
+  }
+  .site-nav a:focus-visible {
+    outline: 3px solid #f59e0b;
+    outline-offset: 2px;
+  }
+  .site-nav a[aria-current="page"] {
+    background: #2563eb;
+    color: #fff;
+  }
+</style>
+
+<nav class="site-nav" aria-label="Main">
+  <ul>
+    <li><a href="/" aria-current="page">Home</a></li>
+    <li><a href="/courses">Courses</a></li>
+    <li><a href="/blog">Blog</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/horizontal-menu.html">
+<>
+<nav aria-label="Main">
+  <ul style={{display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: 0, padding: 0, listStyle: 'none'}}>
+    <li><a href="#" aria-current="page" style={{display: 'block', padding: '0.75rem 1rem', background: '#2563eb', color: '#fff', textDecoration: 'none', borderRadius: '6px'}}>Home</a></li>
+    <li><a href="#" style={{display: 'block', padding: '0.75rem 1rem', textDecoration: 'none', borderRadius: '6px'}}>Courses</a></li>
+    <li><a href="#" style={{display: 'block', padding: '0.75rem 1rem', textDecoration: 'none', borderRadius: '6px'}}>Blog</a></li>
+    <li><a href="#" style={{display: 'block', padding: '0.75rem 1rem', textDecoration: 'none', borderRadius: '6px'}}>Contact</a></li>
+  </ul>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Design Rules That Help Everyone
+
+- **Make targets big.** Aim for at least 44 by 44 pixels on touch screens. Padding on the `<a>`, not the `<li>`, makes the whole area tappable.
+- **Keep order and wording consistent** on every page. Visitors learn the menu once.
+- **Use short, clear labels.** "Courses" beats "Our Educational Offerings."
+- **Limit the number of items.** Five to seven main items are easy to scan.
+- **Keep the focus outline visible.** Do not remove it without a better replacement.
+- **Check contrast.** Text and the current-page highlight should be easy to read.
+
+## A Menu for Small Screens
+
+A long horizontal menu does not fit on a phone. A common solution is a **menu button** that opens and closes the list. The button must be a real `<button>`, and it must tell assistive technology whether the menu is open, with `aria-expanded`.
+
+```html title="mobile-menu.html"
+<header class="site-header">
+  <a class="brand" href="/">CodeHarborHub</a>
+
+  <button
+    type="button"
+    class="menu-toggle"
+    aria-expanded="false"
+    aria-controls="main-menu">
+    Menu
+  </button>
+
+  <nav aria-label="Main">
+    <ul id="main-menu" class="menu">
+      <li><a href="/" aria-current="page">Home</a></li>
+      <li><a href="/courses">Courses</a></li>
+      <li><a href="/blog">Blog</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+```
+
+```css title="mobile-menu.css"
+.menu-toggle { display: none; }          /* hidden on wide screens */
+
+.menu {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 40rem) {
+  .menu-toggle {
+    display: inline-block;
+    padding: 0.75rem 1rem;
+  }
+  .menu { display: none; flex-direction: column; }
+  .menu.is-open { display: flex; }
+}
+```
+
+```js title="mobile-menu.js"
+const toggle = document.querySelector(".menu-toggle");
+const menu = document.getElementById("main-menu");
+
+toggle.addEventListener("click", () => {
+  const open = toggle.getAttribute("aria-expanded") === "true";
+  toggle.setAttribute("aria-expanded", String(!open));
+  menu.classList.toggle("is-open", !open);
+});
+
+// Let the Escape key close the menu and return focus to the button
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
+    toggle.setAttribute("aria-expanded", "false");
+    menu.classList.remove("is-open");
+    toggle.focus();
+  }
+});
+```
+
+This is a simple **disclosure pattern**. A button shows or hides a section. It is much easier to use correctly than a complicated menu widget.
+
+:::info Why `aria-expanded` and `aria-controls`?
+`aria-expanded="true"` or `"false"` tells a screen reader if the menu is currently open. `aria-controls` points to the element the button controls. Together they make the button announce something like "Menu, collapsed, button."
+:::
+
+If you build with a framework such as Docusaurus, the site's own navbar already does this for you. Understanding the pattern is still valuable, so you can build and fix menus yourself.
+
+## Dropdown Menus: Handle With Care
+
+Dropdowns are popular, but they cause many accessibility problems:
+
+- They often open only on **hover**, which touch screens and keyboards cannot do.
+- They are hard to use with a **shaky hand**, since the menu closes when the pointer slips.
+- Screen reader users may not know there are hidden links.
+
+If you need a dropdown, build it as a **disclosure** too: a button that opens a nested list of normal links.
+
+```html title="dropdown.html"
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li>
+      <button type="button" aria-expanded="false" aria-controls="courses-menu">
+        Courses
+      </button>
+      <ul id="courses-menu" hidden>
+        <li><a href="/courses/html">HTML</a></li>
+        <li><a href="/courses/css">CSS</a></li>
+        <li><a href="/courses/javascript">JavaScript</a></li>
+      </ul>
+    </li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+JavaScript toggles the `hidden` attribute and updates `aria-expanded`, just as in the mobile menu. Opens on click or <kbd>Enter</kbd>, closes with <kbd>Escape</kbd>, and works on touch screens.
+
+:::warning Avoid `role="menu"` for site navigation
+The ARIA `menu` role is meant for application menus, like the File menu in a word processor. It changes how keyboards and screen readers behave, and it is a common mistake on websites. For a site menu, use a plain `<nav>` with a list of links.
+:::
+
+When you can, the simplest choice is **no dropdown**. A clear top-level menu with a good landing page for each section is usually easier for everyone.
+
+## Skip Links
+
+Once your menu gets long, a keyboard user has to press <kbd>Tab</kbd> through every link on every page. A **skip link** at the top lets them jump straight to the main content. You built one in the [Internal Links](./internal-links) lesson.
+
+```html
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header><!-- brand and nav --></header>
+  <main id="main" tabindex="-1">...</main>
+</body>
+```
+
+## Other Kinds of Navigation
+
+A good site uses more than one navigation area. Give each its own `<nav>` and its own label.
+
+### Breadcrumbs
+
+Breadcrumbs show the path to the current page, so visitors know where they are in the site's structure.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="breadcrumb.html"
+<nav aria-label="Breadcrumb">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/html">HTML</a></li>
+    <li><a href="/html/links-and-navigation">Links and Navigation</a></li>
+    <li><a href="/html/links-and-navigation/navigation-menus" aria-current="page">Navigation Menus</a></li>
+  </ol>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/breadcrumb.html">
+<>
+<nav aria-label="Breadcrumb">
+  <ol style={{display: 'flex', flexWrap: 'wrap', gap: '0.5rem', listStyle: 'none', margin: 0, padding: 0}}>
+    <li><a href="#">Home</a> /</li>
+    <li><a href="#">HTML</a> /</li>
+    <li><a href="#">Links and Navigation</a> /</li>
+    <li><a href="#" aria-current="page">Navigation Menus</a></li>
+  </ol>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+An **ordered list** fits breadcrumbs because the order matters. Use CSS to add separators, not extra characters in the HTML:
+
+```css
+nav[aria-label="Breadcrumb"] li + li::before {
+  content: "/";
+  margin-inline: 0.5rem;
+}
+```
+
+### Footer Menu
+
+A footer is a good home for secondary links, such as Privacy, Terms, and Contact.
+
+```html
+<footer>
+  <nav aria-label="Footer">
+    <ul>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+</footer>
+```
+
+### Previous and Next
+
+On tutorial pages like these, links to the previous and next lesson keep readers moving.
+
+```html
+<nav aria-label="Lesson navigation">
+  <a href="download-links" rel="prev">Previous: Download Links</a>
+  <a href="/html" rel="next">Next: HTML Forms</a>
+</nav>
+```
+
+The `rel="prev"` and `rel="next"` values describe the relationship between pages.
+
+### Language Switcher
+
+A language menu helps a global audience. Write each language in its own language, and mark it with `lang` and `hreflang`.
+
+```html
+<nav aria-label="Language">
+  <ul>
+    <li><a href="/en/" hreflang="en" lang="en" aria-current="true">English</a></li>
+    <li><a href="/hi/" hreflang="hi" lang="hi">हिन्दी</a></li>
+    <li><a href="/es/" hreflang="es" lang="es">Español</a></li>
+    <li><a href="/ar/" hreflang="ar" lang="ar">العربية</a></li>
+  </ul>
+</nav>
+```
+
+## Menus for Every Language and Direction
+
+The web reads left to right in some languages and right to left in others. Your menu should work in both without being rewritten.
+
+- **Set `dir="rtl"` or `<html dir="rtl">`** for languages such as Arabic and Hebrew. A flex menu then automatically starts from the right.
+- **Use logical CSS properties** instead of left and right. They adapt to the reading direction.
+
+| Physical (avoid) | Logical (prefer) |
+| :-- | :-- |
+| `margin-left` | `margin-inline-start` |
+| `margin-right` | `margin-inline-end` |
+| `padding-left` | `padding-inline-start` |
+| `border-left` | `border-inline-start` |
+| `text-align: left` | `text-align: start` |
+
+- **Leave room for longer words.** Translated labels can be much longer than English. Do not use fixed widths that would cut or overflow them.
+- **Test with real translations,** not just placeholder text.
+
+## Choosing the Right Navigation
+
+| You need... | Use |
+| :-- | :-- |
+| The main menu | `<nav aria-label="Main">` with a list of links |
+| A way to show where the visitor is | `aria-current="page"` and a breadcrumb |
+| A menu for phones | A `<button>` with `aria-expanded` and `aria-controls` |
+| A menu with sub-sections | A disclosure button with a nested list, or no dropdown at all |
+| Fast keyboard access | A skip link |
+| Secondary links | A footer `<nav aria-label="Footer">` |
+| Moving through a series | `rel="prev"` and `rel="next"` links |
+| Reaching other languages | A language list with `lang` and `hreflang` |
+
+## Common Mistakes
+
+### Mistake 1: Building a menu from `<div>` elements
+
+Without `<nav>`, a list, and real `<a>` links, assistive technology has no idea it is a menu.
+
+### Mistake 2: Several `<nav>` elements with no labels
+
+Screen reader users hear "navigation, navigation, navigation" and cannot tell them apart. Add `aria-label` to each.
+
+### Mistake 3: Menus that open only on hover
+
+Touch and keyboard users cannot open them. Use a button.
+
+### Mistake 4: Removing the focus outline
+
+Keyboard users lose track of where they are.
+
+### Mistake 5: Tiny tap targets
+
+Small links cause frustration on phones. Give links generous padding.
+
+### Mistake 6: Inconsistent menus
+
+If the menu changes from page to page, visitors have to relearn the site every time.
+
+### Mistake 7: Using `role="menu"` for site navigation
+
+It changes keyboard behavior in ways that confuse users. A plain `<nav>` with links is better.
+
+### Mistake 8: Fixed widths and physical left/right CSS
+
+They break with long translations and right-to-left languages.
+
+### Mistake 9: Icon-only menus with no name
+
+A hamburger icon with no text needs an accessible name, such as `aria-label="Menu"`.
+
+## Try It Yourself
+
+Build the navigation for a small learning site.
+
+1. Create `index.html` with a `<header>` containing a brand link and a `<nav aria-label="Main">`, using a list of four links.
+2. Mark the current page with `aria-current="page"` and style it with the attribute selector.
+3. Style the menu as a horizontal bar with Flexbox. Add `:hover` and `:focus-visible` styles.
+4. Add a **menu button** for screens narrower than 40rem, with `aria-expanded` and `aria-controls`, and write the JavaScript to toggle it. Let <kbd>Escape</kbd> close it.
+5. Add a **skip link** that appears on focus.
+6. Add a **breadcrumb** nav with an ordered list, and a **footer** nav.
+7. Test everything with only the keyboard. Can you reach and use every link?
+8. Add `dir="rtl"` to the `<html>` tag. Does your menu still look right? Replace any `margin-left` with `margin-inline-start`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which elements make up the basic structure of a menu?</summary>
+
+A `<nav>` element containing a `<ul>` list of `<li>` items, each holding an `<a>` link.
+
+</details>
+
+<details>
+<summary>2. Why give each `<nav>` an `aria-label`?</summary>
+
+So screen reader users can tell several navigation areas apart, such as Main, Breadcrumb, and Footer.
+
+</details>
+
+<details>
+<summary>3. How do you mark the link for the page you are on?</summary>
+
+Add `aria-current="page"` to that link, and style it using the attribute selector.
+
+</details>
+
+<details>
+<summary>4. What should control a menu that opens and closes on a phone?</summary>
+
+A real `<button>` with `aria-expanded` and `aria-controls`, plus JavaScript that toggles the menu.
+
+</details>
+
+<details>
+<summary>5. Why use logical CSS properties like `margin-inline-start`?</summary>
+
+They follow the reading direction, so the same menu works for left-to-right and right-to-left languages.
+
+</details>
+
+## Key Takeaways
+
+- A menu is a **list of links** inside a `<nav>`, with a label that names it.
+- Use `aria-current="page"` to show where the visitor is, and keep focus outlines visible.
+- Build small-screen menus with a real `<button>`, `aria-expanded`, and `aria-controls`.
+- Prefer simple menus and disclosure dropdowns over hover-only menus and `role="menu"`.
+- Add skip links, breadcrumbs, and footer menus, and design with logical CSS and translations in mind so everyone can find their way.
+
+## Congratulations!
+
+You have finished the **HTML Links and Navigation** section. You can now write every kind of link, point to pages, files, email addresses, and phone numbers, choose where links open, keep visitors safe, and tie it all together into a clear, accessible menu.
+
+Want to review? Go back to the [Links and Navigation overview](./) and try the practice task in each lesson. When you are ready, move on to the next section of the HTML tutorial.
