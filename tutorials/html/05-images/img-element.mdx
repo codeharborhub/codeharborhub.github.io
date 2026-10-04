@@ -1,16 +1,419 @@
 ---
-id: img-element
-title: "The HTML Image Element: Inserting Images"
-sidebar_label: "Image Element (<img>)"
+id: html-img-element
+title: "The HTML img Element"
+sidebar_label: "The img Element"
 sidebar_position: 2
 slug: /html/images/img-element
-description: "Learn the fundamentals of the HTML img tag, its void element syntax, inline display behavior, and basic usage on web pages."
+description: "Learn how the HTML img element works. Understand how browsers load images, the core attributes, why images are inline, how to fix the small gap below an image, make images fit with CSS, handle broken images, and choose between img, picture, SVG, and CSS backgrounds on CodeHarborHub."
 keywords:
+  - HTML img element
   - HTML img tag
-  - image element HTML
-  - inserting web images
-  - void elements img
+  - HTML image tag
+  - add image to HTML
+  - responsive image max-width
+  - object-fit CSS
+  - broken image HTML
+  - HTML decoding async
+  - fetchpriority HTML
+  - img vs background-image
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, img-tag, markup, beginner]
+tags: [html, web-development, beginner, images, img, media, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='%23dbeafe'/><circle cx='170' cy='50' r='24' fill='%23fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='%232563eb'/><path d='M70 110 V62 L112 110 Z' fill='%23ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='%23334155'/></svg>";
+
+Think about what happens when you put a photograph on a wall. You have to decide which photograph, where to hang it, how big it should be, and what to write on the little label next to it for people who cannot see it.
+
+The `<img>` element is how you do all of that on a web page. It is one of the oldest and most used elements in HTML, and it looks simple. Behind that simplicity, there are details that decide whether your images load fast, fit the page, and work for everyone. This lesson shows you how `<img>` works, from the inside out.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<img>` element is, and why it is a "replaced" element
+- What the browser does from the moment it finds an image
+- The core attributes and some useful extras
+- Why images are inline, and how to fix the small gap below them
+- How to make images fit any screen with CSS
+- What happens when an image fails, and how to prepare for it
+- When to use `<img>`, and when to use something else
+
+## The Basics
+
+An image needs a source and a description. Everything else is a bonus.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img
+  src="images/harbor.jpg"
+  alt="A small sailboat on blue waves under a bright sun"
+  width="240"
+  height="160"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<img
+  src={sample}
+  alt="A small sailboat on blue waves under a bright sun"
+  width="240"
+  height="160"
+/>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo uses a small drawing built into the page, since there are no image files here. In your project, `src` would be a file path like the one in the code.
+
+## A "Replaced" Element
+
+Most HTML elements contain their own content: a paragraph holds text, a list holds items. An `<img>` is different. It holds **nothing**. Its content comes from a **separate file** that the browser fetches and puts in its place.
+
+Because of this, `<img>` is called a **replaced element**, and it is also a **void element**:
+
+- It has **no closing tag**. Write `<img ... />` or `<img ...>`.
+- It has **no children**. You cannot put text or other elements inside it.
+- Its size comes from the file itself, unless you say otherwise.
+
+:::info In MDX, close it
+In plain HTML, `<img ...>` is fine. In MDX and JSX, which this tutorial site uses, always write `<img ... />` with the closing slash.
+:::
+
+## What the Browser Does With an Image
+
+Understanding this sequence explains many of the tips later in this section.
+
+1. **Reads the HTML** and finds the `<img>` element.
+2. **Starts a request** for the file at `src`. This happens in parallel with other work, so the page keeps building.
+3. **Reserves space,** if it knows the size from `width` and `height`. If not, the space is empty until the file arrives.
+4. **Downloads the file** over the network. Big files take longer.
+5. **Decodes the image,** turning the compressed file into pixels.
+6. **Paints it** on the page. If the size was not reserved, the content below jumps to make room.
+
+This is why three habits matter so much: **small files** (steps 4 and 5), **`width` and `height`** (step 3), and **lazy loading** for images far down the page (step 2). You will learn each of them in this section.
+
+## The Core Attributes
+
+| Attribute | Purpose | Notes |
+| :-- | :-- | :-- |
+| `src` | The address of the image file | Required. See [Src and Alt](./src-and-alt) |
+| `alt` | A text alternative | Required. Use `alt=""` for decoration |
+| `width` | Width in pixels | Without `px`. Reserves space. See [Width and Height](./width-and-height) |
+| `height` | Height in pixels | Same as above |
+| `loading` | `eager` or `lazy` | See [Lazy Loading](./lazy-loading) |
+| `srcset` | A list of image files at different sizes | See [Srcset and Sizes](./srcset-and-sizes) |
+| `sizes` | How wide the image will be on screen | Works together with `srcset` |
+
+### A Few Extras Worth Knowing
+
+| Attribute | What it does | When to use it |
+| :-- | :-- | :-- |
+| `decoding="async"` | Lets the browser decode the image without blocking other work | Most content images |
+| `fetchpriority="high"` | Hints that this image is very important | The main image at the top of a page, often called the "hero" |
+| `crossorigin` | Controls how an image from another site is requested | When you draw it on a canvas, or use special security rules |
+| `referrerpolicy` | Controls what is sent about your page | For privacy, as in [Link Security](/tutorials/html/links-and-navigation/link-security) |
+| `title` | A tooltip | Use sparingly. Touch and keyboard users never see it |
+
+```html title="extras.html"
+<!-- The big image at the top of the page: load first -->
+<img
+  src="images/hero.jpg"
+  alt="Students learning to code together"
+  width="1200"
+  height="600"
+  fetchpriority="high"
+  decoding="async"
+/>
+
+<!-- An image far down the page: load later -->
+<img
+  src="images/team.jpg"
+  alt="The CodeHarborHub team on a video call"
+  width="600"
+  height="400"
+  loading="lazy"
+  decoding="async"
+/>
+```
+
+:::tip Do not use `title` instead of `alt`
+`alt` is for everyone who cannot see the image. `title` is only a tooltip that appears on mouse hover. They do different jobs, and `alt` is the one you must always write.
+:::
+
+## Images Are Inline
+
+By default, an `<img>` behaves like a **letter in a sentence**, not like a paragraph. It sits on the same line as the text around it, and it lines up with the **baseline** of the text.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="inline.html"
+<p>
+  A boat
+  <img src="images/boat-icon.png" alt="" width="24" height="24" />
+  can sit right inside a sentence.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/inline.html">
+<>
+<p>
+  A boat{' '}
+  <img src={sample} alt="" width="24" height="16" />{' '}
+  can sit right inside a sentence.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+That is perfect for small icons. For a large picture, you usually want it to stand alone as a block.
+
+### The Mysterious Gap
+
+If you put an image alone in a container, you may see a small **empty strip below it**. This is not a bug. The image sits on the text baseline, and the space under the baseline is reserved for letters like "g" and "y".
+
+There are two simple fixes.
+
+```css
+/* Fix 1: make the image a block */
+img {
+  display: block;
+}
+
+/* Fix 2: align it to the bottom of its line */
+img {
+  vertical-align: middle;
+}
+```
+
+Many developers add one of these to every project. A common choice is `display: block` for large images and `vertical-align: middle` for icons beside text.
+
+## Making Images Fit: A Few Lines of CSS
+
+An image keeps its natural size unless told otherwise. A photograph that is 3000 pixels wide will overflow a phone screen. This short rule makes images shrink to fit their container, and never grow beyond their real size.
+
+```css title="images.css"
+img {
+  max-width: 100%;
+  height: auto;
+}
+```
+
+- `max-width: 100%` stops the image from being wider than its container.
+- `height: auto` keeps the proportions, so the picture is not squashed.
+
+:::warning Keep `height: auto` with `width` and `height` attributes
+When you set `width` and `height` in HTML **and** use `max-width: 100%`, add `height: auto` too. Without it, the image may stay tall while its width shrinks, and look stretched.
+:::
+
+### Fitting an Image Into a Fixed Box
+
+Sometimes the box has a fixed shape, such as a square card. Use `object-fit` to decide how the picture fills it.
+
+| `object-fit` value | What happens |
+| :-- | :-- |
+| `fill` | Stretches to fill the box. Can distort the image |
+| `contain` | Shows the whole image inside the box, with empty space if needed |
+| `cover` | Fills the box and **crops** the extra. Best for cards and avatars |
+| `none` | Keeps the original size |
+| `scale-down` | Uses `none` or `contain`, whichever is smaller |
+
+```css title="card-image.css"
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  object-position: center;
+}
+```
+
+### A Few More Handy Styles
+
+```css
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;          /* a circle */
+  object-fit: cover;
+}
+
+.framed {
+  border: 4px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+```
+
+## When an Image Does Not Load
+
+Images fail more often than you might think: a typo in the path, a deleted file, a slow network, or a blocked request. The browser shows a **broken image icon**, and the `alt` text appears in its place.
+
+That is another reason `alt` matters: it is your fallback.
+
+```html
+<img src="images/harbour.jpg" alt="Fishing boats resting in a calm harbor at sunrise" />
+<!-- If the file is named harbor.jpg, the path above is wrong. Visitors see the alt text. -->
+```
+
+You can also react in JavaScript, for example to show a default picture.
+
+```html title="fallback.html"
+<img
+  id="profile"
+  src="images/users/amara.jpg"
+  alt="Profile photo of Amara"
+  width="64"
+  height="64"
+/>
+
+<script>
+  const picture = document.getElementById("profile");
+  picture.addEventListener("error", () => {
+    picture.src = "images/users/default.png";
+  }, { once: true });
+</script>
+```
+
+The `{ once: true }` option makes sure the fallback runs only once, so a missing fallback file cannot cause an endless loop.
+
+### Quick Debugging Checklist
+
+1. **Check the path.** Is it relative to the right folder? See [Relative URLs](/tutorials/html/links-and-navigation/relative-urls).
+2. **Check the spelling and case.** `Photo.JPG` is not `photo.jpg` on most servers.
+3. **Check the file exists** and was uploaded.
+4. **Open the browser's developer tools.** The Network tab shows failed requests in red.
+5. **Check the file type.** A file that was renamed to `.jpg` but is really another format may fail to display.
+
+## Images That Are Links
+
+Wrap an `<img>` in an `<a>` to make it clickable. The `alt` text then becomes the link's name, so describe where the link goes.
+
+```html
+<a href="/">
+  <img src="images/logo.svg" alt="CodeHarborHub home" width="140" height="40" />
+</a>
+```
+
+## `img`, `picture`, SVG, or CSS Background?
+
+You have several ways to show an image. Each has a place.
+
+| Method | Best for | Notes |
+| :-- | :-- | :-- |
+| `<img>` | Almost all **content** images | Accessible, searchable, easy to lazy-load |
+| `<picture>` | Different formats or crops for different screens | Contains an `<img>`. See [Picture Element](./picture-element) |
+| Inline `<svg>` | Icons and graphics you want to style or animate | Part of the page's HTML |
+| `<img src="file.svg">` | A logo or illustration as a separate file | Cacheable and simple |
+| CSS `background-image` | **Decoration** that carries no meaning | Has no `alt`, so keep it for purely visual use |
+
+The rule of thumb: if the image **means something** to the reader, use `<img>`. If it is only decoration, a CSS background is fine.
+
+## Common Mistakes
+
+### Mistake 1: Forgetting `alt`
+
+Every `<img>` needs an `alt`. Use an empty one for decoration, never leave it out.
+
+### Mistake 2: Using a huge file for a tiny space
+
+A 4000-pixel photo shown at 300 pixels wastes data and time. Resize it first.
+
+### Mistake 3: Squashing an image with the wrong `width` and `height`
+
+Set values that match the image's real proportions, and use `height: auto` in CSS.
+
+### Mistake 4: Putting content inside `<img>`
+
+It is a void element. Text placed between `<img>` and `</img>` is invalid.
+
+### Mistake 5: Using a CSS background for an important picture
+
+Without `alt`, a screen reader skips it, and search engines may ignore it.
+
+### Mistake 6: Not testing on a slow connection
+
+Use the developer tools to slow the network down, then see how your page loads.
+
+### Mistake 7: Hot-linking someone else's image
+
+It uses their bandwidth, it can break without warning, and it may break copyright rules. Use your own copy, and only if you have the right to.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a folder `images` and put two pictures in it: one photo and one small icon.
+2. Create `gallery.html` with an `<h1>` and add both images with `src`, `alt`, `width`, and `height`.
+3. Add `img { max-width: 100%; height: auto; }` in a `<style>` block. Resize the browser window. What happens?
+4. Put the photo alone in a `<div>`. Do you see a gap below it? Fix it with `display: block`.
+5. Make a card with a fixed-height box and test the `object-fit` values `contain` and `cover`.
+6. Break the `src` on purpose. What do you see? Check that the `alt` text makes sense on its own.
+7. Wrap the icon in a link and write `alt` text that says where it goes.
+8. Add `fetchpriority="high"` to the first image and `loading="lazy"` to the second.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why is `<img>` called a replaced element?</summary>
+
+Its content comes from an external file that the browser fetches and puts in its place. The element itself holds nothing.
+
+</details>
+
+<details>
+<summary>2. Is `<img>` a block or an inline element by default?</summary>
+
+Inline. It sits in the flow of text, aligned to the text baseline.
+
+</details>
+
+<details>
+<summary>3. What two CSS lines make images fit their container?</summary>
+
+`max-width: 100%;` and `height: auto;`.
+
+</details>
+
+<details>
+<summary>4. What does `object-fit: cover` do?</summary>
+
+It makes the image fill its box completely and crops whatever does not fit, without distorting it.
+
+</details>
+
+<details>
+<summary>5. When is a CSS background better than `<img>`?</summary>
+
+When the picture is only decoration and carries no meaning, because CSS backgrounds have no `alt` text.
+
+</details>
+
+## Key Takeaways
+
+- `<img>` is a void, inline, replaced element whose content comes from the file at `src`.
+- Always provide `alt`, and add `width` and `height` to reserve space.
+- Use `max-width: 100%` and `height: auto` so images fit any screen, and `object-fit` for fixed boxes.
+- Use `display: block` or `vertical-align` to remove the small gap below an image.
+- Choose `<img>` for meaningful content, and prepare for failure with good `alt` text and a clear debugging routine.
+
+Now you know how the element works. Next, learn how to point to the right file and describe it well in [Src and Alt](./src-and-alt).

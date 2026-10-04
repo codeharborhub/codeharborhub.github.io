@@ -1,16 +1,444 @@
 ---
-id: lazy-loading
-title: "Optimizing Image Performance with Native Lazy Loading"
+id: html-lazy-loading
+title: "HTML Lazy Loading Images"
 sidebar_label: "Lazy Loading"
 sidebar_position: 9
 slug: /html/images/lazy-loading
-description: "Boost site load speed and save bandwidth by enabling native browser lazy loading using loading='lazy' on images below the fold."
+description: "Learn how to lazy load images in HTML with the loading attribute. Understand which images to lazy load and which not to, protect your main image, reserve space with width and height, lazy load iframes, use IntersectionObserver, and measure the results on CodeHarborHub."
 keywords:
   - HTML lazy loading
   - loading lazy attribute
-  - page speed optimization
-  - image load performance
+  - lazy load images
+  - loading eager
+  - largest contentful paint LCP images
+  - fetchpriority high
+  - lazy load iframe
+  - IntersectionObserver lazy images
+  - image placeholder
+  - page speed images
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, performance, lazy-loading, web-vitals]
+tags: [html, web-development, beginner, images, lazy-loading, performance, frontend]
 ---
+
+Imagine a restaurant that cooks every dish on its menu the moment you sit down, whether you order it or not. Dozens of plates would pile up, most would go cold, and your actual meal would arrive late.
+
+Browsers behave like that restaurant by default. When a page loads, they start downloading **every image**, including ones far down the page that the visitor may never scroll to. That wastes data, slows down the images that really matter, and makes the page feel heavy.
+
+**Lazy loading** fixes this. Images wait until the visitor is about to see them. Today it takes one attribute. In this lesson, you will learn how to use it, which images to leave out, and how to measure that it works.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What lazy loading is, and why it helps
+- How to use `loading="lazy"` and `loading="eager"`
+- Which images to lazy load, and which **never** to lazy load
+- Why `width` and `height` matter even more with lazy loading
+- How to lazy load iframes and handle special cases
+- A JavaScript fallback with `IntersectionObserver`
+- How to check that it works
+- Common mistakes, and how to avoid them
+
+## The One-Line Solution
+
+Add `loading="lazy"` to an image.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="lazy.html"
+<img
+  src="images/team-photo.jpg"
+  alt="The CodeHarborHub team on a video call"
+  width="1200"
+  height="800"
+  loading="lazy"
+/>
+```
+
+</TabItem>
+<TabItem value="notes" label="What happens">
+
+1. The page loads without downloading `team-photo.jpg`.
+2. As the visitor scrolls, the browser notices the image is getting close to the screen.
+3. The browser starts downloading it just before it comes into view.
+4. By the time the visitor reaches it, the image is usually ready.
+
+</TabItem>
+</Tabs>
+
+The browser, not you, decides **how early** to start. It begins loading when the image is within a certain distance of the visible area, and that distance can depend on the connection speed. On a fast connection, it loads closer to the moment of need. On a slow one, it starts earlier to leave time.
+
+## The `loading` Attribute
+
+| Value | What it does |
+| :-- | :-- |
+| `lazy` | Wait until the image is near the visible area, then load it |
+| `eager` | Load right away. This is the **default** if you write nothing |
+
+```html
+<img src="a.jpg" alt="..." loading="lazy" />   <!-- waits -->
+<img src="b.jpg" alt="..." loading="eager" />  <!-- loads at once -->
+<img src="c.jpg" alt="..." />                  <!-- same as eager -->
+```
+
+You rarely need to write `eager`. It is useful only to override a lazy default set somewhere else.
+
+## Which Images Should Be Lazy?
+
+A page has a **visible area** when it first opens, often called **above the fold**. Everything beyond it is **below the fold**.
+
+```text
+┌──────────────────────────┐
+│  Logo        Menu        │  ← above the fold
+│  ┌────────────────────┐  │     Load these immediately
+│  │   Hero image       │  │
+│  └────────────────────┘  │
+│  Welcome to the site     │
+├──────────────────────────┤  ← the fold
+│  ┌─────┐  ┌─────┐        │  ← below the fold
+│  │ pic │  │ pic │        │     Lazy load these
+│  └─────┘  └─────┘        │
+│  ...                     │
+│  ┌────────────────────┐  │
+│  │  Footer picture    │  │
+│  └────────────────────┘  │
+└──────────────────────────┘
+```
+
+| Image | Lazy? | Why |
+| :-- | :-- | :-- |
+| The main image at the top of the page (hero) | **No** | It is the first thing visitors see. Delaying it hurts |
+| The logo in the header | **No** | It is visible at once |
+| Images in the first screen of content | **No** | They are needed immediately |
+| Images in the middle and bottom of a long page | **Yes** | The visitor may never reach them |
+| Images in a gallery below the first row | **Yes** | Most are off-screen |
+| Thumbnails in a long list | **Yes** | Hundreds can be far off-screen |
+| Images in tabs, accordions, and modals that start hidden | **Yes**, with care | They are not visible until opened |
+
+:::warning Never lazy load your main image
+The largest image visible when the page opens is usually what search engines measure as **Largest Contentful Paint (LCP)**, the moment the page seems loaded. Lazy loading it makes the page look slow. Give it `fetchpriority="high"` instead.
+:::
+
+### The Hero Image Done Right
+
+```html title="hero.html"
+<img
+  src="images/hero.jpg"
+  alt="Students learning to code together"
+  width="1600"
+  height="800"
+  fetchpriority="high"
+  decoding="async"
+/>
+<!-- No loading="lazy" here -->
+```
+
+`fetchpriority="high"` tells the browser: "this one matters most, download it first."
+
+### A Simple Rule
+
+> **Eager and high priority for what is visible at the start. Lazy for everything else.**
+
+If you are not sure which images are above the fold, remember that screens differ. A tall desktop monitor shows more than a small phone. When in doubt, leave the first one or two images on the page as normal.
+
+## Always Set `width` and `height`
+
+With lazy loading, an image arrives long after the page was built. If the browser has not reserved space for it, the content below will **jump** when the image appears, just as in the example from [Width and Height](./width-and-height).
+
+Worse, without a size, the browser thinks every unloaded image is 0 pixels tall. It may then consider *all* the lazy images "close to the screen" and start loading them all at once. That cancels the benefit.
+
+<Tabs>
+<TabItem value="bad" label="Problem" default>
+
+```html
+<img src="a.jpg" alt="..." loading="lazy" />
+<!-- No size: no space reserved, and the page jumps -->
+```
+
+</TabItem>
+<TabItem value="good" label="Good">
+
+```html
+<img src="a.jpg" alt="..." width="800" height="600" loading="lazy" />
+<style>
+  img { max-width: 100%; height: auto; }
+</style>
+```
+
+</TabItem>
+</Tabs>
+
+## A Complete Gallery Example
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="gallery.html"
+<h1>Harbor Gallery</h1>
+
+<!-- The first picture is in the first screen: load normally -->
+<img
+  src="images/harbor-1.jpg"
+  alt="Fishing boats resting in a calm harbor at sunrise"
+  width="1200"
+  height="800"
+  fetchpriority="high"
+/>
+
+<!-- The rest are below the fold: lazy -->
+<img src="images/harbor-2.jpg" alt="Nets drying on a pier" width="1200" height="800" loading="lazy" />
+<img src="images/harbor-3.jpg" alt="A lighthouse at dusk" width="1200" height="800" loading="lazy" />
+<img src="images/harbor-4.jpg" alt="Waves breaking on dark rocks" width="1200" height="800" loading="lazy" />
+```
+
+</TabItem>
+<TabItem value="notes" label="What loads when">
+
+| Moment | What downloads |
+| :-- | :-- |
+| Page opens | `harbor-1.jpg` (high priority) |
+| Visitor scrolls near picture 2 | `harbor-2.jpg` |
+| Visitor scrolls near picture 3 | `harbor-3.jpg` |
+| Visitor never scrolls to picture 4 | `harbor-4.jpg` is never downloaded |
+
+</TabItem>
+</Tabs>
+
+If the visitor leaves after the first screen, three images were never downloaded. That is data saved for them, and bandwidth saved for you.
+
+## Lazy Loading With `srcset` and `<picture>`
+
+Lazy loading works with everything you have learned. Put `loading` on the final `<img>`.
+
+```html title="lazy-picture.html"
+<picture>
+  <source type="image/avif" srcset="images/team-800.avif 800w, images/team-1600.avif 1600w" sizes="100vw" />
+  <source type="image/webp" srcset="images/team-800.webp 800w, images/team-1600.webp 1600w" sizes="100vw" />
+  <img
+    src="images/team-800.jpg"
+    srcset="images/team-800.jpg 800w, images/team-1600.jpg 1600w"
+    sizes="100vw"
+    alt="The CodeHarborHub team on a video call"
+    width="1600"
+    height="1067"
+    loading="lazy"
+    decoding="async"
+  />
+</picture>
+```
+
+`decoding="async"` is a good companion: it lets the browser decode the image off the main thread so scrolling stays smooth.
+
+## Lazy Loading Iframes
+
+`loading="lazy"` also works on `<iframe>`, which is helpful for embedded videos and maps that are heavy to load.
+
+```html title="lazy-iframe.html"
+<iframe
+  src="https://www.youtube-nocookie.com/embed/VIDEO_ID"
+  title="Course introduction video"
+  width="560"
+  height="315"
+  loading="lazy"
+  allowfullscreen>
+</iframe>
+```
+
+`VIDEO_ID` is a placeholder. Replace it with the real ID of the video you are embedding. Always give an iframe a descriptive `title`, and keep in mind that an embedded frame from another site can load scripts, so embed only sources you trust.
+
+## Placeholders: Something to Look at While Waiting
+
+Between the page opening and the image arriving, the reserved space is empty. A calm placeholder makes the wait feel smoother.
+
+```css title="placeholder.css"
+.photo {
+  background: #e2e8f0;          /* a soft color while loading */
+  aspect-ratio: 3 / 2;
+}
+```
+
+Other ideas, from simple to advanced:
+
+| Technique | Description |
+| :-- | :-- |
+| **Solid color** | A neutral color or the picture's average color |
+| **Low-quality preview** | A tiny, blurred version that is replaced by the sharp one |
+| **Gradient** | A soft gradient that matches the picture's tones |
+| **Skeleton** | A gray shape that matches the layout |
+
+Keep placeholders subtle. Flashing or moving effects can bother some visitors, so respect `prefers-reduced-motion` if you animate anything.
+
+## A JavaScript Fallback With `IntersectionObserver`
+
+Native lazy loading is supported by all current major browsers. If you need more control, such as for CSS background images or custom timing, you can build your own with `IntersectionObserver`, which tells you when an element enters the screen.
+
+```html title="observer.html"
+<img
+  class="lazy"
+  src="images/placeholder.svg"
+  data-src="images/team-photo.jpg"
+  alt="The CodeHarborHub team on a video call"
+  width="1200"
+  height="800"
+/>
+```
+
+```js title="observer.js"
+const images = document.querySelectorAll("img.lazy");
+
+if ("IntersectionObserver" in window) {
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      img.src = img.dataset.src;      // start the real download
+      img.classList.remove("lazy");
+      obs.unobserve(img);             // stop watching this one
+    });
+  }, { rootMargin: "200px 0px" });    // start 200px before it appears
+
+  images.forEach((img) => observer.observe(img));
+} else {
+  // Very old browsers: just load everything
+  images.forEach((img) => { img.src = img.dataset.src; });
+}
+```
+
+:::info Prefer the native attribute
+The native `loading="lazy"` needs no JavaScript, works even if scripts fail, and lets the browser use what it knows about the network. Reach for `IntersectionObserver` only when you truly need it. If you write your own, keep a `<noscript>` fallback so visitors without JavaScript still see the image.
+:::
+
+## Special Cases and Cautions
+
+- **Images in carousels.** Slides that are not visible yet can be lazy. Make sure the next slide loads before the visitor arrives, or it will flash in empty.
+- **Images in hidden tabs or accordions.** Browsers may not load images inside hidden elements until they are shown. Test that they appear quickly when opened.
+- **Printing.** A page printed before the visitor scrolled may show empty spaces for unloaded images. Many browsers handle this, but test if printing matters for your page.
+- **Search engines.** Modern search engines understand `loading="lazy"`. Avoid hiding important images behind scroll-only JavaScript tricks that crawlers cannot trigger.
+- **Screen readers.** The `alt` text is available even before the image loads, so write it carefully. See [Accessible Images](./accessible-images).
+- **Very small images.** Lazy loading a 1 KB icon saves almost nothing, and the extra scheduling work is not worth it.
+
+## Measuring the Result
+
+Do not guess. Check.
+
+1. **Open the Network tab** in your browser's developer tools and filter by **Img**.
+2. **Reload without scrolling.** Which images were downloaded? Only the ones near the top should appear.
+3. **Scroll slowly.** Watch new images appear in the list just before they come into view.
+4. **Compare totals.** Note the "transferred" size with and without `loading="lazy"`.
+5. **Run Lighthouse** or **PageSpeed Insights.** Look at the LCP, CLS, and total page weight.
+6. **Throttle the connection** to "Slow 3G" and see how the first screen behaves.
+
+| Check | What a good result looks like |
+| :-- | :-- |
+| First screen images | Load first and fast |
+| Off-screen images | Not downloaded until you scroll near them |
+| Layout | No jumps as images appear |
+| LCP image | Not lazy, and with high priority |
+
+## Lazy Loading for a Global Audience
+
+For visitors on limited data plans, lazy loading can save a large share of what a page costs. Pages with long galleries, blogs with many pictures, and shops with many thumbnails benefit most. It also helps people with older phones, since fewer images are decoded at once.
+
+Pair it with the other ideas in this section: modern formats, correctly sized files with `srcset`, and `width` and `height`. Together, they make a page that is quick and affordable everywhere.
+
+## Common Mistakes
+
+### Mistake 1: Lazy loading the main image
+
+It delays the most important image and makes the page look slow. Leave it eager, and add `fetchpriority="high"`.
+
+### Mistake 2: Lazy loading every image on the page
+
+The first-screen images should load normally.
+
+### Mistake 3: Forgetting `width` and `height`
+
+You get layout jumps, and the browser may load all lazy images early.
+
+### Mistake 4: Lazy loading tiny icons
+
+The saving is negligible, and the delay may be visible.
+
+### Mistake 5: Relying on a script with no fallback
+
+If JavaScript fails, the image never appears. Prefer native lazy loading, or provide `<noscript>`.
+
+### Mistake 6: Hiding important images from crawlers
+
+Do not make content images appear only after custom scroll events that search engines cannot trigger.
+
+### Mistake 7: Not testing
+
+Check the Network tab and a real phone. Behavior changes with screen size and connection speed.
+
+### Mistake 8: Skipping `alt`
+
+Lazy images still need good `alt` text.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Build a page with a hero image and at least ten pictures in a long gallery.
+2. Give every image `width` and `height`, and the standard `max-width: 100%; height: auto;` CSS.
+3. Open the Network tab, filter by Img, and reload. Note how many images download and their total size.
+4. Add `loading="lazy"` to every image except the hero, and add `fetchpriority="high"` to the hero. Reload and compare.
+5. Scroll slowly and watch images appear in the Network tab.
+6. Set the connection to "Slow 3G" and compare again.
+7. Add a soft background color to the image boxes, and notice how it looks while waiting.
+8. Bonus: write an `IntersectionObserver` version for one image, with a `<noscript>` fallback.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `loading="lazy"` do?</summary>
+
+It tells the browser to wait and load the image only when it is near the visible area, instead of at page load.
+
+</details>
+
+<details>
+<summary>2. Which images should you never lazy load?</summary>
+
+Images visible when the page opens, especially the main (hero) image that often determines Largest Contentful Paint. Give that one `fetchpriority="high"`.
+
+</details>
+
+<details>
+<summary>3. Why are `width` and `height` especially important with lazy loading?</summary>
+
+They reserve space so the page does not jump when the image arrives, and they stop the browser from thinking all unloaded images are close to the screen.
+
+</details>
+
+<details>
+<summary>4. Does lazy loading work on iframes?</summary>
+
+Yes. `loading="lazy"` can also be used on `<iframe>`, which helps with heavy embeds like videos and maps.
+
+</details>
+
+<details>
+<summary>5. When would you use `IntersectionObserver` instead of the native attribute?</summary>
+
+When you need more control, such as for CSS background images or custom loading timing. Otherwise, native lazy loading is simpler and more robust.
+
+</details>
+
+## Key Takeaways
+
+- Lazy loading delays off-screen images, saving data and making the first screen faster.
+- Add `loading="lazy"` to images below the fold, and never to the main image at the top.
+- Give the main image `fetchpriority="high"`, and every image `width` and `height`.
+- Use calm placeholders, and consider `IntersectionObserver` only when you need extra control.
+- Measure with the Network tab and Lighthouse, and test on slow connections.
+
+Your images now load when they are needed. Next, learn how to add captions that belong with their images in [Figure and Figcaption](./figure-and-figcaption).

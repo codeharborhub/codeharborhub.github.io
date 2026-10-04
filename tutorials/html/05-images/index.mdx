@@ -1,16 +1,250 @@
 ---
 id: images-overview
-title: "Working with Images in HTML"
-sidebar_label: "Working with Images"
+title: "HTML Images"
+sidebar_label: "Images"
 sidebar_position: 1
 slug: /html/images
-description: "Master HTML image elements, responsive image techniques, performance optimizations, semantic figures, and image accessibility with CodeHarborHub."
+description: "Learn how to add and manage images in HTML. Master the img element, src and alt, width and height, image formats, responsive images with srcset and the picture element, lazy loading, figure and figcaption, and accessible images with CodeHarborHub."
 keywords:
-  - HTML images overview
-  - HTML img tag tutorial
-  - responsive images HTML
+  - HTML images
+  - HTML img tag
+  - HTML alt text
+  - HTML image formats
+  - HTML responsive images
+  - HTML srcset and sizes
+  - HTML picture element
+  - HTML lazy loading images
+  - HTML figure and figcaption
+  - HTML accessible images
   - web image optimization
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, images, media, beginner]
---- 
+tags: [html, web-development, beginner, images, media, frontend]
+---
+
+A page with only text is like a book with no pictures. It can be great, but a photo of a harbor at sunrise, a chart that shows a trend, or a diagram that explains a machine can say in one second what takes a paragraph to describe.
+
+Images are also where web pages most often go wrong. They can make a page slow, break on small screens, shut out people who cannot see them, and cost visitors real money on mobile data. The good news is that every one of those problems has a simple, well-known solution in HTML. In this section, you will learn how to add images that look sharp, load fast, and work for everyone.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+In this section, you will be able to:
+
+- Add an image to a page with the **`<img>` element**
+- Write a correct **`src`** and a meaningful **`alt`** text
+- Set **`width` and `height`** so your page does not jump around while loading
+- Pick the right **image format** for photos, graphics, and icons
+- Serve the right size to every screen with **responsive images**, `srcset`, and `sizes`
+- Choose formats and crops with the **`<picture>` element**
+- Speed up your pages with **lazy loading**
+- Add captions with **`<figure>` and `<figcaption>`**
+- Make images **accessible** to people who cannot see them
+
+:::info Prerequisites
+You should know how to write basic HTML elements and how file paths work. If you need a refresher, read [Relative URLs](/tutorials/html/links-and-navigation/relative-urls) first.
+:::
+
+## Your First Image
+
+An image takes only one element. Here is the smallest useful version.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img
+  src="images/harbor.jpg"
+  alt="Fishing boats resting in a calm harbor at sunrise"
+  width="300"
+  height="160"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<img
+  src={"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 160'><rect width='300' height='160' fill='%23bfdbfe'/><circle cx='235' cy='48' r='22' fill='%23fbbf24'/><path d='M0 110 Q40 95 80 110 T160 110 T240 110 T300 110 V160 H0 Z' fill='%232563eb'/><path d='M0 130 Q40 118 80 130 T160 130 T240 130 T300 130 V160 H0 Z' fill='%231d4ed8'/><path d='M120 100 V55 L160 100 Z' fill='%23ffffff'/><rect x='112' y='100' width='56' height='8' rx='3' fill='%23334155'/></svg>"}
+  alt="A small sailboat on blue waves under a bright sun"
+  width="300"
+  height="160"
+/>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo above uses a small drawing built right into the page, because this lesson has no image files to load. In your own project, `src` points to a real file such as `images/harbor.jpg`.
+
+## The Anatomy of an Image
+
+An `<img>` is a **void element**: it has no content and no closing tag, like `<br />` and `<hr />`. All the information lives in its attributes.
+
+```html
+<img src="images/harbor.jpg" alt="Fishing boats at sunrise" width="300" height="160" />
+```
+
+| Attribute | What it does | Required? |
+| :-- | :-- | :-- |
+| `src` | The **address** of the image file | Yes |
+| `alt` | A **text alternative** for people and tools that cannot see the image | Yes, always |
+| `width` and `height` | The image's **size in pixels**, so the browser can reserve space | Strongly recommended |
+| `loading` | Whether to load the image right away or later (`lazy`) | Optional |
+| `srcset` and `sizes` | Several versions of the image for different screens | Optional |
+
+## Three Questions to Ask About Every Image
+
+Before you add an image, ask yourself these three questions. They guide almost every decision in this section.
+
+| Question | Why it matters | Where you will learn it |
+| :-- | :-- | :-- |
+| **Does the image mean something?** | Meaningful images need helpful `alt` text. Decorative ones need an empty `alt` | [Src and Alt](./images/src-and-alt), [Accessible Images](./images/accessible-images) |
+| **How big will it be on screen?** | A huge file on a small phone wastes data and time | [Responsive Images](./images/responsive-images), [Srcset and Sizes](./images/srcset-and-sizes) |
+| **What is the best file type?** | A photo, a logo, and a chart each have a best format | [Image Formats](./images/image-formats) |
+
+## Choosing a Format at a Glance
+
+You will study formats in depth later. This quick map gets you started.
+
+| Your image is... | Good choice | Why |
+| :-- | :-- | :-- |
+| A photograph | JPEG, WebP, or AVIF | Small files for rich colors |
+| A logo, icon, or simple illustration | SVG | Sharp at any size, and tiny |
+| A screenshot or image with sharp text | PNG or WebP | Keeps edges crisp |
+| A short animation | Animated WebP or video | Much smaller than a GIF |
+
+## Images and Page Speed
+
+Images are usually the **heaviest** part of a web page. On many sites, they make up more than half of everything a visitor has to download. A few habits make a big difference.
+
+1. **Resize before you upload.** Do not publish a 6000-pixel photo to show it at 600 pixels.
+2. **Use modern formats** like WebP and AVIF when they fit.
+3. **Give the browser sizes** with `width` and `height`, so the page does not jump.
+4. **Offer several versions** with `srcset`, so phones download smaller files.
+5. **Load later what is not visible yet** with `loading="lazy"`.
+
+Visitors around the world use slow connections and pay for each megabyte. Efficient images are not just a technical nicety. They make your page usable and affordable for everyone.
+
+## Images and Accessibility
+
+Some visitors cannot see your images. They may use a screen reader, have a very slow connection where images have not loaded, or use a text-only browser. The `alt` attribute is how your page speaks to them.
+
+<Tabs>
+<TabItem value="bad" label="Not helpful" default>
+
+```html
+<img src="chart.png" alt="chart" />
+<img src="photo1.jpg" alt="IMG_20261003_0457.jpg" />
+<img src="team.jpg" />
+```
+
+</TabItem>
+<TabItem value="good" label="Helpful">
+
+```html
+<img src="chart.png" alt="Bar chart: course sign-ups doubled between March and June" />
+<img src="photo1.jpg" alt="Students building a website together in a classroom" />
+<img src="divider.svg" alt="" />
+```
+
+The last image is purely decorative, so its `alt` is intentionally empty.
+
+</TabItem>
+</Tabs>
+
+:::tip The one-sentence test
+Imagine reading the page aloud to a friend over the phone. What would you say in place of the picture? That sentence is your `alt` text.
+:::
+
+## Your Learning Path
+
+Follow the lessons in order. Each one builds on the one before.
+
+<DocCardList />
+
+## Common Beginner Mistakes
+
+Here are a few traps worth knowing about before you start. Each one has its own lesson later.
+
+| Mistake | What goes wrong | Where you will fix it |
+| :-- | :-- | :-- |
+| Leaving out `alt`, or writing "image" | Screen reader users get nothing, or noise | [Src and Alt](./images/src-and-alt) |
+| A wrong file path | The image shows as a broken icon | [Src and Alt](./images/src-and-alt) |
+| No `width` and `height` | The text jumps down when the image finally loads | [Width and Height](./images/width-and-height) |
+| Using a huge photo for a small space | Slow pages and wasted data | [Responsive Images](./images/responsive-images) |
+| Using PNG for every photo | Files several times bigger than needed | [Image Formats](./images/image-formats) |
+| Loading every image at once | The page feels slow, even for images far below the fold | [Lazy Loading](./images/lazy-loading) |
+| Putting important text inside an image | It cannot be searched, translated, or read aloud | [Accessible Images](./images/accessible-images) |
+| Using someone else's picture without permission | Copyright trouble | See the tip below |
+
+:::warning Use images you have the right to use
+Do not copy pictures from other websites. Use your own photos and drawings, or images with a license that allows reuse, and follow its rules for credit. When in doubt, ask or choose a different picture.
+:::
+
+## Images for a Global Audience
+
+Your visitors come from many countries and cultures. A few thoughtful habits help.
+
+- **Write `alt` text in the language of the page,** and set the `lang` attribute.
+- **Avoid text inside images.** It cannot be translated by browsers or read aloud. Put the words in HTML instead.
+- **Choose pictures that many people can relate to.** Gestures, symbols, and clothing can mean different things in different places.
+- **Think about data costs.** Smaller files are kinder to visitors on limited plans.
+- **Show diverse people** when your pictures include people.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Test yourself. Click a question to reveal the answer.
+
+<details>
+<summary>1. Which element adds an image, and does it need a closing tag?</summary>
+
+The `<img>` element. It is a void element, so it has no closing tag.
+
+</details>
+
+<details>
+<summary>2. Which two attributes does every image need?</summary>
+
+`src`, the address of the file, and `alt`, a text alternative for people and tools that cannot see the image.
+
+</details>
+
+<details>
+<summary>3. Why should you set `width` and `height`?</summary>
+
+They let the browser reserve space before the image loads, so the page does not jump.
+
+</details>
+
+<details>
+<summary>4. What should the `alt` be for a purely decorative image?</summary>
+
+An empty value, `alt=""`, so screen readers skip it.
+
+</details>
+
+<details>
+<summary>5. Name two ways to make images load faster.</summary>
+
+Resize them before uploading, use modern formats like WebP or AVIF, offer smaller versions with `srcset`, and use `loading="lazy"` for images below the fold.
+
+</details>
+
+## Key Takeaways
+
+- Add images with the `<img>` element, which needs `src` and `alt`.
+- Write `alt` text that says what the image means. Use `alt=""` for decoration only.
+- Set `width` and `height` to keep your layout steady while images load.
+- Choose formats, sizes, and loading behavior with page speed and data costs in mind.
+- Make every image work for everyone: describe it, caption it when it helps, and keep important text out of pictures.
+
+Ready to begin? Start with [The img Element](./images/img-element).

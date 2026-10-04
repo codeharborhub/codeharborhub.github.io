@@ -1,16 +1,447 @@
 ---
-id: src-and-alt
-title: "Image Sources and Alt Text: src and alt Attributes"
-sidebar_label: "src & alt Attributes"
+id: html-src-and-alt
+title: "HTML Image src and alt Attributes"
+sidebar_label: "Src and Alt"
 sidebar_position: 3
 slug: /html/images/src-and-alt
-description: "Understand the critical role of src paths and descriptive alt text for image rendering, screen readers, fallback handling, and image SEO."
+description: "Learn how to write the src and alt attributes of an HTML image. Point to the right file with relative, root-relative and absolute paths, name files well, and write alt text for photos, icons, charts, logos, linked images and decorative graphics in any language on CodeHarborHub."
 keywords:
-  - HTML image src
-  - alt attribute accessibility
-  - descriptive alt text
-  - image fallback text
+  - HTML src attribute
+  - HTML alt attribute
+  - HTML image alt text
+  - how to write alt text
+  - empty alt decorative image
+  - HTML image path
+  - image file naming SEO
+  - alt text for charts
+  - alt text for linked images
+  - alt text best practices
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, accessibility, seo, attributes]
+tags: [html, web-development, beginner, images, src, alt, accessibility, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='%23dbeafe'/><circle cx='170' cy='50' r='24' fill='%23fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='%232563eb'/><path d='M70 110 V62 L112 110 Z' fill='%23ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='%23334155'/></svg>";
+
+Two small attributes decide whether an image works at all: **`src`** tells the browser *where* the picture is, and **`alt`** tells everyone *what* it is when they cannot see it.
+
+One is about the machine, the other is about people. Both are easy to get wrong, and both are worth getting right. A wrong `src` gives your visitors a broken icon. A missing or lazy `alt` shuts out anyone who uses a screen reader, and it quietly hurts your page in search results too. This lesson makes both attributes simple.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `src` works, with relative, root-relative, and absolute paths
+- How to name and organize image files
+- What `alt` text is, and who relies on it
+- How to write great `alt` text for photos, icons, charts, logos, and linked images
+- When to use an **empty** `alt`
+- How `alt` works in different languages
+- Common mistakes, and how to test your images
+
+## Part 1: The `src` Attribute
+
+`src` stands for **source**. Its value is the address of the image file. It follows the same rules as any other URL, so everything you learned in [Relative URLs](/tutorials/html/links-and-navigation/relative-urls) and [Absolute URLs](/tutorials/html/links-and-navigation/absolute-urls) applies here.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img src="images/harbor.jpg" alt="Fishing boats at sunrise" width="240" height="160" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<img src={sample} alt="A small sailboat on blue waves under a bright sun" width="240" height="160" />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo uses a small drawing built into the page. In your project, `src` points to a real file.
+
+### Four Ways to Write a Path
+
+Imagine this project.
+
+```text
+my-website/
+├── index.html
+├── images/
+│   ├── logo.svg
+│   └── team/
+│       └── photo.jpg
+└── blog/
+    └── first-post.html
+```
+
+| Kind | Example | Where it is measured from |
+| :-- | :-- | :-- |
+| **Relative to the page** | `images/logo.svg` | The folder of the current page |
+| **Going up a folder** | `../images/logo.svg` | One folder above the current page |
+| **Root-relative** | `/images/logo.svg` | The root of the website |
+| **Absolute** | `https://example.com/images/logo.svg` | Nowhere. It is complete |
+
+In `index.html`, you write `images/team/photo.jpg`. In `blog/first-post.html`, the same file is `../images/team/photo.jpg`.
+
+:::tip Pick one habit and keep it
+Relative paths work everywhere, including on your own computer. Root-relative paths are tidy but need the site to live at the top of a domain. Absolute paths are for images hosted somewhere else, such as a content delivery network (CDN) you control.
+:::
+
+### Name Your Files Well
+
+A good file name helps you, your teammates, and search engines.
+
+| Weak | Better | Why |
+| :-- | :-- | :-- |
+| `IMG_4521.JPG` | `students-coding-workshop.jpg` | Says what the picture shows |
+| `Final Logo (2).png` | `codeharborhub-logo.png` | No spaces, brackets, or "final" |
+| `Photo.JPG` | `photo.jpg` | Lowercase avoids case problems on servers |
+| `café-münchen.jpg` | `cafe-munchen.jpg` | Plain letters work everywhere |
+
+Rules to follow:
+
+1. **Use lowercase letters, numbers, and hyphens.**
+2. **Describe the content,** with a few words.
+3. **Avoid spaces and special characters.** If a space is unavoidable, it must be written as `%20` in the URL.
+4. **Keep the extension honest.** A `.jpg` should be a real JPEG.
+
+### Images From Another Site
+
+You can point `src` to a picture on another website.
+
+```html
+<img src="https://images.example.com/photos/sunrise.jpg" alt="Sunrise over a harbor" width="600" height="400" />
+```
+
+Do this only with permission, or for files that a service clearly offers for embedding. Otherwise you use their bandwidth, the file may change or vanish, and you may break copyright rules. Always prefer a copy that you control. Use `https` so browsers do not block the image on a secure page.
+
+### Data URIs: Images Inside the Code
+
+A `data:` URI places the whole image inside the `src` text. It needs no separate file, but it makes the HTML long. It is useful only for very small images, such as the tiny drawings in this tutorial.
+
+```html
+<img
+  src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><circle cx='5' cy='5' r='4' fill='%232563eb'/></svg>"
+  alt=""
+  width="24"
+  height="24"
+/>
+```
+
+For anything bigger, use a normal file, so the browser can cache it.
+
+## Part 2: The `alt` Attribute
+
+`alt` stands for **alternative text**. It is a short description that stands in for the image when the picture cannot be seen or shown.
+
+### Who Uses `alt` Text?
+
+| Who | How they meet `alt` |
+| :-- | :-- |
+| **Screen reader users** | Their software reads the `alt` aloud |
+| **People on slow or failed connections** | The browser shows `alt` while the image loads, or if it fails |
+| **People who turned images off** | To save data, or for focus |
+| **Search engines** | They read `alt` to understand and index the image |
+| **Text-only and reader-mode tools** | They show `alt` instead of the picture |
+| **Voice assistants and translation tools** | They use `alt` to describe a page |
+
+Roughly speaking, `alt` is not an extra. It is the **version of the image** for everyone who cannot see it.
+
+### The Golden Rule
+
+> Write the `alt` text that would give the visitor the same information or the same function as the image.
+
+Ask: **what is this image doing here?**
+
+- Is it giving **information**? Say that information.
+- Is it a **link or button**? Say where it goes or what it does.
+- Is it **decoration**? Leave `alt` empty.
+
+## How to Write Good `alt` Text
+
+### 1. Be Specific and Concise
+
+Describe what matters, in a short phrase or sentence. Aim for around 125 characters or fewer as a guide, not a strict rule.
+
+<Tabs>
+<TabItem value="weak" label="Weak" default>
+
+```html
+<img src="boats.jpg" alt="boats" />
+<img src="boats.jpg" alt="image" />
+<img src="boats.jpg" alt="boats.jpg" />
+<img src="boats.jpg" alt="harbor sunrise boats water sea fishing photo best cheap" />
+```
+
+</TabItem>
+<TabItem value="strong" label="Strong">
+
+```html
+<img src="boats.jpg" alt="Fishing boats resting in a calm harbor at sunrise" />
+```
+
+</TabItem>
+</Tabs>
+
+### 2. Do Not Start With "Image of" or "Picture of"
+
+Screen readers already announce "image" or "graphic." Starting with those words repeats it.
+
+| Instead of | Write |
+| :-- | :-- |
+| "Image of a girl reading a book" | "A girl reading a book under a tree" |
+| "Photo of our office" | "Our office, with a long table and large windows" |
+
+### 3. Match the Image to the Context
+
+The same picture can need different `alt` text on different pages.
+
+| Page | Picture of a lighthouse | Good `alt` |
+| :-- | :-- | :-- |
+| Travel guide | A lighthouse at dusk | "A white lighthouse glowing at dusk on a rocky coast" |
+| Article on architecture | The same photo | "The lighthouse's spiral stone tower, built in 1850" |
+| Company logo area | A lighthouse logo | "Beacon Books home" |
+
+### 4. Do Not Stuff Keywords
+
+Search engines recognize it, visitors find it annoying, and screen reader users have to listen to it. Write for people.
+
+### 5. Use Normal Sentences and Punctuation
+
+A final period helps screen readers pause naturally, and it is optional. What matters is that the text reads smoothly aloud.
+
+## Writing `alt` for Different Kinds of Images
+
+| Type of image | What to write | Example |
+| :-- | :-- | :-- |
+| **Photo that supports an article** | What is shown, and why it matters | `alt="Students on a video call, sharing their code on a screen"` |
+| **Logo** | The organization's name, and where it goes if linked | `alt="CodeHarborHub"` or `alt="CodeHarborHub home"` |
+| **Icon with a label next to it** | Empty, since the label already says it | `alt=""` |
+| **Icon alone, in a button or link** | The **action** or destination | `alt="Search"`, `alt="Download the PDF"` |
+| **Decorative divider or background shape** | Empty | `alt=""` |
+| **Photo of a person** | Who, and what they are doing, if it matters | `alt="Amara Okafor, course instructor, smiling at a whiteboard"` |
+| **Chart or graph** | The main conclusion, and give the data elsewhere | `alt="Bar chart: course sign-ups doubled between March and June"` |
+| **Screenshot** | What it shows, and the key details | `alt="Browser window showing the page with a blue Sign Up button"` |
+| **Image of text** | The same words | `alt="Sale ends Sunday"` |
+| **Map** | Where, and what the reader needs from it | `alt="Map: the school is two blocks north of the train station"` |
+
+### Linked Images
+
+When an image is the only thing inside a link, the `alt` text **is** the link text. Describe the destination.
+
+```html
+<a href="/">
+  <img src="images/logo.svg" alt="CodeHarborHub home" width="140" height="40" />
+</a>
+```
+
+### Charts and Complex Images
+
+A short `alt` cannot hold all the data in a chart. Give a brief conclusion in `alt`, and put the full information next to the image as text, in a table, or in a longer description.
+
+```html
+<figure>
+  <img
+    src="images/signups.png"
+    alt="Bar chart: course sign-ups doubled between March and June"
+    width="600"
+    height="360"
+  />
+  <figcaption>
+    Sign-ups grew from 120 in March to 250 in June.
+    <a href="#signups-table">See the full data table.</a>
+  </figcaption>
+</figure>
+```
+
+You will see how `<figure>` and `<figcaption>` work in [Figure and Figcaption](./figure-and-figcaption), and go deeper on these cases in [Accessible Images](./accessible-images).
+
+## Part 3: The Empty `alt`
+
+Some images do not add anything for a person who cannot see them. Examples are decorative lines, background swirls, and icons that repeat the text next to them. For these, write an **empty** `alt`.
+
+```html
+<img src="images/divider.svg" alt="" width="300" height="12" />
+```
+
+A screen reader **skips** an image with `alt=""`. That is exactly what you want.
+
+### Empty vs Missing: A Big Difference
+
+| What you write | What a screen reader may do |
+| :-- | :-- |
+| `alt=""` | Skips the image completely. Correct for decoration |
+| `alt` left out entirely | May read the file name, such as "IMG underscore 4521 dot jpg," or announce "image" with no explanation |
+| `alt="decorative image"` | Reads those words aloud, which is just noise |
+
+:::warning Never leave `alt` out
+An `<img>` without `alt` is invalid HTML, and it is a real barrier. If the image is decorative, write `alt=""`. If it is meaningful, write a description.
+:::
+
+### Is It Decoration? Test It
+
+Ask: **if I remove this image, does the page lose any information or function?**
+
+- If **no**, it is decoration. Use `alt=""`, or put it in CSS as a background.
+- If **yes**, describe what would be lost.
+
+## `alt`, Captions, and `title`
+
+These three are different tools.
+
+| | `alt` | Caption (`<figcaption>`) | `title` |
+| :-- | :-- | :-- | :-- |
+| Seen by | Mostly people who cannot see the image | Everyone | Mouse users on hover |
+| Purpose | A replacement for the image | Extra information about the image | A tooltip |
+| Required? | Always | Optional | Optional, use rarely |
+
+Do not copy the same text into both `alt` and the caption. If a caption already describes the image well, the `alt` can be shorter or focus on what the caption leaves out.
+
+## `alt` for a Global Audience
+
+- **Write `alt` in the language of the page.** A Hindi page needs Hindi `alt` text, so Hindi screen readers pronounce it properly.
+- **Mark text in another language** with `lang` on the image, for example `<img ... alt="Bonjour" lang="fr" />`.
+- **Avoid slang and idioms,** which translate badly in automatic tools.
+- **Use plain, clear words.** Many visitors read in their second or third language.
+- **Spell out names** with their usual spelling, and avoid abbreviations people may not know.
+- **Do not hide key information only in the picture.** Translation tools cannot translate text inside an image.
+
+<Tabs>
+<TabItem value="en" label="English" default>
+
+```html
+<img src="images/library.jpg" alt="Students reading quietly in the school library" />
+```
+
+</TabItem>
+<TabItem value="es" label="Español">
+
+```html
+<img src="images/library.jpg" alt="Estudiantes leyendo en silencio en la biblioteca de la escuela" />
+```
+
+</TabItem>
+<TabItem value="hi" label="हिन्दी">
+
+```html
+<img src="images/library.jpg" alt="स्कूल के पुस्तकालय में शांति से पढ़ते विद्यार्थी" />
+```
+
+</TabItem>
+</Tabs>
+
+## Testing Your Images
+
+Do not guess. Check.
+
+1. **Turn off images** in your browser settings, or break a `src` on purpose. Does the page still make sense with only the `alt` text?
+2. **Use a screen reader** for a minute: VoiceOver on Apple devices, TalkBack on Android, or a free one such as NVDA on Windows.
+3. **Run an accessibility checker.** Browser developer tools and extensions flag missing `alt`.
+4. **Read all your `alt` text in a row.** Do the descriptions sound useful, or repetitive?
+5. **Ask someone else** what they understand from the `alt` alone.
+
+## Common Mistakes
+
+### Mistake 1: A wrong path
+
+A typo, a wrong folder, or a capital letter breaks the image. Check against your folder map.
+
+### Mistake 2: Missing `alt`
+
+Always include it, even if empty.
+
+### Mistake 3: Useless `alt` such as "image" or the file name
+
+It adds noise and no information.
+
+### Mistake 4: Keyword stuffing
+
+It harms accessibility and trust.
+
+### Mistake 5: Describing too much
+
+A paragraph in `alt` is hard to listen to. Put long details in the page text.
+
+### Mistake 6: Describing decoration
+
+If the image adds nothing, use `alt=""`, and do not make visitors listen to it.
+
+### Mistake 7: Describing the look instead of the function
+
+A search icon inside a button should say "Search," not "magnifying glass."
+
+### Mistake 8: Important words inside the image only
+
+Repeat the text in the `alt`, or better, put it in HTML.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a folder `images` with at least five pictures of different kinds: a photo, a logo, an icon, a decorative shape, and a chart or screenshot.
+2. Rename every file with a clear, lowercase, hyphenated name.
+3. Create `alt-practice.html` and add each image with a correct `src`.
+4. Write a thoughtful `alt` for each one, using the table in this lesson.
+5. Make the logo a link to the home page, with `alt` that describes the destination.
+6. Mark the decorative shape with `alt=""`.
+7. Break one `src` on purpose and check that the page still makes sense.
+8. Turn on a screen reader and listen to the page. Rewrite any `alt` that sounds odd.
+9. Bonus: write the same `alt` texts in a second language.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `src` attribute contain?</summary>
+
+The address of the image file, as a relative, root-relative, or absolute URL.
+
+</details>
+
+<details>
+<summary>2. Why are lowercase, hyphenated file names recommended?</summary>
+
+Many servers are case-sensitive, and spaces or special characters can break URLs. Clear names also help people and search engines.
+
+</details>
+
+<details>
+<summary>3. What is the main purpose of `alt` text?</summary>
+
+To give the same information or function as the image to anyone who cannot see it.
+
+</details>
+
+<details>
+<summary>4. When should `alt` be empty?</summary>
+
+When the image is decorative or its meaning is already given by nearby text, so that a screen reader skips it.
+
+</details>
+
+<details>
+<summary>5. What should `alt` say for an image that is the only content of a link?</summary>
+
+Where the link goes, such as "CodeHarborHub home," because the `alt` text becomes the link's name.
+
+</details>
+
+## Key Takeaways
+
+- `src` points to the file. Use correct relative paths, simple lowercase file names, and `https` for outside images.
+- `alt` is the image's text version. Write it for the visitor who cannot see the picture.
+- Match the `alt` to the image's job: information, function, or decoration.
+- Use `alt=""` for decoration, never leave `alt` out, and never write "image of."
+- Write `alt` in the page's language, keep it concise, and test with images turned off and a screen reader.
+
+You can now point to your images and describe them well. Next, learn how to stop your page from jumping while images load with [Width and Height](./width-and-height).

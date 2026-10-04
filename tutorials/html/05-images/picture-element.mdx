@@ -1,16 +1,439 @@
 ---
-id: picture-element
-title: "Art Direction with the HTML picture Element"
-sidebar_label: "Picture Element (<picture>)"
-sidebar_position: 6
+id: html-picture-element
+title: "The HTML picture Element"
+sidebar_label: "Picture Element"
+sidebar_position: 8
 slug: /html/images/picture-element
-description: "Master the picture element to provide fallback image formats, media query conditioning, and advanced art direction for various device viewports."
+description: "Learn how the HTML picture element works. Use source and img together to switch image formats with fallbacks, art direction with media queries, combine srcset and sizes, serve dark-mode images, and avoid common mistakes with AVIF, WebP and JPEG on CodeHarborHub."
 keywords:
   - HTML picture element
-  - picture vs img
-  - art direction web design
-  - WebP AVIF fallback
+  - HTML source element
+  - picture AVIF WebP fallback
+  - art direction images
+  - picture media query
+  - prefers-color-scheme picture
+  - picture srcset sizes
+  - responsive images picture
+  - image type attribute
+  - dark mode images HTML
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, picture-tag, responsive-design, media]
+tags: [html, web-development, beginner, images, picture, responsive, frontend]
 ---
+
+export const wide = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 120'><rect width='240' height='120' fill='#dbeafe'/><circle cx='200' cy='30' r='14' fill='#fbbf24'/><path d='M0 90 Q30 78 60 90 T120 90 T180 90 T240 90 V120 H0 Z' fill='#2563eb'/><path d='M100 82 V40 L135 82 Z' fill='#ffffff'/><rect x='94' y='82' width='48' height='7' rx='3' fill='#334155'/></svg>");
+
+export const crop = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' fill='#dbeafe'/><circle cx='95' cy='25' r='10' fill='#fbbf24'/><path d='M0 90 Q15 78 30 90 T60 90 T90 90 T120 90 V120 H0 Z' fill='#2563eb'/><path d='M40 82 V30 L82 82 Z' fill='#ffffff'/><rect x='32' y='82' width='58' height='8' rx='3' fill='#334155'/></svg>");
+
+Most of the time, a single `<img>` is all you need. But sometimes the browser needs a **choice** that you want to control yourself: use this file format if you understand it, otherwise that one; show this crop on a phone and that crop on a desktop; show a light logo in a dark theme.
+
+The `<picture>` element is the tool for these jobs. It wraps one or more `<source>` elements and a final `<img>`. The browser goes through the sources from top to bottom, and takes the **first one that matches**. If none matches, it uses the `<img>`. It is a small element with a lot of power, and in this lesson, you will see its three main uses.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The structure of `<picture>`, and the role of each part
+- How the browser decides which `<source>` to use
+- How to offer **modern formats** with a safe fallback
+- How to do **art direction** with different crops for different screens
+- How to combine `<picture>` with `srcset` and `sizes`
+- How to serve different images for **light and dark mode**
+- Common mistakes, and how to avoid them
+
+## The Structure
+
+```html title="structure.html"
+<picture>
+  <source ... />     <!-- zero or more sources, checked in order -->
+  <source ... />
+  <img ... />        <!-- required: the fallback, and the real image -->
+</picture>
+```
+
+| Part | Its job |
+| :-- | :-- |
+| `<picture>` | A container. It does not display anything itself |
+| `<source>` | A candidate. It says "use this file **if** these conditions are true" |
+| `<img>` | The **required** last child. It is the fallback and also holds `alt`, `width`, `height`, `loading`, and styling |
+
+:::warning The `<img>` is not optional
+Without a final `<img>`, nothing is displayed. The `<img>` is also where `alt`, `width`, and `height` belong. Never put `alt` on a `<source>`.
+:::
+
+### What a `<source>` Can Say
+
+| Attribute | Meaning | Example |
+| :-- | :-- | :-- |
+| `srcset` | The file (or files) to use | `srcset="images/harbor.webp"` |
+| `type` | The file's MIME type. The browser skips the source if it cannot display that type | `type="image/avif"` |
+| `media` | A media condition. The source applies only when it is true | `media="(min-width: 60rem)"` |
+| `sizes` | The display width, as in `<img sizes>` | `sizes="100vw"` |
+| `width` and `height` | Dimensions of the file, to reserve space | `width="800" height="800"` |
+
+### How the Browser Chooses
+
+1. Look at the first `<source>`. Does its `media` condition match? Does the browser support its `type`?
+2. If **yes**, use it and stop looking.
+3. If **no**, move to the next `<source>`.
+4. If none matches, use the `<img>`'s own `src` and `srcset`.
+
+The browser stops at the **first match**, so the **order is important**.
+
+## Use 1: Modern Formats With a Fallback
+
+Newer formats like AVIF and WebP are smaller, but older browsers may not understand them. `<picture>` lets you offer them safely.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="formats.html"
+<picture>
+  <source srcset="images/harbor.avif" type="image/avif" />
+  <source srcset="images/harbor.webp" type="image/webp" />
+  <img
+    src="images/harbor.jpg"
+    alt="Fishing boats resting in a calm harbor at sunrise"
+    width="1200"
+    height="800"
+  />
+</picture>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/formats.html">
+<>
+<picture>
+  <img
+    src={wide}
+    alt="Fishing boats resting in a calm harbor at sunrise"
+    width="240"
+    height="120"
+    style={{maxWidth: '100%', height: 'auto'}}
+  />
+</picture>
+<p>Here the picture holds only an image, since the demo has no AVIF or WebP files to try.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+What each browser does with that code:
+
+| Browser | Result |
+| :-- | :-- |
+| Understands AVIF | Uses `harbor.avif`, the smallest file |
+| Does not understand AVIF, understands WebP | Skips the first source, uses `harbor.webp` |
+| Understands neither | Uses `harbor.jpg` from the `<img>` |
+
+Put the **best and newest** format first, the next best second, and the universal fallback last in the `<img>`.
+
+:::tip Why the `type` attribute matters
+Without `type`, the browser would have to download the file to find out whether it can show it. With `type`, it knows at once and skips sources it cannot use without any wasted download.
+:::
+
+### Common MIME Types
+
+| Format | `type` value |
+| :-- | :-- |
+| AVIF | `image/avif` |
+| WebP | `image/webp` |
+| JPEG | `image/jpeg` |
+| PNG | `image/png` |
+| SVG | `image/svg+xml` |
+| GIF | `image/gif` |
+
+## Use 2: Art Direction
+
+**Art direction** means showing a different *picture* depending on the situation, not just a different size of the same one.
+
+Imagine a wide photograph of a harbor. On a desktop, it is lovely. On a narrow phone, it shrinks until the sailboat is a speck. A tighter, square crop around the boat would work far better.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="art-direction.html"
+<picture>
+  <!-- On narrow screens, use the tight square crop -->
+  <source
+    media="(max-width: 40rem)"
+    srcset="images/harbor-square.jpg"
+    width="800"
+    height="800"
+  />
+  <!-- Otherwise, use the wide picture -->
+  <img
+    src="images/harbor-wide.jpg"
+    alt="A white sailboat on blue waves under a bright sun"
+    width="1600"
+    height="800"
+  />
+</picture>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/art-direction.html">
+<>
+<picture>
+  <source media="(max-width: 40rem)" srcSet={crop} width="120" height="120" />
+  <img
+    src={wide}
+    alt="A white sailboat on blue waves under a bright sun"
+    width="240"
+    height="120"
+    style={{maxWidth: '100%', height: 'auto'}}
+  />
+</picture>
+<p>On a screen narrower than 40rem, this shows a tight square crop. On a wider screen, it shows the wide picture.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+This demo is live. If you are reading on a phone, you see the square crop. On a computer, you see the wide version. Make your browser window narrower to watch it change.
+
+### Several Breakpoints
+
+You can add as many sources as you need. Order them from the **most specific** (usually the smallest screen) to the least.
+
+```html title="breakpoints.html"
+<picture>
+  <source media="(max-width: 30rem)" srcset="images/hero-portrait.jpg" />
+  <source media="(max-width: 60rem)" srcset="images/hero-square.jpg" />
+  <img src="images/hero-wide.jpg" alt="Students learning to code together" width="1600" height="800" />
+</picture>
+```
+
+### Remember: Same Meaning, Different Crop
+
+All the versions must convey the **same information** to match the single `alt` text. If the wide version shows a whole classroom and the narrow version shows only one student, the `alt` may be wrong for one of them. Choose crops that keep the main subject.
+
+## Use 3: Combining With `srcset` and `sizes`
+
+Each `<source>` can have its own `srcset` and `sizes`, so you can offer several **sizes** of each **format**. This is the full power of responsive images.
+
+```html title="full-example.html"
+<picture>
+  <source
+    type="image/avif"
+    srcset="
+      images/harbor-400.avif   400w,
+      images/harbor-800.avif   800w,
+      images/harbor-1600.avif 1600w
+    "
+    sizes="(min-width: 60rem) 50vw, 100vw"
+  />
+  <source
+    type="image/webp"
+    srcset="
+      images/harbor-400.webp   400w,
+      images/harbor-800.webp   800w,
+      images/harbor-1600.webp 1600w
+    "
+    sizes="(min-width: 60rem) 50vw, 100vw"
+  />
+  <img
+    src="images/harbor-800.jpg"
+    srcset="
+      images/harbor-400.jpg   400w,
+      images/harbor-800.jpg   800w,
+      images/harbor-1600.jpg 1600w
+    "
+    sizes="(min-width: 60rem) 50vw, 100vw"
+    alt="Fishing boats resting in a calm harbor at sunrise"
+    width="1600"
+    height="1067"
+    loading="lazy"
+    decoding="async"
+  />
+</picture>
+```
+
+This looks long, but it is straightforward: three formats, each with three sizes. The browser first picks the best format it understands, then the best size from that format's list.
+
+Build tools and image services can generate this markup for you, so you rarely need to write it by hand for a whole site.
+
+## Use 4: Light and Dark Mode
+
+The `media` attribute can test the visitor's color theme. This is useful for logos and diagrams that need a different version on dark backgrounds.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="dark-mode.html"
+<picture>
+  <source srcset="images/logo-light.svg" media="(prefers-color-scheme: dark)" />
+  <img src="images/logo-dark.svg" alt="CodeHarborHub" width="160" height="48" />
+</picture>
+```
+
+</TabItem>
+<TabItem value="notes" label="How it reads">
+
+If the visitor's system is set to dark mode, the browser uses `logo-light.svg`, a light-colored logo that stands out on a dark background. Otherwise, it uses `logo-dark.svg`, a dark logo for light backgrounds.
+
+</TabItem>
+</Tabs>
+
+If your page has its own theme switch that does not follow the system setting, the media query will not know about it. In that case, use CSS classes and swap the images with JavaScript or CSS.
+
+### Other Useful Media Conditions
+
+| Condition | Matches when |
+| :-- | :-- |
+| `(orientation: portrait)` | The window is taller than wide |
+| `(min-resolution: 2dppx)` | The screen is high-density |
+| `(prefers-reduced-motion: reduce)` | The visitor prefers less motion (useful for choosing a still image over an animation) |
+| `print` | The page is being printed |
+
+```html title="print.html"
+<picture>
+  <source media="print" srcset="images/diagram-high-contrast.png" />
+  <img src="images/diagram-color.png" alt="Diagram of how a browser loads an image" width="800" height="500" />
+</picture>
+```
+
+## Styling a `<picture>`
+
+The `<picture>` element is only a wrapper. The visible image is the `<img>` inside, so **style the `<img>`**.
+
+```css title="picture.css"
+picture img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+```
+
+Styles written for `picture` itself, such as `border-radius` or `width`, affect the invisible wrapper and may not do what you expect. Put the CSS on the `<img>`.
+
+## Choosing Between `<img srcset>` and `<picture>`
+
+| You want to... | Use |
+| :-- | :-- |
+| Offer several **sizes** of the same picture and let the browser choose | `<img>` with `srcset` and `sizes` |
+| Offer several **formats** with a fallback | `<picture>` with `type` |
+| Show a different **crop or composition** on different screens | `<picture>` with `media` |
+| Swap images for **dark mode** or **print** | `<picture>` with `media` |
+| Do all of these | `<picture>` with sources that also have `srcset` and `sizes` |
+
+Remember: with `srcset` the browser *decides*. With `<picture>` and `media`, *you* decide, and the browser follows your rules. Use the simplest tool that does the job.
+
+## Accessibility and Global Audiences
+
+- **One `alt`, on the `<img>`.** Every source shares it, so write text that fits all versions.
+- **Keep the content equal.** A crop that removes important information is an accessibility problem.
+- **Do not put text in the images.** Different crops may cut it off, and translators cannot reach it.
+- **Think about data costs.** A format fallback chain lets visitors with newer browsers download less. Visitors in places where data is expensive benefit the most.
+- **Respect preferences.** Dark mode, reduced motion, and print are real needs, and `<picture>` lets you honor them.
+
+## Common Mistakes
+
+### Mistake 1: Forgetting the `<img>`
+
+Without it, nothing shows, and there is nowhere for `alt` to go.
+
+### Mistake 2: Putting `alt` on `<source>`
+
+Only the `<img>` takes `alt`, `width`, and `height`.
+
+### Mistake 3: Putting the fallback format first
+
+Browsers stop at the first match. If JPEG is first, they never reach the AVIF.
+
+### Mistake 4: Leaving out `type` on format sources
+
+The browser may download files it cannot use or make a worse choice.
+
+### Mistake 5: Wrong order of media conditions
+
+The first matching source wins. List narrower conditions first, so a wider condition does not catch everything.
+
+### Mistake 6: Using `<picture>` when `srcset` is enough
+
+If you only change **sizes**, an `<img>` with `srcset` and `sizes` is simpler, and the browser can adapt to the network.
+
+### Mistake 7: Styling the `<picture>` instead of the `<img>`
+
+The visible image is the `<img>`.
+
+### Mistake 8: Different crops that change the meaning
+
+The single `alt` must fit them all.
+
+### Mistake 9: Forgetting `width` and `height`
+
+They prevent layout shift, as you learned in [Width and Height](./width-and-height). When crops have different shapes, set the dimensions on each `<source>` too.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Take a wide photo and make three versions: AVIF, WebP, and JPEG. Compare their file sizes.
+2. Build a `<picture>` with two `<source>` elements (AVIF and WebP, each with `type`) and a JPEG `<img>` with `alt`, `width`, and `height`.
+3. Open the Network tab. Which file does your browser download?
+4. Make a tight square crop of the same photo. Add a `<source media="(max-width: 40rem)">` for it.
+5. Resize your browser or use the device toolbar. Does the crop change at the right width?
+6. Add `srcset` and `sizes` to the sources, using two sizes of each file.
+7. Make a light and a dark version of a simple logo, and swap them with `prefers-color-scheme`.
+8. Style `picture img` with `max-width: 100%`, `height: auto`, and a rounded corner.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the required parts of a `<picture>` element?</summary>
+
+A `<picture>` wrapper and a final `<img>`. The `<source>` elements are optional, but they are what makes `<picture>` useful.
+
+</details>
+
+<details>
+<summary>2. How does the browser choose between several `<source>` elements?</summary>
+
+It checks them from top to bottom and uses the first one whose `media` condition matches and whose `type` it supports. If none match, it uses the `<img>`.
+
+</details>
+
+<details>
+<summary>3. Why add a `type` attribute to a format source?</summary>
+
+So the browser can skip formats it does not support without downloading anything.
+
+</details>
+
+<details>
+<summary>4. What is art direction?</summary>
+
+Showing a different crop or composition of an image for different situations, such as a tight square on small screens and a wide picture on large ones.
+
+</details>
+
+<details>
+<summary>5. Where do `alt`, `width`, and `height` belong in a `<picture>`?</summary>
+
+On the final `<img>` element, never on the `<source>` elements (except that `<source>` may carry `width` and `height` for its own file).
+
+</details>
+
+## Key Takeaways
+
+- `<picture>` holds `<source>` elements and a required `<img>`, and the browser uses the first matching source.
+- Use `type` to offer AVIF and WebP with a JPEG fallback, and `media` for different crops, dark mode, or print.
+- Sources can have their own `srcset` and `sizes`, so you can offer sizes for each format.
+- Put `alt`, `width`, `height`, and `loading` on the `<img>`, and style the `<img>` rather than the `<picture>`.
+- Choose the simplest tool: `srcset` for sizes, `<picture>` when you need to control the format or the crop.
+
+Now you can control exactly which image each visitor gets. Next, learn how to delay loading images that are not yet visible with [Lazy Loading](./lazy-loading).
