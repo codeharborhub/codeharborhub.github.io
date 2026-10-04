@@ -1,16 +1,393 @@
 ---
-id: responsive-images
-title: "Introduction to Responsive Images in HTML"
+id: html-responsive-images
+title: "Responsive Images in HTML"
 sidebar_label: "Responsive Images"
-sidebar_position: 5
+sidebar_position: 6
 slug: /html/images/responsive-images
-description: "Discover core responsive image concepts, device pixel ratios, viewport switching, art direction, and serving screen-optimized visuals."
+description: "Learn the big picture of responsive images in HTML. Understand screen sizes and pixel density, flexible images with CSS, resolution switching with srcset, art direction with the picture element, fluid galleries with CSS grid, and how to test what the browser downloads on CodeHarborHub."
 keywords:
   - responsive images HTML
-  - high DPI screens images
+  - responsive images CSS
   - device pixel ratio
-  - art direction HTML
+  - CSS pixels vs device pixels
+  - fluid image gallery CSS grid
+  - srcset and picture overview
+  - art direction images
+  - resolution switching
+  - img currentSrc
+  - mobile first images
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, responsive-design, images, css]
+tags: [html, web-development, beginner, images, responsive, performance, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='%23dbeafe'/><circle cx='170' cy='50' r='24' fill='%23fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='%232563eb'/><path d='M70 110 V62 L112 110 Z' fill='%23ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='%23334155'/></svg>";
+
+Your page will be seen on a tiny phone held in one hand, on a tablet on a kitchen table, on a laptop, on a huge monitor in an office, and on a television across a room. The screens differ in size by a factor of ten, in sharpness by a factor of three, and the internet connections feeding them differ even more.
+
+If you serve the same single image to all of them, somebody loses. The phone downloads far more than it can show. The big monitor gets a blurry, stretched picture. **Responsive images** are the set of tools HTML and CSS give you so that every visitor gets an image that fits their screen, looks sharp, and does not waste their data. This lesson is the map. The next lessons walk each road in detail.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Why one image file cannot suit every device
+- The difference between **CSS pixels** and **device pixels**
+- The three problems responsive images solve
+- How to make images flexible with CSS, and build a fluid gallery
+- A first look at `srcset`, `sizes`, and `<picture>`
+- How to check which file the browser actually chose
+- A simple plan for choosing the right technique
+
+## Why One File Is Not Enough
+
+Picture a 2400-pixel-wide photograph, sized for a large desktop.
+
+| Visitor | What goes wrong with the single big file |
+| :-- | :-- |
+| A phone on a slow network | Downloads about 1 MB when a 100 KB version would look the same on a small screen |
+| A tablet | Wastes data, and decodes a huge image for a small display |
+| A very large, sharp monitor | Might actually need that size, and a smaller file would look soft |
+| Someone on a limited data plan | Pays for pixels they can never see |
+
+Now imagine the opposite: a 400-pixel image for everyone. It loads quickly, but it looks blurry on large and sharp screens. **Neither extreme is good for everyone.** The answer is to offer a choice and let the browser pick.
+
+## A Short Lesson in Pixels
+
+To understand responsive images, you need to know two kinds of pixels.
+
+| Kind | What it is |
+| :-- | :-- |
+| **CSS pixel** | The unit you write in HTML and CSS, such as `width="300"`. It is a *logical* unit |
+| **Device pixel** | A physical dot on the screen |
+
+On older screens, one CSS pixel was one device pixel. On modern **high-density** screens, one CSS pixel is covered by two, three, or even more device pixels. The ratio is called the **device pixel ratio (DPR)**.
+
+| Screen | Typical DPR | A 300 CSS-pixel-wide image needs about... |
+| :-- | :-- | :-- |
+| Older or budget monitors | 1 | 300 pixels of image data |
+| Many laptops and phones | 2 | 600 pixels |
+| Some high-end phones | 3 | 900 pixels |
+
+This is why a photo that looks crisp on one device can look soft on another, and why "just make everything big" and "just make everything small" both fail.
+
+## Three Problems, Three Tools
+
+Responsive images solve three different problems. Knowing which one you have tells you which tool to use.
+
+| Problem | What you need | Tool | Lesson |
+| :-- | :-- | :-- | :-- |
+| **1. The image should fit its space** | A flexible image that never overflows | CSS: `max-width`, `width`, `aspect-ratio`, `object-fit` | This lesson |
+| **2. The right size for each device** | The same picture in several sizes, so each device downloads what it needs | `srcset` and `sizes` on `<img>` | [Srcset and Sizes](./srcset-and-sizes) |
+| **3. The right picture for each situation** | A different crop, shape, or file format | The `<picture>` element | [Picture Element](./picture-element) |
+
+The first problem is about **layout**. The second is about **resolution** (called *resolution switching*). The third is about **content** (called *art direction*) or **format**. Many pages need all three.
+
+## Tool 1: Flexible Images With CSS
+
+You met these rules in [The img Element](./img-element) and [Width and Height](./width-and-height).
+
+```css title="images.css"
+img {
+  max-width: 100%;
+  height: auto;
+}
+```
+
+With them, an image never overflows its container, keeps its shape, and shrinks smoothly as the window narrows. Put the real `width` and `height` in the HTML, so the browser reserves the right space.
+
+### A Fluid Gallery With CSS Grid
+
+For a set of pictures, CSS Grid can adjust the number of columns to the available space with no media queries at all.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="gallery.html"
+<style>
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+  .gallery img {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    display: block;
+  }
+</style>
+
+<div class="gallery">
+  <img src="images/a.jpg" alt="Sailboat at sunrise" width="600" height="400" />
+  <img src="images/b.jpg" alt="Fishing nets drying on a pier" width="600" height="400" />
+  <img src="images/c.jpg" alt="A lighthouse at dusk" width="600" height="400" />
+  <img src="images/d.jpg" alt="Waves breaking on rocks" width="600" height="400" />
+</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/gallery.html">
+<>
+<div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem'}}>
+  <img src={sample} alt="Sailboat at sunrise" width="240" height="160" style={{width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block'}} />
+  <img src={sample} alt="Sailboat at midday" width="240" height="160" style={{width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block'}} />
+  <img src={sample} alt="Sailboat in the afternoon" width="240" height="160" style={{width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block'}} />
+  <img src={sample} alt="Sailboat at dusk" width="240" height="160" style={{width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block'}} />
+</div>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Resize the window and the grid reflows: four columns on a wide screen, two or one on a narrow one. The `aspect-ratio` and `object-fit: cover` keep every tile the same shape.
+
+## Tool 2: A Taste of `srcset` and `sizes`
+
+Flexible CSS fixes **layout**, but the browser still downloads one file. To let each device download a **different size**, you give the browser a menu.
+
+```html title="srcset-preview.html"
+<img
+  src="images/harbor-800.jpg"
+  srcset="
+    images/harbor-400.jpg   400w,
+    images/harbor-800.jpg   800w,
+    images/harbor-1600.jpg 1600w
+  "
+  sizes="(min-width: 60rem) 50vw, 100vw"
+  alt="Fishing boats resting in a calm harbor at sunrise"
+  width="1600"
+  height="1067"
+/>
+```
+
+In plain words:
+
+- `srcset` lists the available files, with each file's real width in pixels (the `w` number).
+- `sizes` tells the browser how wide the image will be on screen: half the window on wide screens, the full window otherwise.
+- The browser knows its own screen size, pixel density, and often its network conditions. It picks the best file from the menu.
+- `src` is the fallback for browsers that do not understand `srcset`.
+
+You do not choose the file. You **describe the options**, and the browser decides. The details come in [Srcset and Sizes](./srcset-and-sizes).
+
+## Tool 3: A Taste of `<picture>`
+
+Sometimes you do not want the browser to choose a size. You want to choose **which picture** or **which format**.
+
+### Art Direction: Different Crops
+
+A wide landscape photo works on a desktop. On a narrow phone screen, the same photo shrinks until the main subject is tiny. A tighter crop would work much better.
+
+```html title="art-direction-preview.html"
+<picture>
+  <source media="(max-width: 40rem)" srcset="images/harbor-crop-square.jpg" />
+  <img
+    src="images/harbor-wide.jpg"
+    alt="Fishing boats resting in a calm harbor at sunrise"
+    width="1600"
+    height="900"
+  />
+</picture>
+```
+
+### Format Switching
+
+```html title="format-preview.html"
+<picture>
+  <source srcset="images/harbor.avif" type="image/avif" />
+  <source srcset="images/harbor.webp" type="image/webp" />
+  <img src="images/harbor.jpg" alt="Fishing boats at sunrise" width="1200" height="800" />
+</picture>
+```
+
+You will practice both in [Picture Element](./picture-element).
+
+## Comparing the Three
+
+| | CSS only | `srcset` and `sizes` | `<picture>` |
+| :-- | :-- | :-- | :-- |
+| Who decides which file loads? | You (one file) | The **browser** | You set rules, the browser follows the **first match** |
+| Solves | Fitting the layout | Right size for each screen and density | Right crop or right format |
+| Same picture? | Yes | Yes, in several sizes | Can be different pictures |
+| Extra files needed? | No | Yes, several sizes | Yes, several crops or formats |
+| Complexity | Low | Medium | Medium to high |
+
+## Mobile First: A Good Habit
+
+Build for the smallest screen first, then enhance for bigger ones. For images, this means:
+
+1. **Start with a small, light default** in `src`. A visitor on a weak connection still gets something good, fast.
+2. **Offer larger versions** through `srcset` for screens that can use them.
+3. **Use `<picture>`** only where a different crop or format is really worth the extra work.
+
+This way, nobody downloads more than they need, and the worst-case experience is still a good one.
+
+## What About CSS Background Images?
+
+Background images defined in CSS can also be responsive. They do not have `alt` text, so keep them for decoration only.
+
+```css title="background.css"
+.hero {
+  background-image: url("images/hero-800.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+@media (min-width: 60rem) {
+  .hero { background-image: url("images/hero-1600.jpg"); }
+}
+
+/* Different files for different pixel densities */
+@media (min-resolution: 2dppx) {
+  .hero { background-image: url("images/hero-1600.jpg"); }
+}
+```
+
+Content images that carry meaning should stay in `<img>`, where `alt`, `srcset`, and `<picture>` are available.
+
+## How to See What the Browser Chose
+
+With `srcset` and `<picture>`, the browser picks a file. You can find out which one.
+
+### In the Browser Tools
+
+1. Open your page and open the **developer tools**.
+2. Go to the **Network** tab and filter by **Img**.
+3. Reload the page and note which files were downloaded.
+4. Use the **device toolbar** to pretend to be a phone, change the screen size, and set a slow connection. Reload again and compare.
+
+### With JavaScript
+
+```js title="current-src.js"
+const pictures = document.querySelectorAll("img");
+pictures.forEach((img) => {
+  console.log(img.alt, "→", img.currentSrc, `(${img.naturalWidth} px wide)`);
+});
+```
+
+`currentSrc` is the file the browser is using right now. `naturalWidth` is that file's real width in pixels.
+
+:::tip Test like your visitors
+Test on a real phone as well as in the device toolbar, on mobile data, if you can. Pay attention to how fast the first screen appears, and whether images look sharp.
+:::
+
+## A Simple Plan
+
+Use this checklist the next time you add an image.
+
+1. **Is it decoration?** Consider a CSS background, or `alt=""`.
+2. **Set `width` and `height`,** and use `max-width: 100%; height: auto;`.
+3. **Resize and compress** a sensible set of sizes, such as 400, 800, and 1600 pixels wide.
+4. **Add `srcset` and `sizes`** so each device can pick its size.
+5. **Do the crops differ on small screens?** Use `<picture>` with `media`.
+6. **Do you want modern formats?** Use `<picture>` with `type` and a JPEG fallback.
+7. **Is the image far down the page?** Add `loading="lazy"`.
+8. **Test** on a small and a large screen.
+
+## Responsive Images and Global Audiences
+
+Responsive images matter most to people with the fewest resources.
+
+- **Data is expensive** in many regions. A well-sized image can cost a tenth as much as an oversized one.
+- **Networks vary widely,** even within a city. Light defaults make your page usable on weak connections.
+- **Devices vary widely.** A budget phone struggles to decode a giant image.
+- **Do not put text inside images,** since a scaled-down image can make the text unreadable. Keep words in HTML, where they adapt to the screen and can be translated.
+
+## Common Mistakes
+
+### Mistake 1: One huge file for everyone
+
+It wastes data and slows pages. Offer several sizes.
+
+### Mistake 2: Forgetting `max-width: 100%`
+
+Large images overflow narrow screens and force sideways scrolling.
+
+### Mistake 3: `srcset` without `sizes`
+
+Without `sizes`, the browser assumes the image fills the whole window, and may download too large a file. You will learn the right way in the next lesson.
+
+### Mistake 4: Using `<picture>` when `srcset` is enough
+
+If you only need different sizes of the **same** picture, `srcset` is simpler and lets the browser decide.
+
+### Mistake 5: Not testing
+
+What you see on a fast laptop is not what visitors see on a slow phone.
+
+### Mistake 6: Hiding images with CSS instead of not loading them
+
+`display: none` on an image may still download it. Use `<picture>` or lazy loading to avoid unneeded downloads.
+
+### Mistake 7: Missing `alt` text on the inner `<img>`
+
+In a `<picture>`, only the `<img>` carries `alt`, `width`, and `height`. Never leave them out.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Choose one photo and export it at 400, 800, and 1600 pixels wide.
+2. Add the 800-pixel version with `width`, `height`, and `alt`, and the standard CSS rules.
+3. Build the fluid gallery with CSS Grid, using four pictures, and resize your window.
+4. Add the `srcset` preview from this lesson to one image, and open the Network tab to see which file is chosen at different window sizes.
+5. Change the device toolbar to a phone and reload. Which file loads now?
+6. Log `currentSrc` and `naturalWidth` for each image with the JavaScript snippet.
+7. Make a tighter crop of your photo and use `<picture>` with a `media` condition so phones receive it.
+8. Write one sentence for each image on your page: which of the three problems does it solve?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why can't one image file suit every device?</summary>
+
+Screens differ in size, pixel density, and network speed. A large file wastes data on small screens, and a small file looks blurry on large, sharp ones.
+
+</details>
+
+<details>
+<summary>2. What is the difference between a CSS pixel and a device pixel?</summary>
+
+A CSS pixel is a logical unit used in code. A device pixel is a physical dot on the screen. On high-density screens, one CSS pixel can cover several device pixels.
+
+</details>
+
+<details>
+<summary>3. Which tool solves "right size for each device"?</summary>
+
+`srcset` with `sizes`, which lets the browser choose from several sizes of the same image.
+
+</details>
+
+<details>
+<summary>4. When do you need `<picture>` instead of `srcset`?</summary>
+
+When you want a different crop for different screens (art direction), or you want to offer different file formats with fallbacks.
+
+</details>
+
+<details>
+<summary>5. How can you tell which file the browser actually loaded?</summary>
+
+Look at the Network tab in developer tools, or read the image's `currentSrc` in JavaScript.
+
+</details>
+
+## Key Takeaways
+
+- Responsive images give every visitor an image that fits their screen, looks sharp, and does not waste data.
+- CSS makes images **flexible**. `srcset` and `sizes` offer the **right size**. `<picture>` offers the **right crop or format**.
+- High-density screens need more pixels in the file than the CSS size suggests.
+- Think mobile first: a light default, with larger files for screens that can use them.
+- Always test with developer tools and on real devices.
+
+Now you can see the whole picture. Next, learn how to give the browser a menu of sizes in [Srcset and Sizes](./srcset-and-sizes).

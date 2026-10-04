@@ -1,16 +1,402 @@
 ---
-id: width-and-height
-title: "Setting Image Dimensions: width and height Attributes"
-sidebar_label: "Width & Height"
+id: html-width-and-height
+title: "HTML Image Width and Height"
+sidebar_label: "Width and Height"
 sidebar_position: 4
 slug: /html/images/width-and-height
-description: "Learn how setting aspect ratio, explicit width, and height attributes prevents Cumulative Layout Shift (CLS) and speeds up browser rendering."
+description: "Learn how the width and height attributes stop layout shift in HTML. Understand aspect ratio, how browsers reserve space, responsive sizing with CSS, the aspect-ratio property, high-density screens, and Cumulative Layout Shift on CodeHarborHub."
 keywords:
-  - image width and height
-  - prevent layout shifts
-  - image aspect ratio HTML
-  - core web vitals images
+  - HTML image width and height
+  - cumulative layout shift images
+  - CLS fix images
+  - HTML aspect ratio images
+  - CSS aspect-ratio
+  - responsive images max-width height auto
+  - image dimensions HTML
+  - retina images 2x
+  - prevent layout jump
+  - Core Web Vitals images
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, performance, layout, web-vitals]
+tags: [html, web-development, beginner, images, width, height, performance, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='%23dbeafe'/><circle cx='170' cy='50' r='24' fill='%23fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='%232563eb'/><path d='M70 110 V62 L112 110 Z' fill='%23ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='%23334155'/></svg>";
+
+You start reading an article on your phone. A paragraph catches your eye, and you move your thumb to scroll. Then, with no warning, the text **jumps down** the screen. A picture above it has just finished loading and pushed everything aside. You lose your place. Worse, you tap a button just as it moves, and you tap the wrong thing.
+
+Almost everyone has felt this, and it is annoying enough that search engines measure it. The cure is two small attributes you may already have noticed: `width` and `height`. In this lesson, you will learn why they work, how to set them correctly, and how to combine them with CSS so your images stay steady **and** flexible.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What causes the "jumping page," and what it is called
+- How `width` and `height` let the browser reserve space
+- How to find and write the right values
+- How to make images responsive while keeping the benefit
+- How to use the CSS `aspect-ratio` property for boxes and placeholders
+- How high-density screens fit in
+- How to measure the problem and confirm the fix
+- Common mistakes, and how to avoid them
+
+## The Problem: Layout Shift
+
+When a browser reads your HTML, it often finds an image **before it has downloaded the file**. It does not know how big the picture is yet, so it gives the image no space. The text after it sits right up against the previous content. Then the file arrives, and the browser makes room by pushing everything down.
+
+That sudden movement is called a **layout shift**. Search engines add up all the shifts on a page into a score called **Cumulative Layout Shift (CLS)**. A lower score means a steadier page.
+
+| CLS score | What it means |
+| :-- | :-- |
+| 0.1 or less | Good. The page is stable |
+| 0.1 to 0.25 | Needs improvement |
+| More than 0.25 | Poor. Visitors will notice jumps |
+
+Images without dimensions are one of the most common causes, and one of the easiest to fix.
+
+## The Fix: `width` and `height`
+
+Tell the browser the image's size **in the HTML**, so it can save the right amount of space before the file arrives.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img
+  src="images/harbor.jpg"
+  alt="A small sailboat on blue waves under a bright sun"
+  width="240"
+  height="160"
+/>
+<p>This paragraph stays put, because the space above it is already reserved.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<img
+  src={sample}
+  alt="A small sailboat on blue waves under a bright sun"
+  width="240"
+  height="160"
+/>
+<p>This paragraph stays put, because the space above it is already reserved.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo uses a small drawing built into the page. In your project, `src` points to a real file.
+
+### The Rules
+
+- Write the values as **plain numbers**. They mean **pixels**, but you do not write `px`.
+- `width="240"` is correct. `width="240px"` and `width="50%"` are not valid in HTML. For percentages, use CSS.
+- Use the image's **real dimensions** (or the same proportions), not made-up numbers.
+
+```html
+<!-- Correct -->
+<img src="photo.jpg" alt="..." width="600" height="400" />
+
+<!-- Not valid in HTML -->
+<img src="photo.jpg" alt="..." width="600px" height="400px" />
+<img src="photo.jpg" alt="..." width="100%" height="auto" />
+```
+
+## How It Works Today
+
+Modern browsers do something clever with these two numbers. They calculate the **aspect ratio** (the proportion of width to height) and reserve space with exactly that shape, **even when CSS later changes the displayed size**.
+
+For example, `width="600" height="400"` is a ratio of 3 to 2. If CSS makes the image 300 pixels wide on a phone, the browser still knows the height should be 200, and it reserves that space before the image loads.
+
+That is why the best practice is:
+
+1. Put the image's **real pixel width and height** in the HTML.
+2. Use **CSS** to control the displayed size.
+
+## Combining With CSS: Steady and Flexible
+
+The next rule gives you images that never overflow, never stretch, and never cause a jump.
+
+```css title="images.css"
+img {
+  max-width: 100%;
+  height: auto;
+}
+```
+
+Here is what each part does.
+
+| Part | What it does |
+| :-- | :-- |
+| `width="600"` and `height="400"` in HTML | Tell the browser the proportions so it can reserve space |
+| `max-width: 100%` in CSS | Prevents the image from being wider than its container |
+| `height: auto` in CSS | Keeps the proportions when the width changes |
+
+<Tabs>
+<TabItem value="bad" label="Distorted" default>
+
+```css
+/* The HTML says height="400", and CSS keeps it fixed.
+   When the width shrinks, the image is stretched tall. */
+img {
+  max-width: 100%;
+}
+```
+
+</TabItem>
+<TabItem value="good" label="Correct">
+
+```css
+img {
+  max-width: 100%;
+  height: auto;   /* height follows the width and the ratio */
+}
+```
+
+</TabItem>
+</Tabs>
+
+<BrowserWindow url="http://127.0.0.1:5500/responsive.html">
+<>
+<div style={{maxWidth: '180px', border: '1px dashed #94a3b8', padding: '4px'}}>
+  <img
+    src={sample}
+    alt="A small sailboat on blue waves under a bright sun"
+    width="240"
+    height="160"
+    style={{maxWidth: '100%', height: 'auto'}}
+  />
+</div>
+<p>The picture shrinks to fit its 180-pixel box and keeps its proportions.</p>
+</>
+</BrowserWindow>
+
+:::warning Never forget `height: auto`
+If you set a CSS `width` on an image but leave out `height: auto`, the HTML `height` attribute still applies. The picture can come out stretched or squashed.
+:::
+
+## How to Find the Right Numbers
+
+You need the image's **natural size** in pixels.
+
+| Where | How |
+| :-- | :-- |
+| **Your computer** | Right-click the file and open its properties or info |
+| **An image editor** | Check the image size or canvas size |
+| **Command line** | Use a tool such as `file photo.jpg` on many systems |
+| **Browser** | Open the image in its own tab. Developer tools show its natural size |
+| **Your build tool or CMS** | Many generate the dimensions automatically |
+
+If you resize a photo before publishing, as you should, use the **resized** dimensions in your HTML.
+
+### Calculating a Missing Value
+
+If you know the ratio and one number, you can find the other.
+
+```text
+height = width × (original height ÷ original width)
+
+Original: 1200 × 800 (ratio 3:2)
+You want a width of 600 → height = 600 × (800 ÷ 1200) = 400
+```
+
+### Common Aspect Ratios
+
+| Ratio | Looks like | Common uses |
+| :-- | :-- | :-- |
+| 1 : 1 | Square | Avatars, product tiles |
+| 4 : 3 | Slightly wide | Older photos, presentations |
+| 3 : 2 | Wide | Camera photos |
+| 16 : 9 | Widescreen | Video, banners |
+| 9 : 16 | Tall | Phone stories |
+
+## The CSS `aspect-ratio` Property
+
+Sometimes you need to reserve space for something that is **not** an `<img>`, such as a video box, a map, or a card whose image has not loaded yet. For those, CSS has the `aspect-ratio` property.
+
+```css title="aspect-ratio.css"
+.video-box {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #e2e8f0;       /* a calm placeholder color */
+}
+
+.avatar {
+  width: 64px;
+  aspect-ratio: 1;           /* same as 1 / 1: a square */
+  border-radius: 50%;
+  object-fit: cover;
+}
+```
+
+<BrowserWindow url="http://127.0.0.1:5500/aspect.html">
+<>
+<div style={{color: '#333', width: '100%', maxWidth: '320px', aspectRatio: '16 / 9', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px'}}>
+  Reserved 16:9 space
+</div>
+</>
+</BrowserWindow>
+
+The box holds its 16 to 9 shape even when it is empty, so nothing jumps when the content arrives. A soft background color also gives visitors something calm to look at instead of a blank hole.
+
+## Images That Fill a Box
+
+When a design needs an image to fill a fixed shape, combine the box's ratio with `object-fit`, as you learned in [The img Element](./img-element).
+
+```css title="card.css"
+.card-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+```
+
+Every card then has the same shape, whatever the original photos look like.
+
+## Dimensions and Sharpness
+
+The `width` and `height` in your HTML describe the image's **real pixel size**. They do not make the picture sharper or blurrier by themselves. But the relationship between the **file size in pixels** and the **size on screen** matters.
+
+| Situation | Result |
+| :-- | :-- |
+| File is **smaller** than the display size | The browser stretches it, and it looks blurry |
+| File is **the same** as the display size | Sharp on normal screens |
+| File is **twice** the display size | Sharp on high-density ("retina") screens, but costs more data |
+| File is **much larger** than needed | Sharp, but slow and wasteful |
+
+High-density screens pack two or three device pixels into each CSS pixel. To look crisp on them, an image shown at 300 CSS pixels wide needs a file about 600 pixels wide. You do not want to send that big file to everyone, which is why you will learn `srcset` in [Srcset and Sizes](./srcset-and-sizes). It lets each device download the size it needs.
+
+:::tip A simple starting rule
+For a single image file, make it about **twice** the largest size it will be shown at, then compress it well. When you learn `srcset`, you can offer several sizes instead.
+:::
+
+## Special Cases
+
+### SVG Images
+
+SVG graphics scale without losing quality, so they have no "natural" pixel size. Still, set `width` and `height` to reserve space and avoid shifts.
+
+```html
+<img src="images/logo.svg" alt="CodeHarborHub home" width="140" height="40" />
+```
+
+### Images That Change Shape
+
+If you show **different crops** on different screens with `<picture>`, set `width` and `height` on the `<img>` and, where the shapes differ, on each `<source>` too. You will see this in [Picture Element](./picture-element).
+
+### Images Loaded Later
+
+For lazy-loaded images, `width` and `height` are even more important. The image arrives long after the page is built, and without reserved space, the jump is certain. Read more in [Lazy Loading](./lazy-loading).
+
+## Checking the Result
+
+You can measure whether your fix worked.
+
+1. **Open your browser's developer tools.** Many have a Performance panel that highlights layout shifts.
+2. **Run Lighthouse** (built into Chrome-based browsers) or the free **PageSpeed Insights** service. Look at the CLS score and the list of "images without explicit dimensions."
+3. **Throttle the network.** Set the connection to "Slow 3G" and reload. Watch whether the content moves as images appear.
+4. **Test on a real phone.** Scroll while the page is still loading.
+
+## Common Mistakes
+
+### Mistake 1: Leaving out `width` and `height`
+
+The most common cause of jumping images. Add both to every `<img>`.
+
+### Mistake 2: Writing units or percentages
+
+`width="300px"` and `width="50%"` are invalid. Write `width="300"`, and use CSS for percentages.
+
+### Mistake 3: Using made-up proportions
+
+Numbers that do not match the real image shape reserve the wrong amount of space, so the page still jumps a little, and your picture may look squashed.
+
+### Mistake 4: Forgetting `height: auto`
+
+With a CSS `width` or `max-width` and no `height: auto`, the image is distorted.
+
+### Mistake 5: Stretching a small image to look big
+
+Enlarging a small file makes it blurry. Start with a file large enough.
+
+### Mistake 6: Sending enormous files and shrinking them with HTML
+
+`width="300"` on a 5000-pixel photo downloads all 5000 pixels. Resize the file itself.
+
+### Mistake 7: Forgetting space for non-image content
+
+Ads, videos, and embeds need reserved space too. Use `aspect-ratio` or fixed-size boxes.
+
+### Mistake 8: Squashing a logo with `width` and `height` that do not match
+
+Keep a logo's proportions, or it will look wrong.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create `steady.html` with three pictures of different shapes: square, wide, and tall.
+2. Find the real width and height of each one and write them in the HTML.
+3. Add `img { max-width: 100%; height: auto; }` and resize your browser window. Do the images keep their shapes?
+4. Remove `height: auto` and test again. What changes?
+5. In developer tools, set the network to "Slow 3G" and reload. Remove the `width` and `height` from one image and compare how the page moves.
+6. Create a `.video-box` with `aspect-ratio: 16 / 9` and a soft background color.
+7. Make a row of four cards with `aspect-ratio: 4 / 3` and `object-fit: cover`.
+8. Run Lighthouse and note your CLS score.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does Cumulative Layout Shift measure?</summary>
+
+How much page content moves around unexpectedly while the page loads. Lower scores mean a steadier page.
+
+</details>
+
+<details>
+<summary>2. How do `width` and `height` in HTML prevent layout jumps?</summary>
+
+They let the browser work out the image's aspect ratio, so it can reserve the right amount of space before the file arrives.
+
+</details>
+
+<details>
+<summary>3. Should you write `width="300px"`?</summary>
+
+No. The attributes take plain numbers that mean pixels. Use CSS for units and percentages.
+
+</details>
+
+<details>
+<summary>4. What two CSS lines make images responsive without distortion?</summary>
+
+`max-width: 100%;` and `height: auto;`.
+
+</details>
+
+<details>
+<summary>5. When would you use the CSS `aspect-ratio` property?</summary>
+
+To reserve a box of a certain shape for content that is not an `<img>`, such as a video, a map, or an image placeholder.
+
+</details>
+
+## Key Takeaways
+
+- Missing image sizes cause layout shift, which annoys visitors and lowers your page-quality scores.
+- Write `width` and `height` in HTML as plain numbers, using the image's real proportions.
+- Add `max-width: 100%` and `height: auto` in CSS so images are flexible without distortion.
+- Use `aspect-ratio` to reserve space for boxes, videos, and placeholders.
+- Resize files to the right size, and measure your result with developer tools or Lighthouse.
+
+Your images now hold their place. Next, learn which file types to choose in [Image Formats](./image-formats).

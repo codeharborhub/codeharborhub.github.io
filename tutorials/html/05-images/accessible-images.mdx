@@ -1,16 +1,512 @@
 ---
-id: accessible-images
-title: "Best Practices for Accessible Web Images"
+id: html-accessible-images
+title: "Accessible Images in HTML"
 sidebar_label: "Accessible Images"
 sidebar_position: 11
 slug: /html/images/accessible-images
-description: "Learn how to make visual media fully accessible with decorative alt semantics, complex image descriptions, SVG accessibility, and ARIA roles."
+description: "Learn how to make every image in your HTML pages accessible. Decide between informative, decorative, functional, and complex images, write useful alt text, handle text in images, linked images, SVG, animated GIFs, and test with real tools on CodeHarborHub."
 keywords:
   - accessible images HTML
-  - empty alt attribute decorative
-  - SVG accessibility aria
-  - web accessibility WCAG images
+  - HTML alt text best practices
+  - decorative images alt empty
+  - functional images links buttons
+  - complex images long description
+  - text in images accessibility
+  - SVG accessibility role img
+  - prefers-reduced-motion GIF
+  - web accessibility images
+  - WCAG non-text content
+  - screen reader images
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, accessibility, wcag, a11y]
+tags: [html, web-development, beginner, images, accessibility, alt-text, wcag, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='#dbeafe'/><circle cx='170' cy='50' r='24' fill='#fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='#2563eb'/><path d='M70 110 V62 L112 110 Z' fill='#ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='#334155'/></svg>");
+
+export const searchIcon = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#1e293b' stroke-width='2.5' stroke-linecap='round'><circle cx='10' cy='10' r='6'/><path d='M15 15 L21 21'/></svg>");
+
+Imagine opening your favorite website, but every picture on it is invisible. Menus are just empty boxes, charts are blank, and the photos have vanished. For millions of people, this is not a thought experiment. Some are blind and use screen readers. Some have low vision. Some are on a slow mobile connection in a remote area, where images never finish loading. Some simply turned images off to save data.
+
+Accessible images make sure that **everyone gets the same information and the same abilities**, whether or not they can see the picture. The good news: you already know most of the tools. This final lesson of the section shows you how to **decide** what each image needs, and how to do it well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The four jobs an image can have, and how each changes your `alt` text
+- How to write `alt` text that is short, useful, and honest
+- When to use an empty `alt=""` and why it is not a mistake
+- How to handle linked images, buttons, icons, and text in images
+- How to describe charts and other complex images
+- How to make SVG and animated images accessible
+- How to test your work with free tools
+
+## Why Accessibility Is Everyone's Job
+
+Accessible images are not only a "nice extra" for a small group. They are part of the rules in many countries, and part of the international standard called **WCAG** (Web Content Accessibility Guidelines). The first rule in that standard is simple: *every non-text item needs a text alternative that serves the same purpose.*
+
+They also help everyone else:
+
+- **Slow connections:** When an image fails to load, the `alt` text appears in its place.
+- **Search engines:** Google reads `alt` text to understand your images.
+- **Voice assistants and translation tools:** They read text, not pixels.
+- **Bright sunlight, broken screens, old devices:** Text still gets through.
+
+:::info The core idea
+The right `alt` text depends on the **purpose** of the image in that place, not only on what the image shows. The same photo can need different `alt` text on two different pages.
+:::
+
+## Step One: Ask "What Is This Image For?"
+
+Before you type a single word of `alt`, ask what job the image does. Almost every image fits one of these four jobs.
+
+| Job | What it does | What `alt` should be |
+| :-- | :-- | :-- |
+| **Informative** | Adds meaning or information | A short description of the meaning |
+| **Decorative** | Only for looks, adds nothing new | Empty: `alt=""` |
+| **Functional** | Is inside a link or button, so it does something | Describe the **action**, not the picture |
+| **Complex** | Contains a lot of data (chart, map, diagram) | A short summary, plus a longer description nearby |
+
+Let's look at each one.
+
+## 1. Informative Images
+
+An informative image adds something the text does not already say. Write a short description of what matters.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img
+  src="images/harbor.jpg"
+  alt="A white sailboat on blue waves under a bright sun"
+  width="600"
+  height="400"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<img
+  src={sample}
+  alt="A white sailboat on blue waves under a bright sun"
+  width="240"
+  height="160"
+/>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Tips for Writing Good `alt` Text
+
+1. **Be concise.** One short sentence is usually enough. A good guide is under 125 characters, but meaning matters more than counting.
+2. **Describe what matters in context.** On a travel blog, "A white sailboat at sea" works. On a sailing-shop product page, the boat model and rig type might matter.
+3. **Do not start with "image of" or "picture of."** Screen readers already announce that it is an image.
+4. **Skip the file name.** `alt="IMG_20250311.jpg"` helps nobody.
+5. **Do not stuff keywords.** `alt="boat boat sailing boat buy boat cheap"` is bad for people and for search engines.
+6. **Include text that is in the picture,** if that text matters.
+7. **End with a period** if it is a full sentence. It gives screen readers a natural pause.
+
+<Tabs>
+<TabItem value="bad" label="Weak" default>
+
+```html
+<img src="boat.jpg" alt="image" />
+<img src="boat.jpg" alt="boat.jpg" />
+<img src="boat.jpg" alt="Picture of a boat boat sailing buy cheap boat" />
+```
+
+</TabItem>
+<TabItem value="good" label="Better">
+
+```html
+<img src="boat.jpg" alt="A white sailboat on calm blue water." />
+<img src="boat.jpg" alt="Sailboat leaving the harbor at sunrise." />
+<img src="boat.jpg" alt="The Lotus 28, a small sailboat with one white sail." />
+```
+
+</TabItem>
+</Tabs>
+
+## 2. Decorative Images
+
+Some images are purely for style: a divider swirl, a background texture, a pretty shape beside a heading. They add no information. If a screen reader announced each one, it would only create noise.
+
+For these, use an **empty** `alt` attribute:
+
+```html
+<img src="images/swirl.svg" alt="" width="120" height="20" />
+```
+
+With `alt=""`, screen readers skip the image completely.
+
+:::warning Empty alt is not the same as no alt
+- `alt=""` says: "I thought about it. This image is decorative." Screen readers skip it. ✅
+- **No `alt` attribute at all** says: "I forgot." Some screen readers then read out the file name, like "swirl dot s v g." ❌
+
+Always include the attribute, even when it is empty.
+:::
+
+### The Even Better Option: CSS Backgrounds
+
+If an image is purely decoration, ask whether it belongs in HTML at all. Style belongs in CSS, so a decorative image can often be a background.
+
+```css
+.hero {
+  background-image: url("images/waves.svg");
+  background-size: cover;
+}
+```
+
+Images added through CSS are ignored by screen readers, which is exactly what you want for decoration. But never put important information in a CSS background. There is no way to give it `alt` text.
+
+## 3. Functional Images
+
+A **functional image** is inside a link or a button. Clicking it *does* something. Here, `alt` must describe the **action or destination**, not the appearance.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Describe the action, not the icon -->
+<button type="submit">
+  <img src="icons/search.svg" alt="Search" width="24" height="24" />
+</button>
+
+<!-- A logo that links home -->
+<a href="/">
+  <img src="logo.svg" alt="CodeHarborHub home" width="140" height="40" />
+</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<button type="button" style={{ padding: "6px 10px", cursor: "pointer" }}>
+  <img src={searchIcon} alt="Search" width="24" height="24" />
+</button>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A screen reader announces the first example as "Search, button." That is exactly what a user needs. If the `alt` said "magnifying glass," they would hear "magnifying glass, button" and have to guess.
+
+| Image | Weak `alt` | Strong `alt` |
+| :-- | :-- | :-- |
+| Magnifier icon in a search button | `magnifying glass` | `Search` |
+| Logo inside a home link | `logo` | `CodeHarborHub home` |
+| Printer icon in a button | `printer icon` | `Print this page` |
+| Arrow in a "next" link | `right arrow` | `Next lesson` |
+
+### When the Link Also Has Text
+
+If the link or button already has visible text, the icon beside it is decorative. Give it an empty `alt` so the label is not read twice.
+
+```html
+<a href="/downloads/guide.pdf">
+  <img src="icons/pdf.svg" alt="" width="20" height="20" />
+  Download the guide (PDF)
+</a>
+```
+
+## 4. Complex Images
+
+Charts, maps, infographics, and diagrams hold more information than a single sentence can carry. One short `alt` cannot do the job, and a very long `alt` is hard to navigate.
+
+The pattern is simple:
+
+1. Put a **short summary** in `alt`: what it is, and the main point.
+2. Provide the **full information** in text nearby, such as a data table or a paragraph.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<figure>
+  <img
+    src="images/visitors-chart.png"
+    alt="Bar chart of monthly visitors. Details follow below."
+    width="600"
+    height="360"
+  />
+  <figcaption>Monthly visitors, January to March.</figcaption>
+</figure>
+
+<details>
+  <summary>Chart data as a table</summary>
+  <table>
+    <tr><th>Month</th><th>Visitors</th></tr>
+    <tr><td>January</td><td>12,000</td></tr>
+    <tr><td>February</td><td>18,500</td></tr>
+    <tr><td>March</td><td>25,200</td></tr>
+  </table>
+</details>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<figure>
+  <img
+    src={sample}
+    alt="Illustration standing in for a bar chart. Details follow below."
+    width="240"
+    height="160"
+  />
+  <figcaption>Monthly visitors, January to March.</figcaption>
+</figure>
+
+<details>
+  <summary>Chart data as a table</summary>
+  <table>
+    <tbody>
+      <tr><th>Month</th><th>Visitors</th></tr>
+      <tr><td>January</td><td>12,000</td></tr>
+      <tr><td>February</td><td>18,500</td></tr>
+      <tr><td>March</td><td>25,200</td></tr>
+    </tbody>
+  </table>
+</details>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here a sample drawing stands in for the chart. In your project, `src` points to the real chart.
+
+The table is useful for **everyone**: a screen reader user can move through it cell by cell, and a sighted user can read exact numbers that a bar can only suggest. Accessible content often turns out to be better content.
+
+:::tip Linking the image to its long description
+You can also connect an image to a longer description on the same page with `aria-describedby`:
+
+```html
+<img src="chart.png" alt="Bar chart of monthly visitors." aria-describedby="chart-desc" />
+<p id="chart-desc">Visitors grew from 12,000 in January to 25,200 in March...</p>
+```
+
+Screen readers will read the `alt` first and offer the longer description.
+:::
+
+## Text Inside Images
+
+Putting words inside a picture (a banner, a screenshot of a quote, a button drawn in an image editor) causes many problems:
+
+- Screen readers cannot read the words unless you repeat them in `alt`.
+- Text cannot be resized, translated, searched, or copied.
+- The words can turn blurry on a high-resolution screen.
+- Low-vision users cannot change the colors or the font.
+
+**The best solution is to use real HTML text** and style it with CSS. If you must keep text in an image (a logo, for example), repeat the exact words in `alt`.
+
+<Tabs>
+<TabItem value="avoid" label="Avoid" default>
+
+```html
+<!-- A picture of the words "50% OFF" with no alt -->
+<img src="sale-banner.png" alt="" />
+```
+
+</TabItem>
+<TabItem value="better" label="Better">
+
+```html
+<!-- Real text styled with CSS -->
+<div class="banner">
+  <h2>50% off all courses</h2>
+  <p>Offer ends Sunday.</p>
+</div>
+```
+
+</TabItem>
+</Tabs>
+
+## SVG and Icons
+
+Inline SVG is a favorite for icons and charts because it scales perfectly. Like an image, it needs a text alternative when it carries meaning.
+
+<Tabs>
+<TabItem value="meaningful" label="Meaningful SVG" default>
+
+```html
+<svg role="img" aria-labelledby="warn-title" viewBox="0 0 24 24" width="24" height="24">
+  <title id="warn-title">Warning</title>
+  <path d="M12 2 L22 20 H2 Z" fill="#f59e0b" />
+</svg>
+```
+
+</TabItem>
+<TabItem value="decorative" label="Decorative SVG">
+
+```html
+<!-- Hidden from assistive technology -->
+<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="24" height="24">
+  <path d="M12 2 L22 20 H2 Z" fill="#f59e0b" />
+</svg>
+```
+
+</TabItem>
+</Tabs>
+
+- `role="img"` tells assistive tech to treat the SVG as one image.
+- `<title>` plus `aria-labelledby` provides its name.
+- `aria-hidden="true"` hides an SVG that is only decoration (for example, an icon next to a text label).
+
+For an SVG loaded through `<img src="icon.svg">`, use the `alt` attribute as usual.
+
+## Animated Images and Motion
+
+Animated GIFs and looping animations can distract people with attention difficulties. Fast flashing can even trigger seizures for people with photosensitive epilepsy.
+
+- **Avoid flashing more than three times per second.** This is a safety rule from WCAG.
+- **Give users control.** If something moves for more than five seconds, provide a way to pause it.
+- **Respect the "reduce motion" setting.** Many people turn this on in their operating system, and CSS can read it:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .animated-banner {
+    animation: none;
+  }
+}
+```
+
+For a video-like animation, a real `<video>` with controls is often better than a GIF. It can be paused, and it is usually far smaller in file size.
+
+## Color and Contrast
+
+Some images carry meaning only through color, such as a red dot for "error" and a green dot for "success." About 1 in 12 men has some form of color vision difference. Add a second clue: a shape, a pattern, or a text label.
+
+When text sits on top of an image, check the **contrast ratio**. WCAG asks for at least **4.5:1** for normal text and **3:1** for large text. A busy photo behind white text can fail in some areas. A semi-transparent dark overlay behind the text is an easy fix.
+
+## Quick Decision Guide
+
+Use this when you are unsure what to write.
+
+| Question | If yes | If no |
+| :-- | :-- | :-- |
+| Is the image inside a link or button? | Describe the **action** | Go to the next question |
+| Does it only decorate, or repeat nearby text? | `alt=""` | Go to the next question |
+| Does it hold lots of data? | Short `alt` plus a full text version | Go to the next question |
+| Does it contain important text? | Put the same words in `alt` | Describe the meaning in a short phrase |
+
+## Testing Your Images
+
+You do not need expensive tools. Try these in order:
+
+1. **Turn images off.** In your browser's developer tools or settings, block images and read your page. Does it still make sense?
+2. **Check with a screen reader.** NVDA (Windows, free), VoiceOver (built into macOS and iPhone), and TalkBack (Android) all work. Even five minutes of listening teaches a lot.
+3. **Run an automated checker.** Lighthouse (inside Chrome DevTools), axe DevTools, and WAVE will find missing `alt` attributes.
+4. **Read the `alt` text out loud, alone.** If it does not make sense without the picture, rewrite it.
+5. **Ask real users** when you can. No tool replaces their feedback.
+
+:::note Automated tools only catch about a third of the problems
+A checker can tell you if `alt` is *missing*, but not if it is *useful*. `alt="image"` passes the test, but helps nobody. Human judgment is the most important tool.
+:::
+
+## Global Audience Notes
+
+- **Write `alt` in the same language as the page.** If one image is in another language, mark the element with `lang`.
+- **Use plain, clear words.** Many of your readers use translation tools, and simple sentences translate best.
+- **Avoid culture-specific references** that need local knowledge to understand.
+- **Keep file sizes small.** In many regions, data is expensive and connections are slow. Accessible also means *reachable*.
+
+## Common Mistakes to Avoid
+
+1. **Missing `alt` attributes.** Always include one, even if empty.
+2. **Starting with "image of" or "photo of."** Screen readers already say "image."
+3. **Using the file name as `alt`.** It carries no meaning.
+4. **Describing the icon instead of the action.** Write "Search," not "magnifying glass."
+5. **Repeating the caption or nearby text** word for word.
+6. **Putting important text inside images** without matching `alt`.
+7. **Using `alt=""` on an informative image** just to pass a checker. This hides real content.
+8. **Stuffing keywords** into `alt` for search ranking.
+9. **Relying on color alone** to carry meaning.
+10. **Autoplaying, flashing animations** with no way to pause them.
+
+## Practice Time
+
+Take any page from your project, or build a small one, and try these:
+
+1. Add one informative image with a short, clear `alt`.
+2. Add one decorative image with `alt=""`.
+3. Add a search button with an icon, and give the icon an action-based `alt`.
+4. Add a link that has both an icon and a text label. Make the icon decorative.
+5. Create a "chart" figure with a short `alt` and a hidden data table inside `<details>`.
+6. Replace one text-in-image banner with real HTML text and CSS.
+7. Add an inline SVG with `role="img"` and a `<title>`, and another with `aria-hidden="true"`.
+8. Add a `prefers-reduced-motion` rule that stops one animation.
+9. Block images in your browser and read the page. Fix anything that no longer makes sense.
+10. Bonus: run Lighthouse and aim for a perfect accessibility score.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the four jobs an image can have?</summary>
+
+Informative, decorative, functional (inside a link or button), and complex (charts, maps, diagrams).
+
+</details>
+
+<details>
+<summary>2. When should you use `alt=""`?</summary>
+
+When an image is purely decorative or just repeats nearby text. The empty value tells screen readers to skip it.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `alt=""` and no `alt` at all?</summary>
+
+`alt=""` is a deliberate choice that hides the image from assistive technology. A missing `alt` is an error, and some screen readers read out the file name instead.
+
+</details>
+
+<details>
+<summary>4. What should `alt` say for an icon inside a button?</summary>
+
+The action, such as "Search" or "Print this page," not a description of the icon.
+
+</details>
+
+<details>
+<summary>5. How do you make a complex chart accessible?</summary>
+
+Give it a short `alt` that names the chart and its main point, and provide the full data nearby as text or a table.
+
+</details>
+
+<details>
+<summary>6. How do you make an inline SVG accessible?</summary>
+
+Use `role="img"` with a `<title>` (and `aria-labelledby`) when it has meaning, or `aria-hidden="true"` when it is only decoration.
+
+</details>
+
+## Key Takeaways
+
+- Start every image with one question: **what is this image for?** The answer decides the `alt`.
+- Informative images get short, useful descriptions. Decorative images get `alt=""`. Functional images describe the action. Complex images get a summary plus full text.
+- Prefer real HTML text over text in images, and CSS backgrounds for pure decoration.
+- Make SVGs, animations, and color-based meaning accessible too.
+- Test by blocking images, listening with a screen reader, and running an automated checker. Then use your own judgment.
+- Accessible images are clearer, lighter, and kinder for everyone, wherever they are in the world.
+
+You have now finished the Images section: from the `<img>` tag to responsive formats, lazy loading, captions, and accessibility. Head back to the [Images overview](/tutorials/html/images) to review the full path, or keep going with the next section of the HTML course.

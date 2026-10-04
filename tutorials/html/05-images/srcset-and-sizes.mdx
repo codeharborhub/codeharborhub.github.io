@@ -1,16 +1,448 @@
 ---
-id: srcset-and-sizes
-title: "Resolution Switching with srcset and sizes Attributes"
-sidebar_label: "srcset & sizes Attributes"
+id: html-srcset-and-sizes
+title: "HTML srcset and sizes"
+sidebar_label: "Srcset and Sizes"
 sidebar_position: 7
 slug: /html/images/srcset-and-sizes
-description: "Learn how to use srcset with pixel density descriptors and width descriptors alongside sizes attributes to deliver optimal images per screen size."
+description: "Learn how srcset and sizes work in HTML. Understand width descriptors and pixel density descriptors, how to write the sizes attribute with media conditions and calc, how browsers choose a file, how to plan image widths, test results, and avoid common mistakes on CodeHarborHub."
 keywords:
-  - HTML srcset attribute
-  - image sizes attribute
-  - width descriptors w
-  - resolution switching
+  - HTML srcset
+  - HTML sizes attribute
+  - srcset width descriptor
+  - srcset pixel density x descriptor
+  - responsive images srcset sizes
+  - how browser chooses srcset image
+  - sizes attribute calc vw
+  - resolution switching images
+  - img currentSrc
+  - retina images srcset
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, srcset, responsive-images, performance]
+tags: [html, web-development, beginner, images, srcset, sizes, responsive, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='%23dbeafe'/><circle cx='170' cy='50' r='24' fill='%23fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='%232563eb'/><path d='M70 110 V62 L112 110 Z' fill='%23ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='%23334155'/></svg>";
+
+Think of ordering a coffee. You do not say, "Give me exactly 237 milliliters." You look at the menu, which lists small, medium, and large, and the barista hands you the one that suits you.
+
+`srcset` and `sizes` work the same way. You do not tell the browser which image file to download. You hand it a **menu** of the files you have made, and a note about **how large the picture will appear**. The browser knows things you cannot: the visitor's screen size, how sharp their screen is, and sometimes how fast their connection is. It picks the best file for that visitor. In this lesson, you will learn to write the menu and the note.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `srcset` is, and the two ways to describe your files
+- How the **`w` descriptor** and the **`sizes`** attribute work together
+- How the **`x` descriptor** works for fixed-size images
+- How to write `sizes` for real page layouts
+- How the browser chooses, and how to check its choice
+- How to plan which widths to create
+- Common mistakes, and how to avoid them
+
+## The Idea
+
+An `<img>` normally has one file in `src`. With `srcset`, it also has a list of alternatives.
+
+```html title="idea.html"
+<img
+  src="images/harbor-800.jpg"
+  srcset="images/harbor-400.jpg 400w, images/harbor-800.jpg 800w, images/harbor-1600.jpg 1600w"
+  sizes="100vw"
+  alt="Fishing boats resting in a calm harbor at sunrise"
+  width="1600"
+  height="1067"
+/>
+```
+
+| Attribute | Its job |
+| :-- | :-- |
+| `srcset` | The **menu**: files you offer, each with its description |
+| `sizes` | The **note**: how wide the image will be on screen |
+| `src` | The **fallback**: used by browsers that do not understand `srcset`, and the default choice |
+| `alt`, `width`, `height` | Still required, as always |
+
+There are two ways to write the menu. We will look at the simpler one first.
+
+## Way 1: Pixel Density (`x` Descriptors)
+
+Use `x` descriptors when the image is shown at a **fixed size**, such as a logo or an avatar that is always 100 CSS pixels wide. You say how many device pixels you have per CSS pixel.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="x-descriptor.html"
+<img
+  src="images/avatar-100.jpg"
+  srcset="
+    images/avatar-100.jpg 1x,
+    images/avatar-200.jpg 2x,
+    images/avatar-300.jpg 3x
+  "
+  alt="Profile photo of Amara"
+  width="100"
+  height="100"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/x-descriptor.html">
+<>
+<img
+  src={sample}
+  alt="Profile photo of Amara"
+  width="100"
+  height="67"
+/>
+<p>The picture is always 100 CSS pixels wide. Screens with higher density use a larger file, so it stays sharp.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo uses one small drawing, since there are no image files here. In your project, each descriptor points to a different file.
+
+- `1x` is for normal screens: a 100-pixel-wide file.
+- `2x` is for sharp screens, where each CSS pixel is two device pixels: a 200-pixel-wide file.
+- `3x` is for very sharp screens: a 300-pixel-wide file.
+
+The display size stays at **100 CSS pixels** (set by `width="100"`). Only the file changes. Notice that **you do not need `sizes`** for `x` descriptors, because the image size does not change.
+
+:::info Use `x` for fixed sizes, `w` for fluid ones
+If the image is always the same size, `x` descriptors are the simplest solution. If the image grows and shrinks with the layout, use `w` descriptors with `sizes`.
+:::
+
+## Way 2: Width Descriptors (`w`) and `sizes`
+
+Most content images are **fluid**: wider on a big screen, narrower on a phone. The browser needs two facts to choose well.
+
+1. **How wide is each file?** You provide this with a `w` descriptor. `800w` means "this file is 800 pixels wide."
+2. **How wide will the image appear on the page?** You provide this with `sizes`.
+
+With those facts, the browser does the arithmetic.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="w-descriptor.html"
+<img
+  src="images/harbor-800.jpg"
+  srcset="
+    images/harbor-400.jpg   400w,
+    images/harbor-800.jpg   800w,
+    images/harbor-1200.jpg 1200w,
+    images/harbor-1600.jpg 1600w
+  "
+  sizes="(min-width: 60rem) 50vw, 100vw"
+  alt="Fishing boats resting in a calm harbor at sunrise"
+  width="1600"
+  height="1067"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/w-descriptor.html">
+<>
+<img
+  src={sample}
+  alt="Fishing boats resting in a calm harbor at sunrise"
+  width="240"
+  height="160"
+  style={{maxWidth: '100%', height: 'auto'}}
+/>
+<p>In your project, the browser would download one of four files here, depending on the screen.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### The `w` Descriptor
+
+Each entry in `srcset` is a file address, a space, and a number followed by `w`.
+
+- The number is the file's **real width in pixels**. It is not a CSS size.
+- Separate entries with commas.
+- Every entry in one `srcset` must use the **same kind** of descriptor, either all `w` or all `x`. Do not mix them.
+
+### The `sizes` Attribute
+
+`sizes` is a list of **conditions and widths**, separated by commas. The browser reads it from left to right and uses the **first condition that matches**. The last entry has no condition and is the default.
+
+```text
+sizes="(min-width: 60rem) 50vw, 100vw"
+        └──── condition ───┘ └width┘ └default┘
+```
+
+In words: "If the window is at least 60rem wide, the image takes up half the window. Otherwise, it takes up the full window."
+
+#### What Can Go in `sizes`
+
+| Unit | Meaning | Example |
+| :-- | :-- | :-- |
+| `vw` | Percent of the **window** width | `50vw` is half the window |
+| `px` | Fixed CSS pixels | `300px` |
+| `rem`, `em` | Based on font size | `20rem` |
+| `calc()` | A mix of units | `calc(100vw - 2rem)` |
+
+:::warning No percentages in `sizes`
+`sizes="50%"` is not valid. A percentage needs a parent to measure from, and the browser must pick the file before the layout exists. Use `vw` instead.
+:::
+
+#### Media Conditions
+
+The conditions use the same syntax as CSS media queries.
+
+| Condition | Matches when |
+| :-- | :-- |
+| `(min-width: 60rem)` | The window is at least 60rem wide |
+| `(max-width: 40rem)` | The window is at most 40rem wide |
+| `(min-width: 40rem) and (max-width: 60rem)` | Between the two widths |
+| `(orientation: landscape)` | The window is wider than tall |
+
+## How the Browser Chooses
+
+The browser follows a simple recipe.
+
+1. **Read `sizes`** and find the first condition that matches. That gives the **display width** in CSS pixels.
+2. **Multiply by the device pixel ratio.** This gives the number of pixels the picture needs to look sharp.
+3. **Look at the `srcset` menu** and pick a file that is at least that wide, usually the smallest one that is big enough.
+
+### A Worked Example
+
+Using the `sizes` and `srcset` above:
+
+| Visitor | Window | Matching condition | Display width | DPR | Pixels needed | File picked |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| Budget phone | 360 px | none, so `100vw` | 360 px | 2 | 720 | `harbor-800.jpg` |
+| Large phone | 430 px | none, so `100vw` | 430 px | 3 | 1290 | `harbor-1600.jpg` |
+| Laptop | 1280 px | `50vw` | 640 px | 1 | 640 | `harbor-800.jpg` |
+| Sharp laptop | 1280 px | `50vw` | 640 px | 2 | 1280 | `harbor-1600.jpg` |
+| Large monitor | 1920 px | `50vw` | 960 px | 1 | 960 | `harbor-1200.jpg` |
+
+:::info The browser has the final say
+The recipe is a guide, not a promise. A browser may pick a larger file if it is already cached, or a smaller one on a slow connection or when a data-saving mode is on. That is a feature: the browser can use information you do not have.
+:::
+
+## Writing `sizes` for Real Layouts
+
+The hardest part of `sizes` is describing your own layout correctly. Look at your CSS, and describe how wide the image really is.
+
+### Case 1: Full-Width Image
+
+The image always spans the window.
+
+```html
+sizes="100vw"
+```
+
+### Case 2: Image With Page Margins
+
+The page has 1rem of padding on each side.
+
+```html
+sizes="calc(100vw - 2rem)"
+```
+
+### Case 3: Two Columns on Wide Screens
+
+Half the window on wide screens, full width otherwise, with a small gap.
+
+```html
+sizes="(min-width: 60rem) calc(50vw - 1.5rem), 100vw"
+```
+
+### Case 4: A Content Column With a Maximum Width
+
+The article column never grows beyond 40rem (about 640 pixels).
+
+```html
+sizes="(min-width: 42rem) 40rem, 100vw"
+```
+
+### Case 5: A Card Grid
+
+Four columns on large screens, two on medium, one on small.
+
+```html
+sizes="(min-width: 70rem) 25vw, (min-width: 40rem) 50vw, 100vw"
+```
+
+Conditions go from the **largest** screens to the smallest, because the first match wins. If you put `100vw` with no condition first, the browser would always use it.
+
+### Matching `sizes` With Your CSS
+
+The values in `sizes` should agree with the real layout. If your CSS says an image is 50% of a 1200-pixel container, but `sizes` says `100vw`, the browser will download a file twice as large as necessary.
+
+```css
+/* The layout */
+.article img { width: 100%; max-width: 40rem; }
+```
+
+```html
+<!-- The matching description -->
+<img ... sizes="(min-width: 42rem) 40rem, 100vw" />
+```
+
+## Which Widths Should You Create?
+
+You do not need dozens of files. A handful of widths covers most devices.
+
+| Width | Good for |
+| :-- | :-- |
+| 400 | Small phones at normal density |
+| 800 | Large phones, small tablets, small slots on laptops |
+| 1200 | Tablets, laptops, and sharp phones |
+| 1600 | Sharp laptops, large layouts |
+| 2400 | Very large or very sharp screens (only if needed) |
+
+Some tips:
+
+- **Aim for steps of about 1.5 to 2 times.** Files that are too close to each other add work with little benefit.
+- **Do not create sizes bigger than the original.** Enlarging only makes blurry, heavy files.
+- **Generate them automatically.** Build tools, image services, and content systems can produce all the sizes for you.
+- **Keep the same aspect ratio** across the set, and put the largest file's dimensions in `width` and `height`.
+
+```bash title="terminal"
+# One way to make the set with ImageMagick
+for w in 400 800 1200 1600; do
+  magick harbor-original.jpg -resize ${w}x -quality 80 harbor-$w.jpg
+done
+```
+
+## Checking the Result
+
+1. **Open developer tools,** go to the Network tab, filter by Img, and reload.
+2. **Use the device toolbar** to switch between phone and desktop sizes, and reload each time.
+3. **Read the real choice in JavaScript.**
+
+```js title="check.js"
+const img = document.querySelector("img");
+console.log("Chosen file:", img.currentSrc);
+console.log("File is", img.naturalWidth, "px wide");
+console.log("Shown at", img.clientWidth, "CSS px, density", window.devicePixelRatio);
+```
+
+If `naturalWidth` is much larger than `clientWidth × devicePixelRatio`, your `sizes` may be too generous. If it is smaller, the image may look soft.
+
+## `srcset` With Other Features
+
+### With `width` and `height`
+
+Always set `width` and `height` to the **largest** file's dimensions (or any pair with the same ratio). The browser uses them to reserve space, as you learned in [Width and Height](./width-and-height).
+
+### With Lazy Loading
+
+`loading="lazy"` works with `srcset`. For lazy images far down the page, the browser can only choose a file once it knows the layout size, and it does so when the image is about to appear. You will see more in [Lazy Loading](./lazy-loading). Some newer browsers also allow `sizes="auto"` on lazy images so they measure the real layout width. Support is still growing, so check current browser tables before relying on it.
+
+### With `<picture>`
+
+When you need different crops or formats, put `srcset` and `sizes` inside the `<source>` elements of a `<picture>`, as you will learn in [Picture Element](./picture-element).
+
+## Common Mistakes
+
+### Mistake 1: `w` descriptors without `sizes`
+
+The browser then assumes `100vw`, the full window width. For an image that is only half as wide, it will pick a file that is too large.
+
+### Mistake 2: Wrong `w` numbers
+
+The number must be the file's **real** pixel width. A wrong number misleads the browser into a bad choice.
+
+### Mistake 3: Mixing `w` and `x` in one `srcset`
+
+It is invalid. Use one kind per image.
+
+### Mistake 4: Percentages in `sizes`
+
+Use `vw`, `px`, `rem`, or `calc()`.
+
+### Mistake 5: Conditions in the wrong order
+
+The first matching condition wins. List the largest screens first, and put the unconditional default last.
+
+### Mistake 6: A `sizes` value that does not match the layout
+
+If the CSS and `sizes` disagree, the choice will not be efficient.
+
+### Mistake 7: Using `srcset` for art direction
+
+`srcset` lets the browser choose a **size**, not a different picture. If you need a different crop, use `<picture>`.
+
+### Mistake 8: Forgetting the `src` fallback
+
+Always provide `src`, usually a mid-sized file, for browsers and tools that do not use `srcset`.
+
+### Mistake 9: Expecting the browser to choose the exact file you imagine
+
+The browser may pick differently because of cache, connection, or data-saving settings. That is expected.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Choose a photo and create four widths: 400, 800, 1200, and 1600 pixels.
+2. Build an `<img>` with `src`, `srcset` using `w` descriptors, `sizes="100vw"`, `alt`, `width`, and `height`.
+3. Open the Network tab, reload at different device sizes, and write down which file loads each time.
+4. Change the layout so the image takes half the window on wide screens. Update `sizes` to match and test again. Did the chosen file get smaller?
+5. Build a small avatar using `x` descriptors with `1x`, `2x`, and `3x` files.
+6. Use the JavaScript snippet to compare `naturalWidth` with `clientWidth × devicePixelRatio`.
+7. Deliberately remove `sizes`. What does the browser choose now?
+8. Bonus: create a three-column card grid and write a `sizes` value for it.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `srcset` contain?</summary>
+
+A comma-separated list of image files, each followed by a descriptor (`w` for the file's width or `x` for pixel density).
+
+</details>
+
+<details>
+<summary>2. What does the `sizes` attribute tell the browser?</summary>
+
+How wide the image will be on the page, with optional media conditions, so the browser can choose a suitable file.
+
+</details>
+
+<details>
+<summary>3. When should you use `x` descriptors instead of `w`?</summary>
+
+When the image is displayed at a fixed size, such as a logo or avatar. Then you only need to provide larger files for denser screens.
+
+</details>
+
+<details>
+<summary>4. Why must the `w` number match the file's real width?</summary>
+
+The browser uses it to calculate which file is big enough. A wrong number leads to a wrong choice.
+
+</details>
+
+<details>
+<summary>5. In `sizes`, what happens when several conditions match?</summary>
+
+The first matching condition wins, so list the largest screens first and put the unconditional default last.
+
+</details>
+
+## Key Takeaways
+
+- `srcset` is a menu of files, and `sizes` describes how big the image will be. The browser chooses.
+- Use `x` descriptors for fixed-size images and `w` descriptors with `sizes` for fluid ones.
+- Write `sizes` from your real CSS layout: use `vw`, `px`, `rem`, or `calc()`, never percentages.
+- Create a handful of widths, such as 400, 800, 1200, and 1600, and always keep a `src` fallback.
+- Check the browser's choice with the Network tab or `currentSrc`.
+
+Now you can offer the right size to every screen. Next, learn how to offer different crops and formats with the [Picture Element](./picture-element).

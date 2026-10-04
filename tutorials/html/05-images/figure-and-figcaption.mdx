@@ -1,16 +1,495 @@
 ---
-id: figure-and-figcaption
-title: "Structuring Image Captions with figure and figcaption"
-sidebar_label: "Figure & Figcaption"
-sidebar_position: 8
+id: html-figure-and-figcaption
+title: "HTML figure and figcaption"
+sidebar_label: "Figure and Figcaption"
+sidebar_position: 10
 slug: /html/images/figure-and-figcaption
-description: "Wrap self-contained media content with figure and provide semantic text captions using figcaption for clean document structure."
+description: "Learn how to use the HTML figure and figcaption elements to add captions to images, diagrams, code, quotes and tables. Understand captions versus alt text, numbering with CSS counters, credits and licenses, accessibility, styling, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML figure element
-  - figcaption element
-  - image with caption HTML
-  - semantic image wrapping
+  - HTML figure
+  - HTML figcaption
+  - image captions HTML
+  - figure vs img
+  - figcaption vs alt
+  - CSS counter figure numbering
+  - HTML figure code block
+  - HTML figure blockquote
+  - image credits license HTML
+  - accessible captions
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, figure, semantics, typography]
+tags: [html, web-development, beginner, images, figure, figcaption, accessibility, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='#dbeafe'/><circle cx='170' cy='50' r='24' fill='#fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='#2563eb'/><path d='M70 110 V62 L112 110 Z' fill='#ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='#334155'/></svg>");
+
+Open a printed book or a magazine, and you will notice that pictures rarely stand alone. Underneath each one is a short line of text: "Figure 3. A fishing harbor at sunrise. Photo: A. Okafor." The picture and its caption belong together. If you moved the picture to another page, its caption would go with it.
+
+HTML has two elements for exactly this: `<figure>`, which holds the picture, and `<figcaption>`, which holds the caption. They are simple, but they carry real meaning: "this content is a self-contained unit, and this text describes it." In this lesson, you will learn how to use them well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<figure>` and `<figcaption>` mean, and what you can put in them
+- How a caption differs from `alt` text
+- How to caption images, diagrams, code, quotes, and more
+- How to number figures automatically with CSS
+- How to give credit and show licenses
+- How to style figures and keep them accessible
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+Wrap the image in a `<figure>`, and add a `<figcaption>` as the first or last child.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<figure>
+  <img
+    src="images/harbor.jpg"
+    alt="A white sailboat on blue waves under a bright sun"
+    width="600"
+    height="400"
+  />
+  <figcaption>
+    A sailboat leaves the harbor just after sunrise.
+  </figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<figure>
+  <img
+    src={sample}
+    alt="A white sailboat on blue waves under a bright sun"
+    width="240"
+    height="160"
+  />
+  <figcaption>
+    A sailboat leaves the harbor just after sunrise.
+  </figcaption>
+</figure>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo uses a small drawing built into the page. In your project, `src` points to a real photo.
+
+By default, browsers indent a `<figure>` with left and right margins (usually about 40 pixels) and show the caption as normal text below the picture. You can style both with CSS.
+
+## What the Elements Mean
+
+| Element | Meaning | Rules |
+| :-- | :-- | :-- |
+| `<figure>` | A **self-contained** piece of content, referred to from the main text, that could move elsewhere without changing the meaning of the text | Can hold images, diagrams, code, quotes, tables, videos, and more |
+| `<figcaption>` | The **caption or legend** for the figure | Must be the **first or last** child of `<figure>`. Only one per figure |
+
+The key idea is in "self-contained." If you removed the figure from the page and put it in an appendix, the main text would still make sense. That is why a decorative image is **not** a figure, but a chart that the text refers to is.
+
+:::tip A quick test
+Ask: "Does this content have a caption, and could it be moved to another place without breaking the sentence around it?" If yes, it is a good candidate for `<figure>`.
+:::
+
+## Caption, `alt`, and `title`: Three Different Jobs
+
+Beginners often mix these up. They answer different questions for different people.
+
+| | `alt` | `<figcaption>` | `title` |
+| :-- | :-- | :-- | :-- |
+| Question it answers | "What is in this image?" (the replacement for the picture) | "What should everyone know about this image?" (extra context) | "Anything else?" (a tooltip) |
+| Visible to | People who cannot see the image, and failed loads | **Everyone** | Mouse hover only |
+| Required? | Always | Optional | Optional, avoid |
+| Where | On the `<img>` | Inside the `<figure>` | On the element |
+
+### How They Work Together
+
+If the caption already describes the picture, the `alt` text should not simply repeat it. A screen reader would read the same information twice.
+
+<Tabs>
+<TabItem value="repeat" label="Repetitive" default>
+
+```html
+<figure>
+  <img src="boat.jpg" alt="A sailboat leaves the harbor just after sunrise." width="600" height="400" />
+  <figcaption>A sailboat leaves the harbor just after sunrise.</figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="complement" label="Complementary">
+
+```html
+<figure>
+  <img
+    src="boat.jpg"
+    alt="A white sailboat with one sail on calm blue water, a low sun behind it"
+    width="600"
+    height="400"
+  />
+  <figcaption>
+    Morning departure from Port Meridian, the first day of the regatta.
+  </figcaption>
+</figure>
+```
+
+The `alt` describes what is *seen*. The caption adds what is *known*: where, when, why.
+
+</TabItem>
+</Tabs>
+
+If the caption fully conveys the picture's meaning, a short `alt` is fine, or even `alt=""` in some cases. Just make sure a person who cannot see the image still gets the information once. You will go deeper in [Accessible Images](./accessible-images).
+
+## It Is Not Only for Images
+
+`<figure>` can wrap any content that has a caption and is referenced from the text.
+
+<Tabs>
+<TabItem value="code" label="Code listing" default>
+
+```html
+<figure>
+  <pre><code>console.log("Hello, harbor!");</code></pre>
+  <figcaption>Listing 1. Printing a message in JavaScript.</figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="quote" label="Quotation">
+
+```html
+<figure>
+  <blockquote>
+    <p>The best way to learn to code is to build something you care about.</p>
+  </blockquote>
+  <figcaption>
+    A tip often shared with beginners, from <cite>the CodeHarborHub forum</cite>.
+  </figcaption>
+</figure>
+```
+
+You saw this pattern in [Quotations](/html/text-content/quotations).
+
+</TabItem>
+<TabItem value="table" label="Data">
+
+```html
+<figure>
+  <table>
+    <caption>Course sign-ups by month</caption>
+    <tr><th>Month</th><th>Sign-ups</th></tr>
+    <tr><td>March</td><td>120</td></tr>
+    <tr><td>June</td><td>250</td></tr>
+  </table>
+</figure>
+```
+
+A table has its own caption element, `<caption>`. Use it inside the `<table>` instead of a `<figcaption>`.
+
+</TabItem>
+<TabItem value="video" label="Video">
+
+```html
+<figure>
+  <video controls width="560" poster="images/intro-poster.jpg">
+    <source src="media/intro.mp4" type="video/mp4" />
+    <track kind="captions" src="media/intro.en.vtt" srclang="en" label="English" default />
+    Your browser does not support the video tag.
+  </video>
+  <figcaption>A two-minute introduction to the course.</figcaption>
+</figure>
+```
+
+</TabItem>
+</Tabs>
+
+## Several Images in One Figure
+
+A figure may hold more than one image if they share a single caption, such as a before-and-after comparison.
+
+```html title="before-after.html"
+<figure>
+  <img src="images/room-before.jpg" alt="The classroom before: bare walls and old desks" width="400" height="300" />
+  <img src="images/room-after.jpg" alt="The classroom after: bright walls and new desks" width="400" height="300" />
+  <figcaption>The school computer lab before (left) and after (right) its renovation.</figcaption>
+</figure>
+```
+
+If the images need **separate** captions, use separate figures. If they are a gallery of different pictures, give each its own `<figure>`.
+
+## Numbering Figures Automatically
+
+Books say "Figure 1," "Figure 2," and refer to them in the text. You can do the same with CSS counters, so you never renumber by hand.
+
+```css title="figure-numbers.css"
+body {
+  counter-reset: figure;
+}
+figure {
+  counter-increment: figure;
+}
+figcaption::before {
+  content: "Figure " counter(figure) ". ";
+  font-weight: 700;
+}
+```
+
+```html title="numbered.html"
+<p>
+  As you can see in <a href="#fig-harbor">Figure 1</a>, the harbor is calm in the morning.
+</p>
+
+<figure id="fig-harbor">
+  <img src="images/harbor.jpg" alt="Boats in a calm harbor" width="600" height="400" />
+  <figcaption>Fishing boats resting in the harbor at sunrise.</figcaption>
+</figure>
+```
+
+The caption now begins with "Figure 1." automatically. The `id` on the figure lets other parts of the page link to it, as you learned in [Internal Links](/html/links-and-navigation/internal-links).
+
+:::info Text added by CSS
+Words added with `content` in CSS may not be announced by every screen reader, and they cannot be selected or translated like normal text. If the numbers matter, write "Figure 1." directly in the HTML. Use CSS counters for convenience, not for essential information.
+:::
+
+## Giving Credit and Showing Licenses
+
+Many images need a credit: who made it, where it came from, and the license that allows you to use it. The caption is the perfect place.
+
+```html title="credit.html"
+<figure>
+  <img src="images/lighthouse.jpg" alt="A white lighthouse glowing at dusk on a rocky coast" width="600" height="400" />
+  <figcaption>
+    A lighthouse at dusk.
+    Photo by <a href="https://example.com/photographers/a-okafor">A. Okafor</a>,
+    licensed under
+    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+  </figcaption>
+</figure>
+```
+
+Tips for credits:
+
+- **Follow the license's rules exactly.** Some require the creator's name, a link to the license, or a note that you changed the image.
+- **Use full links** for the source and the license, so readers can check them.
+- **Keep the credit short,** and put the longer details on a separate credits page if needed.
+- **Never claim someone else's work as your own.**
+- **When in doubt, ask,** or choose a different image.
+
+## Styling Figures
+
+A small amount of CSS makes figures neat. Style the `<img>` for sizing and the `<figcaption>` for text.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="styled-figure.html"
+<style>
+  figure {
+    margin: 2rem auto;
+    max-width: 40rem;
+  }
+  figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  figcaption {
+    margin-top: 0.5rem;
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+</style>
+
+<figure>
+  <img src="images/harbor.jpg" alt="Boats in a calm harbor" width="800" height="533" />
+  <figcaption>Fishing boats resting in the harbor at sunrise.</figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/styled-figure.html">
+<>
+<figure style={{margin: '1rem auto', maxWidth: '20rem'}}>
+  <img
+    src={sample}
+    alt="Boats in a calm harbor"
+    width="240"
+    height="160"
+    style={{display: 'block', maxWidth: '100%', height: 'auto', borderRadius: '8px'}}
+  />
+  <figcaption style={{marginTop: '0.5rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.5}}>
+    Fishing boats resting in the harbor at sunrise.
+  </figcaption>
+</figure>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Caption on Top, or Beside
+
+A `<figcaption>` may go first, to appear above the content. For a side-by-side layout, use CSS Grid.
+
+```css
+figure.side {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+  align-items: center;
+}
+```
+
+Keep the caption's contrast high and its text size readable. Gray text that is too light is hard for many people.
+
+## Accessibility and Global Readers
+
+- **Browsers connect the caption to the figure.** Many screen readers announce the figure as a group with its caption as its label. That is why a caption should make sense by itself.
+- **Do not repeat yourself.** The `alt` and the caption should not say the same thing.
+- **Write captions in the page's language,** and mark foreign names or terms with `lang`.
+- **Use plain words.** Many readers use a second language. Avoid idioms and long sentences.
+- **Right-to-left pages work as they are.** The caption follows the reading direction. Use logical CSS properties such as `margin-inline` if you set margins.
+- **Do not put important text only inside the image.** Say it in the caption or the text, where it can be searched and translated.
+- **Name the figure if there is no caption.** If a `<figure>` has no `<figcaption>`, give it an accessible name with `aria-label`, or reconsider whether it needs to be a figure at all.
+
+```html title="aria-label.html"
+<figure aria-label="Bar chart of course sign-ups from March to June">
+  <img src="images/signups.png" alt="Bar chart: sign-ups doubled between March and June" width="600" height="360" />
+</figure>
+```
+
+## When Not to Use `<figure>`
+
+Not every image needs a figure. Skip it when:
+
+- The image is **decoration** with `alt=""`.
+- The image is a **logo** or an **icon**.
+- The image is a **small inline picture** inside a sentence.
+- There is **no caption** and nothing refers to it.
+- The image is part of the **page design**, such as a background or banner.
+
+Using `<figure>` on everything adds noise for screen reader users, without adding meaning.
+
+## Choosing the Right Tool
+
+| You want to... | Use |
+| :-- | :-- |
+| Show a plain picture inside the flow of text | `<img>` |
+| Add a visible caption that belongs to a picture, diagram, code, or quote | `<figure>` with `<figcaption>` |
+| Describe the image for people who cannot see it | `alt` on the `<img>` |
+| Caption a table | `<caption>` inside the `<table>` |
+| Group items in a gallery | A `<figure>` for each, in a list or grid |
+| Add a hover tooltip | `title`, used sparingly |
+
+## Common Mistakes
+
+### Mistake 1: Using `<figure>` for every image
+
+Reserve it for content that is self-contained and captioned.
+
+### Mistake 2: Placing `<figcaption>` in the wrong place
+
+It must be the **first or last** child of the `<figure>`, never in the middle.
+
+### Mistake 3: More than one `<figcaption>`
+
+A figure takes only one. Use separate figures for separate captions.
+
+### Mistake 4: Copying the caption into `alt`
+
+Screen reader users hear it twice. Make the two complement each other.
+
+### Mistake 5: Using `<figcaption>` outside a `<figure>`
+
+It has no meaning on its own.
+
+### Mistake 6: Skipping credits
+
+Always name the creator and the license when they are required.
+
+### Mistake 7: Using the caption for critical information that must stay hidden from no one but is not visible
+
+A caption is visible to everyone. Do not put in it things you do not want everyone to see.
+
+### Mistake 8: Forgetting default margins
+
+Browsers indent figures by default. If your layout looks off, set `margin` on `figure`.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create `captions.html` with a heading **A Day at the Harbor**.
+2. Add three figures: a photo, a diagram or screenshot, and a short code listing.
+3. Write a caption for each, and a separate `alt` for the images that complements it, not repeats it.
+4. Add a CSS counter that numbers the captions as "Figure 1.", "Figure 2.", and so on.
+5. In the paragraph above the first figure, add a link to it using its `id`.
+6. Credit one image with a creator name and license link in its caption.
+7. Build a before-and-after figure with two images and one caption.
+8. Style the figures: a centered `max-width`, a rounded image, and a muted caption with good contrast.
+9. Bonus: caption the same photo in a second language, with the correct `lang` attribute.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `<figure>` represent?</summary>
+
+A self-contained piece of content, such as an image, diagram, code listing, or quote, that is referred to from the main text and could be moved elsewhere without changing its meaning.
+
+</details>
+
+<details>
+<summary>2. Where must `<figcaption>` go?</summary>
+
+Inside the `<figure>`, as its first or last child. There can be only one.
+
+</details>
+
+<details>
+<summary>3. How is a caption different from `alt` text?</summary>
+
+The `alt` text replaces the image for people who cannot see it. The caption is visible to everyone and adds context. They should complement each other, not repeat.
+
+</details>
+
+<details>
+<summary>4. How can you number figures automatically?</summary>
+
+With CSS counters: `counter-reset` on `body`, `counter-increment` on `figure`, and `counter()` in `figcaption::before`.
+
+</details>
+
+<details>
+<summary>5. What should you use to caption a table?</summary>
+
+The `<caption>` element inside the `<table>`, instead of a `<figcaption>`.
+
+</details>
+
+## Key Takeaways
+
+- `<figure>` groups self-contained content, and `<figcaption>` gives it a caption, first or last, one per figure.
+- A caption is for everyone. `alt` is for people who cannot see the image. Make them complement each other.
+- Figures can hold images, code, quotes, video, and more, but a table uses `<caption>`.
+- Use captions for credits and licenses, and CSS for numbering and styling.
+- Use `<figure>` only where it adds meaning, and write captions in plain, clear language for a global audience.
+
+Now your images have captions that stay with them. The last lesson brings everything together: how to make every image work for every visitor in [Accessible Images](./accessible-images).

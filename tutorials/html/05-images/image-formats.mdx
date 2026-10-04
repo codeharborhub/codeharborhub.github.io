@@ -1,16 +1,380 @@
 ---
-id: image-formats
-title: "Comparing Web Image Formats: JPEG, PNG, GIF, SVG, WebP, and AVIF"
+id: html-image-formats
+title: "Image Formats for the Web"
 sidebar_label: "Image Formats"
-sidebar_position: 10
+sidebar_position: 5
 slug: /html/images/image-formats
-description: "Understand the strengths, compression types, transparency support, and compatibility of modern web image formats like WebP, AVIF, and SVG."
+description: "Learn which image format to use on the web. Compare JPEG, PNG, GIF, WebP, AVIF and SVG, understand lossy and lossless compression, transparency and animation, browser support, optimization tools, metadata privacy, and how to choose the best format on CodeHarborHub."
 keywords:
-  - web image formats
-  - WebP vs AVIF
-  - SVG vector graphics
-  - JPEG vs PNG lossy lossless
+  - image formats for web
+  - JPEG vs PNG vs WebP
+  - AVIF image format
+  - SVG images HTML
+  - GIF vs animated WebP
+  - lossy vs lossless compression
+  - raster vs vector images
+  - optimize images for web
+  - image compression tools
+  - favicon formats
+  - learn HTML images
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, image-formats, webp, avif, performance]
+tags: [html, web-development, beginner, images, formats, performance, frontend]
 ---
+
+export const sample = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 160'><rect width='240' height='160' fill='%23dbeafe'/><circle cx='170' cy='50' r='24' fill='%23fbbf24'/><path d='M0 120 Q40 100 80 120 T160 120 T240 120 V160 H0 Z' fill='%232563eb'/><path d='M70 110 V62 L112 110 Z' fill='%23ffffff'/><rect x='62' y='110' width='58' height='8' rx='3' fill='%23334155'/></svg>";
+
+Save the same photograph in different ways, and you can end up with files that differ in size by ten times, with almost no difference to the eye. On a page with twenty images, that gap decides whether your site loads in a second or in ten, and whether a visitor on a limited data plan can afford to open it.
+
+The **format** of an image file is the biggest choice you make about its weight and quality. This lesson explains the main formats in plain language, so you can pick the right one for each image, and know how to shrink files without spoiling them.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The difference between **raster** and **vector** images
+- What **lossy** and **lossless** compression mean
+- When to use JPEG, PNG, GIF, WebP, AVIF, and SVG
+- How transparency and animation fit in
+- Which formats browsers support, and how to offer fallbacks
+- How to compress and prepare images, including privacy tips
+- How to choose a format with a simple decision guide
+
+## Two Big Ideas
+
+### Raster vs Vector
+
+| | Raster | Vector |
+| :-- | :-- | :-- |
+| Made of | A grid of colored **pixels** | **Shapes and paths** described by math |
+| Zooming in | Gets blocky and blurry | Stays perfectly sharp |
+| Best for | Photographs, detailed pictures | Logos, icons, diagrams, simple illustrations |
+| File size | Grows with pixel count | Stays small for simple shapes |
+| Examples | JPEG, PNG, GIF, WebP, AVIF | SVG |
+
+A photo of a harbor has millions of subtle color changes, so it must be raster. A logo is a few clean shapes, so vector is ideal.
+
+### Lossy vs Lossless
+
+Compression makes files smaller by storing the picture more cleverly.
+
+| | Lossy | Lossless |
+| :-- | :-- | :-- |
+| What it does | **Throws away** details your eyes barely notice | Packs the data tighter, **losing nothing** |
+| File size | Much smaller | Smaller than raw, but larger than lossy |
+| Quality | Slightly reduced, adjustable | Identical to the original |
+| Best for | Photographs | Screenshots, sharp text, graphics with flat colors |
+| Repeated saving | Each save can lower quality further | No damage |
+
+:::tip Keep your originals
+Always keep the original, full-quality file somewhere safe. Make web copies from it. Once a lossy file has been compressed, the lost detail cannot come back.
+:::
+
+## The Formats
+
+### JPEG (`.jpg`, `.jpeg`)
+
+The classic format for photographs. It uses **lossy** compression and supports millions of colors.
+
+- **Good for:** photos with smooth gradients and many colors
+- **Not good for:** sharp text, line art, logos, or anything that needs a transparent background
+- **Transparency:** no
+- **Animation:** no
+- **Support:** every browser, ever
+
+### PNG (`.png`)
+
+A **lossless** format that keeps crisp edges and supports **transparency**.
+
+- **Good for:** screenshots, diagrams, images with text, graphics that need a see-through background
+- **Not good for:** large photographs, where files become heavy
+- **Transparency:** yes, with smooth edges
+- **Animation:** not in common use
+- **Support:** every browser
+
+### GIF (`.gif`)
+
+An old format limited to **256 colors**, famous for short looping animations.
+
+- **Good for:** very small, simple animations
+- **Not good for:** photos, or longer animations. Files are large and the color is poor
+- **Transparency:** yes, but with hard, jagged edges
+- **Animation:** yes
+- **Support:** every browser
+
+For most animations today, a short **video** or an animated **WebP** is far smaller than a GIF with better quality.
+
+### WebP (`.webp`)
+
+A modern format from Google that can be **lossy or lossless**, with transparency and animation in one format.
+
+- **Good for:** almost everything. It is often noticeably smaller than JPEG and PNG
+- **Transparency:** yes
+- **Animation:** yes
+- **Support:** all current major browsers
+
+### AVIF (`.avif`)
+
+A newer format based on a video codec. It often gives the **smallest files** for a given quality, with support for transparency and wide color.
+
+- **Good for:** photographs and graphics where every kilobyte counts
+- **Trade-off:** slower to create, and a little slower to decode on weak devices
+- **Transparency:** yes
+- **Animation:** yes, but less common
+- **Support:** current versions of the major browsers, though older ones may lack it, so offer a fallback
+
+### SVG (`.svg`)
+
+A **vector** format written in text (XML). It scales to any size without losing sharpness and can be styled and animated with CSS.
+
+- **Good for:** logos, icons, charts, illustrations with flat shapes
+- **Not good for:** photographs
+- **Transparency:** yes
+- **Animation:** yes, with CSS or script
+- **Support:** every modern browser
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="svg-sizes.html"
+<!-- The same SVG file, shown at two sizes: both stay sharp -->
+<img src="images/boat.svg" alt="A sailboat on blue waves" width="60" height="40" />
+<img src="images/boat.svg" alt="A sailboat on blue waves" width="240" height="160" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/svg-sizes.html">
+<>
+<img src={sample} alt="A sailboat on blue waves" width="60" height="40" />{' '}
+<img src={sample} alt="A sailboat on blue waves" width="240" height="160" />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The drawing above is itself an SVG. Notice how it stays crisp at both sizes. A raster image enlarged four times would look soft.
+
+:::warning Treat SVG files from strangers with care
+An SVG is text, and it can contain scripts. Loaded through `<img>`, scripts are blocked, so that is safe. Pasted directly into your page, or opened on its own, an untrusted SVG can run code. Only use SVGs from sources you trust, and sanitize any SVG that visitors upload.
+:::
+
+### Others You May Meet
+
+| Format | What it is | Advice |
+| :-- | :-- | :-- |
+| **ICO** | The classic favicon format | Fine for favicons, though a PNG or SVG favicon also works in modern browsers |
+| **HEIC / HEIF** | The default photo format on many phones | Convert to JPEG, WebP, or AVIF before using it on a web page |
+| **BMP, TIFF** | Large, uncompressed formats | Do not use them on the web |
+| **JPEG XL** | A newer format with strong features | Browser support is still limited, so check current support before relying on it |
+
+## Comparing the Main Formats
+
+| | JPEG | PNG | GIF | WebP | AVIF | SVG |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| Type | Raster | Raster | Raster | Raster | Raster | Vector |
+| Compression | Lossy | Lossless | Lossless (256 colors) | Both | Both | Text |
+| Photos | Great | Heavy | Poor | Great | Great | No |
+| Sharp graphics and text | Poor | Great | Fair | Great | Great | Great |
+| Transparency | No | Yes | Basic | Yes | Yes | Yes |
+| Animation | No | No | Yes | Yes | Yes | Yes |
+| Typical file size | Medium | Large | Large | Small | Smallest | Tiny for simple shapes |
+| Browser support | Universal | Universal | Universal | Universal today | Wide, offer a fallback | Universal |
+
+Exact savings depend on the image, but as a rough guide, WebP is often around a quarter to a third smaller than a comparable JPEG, and AVIF is often smaller still. Always test your own images.
+
+## A Simple Decision Guide
+
+Ask these questions in order.
+
+1. **Is it a logo, icon, chart, or simple flat illustration?** Use **SVG**.
+2. **Is it a photograph or a picture with rich color?** Use **AVIF or WebP**, with a **JPEG** fallback.
+3. **Is it a screenshot, diagram, or picture with sharp text?** Use **WebP** (lossless) or **PNG**.
+4. **Does it need a transparent background and it is not a vector?** Use **WebP**, **AVIF**, or **PNG**.
+5. **Is it an animation?** Use a short **video** or an **animated WebP**. Avoid GIF unless it is tiny.
+
+| Your image | First choice | Fallback |
+| :-- | :-- | :-- |
+| Hero photo | AVIF or WebP | JPEG |
+| Product photo with a white background | WebP | JPEG |
+| Logo | SVG | PNG |
+| Icon set | SVG | PNG |
+| Chart | SVG, or WebP | PNG |
+| Screenshot | WebP | PNG |
+| Cutout with a transparent background | WebP | PNG |
+| Short looping clip | Video | Animated WebP |
+| Favicon | SVG or PNG | ICO |
+
+## Offering Fallbacks
+
+Not every browser understands every format. HTML gives you a clean way to offer several versions, and the browser picks the first one it can use. It is called the `<picture>` element, and you will study it in [Picture Element](./picture-element). Here is a preview.
+
+```html title="picture-preview.html"
+<picture>
+  <source srcset="images/harbor.avif" type="image/avif" />
+  <source srcset="images/harbor.webp" type="image/webp" />
+  <img
+    src="images/harbor.jpg"
+    alt="Fishing boats resting in a calm harbor at sunrise"
+    width="1200"
+    height="800"
+  />
+</picture>
+```
+
+A modern browser takes the AVIF. One that does not understand AVIF takes the WebP. The oldest takes the JPEG in the `<img>`, which also holds the `alt` text and the dimensions.
+
+## Preparing Images: A Practical Routine
+
+Picking a format is only part of the job. These steps make files light and tidy.
+
+1. **Resize first.** Decide the largest size the image will be shown at, then resize to about that (or twice that for sharp high-density screens). Never upload a 6000-pixel photo to show at 600.
+2. **Crop** to the part that matters.
+3. **Choose the format** with the guide above.
+4. **Compress.** For lossy photos, a quality between about 70 and 85 usually looks the same as the original to the eye, at a fraction of the size. Compare before you decide.
+5. **Strip extra data.** Photos often carry hidden **metadata** such as camera model, time, and even **GPS location**. Remove it before publishing.
+6. **Name the file clearly,** in lowercase with hyphens.
+7. **Check the result** in a browser, on a phone, at the real display size.
+
+### Tools to Help
+
+| Tool | What it is |
+| :-- | :-- |
+| **Squoosh** (web app) | Compare formats and quality side by side in your browser |
+| **ImageMagick** | A command-line tool for resizing and converting |
+| **cwebp / avifenc** | Command-line encoders for WebP and AVIF |
+| **Sharp** | A popular library for processing images in Node.js builds |
+| **SVGO** | A tool that makes SVG files smaller |
+| **Your image editor** | "Export for web" options in many editors |
+
+A few commands, for those who like the terminal:
+
+```bash title="terminal"
+# Resize a JPEG to 1200 pixels wide, with good quality
+magick input.jpg -resize 1200x -quality 80 harbor-1200.jpg
+
+# Convert to WebP
+cwebp -q 80 harbor-1200.jpg -o harbor-1200.webp
+
+# Convert to AVIF
+avifenc --min 20 --max 35 harbor-1200.jpg harbor-1200.avif
+```
+
+Exact options differ between versions, so check each tool's help.
+
+:::info Privacy: remove location data
+A photo taken on a phone may contain the exact coordinates of where it was taken. Publishing it without removing that data can reveal someone's home. Most export tools have a "remove metadata" option, and command-line tools such as `exiftool -all= photo.jpg` can strip it.
+:::
+
+## Formats and Page Speed
+
+Image weight directly affects speed, and speed affects real people.
+
+| For a visitor on... | A heavy image page means... |
+| :-- | :-- |
+| A slow mobile network | Long waiting, and a page that may never finish loading |
+| A limited data plan | Paying for every extra megabyte |
+| An older phone | Slower decoding and a laggy page |
+| A battery that is low | More energy used |
+
+Smaller images are one of the kindest things you can do for a global audience. A good target for most pages is to keep each content image **well under 200 KB**, and the whole page as light as you can.
+
+## Common Mistakes
+
+### Mistake 1: Using PNG for every photograph
+
+PNG files of photos can be several times larger than a good WebP or JPEG.
+
+### Mistake 2: Using JPEG for logos and text
+
+Lossy compression leaves fuzzy halos around sharp edges. Use SVG or PNG.
+
+### Mistake 3: Using a GIF for a long animation
+
+A short video is far lighter and sharper.
+
+### Mistake 4: Serving only AVIF or WebP with no fallback
+
+Some browsers may not display it. Use `<picture>` with a fallback.
+
+### Mistake 5: Re-saving a JPEG again and again
+
+Quality drops each time. Always export from the original.
+
+### Mistake 6: Keeping metadata
+
+It adds weight and can leak private information.
+
+### Mistake 7: Renaming a file to change its format
+
+Renaming `photo.png` to `photo.jpg` does not convert it. Use a proper export or conversion tool.
+
+### Mistake 8: Trusting an uploaded SVG
+
+Sanitize SVG files from visitors, or do not accept them.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Take one photo and save it as a JPEG at quality 90, 80, and 60. Compare their sizes and look at them side by side.
+2. Convert the same photo to WebP and AVIF with Squoosh or a command-line tool. Note each file size.
+3. Take a screenshot with text, and save it as PNG and as lossy JPEG. Zoom in on the text. Which looks cleaner?
+4. Make or download a simple logo as SVG. Show it at three different sizes in an HTML page. Does it stay sharp?
+5. Build a `<picture>` element that offers AVIF, WebP, and JPEG versions of your photo.
+6. Check a photo's metadata with a tool such as `exiftool`, then strip it.
+7. Write down which format you would choose for each image on a page of your own project, and why.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between raster and vector images?</summary>
+
+Raster images are grids of pixels and get blurry when enlarged. Vector images are made of shapes and paths and stay sharp at any size.
+
+</details>
+
+<details>
+<summary>2. What does lossy compression do?</summary>
+
+It permanently discards some detail that the eye barely notices, so files become much smaller.
+
+</details>
+
+<details>
+<summary>3. Which format is best for logos and icons, and why?</summary>
+
+SVG, because it is a small vector format that scales to any size without losing sharpness.
+
+</details>
+
+<details>
+<summary>4. Why offer a JPEG fallback when using AVIF or WebP?</summary>
+
+Some older browsers do not support the newer formats. The `<picture>` element lets each browser choose the best version it can display.
+
+</details>
+
+<details>
+<summary>5. Why should you strip metadata from photos before publishing them?</summary>
+
+Metadata adds weight and can contain private details such as the exact location where a photo was taken.
+
+</details>
+
+## Key Takeaways
+
+- Use **SVG** for logos, icons, and simple graphics, and **AVIF or WebP** for photos, with a **JPEG** fallback.
+- Use **PNG or lossless WebP** for screenshots and sharp text, and videos or animated WebP instead of GIF.
+- Resize before you compress, compress sensibly, and strip metadata.
+- Offer fallbacks with `<picture>` so every browser gets a format it understands.
+- Lighter images make your site faster, cheaper, and kinder to visitors everywhere.
+
+Now you know which files to make. Next, learn how to make images fit every screen in [Responsive Images](./responsive-images).
