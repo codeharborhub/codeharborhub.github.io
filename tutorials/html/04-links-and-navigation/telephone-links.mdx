@@ -1,15 +1,403 @@
 ---
-id: telephone-links
-title: "Click-to-Call Phone Links with tel Protocol"
-sidebar_label: "Telephone Links (tel)"
-sidebar_position: 8
+id: html-telephone-links
+title: "HTML Telephone Links"
+sidebar_label: "Telephone Links"
+sidebar_position: 10
 slug: /html/links-and-navigation/telephone-links
-description: "Implement click-to-call mobile features using the tel protocol, international number formatting, and desktop dialing fallbacks."
+description: "Learn how to create telephone links in HTML with the tel scheme. Write international phone numbers with country codes, add extensions, use sms links, handle desktop vs mobile, prevent unwanted auto-detection, and make phone links accessible on CodeHarborHub."
 keywords:
-  - HTML tel links
+  - HTML telephone link
+  - HTML tel link
+  - tel href international format
   - click to call HTML
-  - telephone protocol link
-  - mobile phone linking
+  - HTML sms link
+  - phone number country code
+  - E.164 phone format
+  - format-detection telephone no
+  - phone link accessibility
+  - right to left phone numbers
+  - learn HTML phone links
   - CodeHarborHub HTML
-tags: [html, mobile, click-to-call, usability]
+tags: [html, web-development, beginner, links, telephone, tel, navigation, frontend]
 ---
+
+Picture someone standing outside a restaurant at closing time, phone in hand, trying to call and ask if there is still a table. They see the phone number on the website. Now they have to remember it, switch to the keypad, and type it in, hoping they do not make a mistake.
+
+Or the number could be a **telephone link**. One tap, and their phone is already dialing. That small difference is the reason `tel:` links exist, and why almost every business website uses them. In this lesson, you will learn how to write them correctly for visitors from any country, and how to avoid the pitfalls that make a phone link annoying instead of helpful.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to write a basic `tel:` link
+- Why you should always include the **country code**
+- How to format numbers for both people and phones
+- What happens on phones, tablets, and desktop computers
+- How to add extensions, and how to use `sms:` links
+- How to stop browsers from turning random numbers into links
+- Accessibility and global tips, including right-to-left pages
+- Common mistakes, and when other options work better
+
+## The Basics
+
+Use the `tel:` scheme followed by the phone number, in the `href` attribute.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  Call our support team on
+  <a href="tel:+12025550100">+1 202 555 0100</a>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  Call our support team on{' '}
+  <a href="tel:+12025550100">+1 202 555 0100</a>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+On a phone, tapping the link opens the dialer or asks "Call this number?" On a computer, the result depends on what is installed, which we cover shortly.
+
+The number in this lesson is a made-up example in a range set aside for fiction, so please do not try to call it. Always replace it with your own number.
+
+:::info Links start the call, but do not place it
+Just as a `mailto:` link only opens a draft, a `tel:` link only prepares the call. The visitor still has to press the green button.
+:::
+
+## Always Include the Country Code
+
+This is the most important rule in the lesson. If your website is public, visitors may be calling from another city, state, or country. A number written without a country code works only for people in your own country.
+
+The international standard is the **E.164** format.
+
+```text
++  country code  area code  local number
++  1             202        5550100
+```
+
+| Part | What it means | Example |
+| :-- | :-- | :-- |
+| `+` | "Dial your country's international prefix first" | `+` |
+| Country code | One to three digits that name the country | `1`, `44`, `91`, `49` |
+| The rest | The national number, **without** a leading zero | `2025550100` |
+
+The plus sign is the key. It lets every phone convert the number to the right international prefix automatically, whether that is `00`, `011`, or something else.
+
+### Drop the National Leading Zero
+
+In many countries, local numbers start with a `0` that is used only inside the country. When you add the country code, **remove that zero**.
+
+| Country | Local format | International `tel:` value |
+| :-- | :-- | :-- |
+| United Kingdom | `020 7946 0123` | `+442079460123` |
+| Germany | `030 1234567` | `+49301234567` |
+| India (mobile) | `098765 43210` | `+919876543210` |
+| United States | `(202) 555-0100` | `+12025550100` |
+
+These numbers are examples only. The UK and US ones come from ranges reserved for fiction, but the others may belong to real people, so do not call them. Always replace them with your own.
+
+<Tabs>
+<TabItem value="bad" label="Local only" default>
+
+```html
+<a href="tel:020 7946 0123">020 7946 0123</a>
+```
+
+Works only for people already inside that country, and spaces in the `href` may cause trouble.
+
+</TabItem>
+<TabItem value="good" label="International">
+
+```html
+<a href="tel:+442079460123">+44 20 7946 0123</a>
+```
+
+Works from anywhere. The visible text uses spaces to be easy to read, and the `href` stays clean.
+
+</TabItem>
+</Tabs>
+
+## Visible Text vs the `href` Value
+
+People and phones want different things.
+
+- **The visible text** should be easy for a human to read. Use spaces, dashes, or brackets in the style your visitors expect.
+- **The `href`** should be clean: a plus sign and digits, nothing else.
+
+```html
+<!-- Readable for people, clean for machines -->
+<a href="tel:+919876543210">+91 98765 43210</a>
+<a href="tel:+12025550100">+1 (202) 555-0100</a>
+```
+
+The standard does allow separators like dashes and dots in the `href`, and many phones accept them. But plain digits work everywhere, so make that your habit.
+
+## Extensions and Pauses
+
+Some numbers need an extension after the main line connects, such as a company switchboard. Support depends on the phone and the app, so test it, and always show the extension in the visible text as well.
+
+```html
+<!-- ext. through a comma: a short pause, then the extension -->
+<a href="tel:+12025550100,204">+1 202 555 0100, ext. 204</a>
+
+<!-- A comma adds a pause of about two seconds. Add more for a longer wait. -->
+<a href="tel:+12025550100,,,204">Call and wait for the menu</a>
+```
+
+| Character | Effect in many dialers |
+| :-- | :-- |
+| `,` (comma) | Waits about two seconds, then continues |
+| `;` (semicolon) | Waits for you to confirm before continuing |
+
+:::warning Test on real devices
+Pauses and extensions behave differently between phone makers, apps, and countries. Always write the extension in words too, such as "ext. 204," so visitors can dial it manually if needed.
+:::
+
+## Text Message Links: `sms:`
+
+A close cousin of `tel:` is the `sms:` link. It opens the messaging app with a number ready, and it can even include a starting message.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="sms.html"
+<a href="sms:+12025550100">Send us a text message</a>
+
+<a href="sms:+12025550100?body=Hello%2C%20I%20have%20a%20question.">
+  Text us a question
+</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/sms.html">
+<>
+<ul>
+  <li><a href="sms:+12025550100">Send us a text message</a></li>
+  <li><a href={"sms:+12025550100?body=Hello%2C%20I%20have%20a%20question."}>Text us a question</a></li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The way the message text is attached differs a little between operating systems, so test on the devices your visitors use. Message text uses the same percent-encoding you learned in [Email Links](./email-links).
+
+Many people also prefer chat apps. Some of them offer ordinary web links that start a chat, such as a link built from a phone number. Those are normal `https` links, so remember the [Link Security](./link-security) advice. Link only to services you trust, and tell visitors which app will open.
+
+## What Happens on Different Devices?
+
+| Device | What a `tel:` link usually does |
+| :-- | :-- |
+| **Smartphone** | Opens the dialer or asks for confirmation. This is the ideal case |
+| **Tablet with a phone plan** | Often the same as a phone |
+| **Tablet without calling** | May do nothing, or offer a calling app |
+| **Laptop or desktop** | May open a calling app, such as a video chat or a "phone link" program, or may do nothing at all |
+
+Because desktop behavior is unpredictable, **always show the number as readable text**, so visitors can read it and call from another device.
+
+### Show the Link Only Where It Helps
+
+If you only want a clickable phone link on touch devices, CSS can help. This pattern makes the number plain text on desktop and a link on phones by styling the link differently depending on the device.
+
+```css title="tel-style.css"
+/* Desktop-like devices: the link looks like normal text */
+a[href^="tel:"] {
+  color: inherit;
+  text-decoration: none;
+  pointer-events: none;
+}
+
+/* Touch devices: make it look and behave like a link */
+@media (hover: none) and (pointer: coarse) {
+  a[href^="tel:"] {
+    color: #2563eb;
+    text-decoration: underline;
+    pointer-events: auto;
+  }
+}
+```
+
+This is optional. Many sites simply keep the link everywhere, which is also fine, as long as the number is readable.
+
+## Stop Unwanted Phone Links
+
+Some mobile browsers look for number-like text and turn it into a phone link by themselves. That is helpful for real phone numbers, but annoying for order numbers, dates, or prices that happen to look similar.
+
+To turn off automatic detection for the whole page, add this to the `<head>`:
+
+```html
+<meta name="format-detection" content="telephone=no" />
+```
+
+Then add real `<a href="tel:...">` links only where you want them. This gives you control, and the result is the same on every device.
+
+## Accessibility and Global Readers
+
+- **Write helpful link text.** "Call support: +1 202 555 0100" is better than just the digits, and much better than "click here."
+- **Use the visitor's language** for the words around the number, and set `lang`. The digits stay the same.
+- **Keep numbers readable.** Group the digits in the pattern people in your region are used to, and add enough padding around the link so it is easy to tap on a phone.
+- **Include hours and time zone.** A global visitor needs to know when someone will answer, for example "Monday to Friday, 9:00 to 17:00 India Standard Time (UTC+5:30)."
+- **Mention toll-free limits.** Free numbers often cannot be called from abroad. Offer an international number as well.
+- **Do not put the number only in an image.** It cannot be tapped, copied, or read aloud.
+
+### Phone Numbers on Right-to-Left Pages
+
+In languages such as Arabic and Hebrew, text runs right to left, but **phone numbers still read left to right**. Inside a right-to-left sentence, the plus sign and spaces can jump to the wrong place. Isolate the number so it stays intact.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="rtl-phone.html"
+<p lang="ar" dir="rtl">
+  اتصل بنا على
+  <a href="tel:+442079460123"><bdi dir="ltr">+44 20 7946 0123</bdi></a>
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/rtl-phone.html">
+<>
+<p lang="ar" dir="rtl">
+  اتصل بنا على{' '}
+  <a href="tel:+442079460123"><bdi dir="ltr">+44 20 7946 0123</bdi></a>
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The `<bdi>` element, which you met in the [Semantic Text](/tutorials/html/text-content/semantic-text) lesson, keeps the number's direction separate from the sentence around it.
+
+## Privacy and Safety
+
+- **Think before you publish a personal number.** Anything on a public page can be copied by programs and sold to spammers. Use a business or role number when you can.
+- **Use `tel:` only for numbers you own and control.** A link you do not control can be changed to a paid, premium-rate number.
+- **Check user-supplied numbers.** If visitors enter their own numbers that you later show as links, allow only digits, a leading plus sign, and a few separators.
+- **Be careful with scams.** Pages that ask visitors to "call now" to fix a problem are a common trick. Make your own contact page clear and honest.
+
+## Choosing the Right Tool
+
+| You want visitors to... | Use |
+| :-- | :-- |
+| Call you with one tap | `tel:` with an international number |
+| Send a text message | `sms:` |
+| Write a longer message | `mailto:` or a contact form |
+| Chat in an app they already use | A trusted chat link, clearly labeled |
+| Reach you from a desktop computer | Show the number as text, plus a form or email |
+| Avoid automatic links on a page | `format-detection` meta tag |
+
+## Common Mistakes
+
+### Mistake 1: Leaving out the country code
+
+Visitors from another country cannot use the link.
+
+### Mistake 2: Keeping the national leading zero
+
+Write `+442079460123`, not `+4402079460123`.
+
+### Mistake 3: Spaces and brackets in the `href`
+
+They often work, but plain digits with a leading plus are safest.
+
+### Mistake 4: Writing `tel` without the colon
+
+The scheme is `tel:`. Without the colon, the browser treats it as a file name.
+
+### Mistake 5: Showing the number only in the `href`
+
+If the visible text says "Call us," desktop visitors have no way to see the number. Show it.
+
+### Mistake 6: Using a link for things that are not phone numbers
+
+Order numbers and reference codes can look like phone numbers. Use the `format-detection` meta tag to avoid accidental links.
+
+### Mistake 7: Putting the number in an image
+
+It cannot be tapped, copied, or read by a screen reader.
+
+### Mistake 8: Forgetting hours and time zones
+
+Visitors from other time zones may call at the wrong time. Say when you are available.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `contact.html` with a heading **Call Us**.
+2. Add a `tel:` link using an international number in E.164 format, with a readable version as the visible text.
+3. Add a second number from another country, and remove the national leading zero.
+4. Add an `sms:` link with a prefilled message.
+5. Add the opening hours with a time zone below the numbers.
+6. Add `<meta name="format-detection" content="telephone=no" />` to the `<head>`, and check that only your real links are clickable.
+7. Bonus: write the same contact line in a right-to-left language, with `<bdi dir="ltr">` around the number.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which scheme starts a phone call from a link?</summary>
+
+`tel:`, as in `tel:+12025550100`.
+
+</details>
+
+<details>
+<summary>2. Why should the number include a country code and a plus sign?</summary>
+
+So the link works from any country. The plus sign tells phones to add the right international prefix automatically.
+
+</details>
+
+<details>
+<summary>3. What happens to the national leading zero when you add a country code?</summary>
+
+You remove it. For example, `020 7946 0123` becomes `+442079460123`.
+
+</details>
+
+<details>
+<summary>4. Why should you always show the phone number as readable text?</summary>
+
+On desktop computers a `tel:` link may do nothing, and visitors may want to dial from another device.
+
+</details>
+
+<details>
+<summary>5. Which element keeps a phone number reading left to right inside a right-to-left sentence?</summary>
+
+`<bdi dir="ltr">`, which isolates the number from the surrounding text direction.
+
+</details>
+
+## Key Takeaways
+
+- A `tel:` link prepares a call with one tap. It does not place the call by itself.
+- Use the international **E.164** format: a plus sign, the country code, and the number without the national leading zero.
+- Keep the visible text readable for people and the `href` clean for machines, and show the number as text for desktop visitors.
+- Use `sms:` for text messages, and `format-detection` to stop unwanted automatic links.
+- Add hours and time zones, protect personal numbers, and isolate numbers on right-to-left pages with `<bdi>`.
+
+You can now connect visitors to you by email and by phone. Next, learn how to offer files for them to save in [Download Links](./download-links).

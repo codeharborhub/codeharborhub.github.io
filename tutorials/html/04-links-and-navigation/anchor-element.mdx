@@ -1,15 +1,400 @@
 ---
-id: anchor-element
-title: "The HTML Anchor Element: Creating Hyperlinks"
-sidebar_label: "Anchor Element (<a>)"
+id: html-anchor-element
+title: "HTML Anchor Element"
+sidebar_label: "Anchor Element"
 sidebar_position: 2
 slug: /html/links-and-navigation/anchor-element
-description: "Learn how the HTML anchor element (a tag) works, its essential href attribute, and how it connects web pages together across the internet."
+description: "Learn how the HTML anchor element works. Understand the a tag, the href attribute, link text, link states, styling links with CSS, linking images, accessibility, hreflang for multilingual sites, and common mistakes on CodeHarborHub."
 keywords:
   - HTML anchor element
-  - a tag HTML
-  - href attribute syntax
-  - hyperlink creation
+  - HTML a tag
+  - HTML href attribute
+  - HTML hyperlink
+  - HTML link text
+  - HTML link states
+  - style links with CSS
+  - link an image in HTML
+  - hreflang attribute
+  - HTML link accessibility
+  - learn HTML links
   - CodeHarborHub HTML
-tags: [html, anchor-tag, links, beginner]
+tags: [html, web-development, beginner, links, anchor, frontend]
 ---
+
+Every link you have ever clicked, from a search result to a "Buy now" button to a footnote, started with the same tiny tag. It is called the **anchor element**, and it is written `<a>`.
+
+The name comes from the idea of a ship's anchor: something that holds a spot and connects it to somewhere else. Learn this one element well and everything else in this section, from internal links to navigation menus, becomes much easier.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How the `<a>` element and its `href` attribute work together
+- What can go inside a link, including text, images, and more
+- The five link states, and how to style each one
+- How to write link text that works for every visitor
+- How to make icon-only links accessible
+- How to use `hreflang`, `title`, and `lang` on links
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+An anchor needs two things: an `href` attribute that says **where** to go, and content that says **what** to click.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  Explore the
+  <a href="https://developer.mozilla.org/">MDN Web Docs</a>
+  to learn more.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  Explore the{' '}
+  <a href="#">MDN Web Docs</a>{' '}
+  to learn more.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo link points to `#` so it stays on this page. In your own file, it would go to the address in `href`.
+
+## The `href` Attribute
+
+`href` stands for **hypertext reference**. Its value can be many different things.
+
+| `href` value | Where it goes |
+| :-- | :-- |
+| `https://example.com` | Another website |
+| `about.html` | Another file in the same folder |
+| `#contact` | A spot on the current page |
+| `mailto:hi@example.com` | A new email message |
+| `tel:+911234567890` | A phone call |
+| `files/guide.pdf` | A file, which opens or downloads |
+
+An `<a>` **without** `href` is called a placeholder link. It looks like plain text, cannot be clicked, and cannot be reached with the keyboard.
+
+```html
+<a>I am not a link yet</a>
+```
+
+:::tip When is a placeholder useful?
+It is handy in templates and menus where the current page's item should not link to itself. Otherwise, always give an anchor an `href`.
+:::
+
+## What Can Go Inside a Link?
+
+Links are **inline** elements, so they live inside text. But they can wrap many things.
+
+<Tabs>
+<TabItem value="text" label="Text" default>
+
+```html
+<a href="/courses">Browse all courses</a>
+```
+
+</TabItem>
+<TabItem value="image" label="Image">
+
+```html
+<a href="/">
+  <img src="logo.png" alt="CodeHarborHub home" width="120" height="40" />
+</a>
+```
+
+When an image is the only content of a link, its `alt` text becomes the link text. Describe where the link **goes**, not what the picture looks like.
+
+</TabItem>
+<TabItem value="block" label="Block content">
+
+```html
+<a href="/courses/html">
+  <h3>HTML for Beginners</h3>
+  <p>Build your first web page in a weekend.</p>
+</a>
+```
+
+Modern HTML lets one link wrap a whole card, including headings and paragraphs. Keep the card short, so a screen reader announces something sensible.
+
+</TabItem>
+</Tabs>
+
+:::warning Never put a link inside another link
+An `<a>` cannot contain another `<a>`, and it should not contain buttons or form controls. Browsers cannot decide which one to follow.
+:::
+
+## Link States
+
+A link is not one thing. It changes as people use it. CSS lets you style each situation with a **pseudo-class**.
+
+| State | Pseudo-class | When it applies |
+| :-- | :-- | :-- |
+| Unvisited | `:link` | The visitor has not been to this address |
+| Visited | `:visited` | The visitor has already been there |
+| Hover | `:hover` | A mouse pointer is over the link |
+| Focus | `:focus-visible` | The link is reached with the keyboard |
+| Active | `:active` | The link is being pressed |
+
+Remember the order with the phrase **L**o**V**e **F**ear **H**ate **A**ctive, or "LVFHA": link, visited, focus, hover, active. If you write them in a different order, later rules can cancel earlier ones.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="link-states.html"
+<style>
+  a:link    { color: #2563eb; }
+  a:visited { color: #7c3aed; }
+  a:focus-visible {
+    outline: 3px solid #f59e0b;
+    outline-offset: 2px;
+  }
+  a:hover   { text-decoration-thickness: 3px; }
+  a:active  { color: #dc2626; }
+</style>
+
+<p>Visit the <a href="https://example.com">example site</a>.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/link-states.html">
+<>
+<p>
+  Visit the{' '}
+  <a href="#" style={{color: '#2563eb', textDecorationThickness: '2px', textUnderlineOffset: '3px'}}>example site</a>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info Why browsers limit `:visited`
+For privacy, browsers only let `:visited` change a few properties, such as color. Otherwise a website could detect which sites you have visited.
+:::
+
+## Writing Good Link Text
+
+Link text is the most important thing you control. Follow these simple habits.
+
+1. **Say where it goes.** "Download the course syllabus" beats "click here."
+2. **Keep it short but clear.** Aim for two to six words.
+3. **Put the key words first.** People scan the start of a link.
+4. **Avoid repeating the same text for different places.** Two links that both say "Read more" cannot be told apart.
+5. **Do not include the word "link."** Screen readers already announce it.
+
+<Tabs>
+<TabItem value="bad" label="Weak" default>
+
+```html
+<p>Our new course is out. <a href="/courses/css">Click here</a>.</p>
+<p>The CSS guide is ready. <a href="/guides/css">Click here</a>.</p>
+```
+
+</TabItem>
+<TabItem value="good" label="Strong">
+
+```html
+<p>Our new <a href="/courses/css">CSS course</a> is out.</p>
+<p>The <a href="/guides/css">CSS guide</a> is ready.</p>
+```
+
+</TabItem>
+</Tabs>
+
+## Icon-Only Links
+
+Sometimes a link is only an icon, like a social media logo or a search symbol. A screen reader needs words to announce. There are two clean ways to give them.
+
+```html title="icon-links.html"
+<!-- Option 1: alt text on an image icon -->
+<a href="https://example.com/profile">
+  <img src="social-icon.svg" alt="CodeHarborHub on the example network" width="24" height="24" />
+</a>
+
+<!-- Option 2: aria-label on the link -->
+<a href="/search" aria-label="Search the site">
+  <svg width="24" height="24" aria-hidden="true" focusable="false">
+    <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+    <line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="2" />
+  </svg>
+</a>
+```
+
+The `aria-hidden="true"` on the SVG stops the picture from being read out, and the `aria-label` gives the link its name.
+
+## The `title` Attribute
+
+You can add a `title` to give extra information as a tooltip.
+
+```html
+<a href="/guide.pdf" title="PDF, 2 MB, 12 pages">Course guide</a>
+```
+
+Use it with care. Tooltips need a mouse, so touch and keyboard users often never see them. Never put **essential** information only in `title`. Put it in the visible text instead.
+
+## Multilingual Links: `hreflang` and `lang`
+
+If your site has pages in several languages, two attributes help.
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `hreflang` | Says what language the **destination** page is in | `hreflang="hi"` |
+| `lang` | Says what language the **link text** is in | `lang="hi"` |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="languages.html"
+<ul>
+  <li><a href="/en/" hreflang="en" lang="en">English</a></li>
+  <li><a href="/hi/" hreflang="hi" lang="hi">हिन्दी</a></li>
+  <li><a href="/es/" hreflang="es" lang="es">Español</a></li>
+  <li><a href="/ar/" hreflang="ar" lang="ar">العربية</a></li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/languages.html">
+<>
+<ul>
+  <li><a href="#" hrefLang="en" lang="en">English</a></li>
+  <li><a href="#" hrefLang="hi" lang="hi">हिन्दी</a></li>
+  <li><a href="#" hrefLang="es" lang="es">Español</a></li>
+  <li><a href="#" hrefLang="ar" lang="ar">العربية</a></li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A good habit for a language switcher is to write each language **in its own language**, as above. A visitor who cannot read English can still find their option.
+
+:::note
+Inside `<BrowserWindow>`, the output uses `hrefLang` because that block is JSX. In plain HTML, write `hreflang`.
+:::
+
+## Accessibility Checklist
+
+- **Use a real `<a href>`** for navigation. Do not build links from a `<div>` or `<span>` with JavaScript. Those cannot be reached with the keyboard by default and do not announce as links.
+- **Keep the focus outline visible.** Never write `outline: none` without a replacement.
+- **Do not rely on color alone.** Keep the underline, or add another clear cue, so people who cannot tell colors apart can still find links.
+- **Make the target big enough.** On phones, aim for a touch area of about 44 by 44 pixels. Add `padding` to small links.
+- **Use a link for going somewhere, and a button for doing something.** Links navigate. Buttons act, like submitting a form or opening a menu.
+
+| The click will... | Use |
+| :-- | :-- |
+| Go to a page, file, or spot on a page | `<a href>` |
+| Run an action on the current page | `<button>` |
+
+## Common Mistakes
+
+### Mistake 1: Forgetting `href`
+
+Without it, the anchor is not a link. It will not be clickable, focusable, or announced as a link.
+
+### Mistake 2: Using "click here" or "read more" everywhere
+
+Visitors who navigate by a list of links hear the same words many times with no clue where each one goes.
+
+### Mistake 3: Removing the underline and the focus outline
+
+Both help people see and use your links. If you change them, replace them with something at least as clear.
+
+### Mistake 4: Linking a whole paragraph
+
+A long underlined paragraph is tiring to read and awkward for screen readers. Link only the key words.
+
+### Mistake 5: Using a link as a button
+
+```html
+<!-- Not ideal -->
+<a href="#" onclick="openMenu()">Menu</a>
+
+<!-- Better -->
+<button type="button" onclick="openMenu()">Menu</button>
+```
+
+### Mistake 6: Writing the address in the text and not the link
+
+If you show a URL, make the whole URL the link, or better, use readable words.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `my-links.html`.
+2. Add an `<h1>` that says **My Favorite Sites**.
+3. Make a list of three links to your favorite websites, each with clear link text.
+4. Make one link wrap an image, and give the image a useful `alt` text.
+5. Add a CSS rule for `a:link`, `a:visited`, `a:hover`, and `a:focus-visible`, in that order.
+6. Press <kbd>Tab</kbd> to move through the links. Can you always see which link has focus?
+7. Bonus: add a small language switcher using `hreflang` and `lang`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which attribute makes an `<a>` element a real link?</summary>
+
+The `href` attribute. Without it, the anchor is only a placeholder.
+
+</details>
+
+<details>
+<summary>2. What can an `<a>` element contain?</summary>
+
+Text, images, and other inline or block content, but never another link or a button.
+
+</details>
+
+<details>
+<summary>3. Which pseudo-class styles a link reached with the keyboard?</summary>
+
+`:focus-visible`.
+
+</details>
+
+<details>
+<summary>4. Why is "click here" poor link text?</summary>
+
+It does not describe the destination. People scanning the page or using a screen reader cannot tell links apart.
+
+</details>
+
+<details>
+<summary>5. How do you give an icon-only link an accessible name?</summary>
+
+Add `alt` text to an image icon, or add `aria-label` to the link and hide a decorative SVG with `aria-hidden="true"`.
+
+</details>
+
+## Key Takeaways
+
+- The `<a>` element with an `href` attribute is the foundation of every link.
+- The `href` value decides where the link goes: a site, a page, a section, an email, a phone number, or a file.
+- Style links with `:link`, `:visited`, `:focus-visible`, `:hover`, and `:active`, in that order.
+- Write link text that describes the destination, and name icon-only links with `alt` or `aria-label`.
+- Use `<a>` to go somewhere and `<button>` to do something, and mark languages with `hreflang` and `lang`.
+
+Now you know how a link is built. Next, learn how to point to any page on the web with [Absolute URLs](./absolute-urls).

@@ -1,15 +1,314 @@
 ---
-id: links-and-navigation-overview
-title: "Links and Navigation in HTML"
+id: links-navigation-overview
+title: "HTML Links and Navigation"
 sidebar_label: "Links and Navigation"
 sidebar_position: 1
 slug: /html/links-and-navigation
-description: "Master hyperlink creation, URL structures, protocol links, link security, and site navigation menus in HTML with CodeHarborHub."
+description: "Learn how links connect the web. Master the HTML anchor element, absolute and relative URLs, internal and external links, the target attribute, link security, email, telephone and download links, and navigation menus with CodeHarborHub."
 keywords:
-  - HTML links overview
-  - HTML navigation tutorial
-  - hyperlinks in HTML
-  - web navigation basics
+  - HTML links
+  - HTML anchor tag
+  - HTML hyperlinks
+  - HTML navigation
+  - absolute vs relative URLs
+  - HTML internal links
+  - HTML external links
+  - HTML target attribute
+  - HTML mailto and tel links
+  - HTML download links
+  - HTML navigation menu
+  - learn HTML links
   - CodeHarborHub HTML
-tags: [html, links, navigation, beginner]
+tags: [html, web-development, beginner, links, navigation, frontend]
 ---
+
+Why is it called the **World Wide Web**? Because it is a web. Billions of pages, each one connected to others by threads you can follow with a single click or tap. Take those threads away and you would have a pile of separate documents that nobody could find.
+
+The thread is the **link**. It is one of the oldest and most important ideas in HTML, and it is the reason you can start on a recipe and end up reading about the history of spices. In this section, you will learn how to build every kind of link: to other websites, to other pages of your own site, to a spot on the same page, to an email address, to a phone number, and even to a file someone can download.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+In this section, you will be able to:
+
+- Write a link with the **anchor element** (`<a>`)
+- Tell **absolute** and **relative** URLs apart, and know when to use each
+- Link inside your own site, and jump to a section on the same page
+- Link to other websites, and decide how the new page should open
+- Keep your links **secure** with `rel` values
+- Create **email**, **telephone**, and **download** links
+- Build a clear **navigation menu** that works for everyone
+
+:::info Prerequisites
+You should be comfortable with basic text elements such as headings and paragraphs. If not, start with the [Text Content](/tutorials/html/text-content) section.
+:::
+
+## Your First Link
+
+A link has three parts: the tag, the destination, and the words people click.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  Learn more about web standards at
+  <a href="https://www.w3.org/">the W3C website</a>.
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  Learn more about web standards at{' '}
+  <a href="#">the W3C website</a>.
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo link above points to `#` so it stays on this page. In your own file, it would take you to the address in `href`.
+
+## The Anatomy of a Link
+
+Here is the same link, split into its parts.
+
+```html
+<a href="https://www.w3.org/">the W3C website</a>
+```
+
+| Part | In the example | What it does |
+| :-- | :-- | :-- |
+| Opening tag | `<a ...>` | Starts the link. `a` means **anchor** |
+| `href` attribute | `href="https://www.w3.org/"` | The destination. `href` means **hypertext reference** |
+| Link text | `the W3C website` | The words people see and click |
+| Closing tag | `</a>` | Ends the link |
+
+The `href` attribute is the heart of every link. Without it, the `<a>` tag is just text.
+
+## Reading a URL
+
+A **URL** is an address on the web. Once you can read one, links become much easier to understand.
+
+```text
+https://codeharborhub.github.io:443/tutorial/html?lang=en#links
+└─┬─┘   └───────────┬──────────┘└┬┘└────────┬───┘└───┬──┘└──┬─┘
+scheme              host        port        path    query  fragment
+```
+
+| Part | Meaning | Example |
+| :-- | :-- | :-- |
+| Scheme | The rule for talking to the resource | `https`, `mailto`, `tel` |
+| Host | The server or website name | `codeharborhub.github.io` |
+| Port | The door on the server, usually hidden | `443` |
+| Path | Which page or file | `/tutorial/html` |
+| Query | Extra information | `?lang=en` |
+| Fragment | A spot within the page | `#links` |
+
+## The Different Kinds of Links
+
+Every link is a variation on the same idea. The destination in `href` decides what kind of link you get.
+
+| Type | What it does | Example `href` |
+| :-- | :-- | :-- |
+| **Absolute URL** | A full address, including the scheme and host | `https://example.com/about` |
+| **Relative URL** | An address from the current page's location | `about.html` or `../images/logo.png` |
+| **Internal link** | Goes to another page or section in your own site | `/contact` or `#pricing` |
+| **External link** | Goes to a different website | `https://developer.mozilla.org/` |
+| **Email link** | Opens the visitor's email app | `mailto:hello@example.com` |
+| **Telephone link** | Starts a phone call | `tel:+911234567890` |
+| **Download link** | Saves a file to the device | `report.pdf` with the `download` attribute |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="link-types.html"
+<ul>
+  <li><a href="https://example.com/about">Absolute: About page</a></li>
+  <li><a href="about.html">Relative: About page</a></li>
+  <li><a href="#pricing">Internal: jump to Pricing</a></li>
+  <li><a href="https://developer.mozilla.org/">External: MDN</a></li>
+  <li><a href="mailto:hello@example.com">Email us</a></li>
+  <li><a href="tel:+911234567890">Call us</a></li>
+  <li><a href="guide.pdf" download>Download the guide</a></li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/link-types.html">
+<>
+<ul>
+  <li><a href="#">Absolute: About page</a></li>
+  <li><a href="#">Relative: About page</a></li>
+  <li><a href="#">Internal: jump to Pricing</a></li>
+  <li><a href="#">External: MDN</a></li>
+  <li><a href="mailto:hello@example.com">Email us</a></li>
+  <li><a href="tel:+911234567890">Call us</a></li>
+  <li><a href="#">Download the guide</a></li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## How Links Behave
+
+By default, a link:
+
+- Is shown in a **different color** and **underlined**, so people know it can be clicked
+- Opens the destination in the **same tab**
+- Changes color after you have visited it
+- Can be reached and activated with the **keyboard**, using <kbd>Tab</kbd> and <kbd>Enter</kbd>
+
+You can change the look with CSS. You can change where it opens with the `target` attribute. You will learn both in this section.
+
+## Good Link Text
+
+The words inside a link matter more than most beginners expect. Many screen reader users move through a page by listening to a **list of links only**. If every link says "click here," that list is useless.
+
+<Tabs>
+<TabItem value="bad" label="Unclear" default>
+
+```html
+<p>To read our privacy policy, <a href="/privacy">click here</a>.</p>
+<p>For the full guide, <a href="/guide">read more</a>.</p>
+```
+
+</TabItem>
+<TabItem value="good" label="Clear">
+
+```html
+<p>Read our <a href="/privacy">privacy policy</a>.</p>
+<p>Open the <a href="/guide">full HTML guide</a>.</p>
+```
+
+</TabItem>
+</Tabs>
+
+:::tip The out-of-context test
+Imagine each link on its own, with nothing around it. Would a stranger understand where it goes? If yes, the link text is good.
+:::
+
+## Navigation: Links That Form a Map
+
+A single link takes you somewhere. A group of links, laid out clearly, forms **navigation**: the map of your site. HTML has the `<nav>` element for this, and a list is the natural way to arrange the links.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="nav.html"
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/courses">Courses</a></li>
+    <li><a href="/blog">Blog</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/nav.html">
+<>
+<nav aria-label="Main">
+  <ul>
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Courses</a></li>
+    <li><a href="#">Blog</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You will turn this plain list into a real menu in the last lesson of this section.
+
+## Your Learning Path
+
+Follow the lessons in order. Each one builds on the one before.
+
+<DocCardList />
+
+## Common Beginner Mistakes
+
+Here are a few traps worth knowing about before you start. Each one has its own lesson later.
+
+| Mistake | What goes wrong | Where you will fix it |
+| :-- | :-- | :-- |
+| Forgetting `https://` on an outside link | The browser treats it as a path on your own site | [Absolute URLs](./links-and-navigation/absolute-urls) |
+| Wrong folder path in a relative link | The page shows a "not found" error | [Relative URLs](./links-and-navigation/relative-urls) |
+| Using "click here" as link text | Screen reader users cannot tell links apart | [Anchor Element](./links-and-navigation/anchor-element) |
+| Opening every link in a new tab | Visitors lose control of their own browsing | [Target Attribute](./links-and-navigation/target-attribute) |
+| Linking out with `target="_blank"` and no `rel` | Older browsers can expose a security risk | [Link Security](./links-and-navigation/link-security) |
+| Writing a phone number without the country code | The call fails for visitors in other countries | [Telephone Links](./links-and-navigation/telephone-links) |
+
+:::warning Links break over time
+Websites move and pages disappear. A link that works today may show an error next year. Good developers check their links from time to time, and you will learn easy ways to keep them healthy.
+:::
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Test yourself. Click a question to reveal the answer.
+
+<details>
+<summary>1. Which tag creates a link, and which attribute holds the destination?</summary>
+
+The `<a>` (anchor) tag creates the link, and the `href` attribute holds the destination.
+
+</details>
+
+<details>
+<summary>2. What is the difference between an absolute and a relative URL?</summary>
+
+An absolute URL contains the full address, including the scheme and host. A relative URL gives a path starting from the current page's location.
+
+</details>
+
+<details>
+<summary>3. Which URL scheme opens an email app?</summary>
+
+`mailto:`, for example `mailto:hello@example.com`.
+
+</details>
+
+<details>
+<summary>4. Why is "click here" a poor link text?</summary>
+
+It says nothing about the destination. Screen reader users, and anyone scanning the page, rely on link text that makes sense on its own.
+
+</details>
+
+<details>
+<summary>5. Which element groups the main links of a site into a navigation area?</summary>
+
+The `<nav>` element, usually with a list of links inside it.
+
+</details>
+
+## Key Takeaways
+
+- A link is an `<a>` element with an `href` attribute that holds the destination.
+- The `href` value decides the type of link: page, section, website, email, phone number, or file.
+- Absolute URLs include everything. Relative URLs depend on the current page's location.
+- Write link text that is clear on its own, so every visitor knows where the link goes.
+- Group your main links in a `<nav>` element to build the map of your site.
+
+Ready to begin? Start with the [Anchor Element](./links-and-navigation/anchor-element).

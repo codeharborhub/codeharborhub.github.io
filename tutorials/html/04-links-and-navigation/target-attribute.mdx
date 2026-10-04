@@ -1,15 +1,368 @@
 ---
-id: target-attribute
-title: "Opening Links in New Windows: The target Attribute"
+id: html-target-attribute
+title: "HTML Target Attribute"
 sidebar_label: "Target Attribute"
-sidebar_position: 10
+sidebar_position: 7
 slug: /html/links-and-navigation/target-attribute
-description: "Master target attributes like _blank, _self, _parent, and _top to control how browsing contexts and tabs open links."
+description: "Learn how the HTML target attribute decides where a link opens. Understand _self, _blank, _parent, _top, named targets and iframes, when opening a new tab helps, accessibility warnings, security basics, and common mistakes on CodeHarborHub."
 keywords:
-  - target attribute HTML
+  - HTML target attribute
   - target _blank
-  - target _self
-  - opening link in new tab
+  - open link in new tab HTML
+  - HTML target _self
+  - HTML target _parent _top
+  - HTML named target iframe
+  - new tab accessibility
+  - HTML base target
+  - noopener target blank
+  - learn HTML target
   - CodeHarborHub HTML
-tags: [html, target-attribute, UX, links]
+tags: [html, web-development, beginner, links, target, navigation, frontend]
 ---
+
+When you click a link, the new page has to appear **somewhere**. Usually it replaces the page you were reading. Sometimes it opens in a fresh tab. Occasionally it loads inside a small frame on the same page. The `target` attribute is how you tell the browser which of these should happen.
+
+It is a short attribute with a big effect on how your site feels. A new tab at the right moment is a kindness. A new tab at the wrong moment is an annoyance. This lesson helps you tell the difference.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `target` attribute does, and which values it accepts
+- How `_self`, `_blank`, `_parent`, and `_top` differ
+- How named targets and `<iframe>` elements work together
+- When opening a new tab helps visitors, and when it hurts
+- How to warn visitors that a link opens a new tab
+- The basic security rule for `target="_blank"`
+- Common mistakes, and how to avoid them
+
+## The Basics
+
+`target` goes on an `<a>` element, next to `href`. Without it, the link opens in the **same tab**, which is the default.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<p>
+  <a href="about.html">Open in this tab</a>
+</p>
+<p>
+  <a href="https://developer.mozilla.org/" target="_blank" rel="noopener">
+    Open MDN in a new tab
+  </a>
+</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p>
+  <a href="#">Open in this tab</a>
+</p>
+<p>
+  <a href="#">Open MDN in a new tab</a>
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#` and do not use `target`, so clicking them will not open anything on this page. In your own file, the second link would open a new tab.
+
+## The Four Keywords
+
+| Value | Where the link opens | Typical use |
+| :-- | :-- | :-- |
+| `_self` | The **same** tab or frame (the default) | Normal navigation |
+| `_blank` | A **new** tab, or sometimes a new window | An outside resource that you want to keep beside the current page |
+| `_parent` | The **parent** of the current frame | A link inside an `<iframe>` that should load in the page that contains it |
+| `_top` | The **full** window, replacing any frames | A link inside an `<iframe>` that should take over the whole page |
+
+You will use `_self` and `_blank` almost every time. `_parent` and `_top` only matter when your page is displayed inside a frame.
+
+### `_self`: The Default
+
+Writing `target="_self"` has the same effect as writing nothing. You almost never need it, except to override a default set somewhere else, such as by `<base target>`.
+
+```html
+<a href="contact.html" target="_self">Contact</a>
+```
+
+### `_blank`: A New Tab
+
+```html
+<a href="https://example.org/guide" target="_blank" rel="noopener">Open the guide</a>
+```
+
+Visitors can still decide for themselves. Holding <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on a Mac) while clicking, or using the middle mouse button, opens **any** link in a new tab. Because of this, you do not have to force a new tab on everyone.
+
+## Named Targets and Iframes
+
+`target` can also be a **name** you invent. If a tab, window, or frame with that name exists, the link opens inside it. If not, the browser creates one and gives it that name. Later links with the same name reuse it.
+
+```html title="named-target.html"
+<ul>
+  <li><a href="videos/intro.html" target="viewer">Introduction</a></li>
+  <li><a href="videos/links.html" target="viewer">All about links</a></li>
+</ul>
+
+<iframe
+  name="viewer"
+  title="Lesson viewer"
+  width="600"
+  height="340"
+  src="videos/intro.html">
+</iframe>
+```
+
+Here the `<iframe>` has `name="viewer"`. Clicking either link loads its page **inside the frame**, while the rest of your page stays put. This pattern is useful for small viewers and previews.
+
+:::info Keep frames meaningful
+An `<iframe>` should always have a `title` attribute that describes its content. Screen readers announce it so users know what the frame is for.
+:::
+
+### `_parent` and `_top`
+
+Imagine your page is shown inside someone else's frame. A link inside it can choose how far to break out.
+
+```html
+<!-- Loads in the frame that contains this one -->
+<a href="next.html" target="_parent">Next</a>
+
+<!-- Loads in the whole browser window -->
+<a href="https://example.com/" target="_top">Go to the full site</a>
+```
+
+If the page is not in a frame, both values behave like `_self`.
+
+## Should This Link Open a New Tab?
+
+This is the most important question in this lesson. There is no single right answer, but there is good guidance.
+
+### When a New Tab Helps
+
+- The visitor is in the middle of something that would be **lost** if they left, such as a long form, a checkout, or a video call.
+- The link is a **reference** that the reader will want to look at while staying on your page, such as a document or a help page.
+- The destination is a **file**, such as a PDF, that opens in a viewer.
+- You are linking to an **external site** from a page of instructions the reader must come back to.
+
+### When It Hurts
+
+- **For every link**. It becomes impossible to tell which tab is which.
+- **For links inside your own site**. Visitors expect to stay in one tab and use the back button.
+- **On phones**. Extra tabs are harder to find and close on small screens.
+- **For people who use a screen reader or magnifier**. A new tab can be disorienting if it is not announced.
+- **When the back button matters**. In a new tab, the back button has nothing to go back to.
+
+| Link | Suggestion |
+| :-- | :-- |
+| Menu item to another page of your site | Same tab |
+| "Next lesson" button | Same tab |
+| Outside reference in the middle of a tutorial | New tab, clearly marked |
+| Terms and conditions, linked from a sign-up form | New tab, so the form is not lost |
+| A downloadable PDF | Your choice. Mark it clearly |
+
+:::tip Let visitors choose
+When in doubt, leave `target` off. People who want a new tab already know how to open one, but nobody can undo a new tab that opened unexpectedly.
+:::
+
+## Warn Visitors About New Tabs
+
+If a link opens a new tab, say so. It helps everyone, and it is especially important for people who cannot see the screen. Accessibility guidelines recommend it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="new-tab-warning.html"
+<a href="https://example.org/terms" target="_blank" rel="noopener">
+  Terms and conditions
+  <span aria-hidden="true">↗</span>
+  <span class="visually-hidden">(opens in a new tab)</span>
+</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/new-tab-warning.html">
+<>
+<p>
+  <a href="#">
+    Terms and conditions{' '}
+    <span aria-hidden="true">↗</span>
+    <span style={{position: 'absolute', width: '1px', height: '1px', margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap'}}>(opens in a new tab)</span>
+  </a>
+</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Sighted visitors see the arrow, and screen reader users hear "Terms and conditions (opens in a new tab)." You saw the `.visually-hidden` CSS class in the [External Links](./external-links) lesson.
+
+A simple alternative is to write the warning in plain, visible words: "Terms and conditions (opens in a new tab)."
+
+If your site is in several languages, translate the warning too. A Hindi page should say "(नए टैब में खुलता है)" and a Spanish page "(se abre en una pestaña nueva)".
+
+## A Safety Rule for `target="_blank"`
+
+When a link opens a new tab, the new page used to get a small amount of **control over the page that opened it**. A badly behaved site could use that to redirect your tab to a fake page. The fix is the `rel` attribute.
+
+```html
+<a href="https://example.org/" target="_blank" rel="noopener noreferrer">Outside site</a>
+```
+
+- `noopener` cuts the connection between the two tabs.
+- `noreferrer` also hides which page the visitor came from.
+
+Most modern browsers now apply `noopener` to `target="_blank"` links automatically. Even so, many teams still write it by hand, because it protects older browsers and makes your intention clear. You will study this properly in the next lessons, starting with [Link Security](./link-security).
+
+:::warning A good habit
+Whenever you write `target="_blank"` on a link to another site, add `rel="noopener"` right away. It costs nothing and keeps your visitors safer.
+:::
+
+## Setting a Default With `<base target>`
+
+If **every** link on a page should open the same way, you can set a default in the `<head>`.
+
+```html title="base-target.html"
+<head>
+  <base target="_blank" />
+</head>
+<body>
+  <a href="https://example.org/a">Opens in a new tab</a>
+  <a href="https://example.org/b">Also opens in a new tab</a>
+  <a href="https://example.org/c" target="_self">This one stays here</a>
+</body>
+```
+
+An individual `target` on a link always wins over the `<base>` default. Be careful, though: `<base target>` also affects links you did not plan for, and it can make a whole page confusing. In most projects, it is better to set `target` on each link where you really need it.
+
+## `target` Beyond Links
+
+The attribute works on a few other elements too.
+
+| Element | What `target` does |
+| :-- | :-- |
+| `<a>` | Where the link opens |
+| `<form>` | Where the **result** of a submitted form appears |
+| `<area>` | Where an image-map link opens |
+| `<base>` | The default for all links on the page |
+
+```html
+<!-- Show the search results in a new tab -->
+<form action="/search" method="get" target="_blank">
+  <label for="q">Search</label>
+  <input id="q" name="q" type="search" />
+  <button type="submit">Search</button>
+</form>
+```
+
+## Common Mistakes
+
+### Mistake 1: Opening every link in a new tab
+
+Visitors lose control, and they end up with many tabs. Use it sparingly.
+
+### Mistake 2: Forgetting `rel="noopener"`
+
+Always add it to `target="_blank"` links that lead to other sites.
+
+### Mistake 3: Giving no warning
+
+An unexpected new tab confuses people, especially those who use assistive technology. Say "(opens in a new tab)".
+
+### Mistake 4: Typing the keyword wrong
+
+The keywords begin with an underscore: `_blank`, not `blank`. Without the underscore, `blank` becomes a **name**, and the browser opens a single tab named "blank" that every such link will reuse.
+
+```html
+<!-- Wrong: opens in a tab named "blank", reused every time -->
+<a href="https://example.org/" target="blank">Link</a>
+
+<!-- Right -->
+<a href="https://example.org/" target="_blank" rel="noopener">Link</a>
+```
+
+### Mistake 5: Using `target` on internal navigation
+
+A site menu should open in the same tab. Keep visitors in one flow.
+
+### Mistake 6: Forgetting the `title` on an `<iframe>`
+
+An unlabeled frame is hard to understand for screen reader users.
+
+### Mistake 7: Using `target` to build a pop-up window
+
+`target` cannot set a window size. Pop-up windows are rarely helpful today, and browsers often block them.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a file called `targets.html`.
+2. Add a list of **three** links to other pages in your project, with no `target`.
+3. Add **two** external links with `target="_blank"` and `rel="noopener noreferrer"`.
+4. Add a warning to each of them, using visible words or hidden text.
+5. Add an `<iframe name="viewer" title="Preview">` and two links that use `target="viewer"`.
+6. Click the same named-target link twice. Does it reuse the frame?
+7. Change one `_blank` to `blank` and see what happens. Then fix it again.
+8. Bonus: add a new-tab warning in a second language.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `target` attribute control?</summary>
+
+Where the linked page opens, such as the same tab, a new tab, or a named frame.
+
+</details>
+
+<details>
+<summary>2. What is the default behavior if you leave `target` out?</summary>
+
+The link opens in the same tab, which is the same as `target="_self"`.
+
+</details>
+
+<details>
+<summary>3. When is a new tab a good idea?</summary>
+
+When leaving the page would lose the visitor's work, such as a form, or when the link is a reference they want to keep beside the page.
+
+</details>
+
+<details>
+<summary>4. What `rel` value should you add to `target="_blank"` links to other sites?</summary>
+
+`noopener`, usually together with `noreferrer`, so the new page cannot control the page that opened it.
+
+</details>
+
+<details>
+<summary>5. Why do `_blank`, `_self`, `_parent`, and `_top` start with an underscore?</summary>
+
+The underscore marks them as reserved keywords. A name without an underscore is treated as a custom target name.
+
+</details>
+
+## Key Takeaways
+
+- `target` decides where a link opens. The default is the same tab.
+- `_blank` opens a new tab, `_parent` and `_top` break out of frames, and a custom name reuses a specific frame or tab.
+- Use a new tab only when it clearly helps, and let visitors choose otherwise.
+- Always warn visitors when a link opens a new tab, in the page's language.
+- Add `rel="noopener"` (and usually `noreferrer`) to `target="_blank"` links.
+
+Next, learn exactly how to keep your visitors safe when links open elsewhere in [Link Security](./link-security).

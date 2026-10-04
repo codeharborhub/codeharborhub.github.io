@@ -1,15 +1,418 @@
 ---
-id: download-links
-title: "Triggering File Downloads using the download Attribute"
+id: html-download-links
+title: "HTML Download Links"
 sidebar_label: "Download Links"
-sidebar_position: 9
+sidebar_position: 11
 slug: /html/links-and-navigation/download-links
-description: "Discover how to force browser file downloads using the download attribute, custom save-as filenames, and cross-origin security rules."
+description: "Learn how to create download links in HTML with the download attribute. Suggest file names, understand same-origin limits and Content-Disposition, generate files with JavaScript, show file type and size, keep downloads safe, and make them accessible on CodeHarborHub."
 keywords:
+  - HTML download link
   - HTML download attribute
-  - trigger file download HTML
-  - save as link filename
-  - anchor download feature
+  - download file HTML
+  - Content-Disposition attachment
+  - create file with JavaScript blob
+  - link to PDF in HTML
+  - file size in link text
+  - safe file downloads
+  - accessible download link
+  - learn HTML download
   - CodeHarborHub HTML
-tags: [html, download, file-handling, frontend]
+tags: [html, web-development, beginner, links, download, navigation, frontend]
 ---
+
+A course syllabus. A free e-book. A spreadsheet template. A photo in full size. Websites share files all the time, and visitors want to take them away to use later, offline, or on another device.
+
+HTML makes this simple. A normal link can already point to a file. With one extra attribute, `download`, you can ask the browser to **save the file** instead of showing it. This lesson teaches you how, explains the rules that decide whether it works, and shows how to make downloads clear, safe, and kind to people with slow or expensive internet.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to link to a file, and how to ask the browser to save it
+- How to suggest a **file name** with the `download` attribute
+- Why `download` sometimes seems to be ignored
+- How servers can force a download with a header
+- How to create a file on the fly with JavaScript
+- How to describe files with their type, size, and language
+- How to keep downloads safe, accessible, and fair to all visitors
+
+## Step One: A Link to a File
+
+You already know how to link to a page. A file is the same, using a path in `href` (see [Relative URLs](./relative-urls)).
+
+```html title="plain-file-link.html"
+<a href="files/course-syllabus.pdf">Course syllabus</a>
+```
+
+What happens next is up to the **browser**, and depends on the file type.
+
+| File type | What the browser usually does |
+| :-- | :-- |
+| Web page, image, PDF, audio, video, plain text | **Shows** the file in the tab |
+| ZIP archive, installer, spreadsheet, word-processor file | **Saves** the file to the device |
+| Unknown or unsupported format | Usually saves it |
+
+So a PDF link opens a viewer by default. If you want visitors to get a copy on their device, add the `download` attribute.
+
+## The `download` Attribute
+
+Add `download` to an `<a>` element. The browser then saves the target instead of opening it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="download.html"
+<ul>
+  <li>
+    <a href="files/course-syllabus.pdf" download>
+      Download the course syllabus (PDF)
+    </a>
+  </li>
+  <li>
+    <a href="images/poster.png" download>
+      Download the poster (PNG)
+    </a>
+  </li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/download.html">
+<>
+<ul>
+  <li><a href="#">Download the course syllabus (PDF)</a></li>
+  <li><a href="#">Download the poster (PNG)</a></li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo links point to `#` and have no `download` attribute, because this lesson page has no real files to save. In your own project, the links above would save the two files.
+
+### Suggest a File Name
+
+Give `download` a value, and the browser uses it as the **suggested name** for the saved file.
+
+```html title="download-name.html"
+<a href="files/syllabus-v3-final-FINAL.pdf" download="html-course-syllabus.pdf">
+  Download the syllabus
+</a>
+```
+
+The file on your server is called `syllabus-v3-final-FINAL.pdf`, but the visitor gets `html-course-syllabus.pdf`. This is handy when your internal file names are messy.
+
+:::tip Choose friendly file names
+Use lowercase letters, numbers, and hyphens: `html-course-syllabus.pdf`. Avoid spaces and special characters. Visitors will see this name in their Downloads folder, and it should make sense there.
+:::
+
+## Why Does `download` Sometimes Do Nothing?
+
+Beginners are often puzzled when `download` does not work. The usual reasons are:
+
+| Reason | What happens | What to do |
+| :-- | :-- | :-- |
+| **The file is on another website** | Browsers ignore `download` for links to a different origin, to protect visitors | Host the file on your own site, or ask the other site to force a download |
+| **The server sets its own instructions** | A `Content-Disposition` header can override your attribute | Check the server's settings |
+| **The link is a `blob:` or `data:` address created by a script** | Works, as long as it is created in the same page | See the JavaScript section below |
+| **The browser is old or unusual** | Some embedded browsers ignore it | Provide a fallback, such as a clear page about the file |
+
+"Same origin" means the same scheme, host, and port. A link to `files/guide.pdf` on your own site is same-origin. A link to `https://other-site.example/guide.pdf` is not.
+
+## Forcing a Download From the Server
+
+Sometimes the server decides. When a file is sent with a `Content-Disposition: attachment` header, browsers save it instead of showing it, whatever the link says. This works for files on any site, including your own.
+
+```text title="Response header"
+Content-Disposition: attachment; filename="html-course-syllabus.pdf"
+```
+
+You do not write this in HTML. It is a setting on the web server or in the code that sends the file. It is useful when:
+
+- The file comes from another service you control
+- You want **every** visitor to save the file, regardless of their browser
+- The file name should be fixed by the server
+
+## Creating a File With JavaScript
+
+You can also **make** a file in the browser, then offer it as a download. This is how "Export as CSV" and "Download my notes" buttons work, without any server.
+
+```html title="create-file.html"
+<button type="button" id="save-notes">Download my notes</button>
+<textarea id="notes" rows="5" cols="40" aria-label="My notes"></textarea>
+
+<script>
+  document.getElementById("save-notes").addEventListener("click", () => {
+    const text = document.getElementById("notes").value;
+
+    // 1. Put the text into a file-like object
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+
+    // 2. Make a temporary address for it
+    const url = URL.createObjectURL(blob);
+
+    // 3. Make a link, give it a name, click it, and clean up
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "my-notes.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+</script>
+```
+
+Notice that the control is a `<button>`, not a link. It **does something** on the page and creates a file, so a button is the right element. The hidden link is only the mechanism for saving.
+
+A few details:
+
+- `type: "text/plain;charset=utf-8"` tells the browser the file is text in UTF-8, so accents and non-Latin letters save correctly.
+- For a spreadsheet, use `text/csv`. For JSON data, use `application/json`.
+- `URL.revokeObjectURL()` frees the memory when you are done.
+
+## Tell Visitors What They Are Getting
+
+A download is a small commitment. Visitors should know the **type**, the **size**, and sometimes the **language** before they click.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="download-info.html"
+<ul>
+  <li>
+    <a href="files/html-course-syllabus.pdf" download>
+      HTML course syllabus
+    </a>
+    (PDF, 1.2 MB, English)
+  </li>
+  <li>
+    <a href="files/html-course-syllabus-hi.pdf" download hreflang="hi" lang="hi">
+      पाठ्यक्रम की रूपरेखा
+    </a>
+    (PDF, 1.3 MB, हिन्दी)
+  </li>
+  <li>
+    <a href="files/starter-project.zip" download>
+      Starter project
+    </a>
+    (ZIP, 4.8 MB)
+  </li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/download-info.html">
+<>
+<ul>
+  <li>
+    <a href="#">HTML course syllabus</a>{' '}
+    (PDF, 1.2 MB, English)
+  </li>
+  <li>
+    <a href="#" hrefLang="hi" lang="hi">पाठ्यक्रम की रूपरेखा</a>{' '}
+    (PDF, 1.3 MB, हिन्दी)
+  </li>
+  <li>
+    <a href="#">Starter project</a>{' '}
+    (ZIP, 4.8 MB)
+  </li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can also give a hint to the browser with the `type` attribute, as in `type="application/pdf"`. It does not change what the file is, but it can help tools and assistive technology describe the link.
+
+### Why File Size Matters
+
+Not everyone has fast, unlimited internet. Many visitors pay for each megabyte, or have a weak connection. Writing the size is a small courtesy that helps them decide.
+
+| Size | Suggestion |
+| :-- | :-- |
+| Under 1 MB | Usually fine without a warning |
+| 1 to 20 MB | Show the size |
+| Over 20 MB | Show the size, and consider offering a smaller version |
+| Very large files | Offer a lower-quality option, or split the file |
+
+Compress images and PDFs before you publish them. A 20 MB photo that could be 400 KB is a burden for everyone.
+
+## Choose the Right Format
+
+| You are sharing... | Good format | Why |
+| :-- | :-- | :-- |
+| A document to read | PDF | Looks the same on every device |
+| A document to edit | DOCX or ODT | Easy to change |
+| Data for a spreadsheet | CSV or XLSX | CSV is plain text and opens almost anywhere |
+| Several files together | ZIP | One download instead of many |
+| An image for printing | PNG or high-quality JPEG | Good detail |
+| Code or a project | ZIP, with a README file | Easy to unpack |
+
+For documents, also think about people who cannot read a PDF easily. Where you can, offer an HTML version too, or make sure the PDF is **tagged** for screen readers.
+
+## Accessibility Checklist
+
+- **Say it is a download** in the link text or right after it, so nobody is surprised.
+- **State the type, size, and language,** as shown earlier.
+- **Make files accessible too.** A link to an inaccessible PDF is only half accessible. Use real headings, alt text for images, and a logical reading order.
+- **Describe the link, not the action only.** "Download the HTML course syllabus" is better than "Download."
+- **Use a button for generated files** and a link for existing files.
+- **Do not rely on an icon alone.** A small PDF icon needs a text label next to it.
+
+## Keeping Downloads Safe
+
+Downloads can carry viruses and scams, so both publishers and visitors need to be careful.
+
+### If You Publish Files
+
+- **Share only files you made or have the right to share.** Respect copyright and licenses.
+- **Scan files for malware** before you upload them.
+- **Avoid executable files** (`.exe`, `.msi`, `.bat`, `.sh`) unless that is your purpose. If you share software, offer a **checksum** (a code that proves the file was not changed), and tell visitors where it is from.
+- **Serve files over `https`.** Otherwise someone could swap the file on its way to the visitor.
+- **Never accept a file name from a visitor and put it straight into a path.** An attacker may try to reach other files on your server. Validate and clean names on the server.
+- **Keep private files private.** A link to a file is public if anyone can guess the address.
+
+### For Visitors
+
+- Download only from sites you trust.
+- Check that the file type matches what the link says. A "PDF" that ends in `.exe` is a warning sign.
+- Be careful with ZIP files and macros in documents from unknown senders.
+
+:::warning Hot-linking and licensing
+Linking directly to a file on another website uses their bandwidth, and the file may change or disappear. Use your own copy, and only when the license allows it.
+:::
+
+## Styling a Download Link as a Button
+
+A link can look like a button with CSS, and still be a link.
+
+```html title="download-button.html"
+<a class="button" href="files/starter-project.zip" download>
+  Download starter project (ZIP, 4.8 MB)
+</a>
+
+<style>
+  .button {
+    display: inline-block;
+    padding: 0.75rem 1.25rem;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .button:hover,
+  .button:focus-visible {
+    background: #1d4ed8;
+    outline: 3px solid #f59e0b;
+    outline-offset: 2px;
+  }
+</style>
+```
+
+Keep the visible focus style, and make sure the text has strong contrast against the background.
+
+## Common Mistakes
+
+### Mistake 1: Expecting `download` to work for other websites
+
+Browsers ignore it for different origins. Host the file yourself, or use a server header.
+
+### Mistake 2: Forgetting to say what the file is
+
+"Click here to download" tells nothing about the type, size, or purpose.
+
+### Mistake 3: Huge, unoptimized files
+
+Compress files, and show the size.
+
+### Mistake 4: Messy file names
+
+`final-FINAL (2).pdf` is hard to find later. Give files clear, simple names.
+
+### Mistake 5: Using a link where a button belongs, or the reverse
+
+Links go to existing files. Buttons run actions like creating a file.
+
+### Mistake 6: Not testing on a phone
+
+Mobile browsers handle downloads differently. Check that the file can be saved and opened.
+
+### Mistake 7: Linking to private files
+
+Anything with a public address is public. Protect private files on the server.
+
+### Mistake 8: Inaccessible documents
+
+A PDF without structure is a barrier for screen reader users. Create files with accessibility in mind.
+
+## Try It Yourself
+
+Here is a short project.
+
+1. Create a folder `files` and add a small PDF and a ZIP file (any practice files).
+2. Create `downloads.html` with a heading **Downloads**.
+3. Add a link to the PDF **without** `download`, and a link to the ZIP **with** `download`. What does each do?
+4. Add a friendly suggested file name to one of the links.
+5. After each link, write the type, size, and language.
+6. Add a button that creates a `.txt` file from a text area using a Blob.
+7. Style one link as a button with a visible focus outline.
+8. Try `download` on a link to a file from another website. What happens, and why?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `download` attribute do?</summary>
+
+It asks the browser to save the linked file instead of opening it.
+
+</details>
+
+<details>
+<summary>2. How do you suggest a file name?</summary>
+
+Give `download` a value, such as `download="html-course-syllabus.pdf"`.
+
+</details>
+
+<details>
+<summary>3. Why might `download` be ignored?</summary>
+
+The file may be on another origin, the server may send its own `Content-Disposition` header, or the browser may not support it.
+
+</details>
+
+<details>
+<summary>4. What information should you give next to a download link?</summary>
+
+The file type, size, and, if useful, the language, such as "(PDF, 1.2 MB, English)".
+
+</details>
+
+<details>
+<summary>5. When is a button better than a link for a download?</summary>
+
+When the file is created by a script, such as an export of the visitor's data. Buttons run actions and links go to existing resources.
+
+</details>
+
+## Key Takeaways
+
+- A normal link to a file may open it. Add `download` to ask the browser to save it, and give a value to suggest a name.
+- `download` works for files on your own site. Other sites need a `Content-Disposition` header.
+- JavaScript can create files with `Blob` and `URL.createObjectURL`, offered through a button.
+- Always state the type, size, and language, and keep files small, clearly named, and accessible.
+- Share only safe, licensed files over `https`, and never expose private files with a public link.
+
+You have now met every kind of link. Next, put them together into a clear, usable menu with [Navigation Menus](./navigation-menus).
