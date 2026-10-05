@@ -1,16 +1,654 @@
 ---
-id: nested-lists
-title: "Creating Nested and Multi-Level Lists in HTML"
+id: html-nested-lists
+title: "HTML Nested Lists"
 sidebar_label: "Nested Lists"
 sidebar_position: 5
 slug: /html/lists/nested-lists
-description: "Discover proper structural placement for nesting lists within li elements to build clean hierarchical outlines and multi-tier menus."
+description: "Learn how to nest HTML lists correctly. Put a ul or ol inside an li to build outlines, sub-menus, and multi-level steps. Covers mixing list types, default marker changes, the most common nesting mistake, multi-level numbering with CSS counters, accessibility, and best practices on CodeHarborHub."
 keywords:
   - HTML nested lists
-  - multi-level list structure
-  - sublists in HTML
-  - nesting ul ol correctly
+  - nested ul
+  - nested ol
+  - HTML sub list
+  - HTML list inside list
+  - HTML outline list
+  - HTML multilevel numbering
+  - HTML sub-menu
+  - nested list mistakes
+  - learn HTML lists
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, lists, nesting, structure]
+tags: [html, web-development, beginner, lists, nested, ul, ol, frontend]
 ---
+
+Think about a book's table of contents. It lists chapters. Under each chapter, it lists sections. Under some sections, it lists subsections. The information has a **tree shape**: big groups hold smaller groups, which hold even smaller ones.
+
+A flat list cannot show that. For a tree, HTML lets you put **a list inside a list**. This is called a **nested list**, and it is how outlines, sub-menus, folder structures, and multi-level instructions are built. The idea is simple, but there is one rule that beginners get wrong again and again. This lesson makes sure you do not.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a nested list is, and when to use one
+- **The golden rule**: where the inner list must go
+- How to nest `<ul>` and `<ol>`, and how to mix them
+- How browsers change the markers on each level
+- Real-world patterns: outlines, sub-menus, and multi-level steps
+- How to number levels as 1, 1.1, 1.2 with CSS
+- Accessibility, depth limits, and common mistakes
+
+## The Golden Rule
+
+> **A nested list goes *inside* an `<li>`, not beside it.**
+
+An inner list is not a separate sibling of the items. It **belongs to** one specific item, the one it describes. So you open an `<li>`, write the item's text, and then place the new list inside the same `<li>` before closing it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ul>
+  <li>Fruits
+    <ul>
+      <li>Apple</li>
+      <li>Mango</li>
+    </ul>
+  </li>
+  <li>Vegetables
+    <ul>
+      <li>Carrot</li>
+      <li>Spinach</li>
+    </ul>
+  </li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul>
+  <li>
+  Fruits
+    <ul>
+      <li>Apple</li>
+      <li>Mango</li>
+    </ul>
+  </li>
+  <li>
+  Vegetables
+    <ul>
+      <li>Carrot</li>
+      <li>Spinach</li>
+    </ul>
+  </li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Read the structure like a family tree:
+
+- The outer `<ul>` has **two** items: "Fruits" and "Vegetables."
+- Each of those items **owns** an inner `<ul>`.
+- The inner list is a **child of its `<li>`**, so it shows indented under its parent.
+
+### The Mistake to Avoid
+
+Putting the inner list directly inside the outer `<ul>`, as a neighbor of the `<li>` items, is invalid.
+
+<Tabs>
+<TabItem value="wrong" label="Invalid" default>
+
+```html
+<ul>
+  <li>Fruits</li>
+  <ul>               <!-- ❌ a ul directly inside a ul -->
+    <li>Apple</li>
+    <li>Mango</li>
+  </ul>
+  <li>Vegetables</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="right" label="Valid">
+
+```html
+<ul>
+  <li>Fruits
+    <ul>             <!-- ✅ the ul sits inside the li -->
+      <li>Apple</li>
+      <li>Mango</li>
+    </ul>
+  </li>
+  <li>Vegetables</li>
+</ul>
+```
+
+</TabItem>
+</Tabs>
+
+:::warning Why it matters even though it "works"
+Browsers usually still indent the invalid version, so it looks right. But the structure is wrong: the sub-list does not belong to any item. Screen readers may announce the levels incorrectly, CSS rules that target `li > ul` will not match, and validators will flag it. Fix the structure, not just the look.
+:::
+
+## Where Exactly Does the Inner List Go?
+
+The inner list can appear after the item's text, inside the same `<li>`. If you want to style or link the text, wrap it so the inner list stays separate:
+
+```html
+<li>
+  <a href="/html">HTML</a>   <!-- the item's own content -->
+  <ul>                       <!-- its sub-list -->
+    <li><a href="/html/lists">Lists</a></li>
+  </ul>
+</li>
+```
+
+Always write the item's own text **before** the nested list. The text names the group, and the list holds its members.
+
+## Nesting Ordered Lists
+
+You can nest `<ol>` inside `<ol>`. Each inner list restarts at 1 by default.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Launch a website</h3>
+<ol>
+  <li>Plan
+    <ol>
+      <li>Choose a goal.</li>
+      <li>Sketch the pages.</li>
+    </ol>
+  </li>
+  <li>Build
+    <ol>
+      <li>Write the HTML.</li>
+      <li>Add the CSS.</li>
+    </ol>
+  </li>
+  <li>Publish</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Launch a website</h3>
+<ol>
+  <li>
+  Plan
+    <ol>
+      <li>Choose a goal.</li>
+      <li>Sketch the pages.</li>
+    </ol>
+  </li>
+  <li>
+  Build
+    <ol>
+      <li>Write the HTML.</li>
+      <li>Add the CSS.</li>
+    </ol>
+  </li>
+  <li>Publish</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+To tell the levels apart at a glance, give each level a different style with the `type` attribute (or CSS). Legal documents and outlines often use 1, a, i.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ol>
+  <li>Setup
+    <ol type="a">
+      <li>Install the editor.
+        <ol type="i">
+          <li>Download it.</li>
+          <li>Run the installer.</li>
+        </ol>
+      </li>
+      <li>Create a folder.</li>
+    </ol>
+  </li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ol>
+  <li>
+  Setup
+    <ol type="a">
+      <li>
+      Install the editor.
+        <ol type="i">
+          <li>Download it.</li>
+          <li>Run the installer.</li>
+        </ol>
+      </li>
+      <li>
+      Create a folder.
+      </li>
+    </ol>
+  </li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Mixing List Types
+
+You can combine list types freely. The rule stays the same: the inner list goes inside an `<li>`.
+
+| Outer | Inner | Good for |
+| :-- | :-- | :-- |
+| `<ol>` | `<ul>` | Steps that each have unordered notes or options |
+| `<ul>` | `<ol>` | Groups where one group has a sequence |
+| `<ul>` | `<dl>` | Categories that hold term-and-meaning pairs |
+| Any | Any | Whatever the content needs |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Set up your project</h3>
+<ol>
+  <li>Create a folder named <code>my-site</code>.</li>
+  <li>Add these files:
+    <ul>
+      <li><code>index.html</code></li>
+      <li><code>style.css</code></li>
+      <li><code>script.js</code></li>
+    </ul>
+  </li>
+  <li>Open <code>index.html</code> in your browser.</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Set up your project</h3>
+<ol>
+  <li>Create a folder named <code>my-site</code>.</li>
+  <li>
+  Add these files:
+    <ul>
+      <li><code>index.html</code></li>
+      <li><code>style.css</code></li>
+      <li><code>script.js</code></li>
+    </ul>
+  </li>
+  <li>Open <code>index.html</code> in your browser.</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## How Browsers Change the Markers
+
+For nested **bullet** lists, browsers automatically use a different marker on each level, so you can see the depth.
+
+| Level | Default marker | CSS name |
+| :-- | :-- | :-- |
+| 1 (top) | Solid circle ● | `disc` |
+| 2 | Hollow circle ○ | `circle` |
+| 3 and deeper | Solid square ■ | `square` |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ul>
+  <li>Level 1
+    <ul>
+      <li>Level 2
+        <ul>
+          <li>Level 3</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul>
+  <li>
+  Level 1
+    <ul>
+      <li>
+      Level 2
+        <ul>
+          <li>Level 3</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can change these with CSS, which you will learn in [Styling Lists](./list-styling). Numbered lists do not change automatically, so use `type` or CSS to tell their levels apart.
+
+## Real-World Examples
+
+### 1. A Site Map or Course Outline
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>HTML course outline</h3>
+<ul>
+  <li>Text content
+    <ul>
+      <li>Headings</li>
+      <li>Paragraphs</li>
+    </ul>
+  </li>
+  <li>Links and navigation
+    <ul>
+      <li>Anchor element</li>
+      <li>Navigation menus</li>
+    </ul>
+  </li>
+  <li>Images</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>HTML course outline</h3>
+<ul>
+  <li>
+  Text content
+    <ul>
+      <li>Headings</li>
+      <li>Paragraphs</li>
+    </ul>
+  </li>
+  <li>
+  Links and navigation
+    <ul>
+      <li>Anchor element</li>
+      <li>Navigation menus</li>
+    </ul>
+  </li>
+  <li>Images</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### 2. A Navigation Menu with a Sub-Menu
+
+Sub-menus and dropdowns are nested lists. The HTML below is the structure only. CSS (and sometimes JavaScript) turns it into a dropdown.
+
+```html
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li>
+      <a href="/courses">Courses</a>
+      <ul>
+        <li><a href="/courses/html">HTML</a></li>
+        <li><a href="/courses/css">CSS</a></li>
+        <li><a href="/courses/js">JavaScript</a></li>
+      </ul>
+    </li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+```
+
+Even without any CSS, this still works as a clear, accessible outline of the site. That is the benefit of building structure first.
+
+### 3. A File and Folder Tree
+
+Folders contain files and other folders, which is a natural tree.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ul>
+  <li>my-site/
+    <ul>
+      <li>index.html</li>
+      <li>css/
+        <ul>
+          <li>style.css</li>
+        </ul>
+      </li>
+      <li>images/
+        <ul>
+          <li>logo.svg</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul>
+  <li>
+  my-site/
+    <ul>
+      <li>index.html</li>
+      <li>
+      css/
+        <ul>
+          <li>style.css</li>
+        </ul>
+      </li>
+      <li>
+      images/
+        <ul>
+          <li>logo.svg</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### 4. A Comment Thread
+
+Replies sit under the comment they answer.
+
+```html
+<ul>
+  <li>
+    <p><strong>Linh:</strong> Great lesson!</p>
+    <ul>
+      <li><p><strong>Mateo:</strong> Agreed. The examples helped.</p></li>
+    </ul>
+  </li>
+</ul>
+```
+
+## Numbering Levels as 1, 1.1, 1.2
+
+Legal documents and technical specs often number sub-items as **1.1**, **1.2**, and **2.1**. HTML does not do this on its own, but a small CSS trick called **counters** does.
+
+```css title="style.css"
+ol.outline {
+  counter-reset: item;
+  list-style: none;
+  padding-left: 0;
+}
+
+ol.outline li {
+  counter-increment: item;
+}
+
+ol.outline li::before {
+  content: counters(item, ".") " ";
+  font-weight: 700;
+}
+
+ol.outline ol {
+  counter-reset: item;
+  list-style: none;
+  padding-left: 1.5rem;
+}
+```
+
+```html title="index.html"
+<ol class="outline">
+  <li>Introduction
+    <ol>
+      <li>Purpose</li>
+      <li>Scope</li>
+    </ol>
+  </li>
+  <li>Method</li>
+</ol>
+```
+
+The result reads: **1** Introduction, **1.1** Purpose, **1.2** Scope, **2** Method. The `counters()` function joins the number of every level with a dot. You will learn more about counters in [Styling Lists](./list-styling).
+
+## How Deep Should You Go?
+
+You can nest as deeply as you like, but you should not.
+
+- **Two levels** is comfortable for almost everyone.
+- **Three levels** is the practical limit for most pages.
+- **Four or more** is a sign to rethink: break the content into separate sections with headings, or into several pages.
+
+Deep nesting is hard to read on a small phone screen, because each level pushes the text further to the right. It is also tiring for screen reader users, who hear every level announced.
+
+:::tip A simple test
+If you need to scroll sideways, or squint to see which list an item belongs to, the nesting is too deep. Flatten it with headings.
+:::
+
+## Accessibility at a Glance
+
+- Screen readers announce nesting, such as "list, 3 items, nested level 2," so people know where they are in the tree. **This only works when your structure is correct.** The inner list must be inside an `<li>`.
+- Keep the level count low. Every level is more to listen to.
+- Make each parent item a **clear label** for its children. "Fruits" works. "Other" does not.
+- Do not use nested lists just for indentation. Use CSS for spacing.
+- In navigation, a `<nav>` with a clear `aria-label` plus nested lists gives screen reader users a quick map of your site.
+
+## Common Mistakes to Avoid
+
+1. **Placing the inner list beside the `<li>`**, directly inside `<ul>` or `<ol>`. It belongs inside the `<li>`.
+2. **Closing the `<li>` before the inner list.** Put the nested list **before** the closing `</li>`.
+3. **Mismatched or missing closing tags.** Deep trees make this easy. Indent your code consistently so each pair lines up.
+4. **Nesting too deep.** More than three levels is hard to read.
+5. **Using nesting for indentation only.** If it is not a real hierarchy, do not nest.
+6. **Typing manual numbers like "1.1" in the text.** Use counters, so numbers update by themselves.
+7. **Vague parent labels** such as "More" or "Other."
+8. **Forgetting that numbered levels look the same** unless you set `type` or CSS.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Write a bullet list of three food groups, each with two items inside.
+2. Write the same data as a numbered list, and set a different `type` for the inner level.
+3. Make a three-step ordered list where step 2 has a bullet list of options.
+4. Build a "My project" folder tree with at least three levels.
+5. Build a navigation menu with one item that has a sub-menu.
+6. Turn the invalid example from this page into a valid one.
+7. Use `type="a"` and `type="i"` to create a three-level outline.
+8. Add the counter CSS to get 1, 1.1, 1.2 numbering.
+9. Add a comment thread with one reply.
+10. Bonus: use your browser's developer tools to inspect the tree and confirm each inner `<ul>` sits inside an `<li>`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Where must a nested list go?</summary>
+
+Inside an `<li>` element, after that item's own text, and before the closing `</li>`. It must not sit directly inside the outer `<ul>` or `<ol>`.
+
+</details>
+
+<details>
+<summary>2. Can you nest an ordered list inside an unordered list?</summary>
+
+Yes. You can mix `<ul>`, `<ol>`, and even `<dl>`, as long as each inner list sits inside an `<li>`.
+
+</details>
+
+<details>
+<summary>3. How do browsers mark the levels of a nested bullet list?</summary>
+
+By default they use a disc at the first level, a circle at the second, and a square at the third and deeper levels.
+
+</details>
+
+<details>
+<summary>4. How can you number levels as 1, 1.1, 1.2?</summary>
+
+With CSS counters: `counter-reset` and `counter-increment`, plus `counters(item, ".")` in a `::before` rule.
+
+</details>
+
+<details>
+<summary>5. How deep should a nested list be?</summary>
+
+Two levels is comfortable and three is usually the limit. Beyond that, split the content with headings or separate pages.
+
+</details>
+
+## Key Takeaways
+
+- A nested list is a list inside an `<li>`. That is the golden rule.
+- You can nest `<ul>`, `<ol>`, and `<dl>` in any combination.
+- Browsers change bullet markers by level. Numbered levels need `type` or CSS to look different.
+- Outlines, sub-menus, file trees, and comment threads are all nested lists.
+- Keep nesting shallow, label parents clearly, and let CSS handle indentation and multi-level numbers.
+
+Your lists can now hold a whole hierarchy, but they still look plain. Next, learn how to change markers, spacing, and layout in [Styling Lists](./list-styling), or go back to the [Lists overview](/tutorials/html/lists).

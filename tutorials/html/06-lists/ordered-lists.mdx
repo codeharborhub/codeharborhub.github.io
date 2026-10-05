@@ -1,16 +1,542 @@
 ---
-id: ordered-lists
-title: "Building Ordered Lists with ol and li Tags"
-sidebar_label: "Ordered Lists (<ol>)"
+id: html-ordered-lists
+title: "HTML Ordered Lists"
+sidebar_label: "Ordered Lists"
 sidebar_position: 3
 slug: /html/lists/ordered-lists
-description: "Master numbered lists in HTML, customizing start values, reversed ordering, and list item numbering types with the ol element."
+description: "Learn how to create HTML ordered (numbered) lists with the ol and li elements. Master the start, reversed, and type attributes, the li value attribute, when order really matters, step-by-step instructions, rankings, accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML ordered list
-  - ol tag attributes
-  - numbered lists HTML
-  - ol type and start attributes
+  - HTML ol tag
+  - HTML numbered list
+  - HTML ol start attribute
+  - HTML ol reversed attribute
+  - HTML ol type attribute
+  - HTML li value attribute
+  - ol vs ul
+  - HTML steps list
+  - learn HTML lists
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, lists, ordered-list, beginner]
+tags: [html, web-development, beginner, lists, ol, li, frontend]
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+Imagine following a recipe where the steps are shuffled: "Serve the cake. Crack the eggs. Bake for 30 minutes. Preheat the oven." You would end up with a mess. Some lists only make sense **in a particular order**, and HTML has a list made for exactly that: the **ordered list**.
+
+Ordered lists number their items automatically. If you add, move, or remove a step, the numbers fix themselves. In this lesson, you will learn how to create them, how to control where the numbering starts and which direction it goes, and when to choose a numbered list over a bullet list.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What an ordered list is, and when to use it
+- How `<ol>` and `<li>` work together
+- How to change the numbering with `start`, `reversed`, and `type`
+- How to set one item's number with `value`
+- Real-world patterns: instructions, rankings, and outlines
+- Accessibility and common mistakes
+
+## The Basics: `<ol>` and `<li>`
+
+An ordered list uses the same `<li>` item as a bullet list. Only the container changes.
+
+| Element | Name | Job |
+| :-- | :-- | :-- |
+| `<ol>` | **O**rdered **L**ist | The container, which numbers its items |
+| `<li>` | **L**ist **I**tem | One item in the list |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Make a cup of tea</h3>
+<ol>
+  <li>Boil some water.</li>
+  <li>Put a tea bag in a cup.</li>
+  <li>Pour the water over the tea bag.</li>
+  <li>Wait three minutes.</li>
+  <li>Remove the tea bag and enjoy.</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Make a cup of tea</h3>
+<ol>
+  <li>Boil some water.</li>
+  <li>Put a tea bag in a cup.</li>
+  <li>Pour the water over the tea bag.</li>
+  <li>Wait three minutes.</li>
+  <li>Remove the tea bag and enjoy.</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You never type the numbers. The browser counts for you. Insert a new step in the middle and every number after it updates by itself, which is much safer than typing "1.", "2.", "3." by hand.
+
+:::info The shuffle test
+Shuffle the items. Does the meaning change? If yes, use `<ol>`. If no, use [`<ul>`](./unordered-lists).
+:::
+
+## When to Use an Ordered List
+
+| Good use | Example |
+| :-- | :-- |
+| Step-by-step instructions | Install a tool, follow a recipe |
+| Rankings | Top 10 movies, leaderboard |
+| Sequences or timelines | Stages of a project |
+| Anything you refer to by number | "See step 3," legal clauses, instructions with references |
+| Countdowns | 5, 4, 3, 2, 1 |
+
+If you never refer to the position and the order is just a habit, a bullet list is probably better.
+
+## Changing the Numbers: Three Attributes
+
+`<ol>` has three attributes that control the numbering.
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `start` | Begins counting from a number you choose | `<ol start="5">` |
+| `reversed` | Counts **down** instead of up | `<ol reversed>` |
+| `type` | Chooses the numbering style | `<ol type="a">` |
+
+### 1. `start`: Begin at Another Number
+
+Sometimes a list continues from earlier, or starts at zero. Use `start` with a whole number.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ol start="4">
+  <li>Open the browser.</li>
+  <li>Go to the site.</li>
+  <li>Sign in.</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ol start="4">
+  <li>Open the browser.</li>
+  <li>Go to the site.</li>
+  <li>Sign in.</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+This is handy when a text block or a figure interrupts a long set of steps and you need to continue the numbering afterward.
+
+:::note Always a number
+`start` takes a number, even when the list shows letters or Roman numerals. `<ol type="a" start="3">` begins at **c**, the third letter.
+:::
+
+### 2. `reversed`: Count Down
+
+The `reversed` attribute is a **boolean attribute**: its presence turns it on. It is perfect for countdowns and "Top N" lists that build up to number one.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Top 3 beginner languages</h3>
+<ol reversed>
+  <li>Python</li>
+  <li>JavaScript</li>
+  <li>HTML and CSS</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Top 3 beginner languages</h3>
+<ol reversed>
+  <li>Python</li>
+  <li>JavaScript</li>
+  <li>HTML and CSS</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The items stay in the order you wrote them. Only the numbers change: they count 3, 2, 1. (The ranking here is just a sample.)
+
+### 3. `type`: Choose a Numbering Style
+
+| Value | Style | Looks like |
+| :-- | :-- | :-- |
+| `1` (default) | Decimal numbers | 1, 2, 3 |
+| `a` | Lowercase letters | a, b, c |
+| `A` | Uppercase letters | A, B, C |
+| `i` | Lowercase Roman numerals | i, ii, iii |
+| `I` | Uppercase Roman numerals | I, II, III |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ol type="A">
+  <li>Plan</li>
+  <li>Build</li>
+  <li>Launch</li>
+</ol>
+
+<ol type="i">
+  <li>Plan</li>
+  <li>Build</li>
+  <li>Launch</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ol type="A">
+  <li>Plan</li>
+  <li>Build</li>
+  <li>Launch</li>
+</ol>
+
+<ol type="i">
+  <li>Plan</li>
+  <li>Build</li>
+  <li>Launch</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip `type` on `ol` is fine, but CSS is more flexible
+Unlike `type` on `<ul>`, the `type` attribute on `<ol>` is still valid in HTML. It is meant for cases where the numbering style is **part of the meaning**, such as legal clauses that must read "(a), (b), (c)" even if the CSS fails.
+
+For purely visual preferences, use CSS `list-style-type`, which offers many more styles (including `lower-greek`, `armenian`, `decimal-leading-zero`, and others). You will see them in [Styling Lists](./list-styling).
+:::
+
+### Combining the Attributes
+
+You can use them together. Here, a list counts down from 10, in Roman numerals.
+
+```html
+<ol type="I" start="10" reversed>
+  <li>Item X</li>
+  <li>Item IX</li>
+  <li>Item VIII</li>
+</ol>
+```
+
+## Setting One Item's Number: `value`
+
+An individual `<li>` inside an `<ol>` can have a `value` attribute. It sets that item's number, and the items after it continue from there.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ol>
+  <li>Registration</li>
+  <li>Welcome talk</li>
+  <li value="10">Closing ceremony</li>
+  <li>Photos</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ol>
+  <li>Registration</li>
+  <li>Welcome talk</li>
+  <li value="10">Closing ceremony</li>
+  <li>Photos</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+"Closing ceremony" becomes **10**, and "Photos" becomes **11**. Use `value` sparingly. It is useful when an item must keep a fixed number (such as a numbered rule that others refer to), but most lists never need it.
+
+## Real-World Examples
+
+### 1. Instructions with More Than Text
+
+Each step can hold links, code, images, and notes.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Run your first page</h3>
+<ol>
+  <li>Create a file named <code>index.html</code>.</li>
+  <li>
+    Add this line inside it:
+    <pre><code>&lt;h1&gt;Hello, world!&lt;/h1&gt;</code></pre>
+  </li>
+  <li>Save the file, then open it in your <strong>browser</strong>.</li>
+  <li>You should see a large "Hello, world!" heading.</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Run your first page</h3>
+<ol>
+  <li>Create a file named <code>index.html</code>.</li>
+  <li>
+    Add this line inside it:
+    <pre><code>{"<h1>Hello, world!</h1>"}</code></pre>
+  </li>
+  <li>Save the file, then open it in your <strong>browser</strong>.</li>
+  <li>You should see a large "Hello, world!" heading.</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### 2. A Ranking
+
+When position is the whole point, `<ol>` says it clearly.
+
+```html
+<h3>Weekly quiz leaderboard</h3>
+<ol>
+  <li>Aisha: 98 points</li>
+  <li>Mateo: 95 points</li>
+  <li>Linh: 91 points</li>
+</ol>
+```
+
+### 3. Breadcrumbs
+
+Breadcrumb trails show where a page sits in the site, from the top down. The order matters, so they are a good fit for `<ol>`.
+
+```html
+<nav aria-label="Breadcrumb">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/html">HTML</a></li>
+    <li aria-current="page">Lists</li>
+  </ol>
+</nav>
+```
+
+`aria-current="page"` tells assistive tech which item is the page you are on. With CSS, you can replace the numbers with arrows or slashes.
+
+### 4. Continuing a List After an Interruption
+
+Sometimes an explanation breaks up the steps. Rather than retyping numbers, use `start` for the second list.
+
+```html
+<ol>
+  <li>Open the settings.</li>
+  <li>Choose "Language."</li>
+</ol>
+
+<p>The menu may look different on phones, but the options are the same.</p>
+
+<ol start="3">
+  <li>Select your language.</li>
+  <li>Save your changes.</li>
+</ol>
+```
+
+:::warning Two lists, or one?
+Splitting one logical set of steps into two `<ol>` elements can make a screen reader announce two separate lists. Do it only when a real break in content is needed. If you can, put the extra explanation **inside** the step's `<li>` instead.
+:::
+
+## Ordered List or Unordered List?
+
+| Question | Use `<ol>` | Use `<ul>` |
+| :-- | :-- | :-- |
+| Does the sequence matter? | Yes | No |
+| Will anyone refer to "step 3"? | Yes | No |
+| Is it a ranking or timeline? | Yes | No |
+| Is it a group of equals? | No | Yes |
+| Is it ingredients, tags, or links? | No | Yes |
+
+A neat example: a recipe's **ingredients** are a `<ul>` (you can gather them in any order), but its **method** is an `<ol>`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Pancakes</h3>
+
+<h4>Ingredients</h4>
+<ul>
+  <li>1 cup flour</li>
+  <li>1 egg</li>
+  <li>1 cup milk</li>
+</ul>
+
+<h4>Method</h4>
+<ol>
+  <li>Whisk everything together.</li>
+  <li>Heat a pan.</li>
+  <li>Pour in a small circle of batter.</li>
+  <li>Flip when bubbles appear.</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Pancakes</h3>
+
+<h4>Ingredients</h4>
+<ul>
+  <li>1 cup flour</li>
+  <li>1 egg</li>
+  <li>1 cup milk</li>
+</ul>
+
+<h4>Method</h4>
+<ol>
+  <li>Whisk everything together.</li>
+  <li>Heat a pan.</li>
+  <li>Pour in a small circle of batter.</li>
+  <li>Flip when bubbles appear.</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Writing Good Steps
+
+1. **One action per step.** "Open the file and change the title and save" is three steps.
+2. **Start with a verb.** "Click," "Type," "Choose." Verbs translate well and are easy to follow.
+3. **Say what to expect.** "You should now see a green message" lets readers check their progress.
+4. **Keep the order honest.** Do not number items that do not need an order.
+5. **Warn before, not after.** Put a caution before the step where it matters.
+
+## Accessibility at a Glance
+
+- Screen readers announce an ordered list with its number of items and read each item's position ("1 of 5"), so people always know where they are in the sequence.
+- Use a real `<ol>`, **not** numbers typed into paragraphs. Typed numbers are just text.
+- Do not remove numbers (`list-style: none`) from a list where position matters, unless something else shows the order.
+- Lists in right-to-left languages such as Arabic and Hebrew place numbers on the right automatically, as long as the page `dir` is set correctly.
+- Different languages and regions also use different numeral systems. CSS `list-style-type` can display those, such as Arabic-Indic or Devanagari digits, for readers who expect them.
+
+## Common Mistakes to Avoid
+
+1. **Typing numbers by hand** (`<li>1. Open</li>`). You will get "1. 1. Open." Let the browser number.
+2. **Using `<ol>` when order is irrelevant.** It adds false meaning.
+3. **Using `<ul>` for steps.** Readers cannot refer to a step number, and screen readers do not announce the position.
+4. **Putting text or `<p>` directly inside `<ol>`.** Only `<li>` is allowed.
+5. **Writing `start="three"`.** The value must be an integer, such as `start="3"`.
+6. **Splitting one sequence into several lists** without reason.
+7. **Putting more than one action in a step.** Break it up.
+8. **Using `value` everywhere.** It makes lists hard to maintain.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Write a five-step ordered list for a task you know well, such as making coffee.
+2. Add a heading above it and a sentence at the end saying what the result should look like.
+3. Make a "Top 5" list that counts down using `reversed`.
+4. Make a list that starts at 6 using `start`.
+5. Change a list to use uppercase letters, then lowercase Roman numerals.
+6. Give one item a `value` and watch the items after it change.
+7. Put a `<code>` snippet and a link inside one of your steps.
+8. Build a breadcrumb trail inside a `<nav>`, and mark the current page.
+9. Write a recipe with a bullet list of ingredients and a numbered method.
+10. Bonus: use CSS `list-style-type: decimal-leading-zero` to show 01, 02, 03.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. When should you use `<ol>` instead of `<ul>`?</summary>
+
+When the order of the items matters, such as steps, rankings, timelines, or anything you refer to by number.
+
+</details>
+
+<details>
+<summary>2. How do you start an ordered list at 5?</summary>
+
+Add `start="5"` to the `<ol>`.
+
+</details>
+
+<details>
+<summary>3. What does the `reversed` attribute do?</summary>
+
+It makes the list count down instead of up. It is a boolean attribute, so just writing `reversed` is enough.
+
+</details>
+
+<details>
+<summary>4. Which `type` value gives uppercase Roman numerals?</summary>
+
+`type="I"`. Other values are `1`, `a`, `A`, and `i`.
+
+</details>
+
+<details>
+<summary>5. What does `value` do on an `<li>`?</summary>
+
+It sets that item's number, and the items after it continue counting from there.
+
+</details>
+
+<details>
+<summary>6. Why should you not type the numbers yourself?</summary>
+
+The browser numbers the items automatically. Typed numbers can double up and fall out of order when you edit the list, and screen readers will not know it is a list.
+
+</details>
+
+## Key Takeaways
+
+- An ordered list is an `<ol>` with `<li>` items. Use it when order matters.
+- The browser numbers the items for you. Never type the numbers by hand.
+- `start`, `reversed`, and `type` control where counting begins, its direction, and its style. `value` sets one item's number.
+- Recipes often need both: a `<ul>` for ingredients and an `<ol>` for the method.
+- Write one action per step, start with a verb, and keep lists as one list whenever possible.
+
+You can now build bullet lists and numbered lists. Next, learn a different kind: lists that pair a **term** with its **meaning** in [Description Lists](./description-lists), or return to the [Lists overview](/tutorials/lists).

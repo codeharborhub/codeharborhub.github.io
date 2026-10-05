@@ -1,0 +1,702 @@
+---
+id: html-list-styling
+title: "Styling HTML Lists with CSS"
+sidebar_label: "Styling Lists"
+sidebar_position: 6
+slug: /html/lists/list-styling
+description: "Learn how to style HTML lists with CSS. Change bullet and number styles with list-style-type, control marker position, use custom images and the ::marker pseudo-element, remove bullets safely, build horizontal menus, add spacing, and number lists in other writing systems on CodeHarborHub."
+keywords:
+  - CSS list-style-type
+  - CSS list-style-position
+  - CSS list-style-image
+  - CSS ::marker
+  - remove bullets from list
+  - horizontal list CSS
+  - custom bullets CSS
+  - list-style none accessibility
+  - decimal-leading-zero
+  - style HTML lists
+  - learn HTML lists
+  - CodeHarborHub HTML
+tags: [html, css, web-development, beginner, lists, styling, frontend]
+---
+
+Browsers give every list the same plain look: round bullets, plain numbers, and a wide left indent. It is clear and readable, but it is rarely what a finished design needs. A menu should have no bullets. A checklist might want check marks. A "top 10" might want numbers like 01, 02, 03.
+
+The good news: **you never need to change your HTML to do any of this.** The list stays a list. CSS only changes how it *looks*. In this lesson, you will learn the properties that control markers, position, spacing, and layout.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to change bullet and number styles with `list-style-type`
+- How to control marker position and use images as markers
+- How to style markers with the `::marker` pseudo-element
+- How to remove bullets, and what to watch out for
+- How to build horizontal lists and menus
+- How to space, indent, and number lists for a global audience
+
+:::info Prerequisites
+This lesson uses basic CSS. If properties and selectors are new to you, you can still follow along. Every example shows the result.
+:::
+
+## The Parts of a List Item
+
+Each `<li>` in a list has two parts:
+
+1. The **marker**: the bullet, number, or letter.
+2. The **content**: the text or elements inside the item.
+
+Most list properties control the marker. Others control the box around the whole list.
+
+| Part | Properties |
+| :-- | :-- |
+| Marker | `list-style-type`, `list-style-image`, `list-style-position`, `::marker` |
+| Whole list | `padding`, `margin`, `display`, `gap` |
+| Shorthand | `list-style` |
+
+## `list-style-type`: Choose the Marker
+
+This property sets the marker's shape or numbering style.
+
+### For Bullet Lists
+
+| Value | Marker |
+| :-- | :-- |
+| `disc` | Solid circle (default) |
+| `circle` | Hollow circle |
+| `square` | Solid square |
+| `none` | No marker |
+
+### For Numbered Lists
+
+| Value | Marker |
+| :-- | :-- |
+| `decimal` | 1, 2, 3 (default) |
+| `decimal-leading-zero` | 01, 02, 03 |
+| `lower-alpha` | a, b, c |
+| `upper-alpha` | A, B, C |
+| `lower-roman` | i, ii, iii |
+| `upper-roman` | I, II, III |
+| `lower-greek` | α, β, γ |
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="index.html"
+<ul style="list-style-type: square;">
+  <li>Square</li>
+  <li>Markers</li>
+</ul>
+
+<ul style="list-style-type: circle;">
+  <li>Hollow</li>
+  <li>Circles</li>
+</ul>
+
+<ol style="list-style-type: decimal-leading-zero;">
+  <li>First</li>
+  <li>Second</li>
+  <li>Third</li>
+</ol>
+
+<ol style="list-style-type: upper-roman;">
+  <li>Plan</li>
+  <li>Build</li>
+  <li>Launch</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul style={{ listStyleType: "square" }}>
+  <li>Square</li>
+  <li>Markers</li>
+</ul>
+
+<ul style={{ listStyleType: "circle" }}>
+  <li>Hollow</li>
+  <li>Circles</li>
+</ul>
+
+<ol style={{ listStyleType: "decimal-leading-zero" }}>
+  <li>First</li>
+  <li>Second</li>
+  <li>Third</li>
+</ol>
+
+<ol style={{ listStyleType: "upper-roman" }}>
+  <li>Plan</li>
+  <li>Build</li>
+  <li>Launch</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In a real project, put the styles in a stylesheet, not in a `style` attribute:
+
+```css title="style.css"
+ul.features {
+  list-style-type: square;
+}
+
+ol.steps {
+  list-style-type: decimal-leading-zero;
+}
+```
+
+:::tip Use a class
+Targeting every `ul` on the page changes menus, footers, and everything else. Give your styled lists a class (`.features`, `.steps`) so changes stay where you want them.
+:::
+
+## `list-style-position`: Inside or Outside?
+
+This sets where the marker sits compared to the text block.
+
+| Value | Meaning |
+| :-- | :-- |
+| `outside` (default) | The marker hangs in the margin. Wrapped lines align with the **text**. |
+| `inside` | The marker sits inside the text box. Wrapped lines go back **under the marker**. |
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="index.html"
+<ul style="list-style-position: outside;">
+  <li>Outside: when this item is long enough to wrap, the second line lines up under the first word of the text.</li>
+</ul>
+
+<ul style="list-style-position: inside;">
+  <li>Inside: when this item is long enough to wrap, the second line begins under the bullet itself.</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul style={{ listStylePosition: "outside", maxWidth: "260px" }}>
+  <li>Outside: when this item is long enough to wrap, the second line lines up under the first word of the text.</li>
+</ul>
+
+<ul style={{ listStylePosition: "inside", maxWidth: "260px" }}>
+  <li>Inside: when this item is long enough to wrap, the second line begins under the bullet itself.</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+`outside` is easier to read for multi-line items, which is why it is the default. Use `inside` when you want the marker to be part of a centered or boxed item.
+
+## `list-style-image`: Use a Picture as the Marker
+
+You can replace the bullet with an image, such as a small check mark or arrow.
+
+```css title="style.css"
+ul.checklist {
+  list-style-image: url("images/check.svg");
+}
+```
+
+This is simple, but limited. You cannot easily resize or recolor the image, and its vertical alignment can look off. For more control, use the techniques in the next sections.
+
+## `::marker`: Style the Marker Itself
+
+The `::marker` pseudo-element targets the bullet or number only, not the text. You can change its color, size, and font.
+
+```css title="style.css"
+li::marker {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+ol.steps li::marker {
+  font-size: 1.2em;
+}
+```
+
+With this, the bullets turn blue while the text stays the same color. It is the easiest way to add a splash of style.
+
+:::note What `::marker` can change
+It supports a limited set of properties: `color`, `font-*` properties, `content`, and a few others. It cannot change spacing, background, or size of the marker box. For those, use the custom marker technique below.
+:::
+
+## Custom Markers with `content`
+
+Because `::marker` accepts the `content` property, you can set any text or emoji as the marker.
+
+```css title="style.css"
+ul.checklist li::marker {
+  content: "✓  ";
+  color: #16a34a;
+}
+
+ul.arrows li::marker {
+  content: "→  ";
+}
+```
+
+Browser support for `content` in `::marker` is good in modern browsers. For full control and the oldest browsers, you can remove the marker and draw your own with `::before`:
+
+```css title="style.css"
+ul.custom {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.custom li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+ul.custom li::before {
+  content: "★";
+  position: absolute;
+  left: 0;
+  color: #f59e0b;
+}
+```
+
+Here is a live example of the idea, using real characters as the markers:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul style={{ listStyle: "none", paddingLeft: 0 }}>
+  {["Free to learn", "Works on any device", "No setup needed"].map((text) => (
+    <li key={text} style={{ position: "relative", paddingLeft: "1.5rem" }}>
+      <span aria-hidden="true" style={{ position: "absolute", left: 0, color: "#16a34a" }}>✓</span>
+      {text}
+    </li>
+  ))}
+</ul>
+</>
+</BrowserWindow>
+
+:::warning Decorative markers and meaning
+Marker text added with CSS is not part of your HTML. Some screen readers read it, and some do not. Use CSS markers for **decoration**, like ticks and stars. Never use them for information that must not be missed, such as "Warning" or "Required."
+:::
+
+## The `list-style` Shorthand
+
+You can write the three marker properties in one line:
+
+```css
+/* list-style: type position image */
+ul {
+  list-style: square inside;
+}
+
+/* Remove everything */
+ul.plain {
+  list-style: none;
+}
+```
+
+Values can appear in any order, and you can leave some out.
+
+## Removing Bullets: The Right Way
+
+Menus, tag lists, and cards usually look wrong with bullets. To remove them, you need to reset **two** things: the marker and the default left indent.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+ul.plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+```
+
+```html title="index.html"
+<ul class="plain">
+  <li>No bullets</li>
+  <li>No left indent</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+  <li>No bullets</li>
+  <li>No left indent</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Many beginners write only `list-style: none` and wonder why the text still has a gap on the left. That gap is the list's `padding-inline-start` (about 40px). Reset it as well.
+
+:::warning Removing bullets can remove "list" for screen readers
+In some browser and screen reader combinations (notably Safari with VoiceOver), a list with `list-style: none` is no longer announced as a list. If the content really is a list, such as a navigation menu, add `role="list"` to the `<ul>`:
+
+```html
+<ul class="plain" role="list">
+```
+
+You will learn more about this in [Accessible Lists](./accessible-lists).
+:::
+
+## Horizontal Lists and Menus
+
+A navigation bar is just a list laid out in a row. The two classic tools are **Flexbox** and `inline`/`inline-block` items. Flexbox is the modern choice.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.menu {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+```
+
+```html title="index.html"
+<nav aria-label="Main">
+  <ul class="menu">
+    <li><a href="/">Home</a></li>
+    <li><a href="/courses">Courses</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<nav aria-label="Main">
+  <ul style={{ display: "flex", gap: "1.5rem", listStyle: "none", margin: 0, padding: 0 }}>
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Courses</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The HTML did not change at all. It is still a plain list of links, and screen readers still treat it that way. Only the layout changed.
+
+### A Wrapping "Tag" List
+
+With `flex-wrap`, items flow onto new lines when the space runs out. This suits tags and chips.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tags li {
+  background: #e0e7ff;
+  color: #1e3a8a;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+```
+
+```html title="index.html"
+<ul class="tags">
+  <li>HTML</li>
+  <li>CSS</li>
+  <li>JavaScript</li>
+  <li>Accessibility</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", listStyle: "none", margin: 0, padding: 0 }}>
+  {["HTML", "CSS", "JavaScript", "Accessibility"].map((tag) => (
+    <li
+      key={tag}
+      style={{
+        background: "#e0e7ff",
+        color: "#1e3a8a",
+        padding: "0.25rem 0.75rem",
+        borderRadius: "999px",
+      }}
+    >
+      {tag}
+    </li>
+  ))}
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Spacing and Indentation
+
+| Goal | CSS |
+| :-- | :-- |
+| Change the indent | `padding-inline-start: 1.5rem;` |
+| Remove the indent | `padding-inline-start: 0;` |
+| Space between items | `li + li { margin-top: 0.5rem; }` or `gap` on a flex or grid list |
+| Space around the list | `margin-block: 1rem;` |
+| Tighter line height | `line-height: 1.4;` on `li` |
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.roomy li + li {
+  margin-top: 0.75rem;
+}
+```
+
+```html title="index.html"
+<ul class="roomy">
+  <li>Comfortable spacing</li>
+  <li>Between each item</li>
+  <li>Is easier to read</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul>
+  <li>Comfortable spacing</li>
+  <li style={{ marginTop: "0.75rem" }}>Between each item</li>
+  <li style={{ marginTop: "0.75rem" }}>Is easier to read</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice `padding-inline-start` rather than `padding-left`. Logical properties like this follow the page's writing direction, so they work correctly in right-to-left languages such as Arabic and Hebrew without extra CSS.
+
+## Lists in Other Writing Systems
+
+Not every reader counts with 1, 2, 3. CSS can show numbers in many scripts.
+
+| Value | Script | Looks like |
+| :-- | :-- | :-- |
+| `arabic-indic` | Arabic-Indic digits | ١، ٢، ٣ |
+| `devanagari` | Devanagari digits | १, २, ३ |
+| `bengali` | Bengali digits | ১, ২, ৩ |
+| `thai` | Thai digits | ๑, ๒, ๓ |
+| `cjk-ideographic` | Chinese/Japanese numerals | 一, 二, 三 |
+| `hiragana` | Japanese Hiragana letters | あ, い, う |
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="index.html"
+<ol style="list-style-type: devanagari;">
+  <li>पहला चरण</li>
+  <li>दूसरा चरण</li>
+  <li>तीसरा चरण</li>
+</ol>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ol style={{ listStyleType: "devanagari" }} lang="hi">
+  <li>पहला चरण</li>
+  <li>दूसरा चरण</li>
+  <li>तीसरा चरण</li>
+</ol>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If a script you need is not on the list, the CSS `@counter-style` rule lets you define your own numbering system. That is an advanced topic, but it is good to know it exists.
+
+:::tip Match the page language
+Set `lang` on the page (or on the list, as above), and use the numbering your readers expect. Browsers pick better fonts and spacing when they know the language.
+:::
+
+## Putting It Together: A Styled Checklist
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 24rem;
+}
+
+.card-list li {
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.card-list li + li {
+  margin-top: 0.5rem;
+}
+```
+
+```html title="index.html"
+<ul class="card-list" role="list">
+  <li>Read the lesson</li>
+  <li>Try the example</li>
+  <li>Finish the practice</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul role="list" style={{ listStyle: "none", margin: 0, padding: 0, maxWidth: "24rem" }}>
+  {["Read the lesson", "Try the example", "Finish the practice"].map((text, index) => (
+    <li
+      key={text}
+      style={{
+        padding: "0.75rem 1rem",
+        border: "1px solid #cbd5e1",
+        borderRadius: "8px",
+        marginTop: index === 0 ? 0 : "0.5rem",
+      }}
+    >
+      {text}
+    </li>
+  ))}
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Quick Reference
+
+| Goal | Use |
+| :-- | :-- |
+| Change bullet shape | `list-style-type: square;` |
+| Change number style | `list-style-type: upper-roman;` |
+| Zero-padded numbers | `list-style-type: decimal-leading-zero;` |
+| Color the markers | `li::marker { color: ... }` |
+| Custom marker text | `li::marker { content: "✓ "; }` |
+| Remove bullets | `list-style: none; margin: 0; padding: 0;` |
+| Keep list meaning | add `role="list"` after removing bullets |
+| Horizontal list | `display: flex; gap: ...;` |
+| RTL-friendly indent | `padding-inline-start` |
+
+## Common Mistakes to Avoid
+
+1. **Removing bullets but not the padding.** Reset both `list-style` and `padding`.
+2. **Styling every `ul` on the page.** Use a class, so menus and footers are not affected by accident.
+3. **Using `display: inline` on `<ul>`** to make it horizontal. Put `display: flex` on the `<ul>`, or style the `<li>` items.
+4. **Putting important words in CSS markers.** Screen readers may skip them.
+5. **Using `list-style: none` on a real list** without thinking about screen readers. Add `role="list"` when it matters.
+6. **Faking bullets with characters in the HTML** instead of using CSS. It breaks list semantics.
+7. **Using `padding-left` in multilingual sites.** Prefer `padding-inline-start`.
+8. **Changing the HTML to change the look.** Switching `<ol>` to `<ul>` just for numbers or bullets changes the meaning. Use CSS.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Make a bullet list with square markers, then hollow circles.
+2. Style a numbered list with `decimal-leading-zero`.
+3. Turn the markers blue with `li::marker`.
+4. Set a check mark as the marker using `content`.
+5. Compare `inside` and `outside` on an item long enough to wrap.
+6. Remove the bullets and the left indent from a list of links.
+7. Turn that list into a horizontal menu with Flexbox.
+8. Build a row of rounded "tags" that wrap on small screens.
+9. Add `role="list"` to a list whose bullets you removed.
+10. Bonus: show a three-step list with the numbering of another writing system.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which property changes the shape or numbering style of the marker?</summary>
+
+`list-style-type`, with values such as `square`, `circle`, `decimal-leading-zero`, and `upper-roman`.
+
+</details>
+
+<details>
+<summary>2. How do you change only the color of the bullets?</summary>
+
+Use the `::marker` pseudo-element, for example `li::marker { color: blue; }`.
+
+</details>
+
+<details>
+<summary>3. What two things should you reset to make a clean, bullet-free list?</summary>
+
+`list-style: none` removes the marker, and `padding` (or `padding-inline-start`) removes the left indent.
+
+</details>
+
+<details>
+<summary>4. How do you turn a list into a horizontal menu?</summary>
+
+Put `display: flex` (with a `gap`) on the `<ul>`. The HTML stays the same.
+
+</details>
+
+<details>
+<summary>5. Why might you add `role="list"` after removing bullets?</summary>
+
+Some browser and screen reader combinations stop announcing a list when `list-style: none` is applied. The role keeps its meaning.
+
+</details>
+
+## Key Takeaways
+
+- CSS changes how a list **looks**. The HTML keeps its **meaning**.
+- `list-style-type`, `list-style-position`, and `list-style-image` control markers, and `::marker` styles them.
+- For clean menus, remove both the bullets and the default padding, and add `role="list"` when the list still matters.
+- Flexbox turns any list into a row, a wrap of tags, or a card stack.
+- Use logical properties and the right numbering system so lists work for readers everywhere.
+
+Your lists now look the way you want, and they should work for everyone too. The last lesson in this section covers just that: [Accessible Lists](./accessible-lists). You can also return to the [Lists overview](/tutorials/html/lists).
