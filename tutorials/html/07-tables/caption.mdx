@@ -1,16 +1,515 @@
 ---
-id: caption
-title: "Adding Table Titles with the caption Element"
-sidebar_label: "Table Caption"
+id: html-table-caption
+title: "HTML Table Caption"
+sidebar_label: "Caption"
 sidebar_position: 5
 slug: /html/tables/caption
-description: "Discover how to provide meaningful summaries and titles for your tabular data using the caption element placed immediately inside the table tag."
+description: "Learn how to give HTML tables a title with the caption element. Understand where caption goes, how it differs from headings and figcaption, how to style and position it with caption-side, number tables with CSS counters, and write captions that help screen reader users on CodeHarborHub."
 keywords:
+  - HTML table caption
   - HTML caption tag
+  - caption-side CSS
   - table title HTML
-  - caption placement table
-  - table accessibility caption
+  - caption vs figcaption
+  - accessible table caption
+  - number tables CSS counter
+  - table caption best practices
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, caption, accessibility]
+tags: [html, web-development, beginner, tables, caption, accessibility, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+Picture a table of numbers on a page, with no title. Is it sales? Is it rainfall? Is it exam results from 1998? Readers have to look around the page for clues. Screen reader users have it harder: when they jump into a table, they hear "table, 4 columns, 6 rows" and then nothing about what the table is *about*.
+
+A **caption** solves this. It is a short title that belongs to the table itself, so the name travels with the data wherever the table goes. It is one of the smallest, easiest improvements you can make to a table, and one of the most helpful.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<caption>` element is and where it goes
+- How it looks by default, and how to move or style it
+- How a caption differs from a heading and from `<figcaption>`
+- How to write a good caption
+- How to number tables automatically with CSS
+- How captions help screen reader users
+- Common mistakes
+
+## The Basics
+
+The `<caption>` element holds a title or short description for a table. It goes **directly inside the `<table>`, as the first child**, before any rows or groups.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Average monthly rainfall by city (mm)</caption>
+  <tr>
+    <th scope="col">City</th>
+    <th scope="col">January</th>
+    <th scope="col">February</th>
+  </tr>
+  <tr>
+    <th scope="row">Mumbai</th>
+    <td>3</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <th scope="row">London</th>
+    <td>55</td>
+    <td>41</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Average monthly rainfall by city (mm)</caption>
+  <tbody>
+    <tr>
+      <th scope="col" style={head}>City</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>January</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>February</th>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Mumbai</th>
+      <td style={num}>3</td>
+      <td style={num}>2</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>London</th>
+      <td style={num}>55</td>
+      <td style={num}>41</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+By default, browsers show the caption **centered above the table**, as ordinary text.
+
+### The Placement Rules
+
+| Rule | Details |
+| :-- | :-- |
+| Where | The **first child** of `<table>` (before `<colgroup>`, `<thead>`, and rows) |
+| How many | **One** per table |
+| What inside | Text and inline elements: `<strong>`, `<em>`, `<a>`, `<abbr>`, and so on |
+| What not inside | Other tables or heavy block structure |
+
+<Tabs>
+<TabItem value="wrong" label="Invalid" default>
+
+```html
+<table>
+  <tr>...</tr>
+  <caption>Too late!</caption>   <!-- not the first child -->
+</table>
+```
+
+</TabItem>
+<TabItem value="right" label="Valid">
+
+```html
+<table>
+  <caption>On time</caption>     <!-- first child -->
+  <tr>...</tr>
+</table>
+```
+
+</TabItem>
+</Tabs>
+
+:::info Position in the code and position on screen
+Where the caption appears **on screen** is controlled by CSS. Where it must appear **in the code** is always the start of the table.
+:::
+
+## Moving the Caption: `caption-side`
+
+Want the caption below the table? Change it with CSS, not by moving the element.
+
+```css title="style.css"
+caption {
+  caption-side: bottom;
+}
+```
+
+| Value | Result |
+| :-- | :-- |
+| `top` (default) | Above the table |
+| `bottom` | Below the table |
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+caption {
+  caption-side: bottom;
+  text-align: left;
+  font-style: italic;
+}
+```
+
+```html title="index.html"
+<table>
+  <caption>Table 1. Weekly study hours</caption>
+  <tr>...</tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption style={{ captionSide: "bottom", textAlign: "left", fontStyle: "italic" }}>
+    Table 1. Weekly study hours
+  </caption>
+  <tbody>
+    <tr>
+      <th scope="col" style={head}>Week</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Hours</th>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>1</th>
+      <td style={num}>6</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>2</th>
+      <td style={num}>8</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The caption is below the table on screen, but in the HTML it is still the first child. Screen reader users meet it first, which is what we want.
+
+## Styling the Caption
+
+A caption is a normal element, so any text style works.
+
+```css title="style.css"
+caption {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: left;       /* default is centered */
+  padding: 0.5rem 0;
+  color: #334155;
+}
+```
+
+Because the default is centered text, many designs left-align captions so they line up with the table's left edge.
+
+## Why Captions Matter
+
+1. **They name the table.** A reader (or listener) knows what the data is before they study it.
+2. **Screen readers announce them.** When a user reaches a table, they hear the caption together with its size: "Average monthly rainfall by city, table, 3 columns, 3 rows." They can then decide to read it or skip it.
+3. **They help people who navigate by tables.** Many screen readers can list every table on a page. A list of captions is far more useful than a list of "table, table, table."
+4. **They stay with the table.** If the table is copied, moved, or reused, the title goes with it.
+5. **They help everyone,** including readers who skim.
+
+:::tip The rule
+Every data table that is not obviously explained by the text right next to it should have a caption. If in doubt, add one.
+:::
+
+## Writing a Good Caption
+
+A caption answers "What is this table?" in a short phrase.
+
+| Weak caption | Better caption |
+| :-- | :-- |
+| Table | Average monthly rainfall by city (mm) |
+| Data | Quiz scores for Class 4B, March 2026 |
+| Results | Results of the 2025 student survey (percentage of respondents) |
+| Info | Plans and prices (USD per month) |
+
+Good habits:
+
+1. **Be specific.** Say *what* the data is, for *whom* or *where*, and *when* if it matters.
+2. **Keep it short.** One line is ideal. A short phrase beats a sentence.
+3. **Include units or scope** if they apply to the whole table: "(mm)", "in USD", "as of June 2026."
+4. **Do not repeat the heading above it** word for word. If a heading already names the section, the caption can be more specific.
+5. **Do not start with "Table of..."** The screen reader already says "table."
+6. **Write for people who cannot see the table.** The caption should make sense when heard alone.
+
+### A Longer Description
+
+Sometimes a table needs a few more sentences, for instance to explain how to read it or to summarize its main point. Put the **short title** in the `<caption>`, and the longer explanation in a paragraph or `<details>` nearby:
+
+```html
+<table aria-describedby="rain-note">
+  <caption>Average monthly rainfall by city (mm)</caption>
+  ...
+</table>
+
+<p id="rain-note">
+  Mumbai has a dry winter and a very wet summer, while London's rainfall
+  stays fairly even all year.
+</p>
+```
+
+`aria-describedby` links the table to the paragraph, so screen readers can offer it as extra information.
+
+## Caption vs Heading vs `<figcaption>`
+
+These three are easy to mix up.
+
+| | `<caption>` | A heading (`<h3>`) | `<figcaption>` |
+| :-- | :-- | :-- | :-- |
+| Belongs to | The **table** itself | The page's outline | A **figure** |
+| Lives | Inside `<table>` | Before the table, in the page flow | Inside `<figure>` |
+| Purpose | Names this one table | Starts a section | Captions a picture, code, table, or other content |
+| Appears in the page outline | No | Yes | No |
+
+### When to Use Which
+
+- **A table inside a section about that table:** use a heading for the section and a short `<caption>` for the table.
+- **A table with a credit or longer note:** you can wrap it in a `<figure>`, but keep the `<caption>` inside the table too. Do not write the same text in both.
+- **A table that is the whole point of a heading:** if a heading says exactly what the table is, a caption may repeat it. In that case, the caption can still add the unit or date, such as "(mm), 2025."
+
+```html
+<h3>Rainfall</h3>
+
+<table>
+  <caption>Average monthly rainfall by city (mm), 2015 to 2025</caption>
+  ...
+</table>
+```
+
+Notice how the heading gives the section name, while the caption states exactly what the table contains.
+
+:::note Using `<figure>` with a table
+HTML allows `<figure>` around a table with a `<figcaption>`. It is useful when you want a caption that is **outside** the table's box, for credits or sources. The table's own `<caption>` is still the best way to name the table for assistive technology, so avoid putting the same words in both.
+:::
+
+## Other Ways to Name a Table
+
+When a visible caption does not fit your design, there are alternatives. Prefer `<caption>` whenever you can.
+
+| Method | Example | Notes |
+| :-- | :-- | :-- |
+| `<caption>` | `<caption>Rainfall</caption>` | Best: visible and built in |
+| `aria-labelledby` | `<table aria-labelledby="t-title">` pointing to a heading's `id` | Good when a visible heading already titles the table |
+| `aria-label` | `<table aria-label="Rainfall">` | Hidden name. Use only if nothing visible fits |
+| `title` attribute | `<table title="Rainfall">` | Not reliable. Avoid |
+
+```html
+<h3 id="rain-title">Rainfall by city</h3>
+<table aria-labelledby="rain-title">
+  ...
+</table>
+```
+
+## Numbering Tables with CSS Counters
+
+Reports and research pages number their tables: "Table 1.", "Table 2.", and so on. You can let CSS do the counting, so numbers update when you add or move a table.
+
+```css title="style.css"
+body {
+  counter-reset: table-number;
+}
+
+caption::before {
+  counter-increment: table-number;
+  content: "Table " counter(table-number) ". ";
+  font-weight: 700;
+}
+```
+
+```html title="index.html"
+<table>
+  <caption>Weekly study hours</caption>
+  ...
+</table>
+
+<table>
+  <caption>Quiz scores</caption>
+  ...
+</table>
+```
+
+The first caption displays "**Table 1.** Weekly study hours," and the second "**Table 2.** Quiz scores." If you add a new table in the middle, the numbers fix themselves.
+
+:::warning Text added by CSS and screen readers
+Some screen readers read text created with `content`, and some do not. If readers must be able to refer to "Table 2" in your text, consider typing the number into the caption instead, so it is always available.
+:::
+
+## Putting It Together
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Class results</h3>
+<p>The table below compares scores for the three class tests.</p>
+
+<table>
+  <caption>Average score per test, Class 4B (out of 100)</caption>
+  <thead>
+    <tr>
+      <th scope="col">Test</th>
+      <th scope="col">Average</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Test 1</th>
+      <td>72</td>
+    </tr>
+    <tr>
+      <th scope="row">Test 2</th>
+      <td>78</td>
+    </tr>
+    <tr>
+      <th scope="row">Test 3</th>
+      <td>85</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Class results</h3>
+<p>The table below compares scores for the three class tests.</p>
+
+<table style={{ borderCollapse: "collapse" }}>
+  <caption style={{ textAlign: "left", fontWeight: 700, padding: "0.5rem 0" }}>
+    Average score per test, Class 4B (out of 100)
+  </caption>
+  <thead>
+    <tr>
+      <th scope="col" style={head}>Test</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Average</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>Test 1</th>
+      <td style={num}>72</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Test 2</th>
+      <td style={num}>78</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Test 3</th>
+      <td style={num}>85</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A screen reader announces: "Average score per test, Class 4B, out of 100, table, 2 columns, 3 rows." The listener knows exactly what they have reached.
+
+## Global Audience Notes
+
+- **Write the caption in the page's language,** and set the `lang` attribute.
+- **Spell out units and currencies** ("USD," "mm," "°C"), since readers come from many regions.
+- **Write dates clearly,** such as "March 2026," not "3/26."
+- **Keep it plain.** Short, simple phrases translate best, and many readers will use translation tools.
+
+## Common Mistakes to Avoid
+
+1. **No caption on a data table** that needs one.
+2. **Placing `<caption>` anywhere but first** inside the table.
+3. **More than one caption** in a table.
+4. **Vague captions** such as "Table" or "Data."
+5. **Starting with "Table of..."** or "Table showing...". The screen reader already announces "table."
+6. **Using a `<div>` or `<p>` above the table** as a fake caption. It is not connected to the table.
+7. **Repeating the same text** in a heading, a `<caption>`, and a `<figcaption>`.
+8. **Using `<caption>` to start a page section.** That is the job of a heading.
+9. **Moving `<caption>` to the bottom in the HTML** instead of using `caption-side`.
+10. **Relying on CSS-generated table numbers** when readers must reference them.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add a `<caption>` to a table you already built.
+2. Move it below the table with `caption-side: bottom`.
+3. Left-align it and make it bold with CSS.
+4. Rewrite a vague caption such as "Data" so it is specific.
+5. Add a unit to a caption, such as "(kg)" or "in USD."
+6. Place a heading above a table and write a caption that adds extra detail.
+7. Add a paragraph with an `id`, and link it to the table with `aria-describedby`.
+8. Add CSS counters to number two tables as "Table 1." and "Table 2."
+9. Wrap a table in `<figure>`, and add a `<figcaption>` for the source only.
+10. Bonus: use a screen reader or your browser's accessibility panel to confirm that the caption is the table's name.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Where must `<caption>` be placed?</summary>
+
+As the first child of the `<table>`, before any `<colgroup>`, `<thead>`, `<tbody>`, or rows. A table can have only one.
+
+</details>
+
+<details>
+<summary>2. How do you show the caption below the table?</summary>
+
+With the CSS property `caption-side: bottom`. The element stays first in the HTML.
+
+</details>
+
+<details>
+<summary>3. Why do captions help screen reader users?</summary>
+
+They are announced when the user reaches the table, so the user learns what the table is about before reading it. Captions also make lists of tables on the page meaningful.
+
+</details>
+
+<details>
+<summary>4. What makes a good caption?</summary>
+
+It is short and specific, says what the data is (with units or dates when they apply), makes sense when heard alone, and does not start with "Table of..."
+
+</details>
+
+<details>
+<summary>5. How is `<caption>` different from a heading and from `<figcaption>`?</summary>
+
+`<caption>` names one table and sits inside it. A heading starts a section of the page. `<figcaption>` captions the content of a `<figure>`.
+
+</details>
+
+## Key Takeaways
+
+- A `<caption>` is the title of a table. Put it as the first child of `<table>`, one per table.
+- It appears above the table by default. Use `caption-side` to move it and CSS to style it.
+- Screen readers announce captions, so they make tables easier to find and understand.
+- Write short, specific captions with units and dates, and avoid "Table of...".
+- Prefer `<caption>` over `aria-label` or a plain paragraph, and avoid duplicating the same words across a heading, caption, and figcaption.
+
+A caption names the whole table. To group the rows inside it into sections, learn [Thead, Tbody, Tfoot](./thead-tbody-tfoot), or return to the [Tables overview](/tutorials/html/tables).

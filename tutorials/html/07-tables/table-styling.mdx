@@ -1,0 +1,705 @@
+---
+id: html-table-styling
+title: "Styling HTML Tables with CSS"
+sidebar_label: "Styling Tables"
+sidebar_position: 9
+slug: /html/tables/table-styling
+description: "Learn how to style HTML tables with CSS. Add borders with border-collapse, spacing and padding, header styles, zebra stripes, hover effects, alignment, rounded corners, captions, and a complete modern table stylesheet, with accessibility and contrast tips on CodeHarborHub."
+keywords:
+  - style HTML table CSS
+  - border-collapse
+  - border-spacing
+  - zebra stripes table CSS
+  - table hover effect
+  - rounded table corners
+  - table padding CSS
+  - tabular-nums
+  - modern table design
+  - table contrast accessibility
+  - learn HTML tables
+  - CodeHarborHub HTML
+tags: [html, css, web-development, beginner, tables, styling, frontend]
+---
+
+export const plain = { padding: "6px 12px", textAlign: "left" };
+export const bordered = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+
+A table with good structure but no styling is like a house with walls and no paint. Everything is where it should be, but it is hard to enjoy. The browser's default table has no borders, tight spacing, and plain text, so readers have to work to follow a row across the page.
+
+The good news is that tables are very easy to style, because every part (the table, the rows, the cells, the header, the footer) is a real element with its own selector. In this lesson, you will learn the CSS that turns a plain table into a clean, readable one, and finish with a small stylesheet you can reuse in any project.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to add borders with `border-collapse`
+- How to control spacing with `padding` and `border-spacing`
+- How to style headers, footers, and captions
+- How to add zebra stripes and hover effects
+- How to align text and numbers
+- How to round corners the right way
+- How to keep tables readable, accessible, and consistent
+- A complete, reusable table stylesheet
+
+:::info Prerequisites
+You should know the table elements from the earlier lessons, and have seen basic CSS selectors and properties.
+:::
+
+## Start with the Default
+
+Out of the box, a table looks like this.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table>
+  <tbody>
+    <tr><th>Course</th><th>Weeks</th><th>Level</th></tr>
+    <tr><td>Intro to HTML</td><td>4</td><td>Beginner</td></tr>
+    <tr><td>CSS Layouts</td><td>6</td><td>Intermediate</td></tr>
+    <tr><td>JavaScript Basics</td><td>8</td><td>Beginner</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+No borders, tight cells, and nothing to guide the eye. Let's improve it one step at a time. We will use this HTML throughout:
+
+```html title="index.html"
+<table class="data-table">
+  <caption>Course catalog</caption>
+  <thead>
+    <tr>
+      <th scope="col">Course</th>
+      <th scope="col">Weeks</th>
+      <th scope="col">Level</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><th scope="row">Intro to HTML</th><td>4</td><td>Beginner</td></tr>
+    <tr><th scope="row">CSS Layouts</th><td>6</td><td>Intermediate</td></tr>
+    <tr><th scope="row">JavaScript Basics</th><td>8</td><td>Beginner</td></tr>
+  </tbody>
+</table>
+```
+
+## Step 1: Borders and `border-collapse`
+
+Borders go on the **cells** (`th` and `td`), and sometimes on the table itself. The key property is `border-collapse`.
+
+| Value | Effect |
+| :-- | :-- |
+| `separate` (default) | Every cell has its own border, with a gap between them. Double lines |
+| `collapse` | Neighboring borders merge into one single line. The clean look |
+
+<Tabs>
+<TabItem value="code" label="CSS" default>
+
+```css title="style.css"
+.data-table {
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #94a3b8;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Separate vs Collapse">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p><strong>Separate (default):</strong></p>
+<table style={{ borderCollapse: "separate" }}>
+  <tbody>
+    <tr><th style={bordered}>Course</th><th style={bordered}>Weeks</th></tr>
+    <tr><td style={bordered}>Intro to HTML</td><td style={bordered}>4</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Collapse:</strong></p>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr><th style={bordered}>Course</th><th style={bordered}>Weeks</th></tr>
+    <tr><td style={bordered}>Intro to HTML</td><td style={bordered}>4</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If you prefer separate borders but want to close the gaps, use `border-spacing`:
+
+```css
+.data-table {
+  border-collapse: separate;
+  border-spacing: 0;   /* no gaps, but borders can double up */
+}
+```
+
+:::tip Which should you use?
+For most tables, `border-collapse: collapse` is simplest. Use `separate` with `border-spacing: 0` when you need rounded corners on the table itself (see below).
+:::
+
+## Step 2: Padding
+
+Cramped cells are hard to read. Add `padding` to the cells.
+
+```css title="style.css"
+.data-table th,
+.data-table td {
+  padding: 0.6rem 0.9rem;
+}
+```
+
+| Padding | Feel |
+| :-- | :-- |
+| `0.25rem 0.5rem` | Compact, for dense data |
+| `0.6rem 0.9rem` | Comfortable, a good default |
+| `1rem 1.25rem` | Airy, for simple tables |
+
+Use `rem` rather than `px` so the spacing grows if a reader enlarges their text.
+
+## Step 3: Header Styling
+
+The header deserves to stand out. Target `thead th`.
+
+```css title="style.css"
+.data-table thead th {
+  background: #0f172a;
+  color: #ffffff;
+  text-align: left;
+  font-weight: 600;
+}
+```
+
+For row headers in the body, you can use the `scope` attribute as a selector:
+
+```css title="style.css"
+.data-table tbody th[scope="row"] {
+  text-align: left;
+  font-weight: 600;
+  background: #f8fafc;
+}
+```
+
+By default, `<th>` is **centered**. Left-aligning headings (in left-to-right languages) makes columns line up with their text below them.
+
+## Step 4: Zebra Stripes
+
+Alternating row colors help the eye follow a long row across the page. Use `:nth-child` on body rows.
+
+```css title="style.css"
+.data-table tbody tr:nth-child(even) {
+  background: #f1f5f9;
+}
+```
+
+| Selector | Effect |
+| :-- | :-- |
+| `tr:nth-child(even)` | Every second row |
+| `tr:nth-child(odd)` | Every other row, starting with the first |
+| `tr:nth-child(3n)` | Every third row |
+
+Use `tbody tr`, not `tr`, so the header and footer are not striped.
+
+## Step 5: Hover and Focus
+
+A hover highlight makes a row easy to track.
+
+```css title="style.css"
+.data-table tbody tr:hover {
+  background: #e0f2fe;
+}
+```
+
+If rows contain links or buttons, also style the focus state, so keyboard users can see where they are:
+
+```css title="style.css"
+.data-table a:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+:::note Hover is a bonus
+Touch devices have no hover, so do not hide important information behind it. Treat it as a small aid.
+:::
+
+## Step 6: Alignment and Number Formatting
+
+You learned in [Table Rows and Cells](./table-rows-and-cells) that numbers read best when right-aligned. Combine alignment with a tidy digit style.
+
+```css title="style.css"
+.data-table td.num,
+.data-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;   /* equal-width digits */
+}
+
+.data-table td {
+  vertical-align: top;
+}
+```
+
+`tabular-nums` makes every digit the same width, so columns of numbers line up perfectly.
+
+## Step 7: The Caption
+
+Style the caption like any text. Left-aligning it matches the table's edge.
+
+```css title="style.css"
+.data-table caption {
+  text-align: left;
+  font-weight: 700;
+  padding: 0 0 0.5rem;
+  color: #334155;
+  caption-side: top;
+}
+```
+
+## Step 8: The Footer
+
+Totals should stand out from the data above them.
+
+```css title="style.css"
+.data-table tfoot th,
+.data-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid #0f172a;
+  background: #f8fafc;
+}
+```
+
+## Putting the Steps Together
+
+Here is the table with all of these styles applied.
+
+<Tabs>
+<TabItem value="css" label="Full CSS" default>
+
+```css title="style.css"
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.data-table caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 0.5rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  text-align: left;
+}
+
+.data-table thead th {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.data-table tbody th[scope="row"] {
+  background: #f8fafc;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #f1f5f9;
+}
+
+.data-table tbody tr:hover {
+  background: #e0f2fe;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse", width: "100%", fontSize: "0.95rem" }}>
+  <caption style={{ textAlign: "left", fontWeight: 700, paddingBottom: "0.5rem" }}>Course catalog</caption>
+  <thead>
+    <tr>
+      {["Course", "Weeks", "Level"].map((label) => (
+        <th
+          key={label}
+          scope="col"
+          style={{ padding: "0.6rem 0.9rem", border: "1px solid #cbd5e1", textAlign: "left", background: "#0f172a", color: "#ffffff" }}
+        >
+          {label}
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {[
+      ["Intro to HTML", "4", "Beginner"],
+      ["CSS Layouts", "6", "Intermediate"],
+      ["JavaScript Basics", "8", "Beginner"],
+    ].map(([course, weeks, level], index) => (
+      <tr key={course} style={{ background: index % 2 === 1 ? "#f1f5f9" : "transparent" }}>
+        <th scope="row" style={{ padding: "0.6rem 0.9rem", border: "1px solid #cbd5e1", textAlign: "left", background: "#f8fafc", color: "#0f172a" }}>{course}</th>
+        <td style={{ padding: "0.6rem 0.9rem", border: "1px solid #cbd5e1", textAlign: "left" }}>{weeks}</td>
+        <td style={{ padding: "0.6rem 0.9rem", border: "1px solid #cbd5e1", textAlign: "left" }}>{level}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The live demo applies the same rules with inline styles, since a stylesheet cannot be attached to a single demo on this page. In your project, use the CSS on the left.
+
+## A Modern Look: Lines Only Between Rows
+
+Full grids of borders can look heavy. Many modern designs use only **horizontal lines**, which is easier on the eyes and works well on narrow screens.
+
+<Tabs>
+<TabItem value="css" label="CSS" default>
+
+```css title="style.css"
+.clean-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.clean-table th,
+.clean-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;   /* only the bottom line */
+}
+
+.clean-table thead th {
+  border-bottom: 2px solid #0f172a;
+  font-weight: 600;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse", width: "100%" }}>
+  <thead>
+    <tr>
+      {["Course", "Weeks", "Level"].map((label) => (
+        <th
+          key={label}
+          scope="col"
+          style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "2px solid #0f172a", fontWeight: 600 }}
+        >
+          {label}
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {[
+      ["Intro to HTML", "4", "Beginner"],
+      ["CSS Layouts", "6", "Intermediate"],
+      ["JavaScript Basics", "8", "Beginner"],
+    ].map(([course, weeks, level]) => (
+      <tr key={course}>
+        <td style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>{course}</td>
+        <td style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>{weeks}</td>
+        <td style={{ padding: "0.75rem 1rem", textAlign: "left", borderBottom: "1px solid #e2e8f0" }}>{level}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Rounded Corners
+
+Here is a surprise: `border-radius` on a table **does not work** when `border-collapse: collapse` is on. Collapsed borders belong to the table grid, not to the table box. You have two good options.
+
+### Option 1: Wrap the Table
+
+Put the table inside a `div`, and round and clip the `div`.
+
+```css title="style.css"
+.table-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  overflow: hidden;       /* clips the corners of the table */
+}
+
+.table-card table {
+  border-collapse: collapse;
+  width: 100%;
+}
+```
+
+```html title="index.html"
+<div class="table-card">
+  <table>...</table>
+</div>
+```
+
+### Option 2: Separate Borders
+
+Use `border-collapse: separate` with `border-spacing: 0`, then round the corner cells.
+
+```css title="style.css"
+.round-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.round-table thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+.round-table thead tr:first-child th:last-child  { border-top-right-radius: 10px; }
+```
+
+The wrapper approach is shorter and covers all four corners at once.
+
+## Sizing and Layout
+
+| Goal | CSS |
+| :-- | :-- |
+| Fill the available width | `width: 100%;` |
+| Fit the content | `width: auto;` (default) |
+| Fixed, predictable columns | `table-layout: fixed;` |
+| Center the table | `margin-inline: auto;` |
+| Keep a value on one line | `white-space: nowrap;` |
+| Break long words | `overflow-wrap: anywhere;` |
+
+For tables that must fit narrow screens, see [Responsive Tables](./responsive-tables).
+
+## Keep It Accessible
+
+Good styling helps readability. Poor styling hurts it.
+
+1. **Contrast.** Text and background should have at least a **4.5 : 1** contrast ratio (3 : 1 for large text). Check the header, the stripes, and the hover color, since light text on a mid-tone background often fails.
+2. **Do not rely on color alone.** If a cell is "over budget," add words or a symbol, not only red.
+3. **Keep stripes subtle.** Stripes should guide the eye, not fight the text.
+4. **Visible focus.** If cells contain links or buttons, give them a clear `:focus-visible` outline.
+5. **Respect user preferences.** In dark mode, adjust the colors.
+6. **Don't hide meaning with `display`.** Changing `display` on table elements can remove their table semantics in some browsers. See [Responsive Tables](./responsive-tables) for the safe approach.
+
+### Dark Mode
+
+A small amount of CSS makes your table work in both light and dark themes. Use CSS variables:
+
+```css title="style.css"
+.data-table {
+  --border: #cbd5e1;
+  --stripe: #f1f5f9;
+  --head-bg: #0f172a;
+  --head-fg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .data-table {
+    --border: #475569;
+    --stripe: #1e293b;
+    --head-bg: #e2e8f0;
+    --head-fg: #0f172a;
+  }
+}
+
+.data-table th,
+.data-table td { border: 1px solid var(--border); }
+.data-table tbody tr:nth-child(even) { background: var(--stripe); }
+.data-table thead th { background: var(--head-bg); color: var(--head-fg); }
+```
+
+## Styling for Print
+
+Tables are often printed. A few rules make that go better.
+
+```css title="style.css"
+@media print {
+  .data-table {
+    font-size: 11pt;
+  }
+
+  .data-table thead {
+    display: table-header-group;   /* repeat the header on each page */
+  }
+
+  .data-table tr {
+    break-inside: avoid;           /* do not split a row across pages */
+  }
+}
+```
+
+## Global Audience Notes
+
+- **Use logical properties** (`padding-inline`, `border-inline-start`, `text-align: start`) instead of left and right, so tables work in right-to-left languages like Arabic and Hebrew.
+- **Leave room for longer text.** Translations can be much longer than English, so avoid tight fixed widths.
+- **Pick fonts that cover your scripts,** and use `font-variant-numeric` only where it makes sense.
+- **Avoid color meanings that vary by culture.** Red may mean danger in one place and luck in another. Combine color with text.
+
+## A Reusable Starter Stylesheet
+
+Copy this into your project, and adjust the colors to suit your site.
+
+```css title="table.css"
+.table-wrap {
+  overflow-x: auto;                  /* lets wide tables scroll sideways */
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.data-table caption {
+  text-align: start;
+  font-weight: 700;
+  padding-block: 0 0.5rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: start;
+  vertical-align: top;
+}
+
+.data-table thead th {
+  border-bottom: 2px solid #0f172a;
+  font-weight: 600;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.data-table tbody tr:hover {
+  background: #eff6ff;
+}
+
+.data-table .num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table tfoot th,
+.data-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid #0f172a;
+}
+```
+
+```html title="index.html"
+<div class="table-wrap">
+  <table class="data-table">
+    ...
+  </table>
+</div>
+```
+
+## Obsolete Attributes to Leave Behind
+
+If you see these in old tutorials, replace them with CSS.
+
+| Old HTML | Modern CSS |
+| :-- | :-- |
+| `<table border="1">` | `border: 1px solid ...` on `th, td` |
+| `cellpadding="8"` | `padding: 0.5rem` on `th, td` |
+| `cellspacing="0"` | `border-collapse: collapse` or `border-spacing: 0` |
+| `bgcolor="#eee"` | `background: #eee` |
+| `align="center"` | `text-align: center` or `margin-inline: auto` |
+| `width="100%"` | `width: 100%` |
+| `<font>` and `<center>` | CSS typography and `text-align` |
+
+## Common Mistakes to Avoid
+
+1. **Forgetting `border-collapse: collapse`** and getting double borders.
+2. **Trying `border-radius` on a collapsed table.** Wrap it, or use `separate`.
+3. **Striping the header and footer** by using `tr:nth-child` instead of `tbody tr:nth-child`.
+4. **Low-contrast headers and stripes.** Always check contrast.
+5. **Using color alone** to convey status.
+6. **Styling every `table` on the site** with a global rule. Use a class.
+7. **Setting `display: block` or `flex` on table elements** to change layout, which can break table semantics.
+8. **Fixed pixel widths** that overflow on small screens.
+9. **Using `px` for padding** and ignoring text zoom.
+10. **Using obsolete HTML attributes** for visual style.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add `border-collapse: collapse` and a 1px border to all cells.
+2. Add comfortable padding and left-align the headings.
+3. Style the header with a dark background and white text.
+4. Add zebra stripes to the body only.
+5. Add a hover color to body rows.
+6. Right-align the number column with `tabular-nums`.
+7. Make the footer bold with a thick top border.
+8. Remove the vertical lines to create the "lines only between rows" look.
+9. Round the table's corners using a wrapper `div`.
+10. Bonus: add a dark mode with CSS variables and `prefers-color-scheme`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `border-collapse: collapse` do?</summary>
+
+It merges the borders of neighboring cells into a single line, instead of drawing a separate border around each cell.
+
+</details>
+
+<details>
+<summary>2. How do you add zebra stripes without coloring the header?</summary>
+
+Use `tbody tr:nth-child(even)` so the rule applies only to rows inside `<tbody>`.
+
+</details>
+
+<details>
+<summary>3. Why does `border-radius` seem to fail on a table?</summary>
+
+With `border-collapse: collapse`, borders belong to the cell grid, not the table box. Wrap the table in a rounded `div` with `overflow: hidden`, or use separate borders with `border-spacing: 0`.
+
+</details>
+
+<details>
+<summary>4. How should numbers be aligned and formatted?</summary>
+
+Right-aligned (`text-align: end`), with `font-variant-numeric: tabular-nums` so the digits line up.
+
+</details>
+
+<details>
+<summary>5. What should you check to keep a styled table accessible?</summary>
+
+Text contrast (at least 4.5 : 1), meaning that does not rely on color alone, visible focus styles, and a table structure that is not broken by changing `display`.
+
+</details>
+
+## Key Takeaways
+
+- HTML builds the table, and CSS makes it readable. Style with a class, never obsolete attributes.
+- Start with `border-collapse: collapse`, cell `padding`, a styled header, and `tbody tr:nth-child(even)` stripes.
+- Right-align numbers with `tabular-nums`, and use logical properties for right-to-left languages.
+- Wrap a table in a rounded `div` for rounded corners, and add `:hover` and `:focus-visible` states.
+- Keep contrast high, do not rely on color alone, and test in light, dark, and print.
+
+Your table now looks good on a desktop. But what about a phone? Learn how to handle wide tables on small screens in [Responsive Tables](./responsive-tables), or return to the [Tables overview](/tutorials/html/tables).

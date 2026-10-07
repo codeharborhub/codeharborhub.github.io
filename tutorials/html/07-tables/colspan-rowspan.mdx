@@ -1,16 +1,662 @@
 ---
-id: colspan-rowspan
-title: "Merging Cells Across Columns and Rows: colspan and rowspan"
-sidebar_label: "Colspan & Rowspan"
+id: html-colspan-rowspan
+title: "HTML Colspan and Rowspan"
+sidebar_label: "Colspan and Rowspan"
 sidebar_position: 7
 slug: /html/tables/colspan-rowspan
-description: "Master cell spanning techniques using the colspan and rowspan attributes to merge multiple data cells horizontally or vertically."
+description: "Learn how to merge cells in HTML tables with colspan and rowspan. Understand how to count cells correctly, build grouped headers, schedules, and totals rows, avoid overlap errors, keep merged tables accessible, and decide when to split a table instead on CodeHarborHub."
 keywords:
-  - HTML colspan attribute
-  - HTML rowspan attribute
-  - merge table cells
-  - multi column table cells
+  - HTML colspan
+  - HTML rowspan
+  - merge table cells HTML
+  - colspan and rowspan example
+  - grouped table headers
+  - table cell spanning
+  - rowspan 0
+  - accessible merged cells
+  - HTML table layout
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, attributes, layout]
+tags: [html, web-development, beginner, tables, colspan, rowspan, frontend]
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+export const mid = { ...cell, textAlign: "center" };
+
+So far, every cell in your tables has been the same size: one row tall and one column wide. Real data is not always so tidy. A heading might cover three months. A lunch break might stretch across every room. A "Total" label might need to sit under four columns at once.
+
+For these cases, HTML lets one cell **span** across several columns or rows. Two attributes do the job: **`colspan`** (across columns) and **`rowspan`** (down rows). They are powerful, but they are also the most common source of broken tables, so the key is learning to count carefully. By the end of this lesson, you will.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `colspan` and `rowspan` do
+- How to count cells correctly when some span
+- How to combine both in one table
+- How to build grouped headers, schedules, and totals rows
+- How to avoid the most common errors
+- How to keep merged tables accessible
+- When to split a table instead
+
+:::note A spelling note for MDX
+In plain HTML, the attributes are written `colspan` and `rowspan` (all lowercase). This course page is written in MDX, so some live demos use the React-style spelling `colSpan` and `rowSpan`. Your HTML files should use the lowercase version, as in all the code tabs here.
+:::
+
+## `colspan`: Merge Across Columns
+
+`colspan` makes a cell stretch over several columns. Its value is a whole number: how many columns the cell covers.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th colspan="3">Quarterly sales</th>
+  </tr>
+  <tr>
+    <th>Jan</th>
+    <th>Feb</th>
+    <th>Mar</th>
+  </tr>
+  <tr>
+    <td>120</td>
+    <td>140</td>
+    <td>160</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th colSpan={3} style={{ ...head, textAlign: "center" }}>Quarterly sales</th>
+    </tr>
+    <tr>
+      <th style={head}>Jan</th>
+      <th style={head}>Feb</th>
+      <th style={head}>Mar</th>
+    </tr>
+    <tr>
+      <td style={num}>120</td>
+      <td style={num}>140</td>
+      <td style={num}>160</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The first row has **one** cell, but it covers **three** columns. The table is three columns wide, and every row must add up to three.
+
+### The Counting Rule
+
+> Each row must **add up to the same number of columns**. A cell with `colspan="3"` counts as three.
+
+| Row | Cells | Columns counted |
+| :-- | :-- | :-- |
+| 1 | one `<th colspan="3">` | 3 |
+| 2 | three `<th>` | 3 |
+| 3 | three `<td>` | 3 |
+
+All rows add up to 3, so the table is balanced.
+
+## `rowspan`: Merge Down Rows
+
+`rowspan` makes a cell stretch down over several rows. The value is how many rows the cell covers.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Day</th>
+    <th>Time</th>
+    <th>Session</th>
+  </tr>
+  <tr>
+    <td rowspan="2">Monday</td>
+    <td>09:00</td>
+    <td>HTML</td>
+  </tr>
+  <tr>
+    <td>11:00</td>
+    <td>CSS</td>
+  </tr>
+  <tr>
+    <td rowspan="2">Tuesday</td>
+    <td>09:00</td>
+    <td>JavaScript</td>
+  </tr>
+  <tr>
+    <td>11:00</td>
+    <td>Project</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Day</th>
+      <th style={head}>Time</th>
+      <th style={head}>Session</th>
+    </tr>
+    <tr>
+      <td rowSpan={2} style={{ ...cell, verticalAlign: "top" }}>Monday</td>
+      <td style={cell}>09:00</td>
+      <td style={cell}>HTML</td>
+    </tr>
+    <tr>
+      <td style={cell}>11:00</td>
+      <td style={cell}>CSS</td>
+    </tr>
+    <tr>
+      <td rowSpan={2} style={{ ...cell, verticalAlign: "top" }}>Tuesday</td>
+      <td style={cell}>09:00</td>
+      <td style={cell}>JavaScript</td>
+    </tr>
+    <tr>
+      <td style={cell}>11:00</td>
+      <td style={cell}>Project</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Look closely at the code. "Monday" appears only once, in the first of its two rows. The second row (11:00, CSS) has **only two cells**, because the Monday cell from above is already occupying its first column.
+
+### The Counting Rule for Rows
+
+> A cell with `rowspan="2"` **takes up a slot in the row below it too**. In that next row, you write one cell **fewer**.
+
+Here is how to picture it. Each `X` marks a slot occupied by a spanning cell above:
+
+```text
+Row 1:  [ Day    ] [ Time  ] [ Session ]
+Row 2:  [ Monday ] [ 09:00 ] [ HTML    ]
+Row 3:  [   X    ] [ 11:00 ] [ CSS     ]   ← write only 2 cells here
+Row 4:  [ Tuesday] [ 09:00 ] [ JS      ]
+Row 5:  [   X    ] [ 11:00 ] [ Project ]   ← write only 2 cells here
+```
+
+:::tip Draw it first
+Before you write a table with merged cells, sketch the grid on paper and mark which slots are covered. It takes one minute and prevents most mistakes.
+:::
+
+## Using Both Together
+
+A single cell can have both attributes. It then covers a rectangle of cells.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <td rowspan="2" colspan="2">Big block (2 × 2)</td>
+    <td>A</td>
+  </tr>
+  <tr>
+    <td>B</td>
+  </tr>
+  <tr>
+    <td>C</td>
+    <td>D</td>
+    <td>E</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <td rowSpan={2} colSpan={2} style={{ ...mid, background: "#fef9c3" }}>Big block (2 × 2)</td>
+      <td style={mid}>A</td>
+    </tr>
+    <tr>
+      <td style={mid}>B</td>
+    </tr>
+    <tr>
+      <td style={mid}>C</td>
+      <td style={mid}>D</td>
+      <td style={mid}>E</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Count the slots:
+
+| Row | What you write | Slots filled |
+| :-- | :-- | :-- |
+| 1 | Big block (takes 2 columns) + A | 2 + 1 = 3 |
+| 2 | B (the big block covers the first 2 slots) | 2 (from above) + 1 = 3 |
+| 3 | C, D, E | 3 |
+
+## Real-World Pattern 1: Grouped Headers
+
+When several columns belong together, a heading above them makes the structure clear. This is the most common good use of `colspan`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Exam results</caption>
+  <thead>
+    <tr>
+      <td rowspan="2"></td>
+      <th colspan="2" scope="colgroup">Math</th>
+      <th colspan="2" scope="colgroup">Science</th>
+    </tr>
+    <tr>
+      <th scope="col">Test 1</th>
+      <th scope="col">Test 2</th>
+      <th scope="col">Test 1</th>
+      <th scope="col">Test 2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Aisha</th>
+      <td>92</td><td>88</td>
+      <td>85</td><td>90</td>
+    </tr>
+    <tr>
+      <th scope="row">Mateo</th>
+      <td>79</td><td>84</td>
+      <td>91</td><td>87</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Exam results</caption>
+  <thead>
+    <tr>
+      <td rowSpan={2} style={cell}></td>
+      <th colSpan={2} scope="colgroup" style={{ ...head, textAlign: "center" }}>Math</th>
+      <th colSpan={2} scope="colgroup" style={{ ...head, textAlign: "center" }}>Science</th>
+    </tr>
+    <tr>
+      <th scope="col" style={head}>Test 1</th>
+      <th scope="col" style={head}>Test 2</th>
+      <th scope="col" style={head}>Test 1</th>
+      <th scope="col" style={head}>Test 2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>Aisha</th>
+      <td style={num}>92</td><td style={num}>88</td>
+      <td style={num}>85</td><td style={num}>90</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Mateo</th>
+      <td style={num}>79</td><td style={num}>84</td>
+      <td style={num}>91</td><td style={num}>87</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here, "Math" and "Science" each cover two columns (`colspan="2"`). The empty top-left cell covers two header rows (`rowspan="2"`). The attribute `scope="colgroup"` tells assistive technology that "Math" labels a group of columns.
+
+## Real-World Pattern 2: A Totals Row
+
+A label that spans all columns except the last is the classic invoice footer.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<tfoot>
+  <tr>
+    <th scope="row" colspan="3">Total</th>
+    <td>43.00</td>
+  </tr>
+</tfoot>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <td style={cell}>Notebook</td>
+      <td style={num}>3</td>
+      <td style={num}>3.50</td>
+      <td style={num}>10.50</td>
+    </tr>
+    <tr>
+      <td style={cell}>Pen set</td>
+      <td style={num}>2</td>
+      <td style={num}>16.25</td>
+      <td style={num}>32.50</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row" colSpan={3} style={{ ...head, textAlign: "right" }}>Total</th>
+      <td style={{ ...num, fontWeight: 700, background: "#e2e8f0" }}>43.00</td>
+    </tr>
+  </tfoot>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The first row of the table has four cells, so the footer must add up to four: 3 (from `colspan`) + 1 = 4.
+
+## Real-World Pattern 3: A Schedule with a Shared Break
+
+When an event covers every room or every day, one merged cell says it neatly.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Time</th>
+    <th>Room A</th>
+    <th>Room B</th>
+  </tr>
+  <tr>
+    <td>09:00</td>
+    <td>HTML basics</td>
+    <td>CSS basics</td>
+  </tr>
+  <tr>
+    <td>12:00</td>
+    <td colspan="2">Lunch (all rooms)</td>
+  </tr>
+  <tr>
+    <td>13:00</td>
+    <td>JavaScript</td>
+    <td>Accessibility</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Time</th>
+      <th style={head}>Room A</th>
+      <th style={head}>Room B</th>
+    </tr>
+    <tr>
+      <td style={cell}>09:00</td>
+      <td style={cell}>HTML basics</td>
+      <td style={cell}>CSS basics</td>
+    </tr>
+    <tr>
+      <td style={cell}>12:00</td>
+      <td colSpan={2} style={{ ...mid, background: "#f1f5f9" }}>Lunch (all rooms)</td>
+    </tr>
+    <tr>
+      <td style={cell}>13:00</td>
+      <td style={cell}>JavaScript</td>
+      <td style={cell}>Accessibility</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Values and Limits
+
+| Attribute | Allowed values | Notes |
+| :-- | :-- | :-- |
+| `colspan` | Whole numbers from 1 up to 1000 | Default is `1`. Values over 1000 are treated as 1000 |
+| `rowspan` | Whole numbers from 0 up to 65534 | Default is `1`. `0` means "to the end of the row group" |
+
+`rowspan="0"` is a special value: the cell stretches down to the end of its `<thead>`, `<tbody>`, or `<tfoot>` section. Support varies, so most developers write the exact number instead.
+
+Both attributes go only on `<td>` and `<th>`. They do nothing on `<tr>` or `<table>`.
+
+## What Happens When You Miscount?
+
+### Too Many Cells in a Row
+
+If a row ends up wider than the others, the browser adds extra columns to the whole table, and the shape breaks.
+
+```html
+<tr>
+  <th colspan="3">Title</th>
+</tr>
+<tr>
+  <td>A</td><td>B</td><td>C</td><td>D</td>   <!-- 4 cells: one too many -->
+</tr>
+```
+
+### Too Few Cells in a Row
+
+If a row is short, you get a ragged right edge, with empty space where cells should be.
+
+### Overlap
+
+A cell spanning down can collide with a cell you write in the next row, if you forget to remove one cell.
+
+<Tabs>
+<TabItem value="wrong" label="Overlap (invalid)" default>
+
+```html
+<tr>
+  <td rowspan="2">Monday</td>
+  <td>09:00</td>
+</tr>
+<tr>
+  <td>Monday again</td>   <!-- collides with the rowspan -->
+  <td>11:00</td>
+</tr>
+```
+
+</TabItem>
+<TabItem value="right" label="Fixed">
+
+```html
+<tr>
+  <td rowspan="2">Monday</td>
+  <td>09:00</td>
+</tr>
+<tr>
+  <td>11:00</td>          <!-- the Monday cell is already above -->
+</tr>
+```
+
+</TabItem>
+</Tabs>
+
+Overlapping cells are a table-model error. Browsers try to recover, but the result is unpredictable. You can check for these errors in the browser's developer tools or in an HTML validator.
+
+## Accessibility: Use Merged Cells with Care
+
+Merged cells make a table harder for assistive technology. A screen reader navigates a table as a grid, cell by cell. When cells span several slots, the grid is no longer regular, and it is easier for the user to get lost.
+
+Follow these guidelines:
+
+1. **Prefer simple tables.** Use merging only when it clearly helps.
+2. **Use `scope` on headings.** `scope="colgroup"` for a heading over a column group, `scope="col"` for single columns, and `scope="row"` for row headers.
+3. **Keep headers consistent.** Every data cell should still have a clear row and column heading.
+4. **Avoid merged cells in the body of data tables** where users compare values. Merge headings and summaries, not data.
+5. **For very complex tables,** use the `headers` and `id` attributes to link cells to headings explicitly. You will see this in [Table Accessibility](./table-accessibility).
+6. **Test with a screen reader.**
+
+:::warning Merged data cells
+In the schedule example, the lunch cell spans two rooms. That is fine for a simple table, but for a data table users may sort, filter, or navigate by cell, spanning data cells causes trouble. Think twice before merging cells that hold data, not labels.
+:::
+
+## When to Split a Table Instead
+
+If you find yourself writing a lot of `colspan` and `rowspan`, stop and ask whether two simple tables would be clearer.
+
+| Instead of... | Consider... |
+| :-- | :-- |
+| One table with many merged group headings | Several tables, each with its own caption |
+| A "table within a table" look | Separate tables or a list |
+| Merged cells for visual style | CSS spacing and borders |
+| A giant, irregular timetable | One table per day |
+
+```html
+<h3>Monday</h3>
+<table>
+  <caption>Monday sessions</caption>
+  ...
+</table>
+
+<h3>Tuesday</h3>
+<table>
+  <caption>Tuesday sessions</caption>
+  ...
+</table>
+```
+
+Simpler tables are easier to read, to style, to make responsive, and to listen to.
+
+## Global Audience Notes
+
+- **Keep merged headings short.** A heading like "Q1" or "Math" is easy to translate and fits on small screens.
+- **Right-to-left pages** reverse the column order. `colspan` still covers adjacent columns, so spanning keeps working.
+- **State units** once in a spanning heading (for example, "Sales (USD)" over several columns) instead of in every cell.
+
+## Common Mistakes to Avoid
+
+1. **Rows that do not add up** to the same number of columns.
+2. **Forgetting to remove a cell** in the row below a `rowspan`.
+3. **Overlapping spans,** where two cells fight for the same slot.
+4. **Using `colspan="0"`.** It is not valid. Use a positive number.
+5. **Merging cells just for looks** when CSS would do.
+6. **Merging data cells** that users need to compare.
+7. **Missing `scope`** on headings above merged columns.
+8. **Putting `colspan` on `<tr>`** or `<table>`. It only works on cells.
+9. **Using huge span values** instead of counting properly.
+10. **Building a complicated table** when two small ones would be clearer.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Make a three-column table with a title row that covers all three columns.
+2. Make a table where one day name spans two time slots with `rowspan="2"`.
+3. Draw a 3 × 3 grid on paper, mark a 2 × 2 merged block, then write the HTML.
+4. Build the "Exam results" table with grouped headers.
+5. Add a totals row that uses `colspan` to span all but the last column.
+6. Add a "Lunch" row that spans every room in a schedule.
+7. Break a table on purpose by adding one extra cell, and see what happens.
+8. Fix an overlap by removing the duplicated cell.
+9. Add `scope="colgroup"` to a group heading.
+10. Bonus: take your merged table and rewrite it as two simpler tables. Which is easier to read?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do `colspan` and `rowspan` do?</summary>
+
+`colspan` makes a cell stretch across several columns, and `rowspan` makes a cell stretch down several rows. The value is the number of columns or rows covered.
+
+</details>
+
+<details>
+<summary>2. How do you count cells in a row that contains a `colspan`?</summary>
+
+A cell with `colspan="3"` counts as three. Every row must add up to the same total number of columns.
+
+</details>
+
+<details>
+<summary>3. What changes in the next row after a `rowspan="2"`?</summary>
+
+The spanning cell already fills a slot in the next row, so you write one cell fewer in that row.
+
+</details>
+
+<details>
+<summary>4. Can one cell have both `colspan` and `rowspan`?</summary>
+
+Yes. It then covers a rectangle of slots, for example 2 columns wide by 2 rows tall.
+
+</details>
+
+<details>
+<summary>5. Why should you be careful with merged cells?</summary>
+
+They make the grid irregular, which can confuse screen reader users. Use them mainly for headings and summaries, add `scope`, and consider splitting complex tables.
+
+</details>
+
+## Key Takeaways
+
+- `colspan` merges across columns and `rowspan` merges down rows. Both go on `<td>` or `<th>`.
+- Count slots, not cells: a spanning cell counts for every slot it covers, and every row must add up.
+- After a `rowspan`, write fewer cells in the rows below.
+- Good uses: grouped headers, totals rows, and shared breaks in a schedule.
+- Keep merged tables as simple as possible, add `scope`, and split a table when it gets complicated.
+
+Merged cells change the column layout, which is also what you control with column groups. Learn how to style whole columns in [Colgroup and Col](./colgroup-and-col), or return to the [Tables overview](/tutorials/html/tables).

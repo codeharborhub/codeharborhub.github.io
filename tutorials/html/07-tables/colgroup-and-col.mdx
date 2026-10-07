@@ -1,0 +1,652 @@
+---
+id: html-colgroup-and-col
+title: "HTML colgroup and col"
+sidebar_label: "Colgroup and Col"
+sidebar_position: 8
+slug: /html/tables/colgroup-and-col
+description: "Learn how to style and size whole table columns with the HTML colgroup and col elements. Understand placement, the span attribute, which CSS properties work on columns, setting column widths, highlighting columns, and how colgroup relates to accessibility on CodeHarborHub."
+keywords:
+  - HTML colgroup
+  - HTML col tag
+  - style table column
+  - table column width HTML
+  - col span attribute
+  - highlight table column
+  - table-layout fixed
+  - HTML table columns
+  - colgroup vs scope
+  - learn HTML tables
+  - CodeHarborHub HTML
+tags: [html, css, web-development, beginner, tables, colgroup, col, frontend]
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+HTML tables are built **row by row**. There is no "column" element holding the cells of column 3. That is simple to write, but it raises a question: what if you want to color a whole column, or set one column's width, without adding a class to every cell in it?
+
+HTML has an answer. Two small elements, **`<colgroup>`** and **`<col>`**, let you describe the table's *columns* separately, so you can style them in one go. They hold no content. They only describe the grid. In this lesson, you will learn how they work, what they can (and cannot) style, and when they are worth using.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<colgroup>` and `<col>` are for
+- Where they go in a table
+- How to use the `span` attribute
+- How to set column widths and fixed layouts
+- Which CSS properties work on columns
+- How to highlight a column, and group columns
+- What columns do (and do not do) for accessibility
+
+## The Problem They Solve
+
+Suppose you want the "Price" column in a table to have a light yellow background. Without column elements, you would add a class to every cell in that column:
+
+```html
+<tr>
+  <td>Notebook</td>
+  <td class="price">3.50</td>
+</tr>
+<tr>
+  <td>Pen set</td>
+  <td class="price">16.25</td>
+</tr>
+<!-- ...and so on for every row -->
+```
+
+That is a lot of repetition, and it is easy to forget a cell. With `<col>`, you describe the column **once**.
+
+## The Basics
+
+| Element | Name | Job |
+| :-- | :-- | :-- |
+| `<colgroup>` | **Col**umn **group** | A container that groups one or more column descriptions |
+| `<col>` | **Col**umn | Describes one column (or several, with `span`). It is a **void element**: no content and no closing tag |
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+col.price {
+  background: #fef9c3;
+}
+```
+
+```html title="index.html"
+<table>
+  <colgroup>
+    <col />                       <!-- column 1: no special style -->
+    <col class="price" />         <!-- column 2: yellow background -->
+    <col />                       <!-- column 3 -->
+  </colgroup>
+  <tr>
+    <th>Item</th>
+    <th>Price</th>
+    <th>Stock</th>
+  </tr>
+  <tr>
+    <td>Notebook</td>
+    <td>3.50</td>
+    <td>40</td>
+  </tr>
+  <tr>
+    <td>Pen set</td>
+    <td>16.25</td>
+    <td>12</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <colgroup>
+    <col />
+    <col style={{ background: "#fef9c3" }} />
+    <col />
+  </colgroup>
+  <tbody>
+    <tr>
+      <th style={head}>Item</th>
+      <th style={{ ...head, background: "transparent" }}>Price</th>
+      <th style={head}>Stock</th>
+    </tr>
+    <tr>
+      <td style={cell}>Notebook</td>
+      <td style={{ ...num, background: "transparent" }}>3.50</td>
+      <td style={num}>40</td>
+    </tr>
+    <tr>
+      <td style={cell}>Pen set</td>
+      <td style={{ ...num, background: "transparent" }}>16.25</td>
+      <td style={num}>12</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The second `<col>` describes the second column, and the style applies to **every cell** in it. (In the live demo, the Price cells are set to a transparent background, so the column color shows through. A cell's own background is painted on top of the column's.)
+
+Each `<col>` describes one column, **in order, left to right**.
+
+## Where They Go
+
+`<colgroup>` is placed inside `<table>`:
+
+- **After** `<caption>` (if there is one)
+- **Before** `<thead>`, `<tbody>`, `<tfoot>`, and any `<tr>`
+
+```html
+<table>
+  <caption>Inventory</caption>
+  <colgroup>
+    <col />
+    <col />
+  </colgroup>
+  <thead>...</thead>
+  <tbody>...</tbody>
+</table>
+```
+
+| Rule | Details |
+| :-- | :-- |
+| Position | After `<caption>`, before the row sections |
+| `<col>` placement | Inside a `<colgroup>`, or directly as `<col>` with no wrapper is **not** valid. Always wrap it |
+| Content | `<colgroup>` contains only `<col>` (or nothing, if you use `span`) |
+| Count | A table may have several `<colgroup>` elements |
+
+:::info The caption comes first
+If your table has a caption, it is always first. Then `<colgroup>`. Then the header, body, and footer.
+:::
+
+## The `span` Attribute
+
+When several neighboring columns share the same style, don't repeat `<col>`. Use `span`.
+
+### On `<col>`
+
+```html
+<colgroup>
+  <col />                          <!-- column 1 -->
+  <col span="2" class="data" />    <!-- columns 2 and 3 -->
+</colgroup>
+```
+
+### On `<colgroup>`
+
+When a `<colgroup>` has **no** `<col>` children, `span` tells it how many columns it covers.
+
+```html
+<colgroup span="2" class="info"></colgroup>
+<colgroup span="3" class="scores"></colgroup>
+```
+
+This table has five columns: the first two form a group called "info," and the next three form a group called "scores."
+
+| Where | `span` means | Note |
+| :-- | :-- | :-- |
+| `<col span="3">` | This one `<col>` covers 3 columns | A whole-number value of 1 or more |
+| `<colgroup span="3">` | The group covers 3 columns | Use only if the group has **no** `<col>` children |
+
+:::warning Do not mix the two
+If a `<colgroup>` contains `<col>` elements, its own `span` is ignored. Choose one method per group.
+:::
+
+## Setting Column Widths
+
+One of the most useful jobs for `<col>` is controlling widths.
+
+```css title="style.css"
+table {
+  table-layout: fixed;   /* widths come from the first row and the col elements */
+  width: 100%;
+}
+```
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="index.html"
+<table style="table-layout: fixed; width: 100%;">
+  <colgroup>
+    <col style="width: 50%;" />
+    <col style="width: 25%;" />
+    <col style="width: 25%;" />
+  </colgroup>
+  <tr>
+    <th>Description</th>
+    <th>Qty</th>
+    <th>Price</th>
+  </tr>
+  <tr>
+    <td>A long description of a product</td>
+    <td>3</td>
+    <td>3.50</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse", tableLayout: "fixed", width: "100%" }}>
+  <colgroup>
+    <col style={{ width: "50%" }} />
+    <col style={{ width: "25%" }} />
+    <col style={{ width: "25%" }} />
+  </colgroup>
+  <tbody>
+    <tr>
+      <th style={head}>Description</th>
+      <th style={{ ...head, textAlign: "right" }}>Qty</th>
+      <th style={{ ...head, textAlign: "right" }}>Price</th>
+    </tr>
+    <tr>
+      <td style={cell}>A long description of a product</td>
+      <td style={num}>3</td>
+      <td style={num}>3.50</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here, the first column always takes half the table, and the others take a quarter each, however long the content is. This is called a **fixed table layout**, and it has a nice bonus: the browser can draw the table faster, because it does not have to measure all the content first.
+
+| `table-layout` | How widths are decided |
+| :-- | :-- |
+| `auto` (default) | By the content. Columns grow to fit |
+| `fixed` | By the table width and the first row or `<col>` widths. Content wraps or is cut off |
+
+:::tip Percent or fixed units
+Percent widths adapt to the container. Fixed units like `rem` keep a column steady. In both cases, make sure the widths add up (or leave one column to take the rest).
+:::
+
+## What CSS Works on Columns?
+
+This is the part that surprises people. Columns are not like normal boxes. Only **four** CSS properties have an effect on `<col>` and `<colgroup>`:
+
+| Property | What it does | Notes |
+| :-- | :-- | :-- |
+| `background` | Colors the column | Painted **under** the cells' own backgrounds |
+| `border` | Draws lines around the column | Works with `border-collapse: collapse` |
+| `width` | Sets the column width | The most common use |
+| `visibility` | `collapse` hides the column | Browser support is uneven |
+
+Everything else, such as `color`, `font-weight`, `text-align`, and `padding`, does **not** affect the cells in the column.
+
+<Tabs>
+<TabItem value="wrong" label="Does not work" default>
+
+```css
+col.price {
+  text-align: right;     /* ignored */
+  font-weight: bold;     /* ignored */
+  color: #166534;        /* ignored */
+}
+```
+
+</TabItem>
+<TabItem value="right" label="Works">
+
+```css
+col.price {
+  background: #dcfce7;
+  border-left: 2px solid #166534;
+  width: 8rem;
+}
+```
+
+</TabItem>
+</Tabs>
+
+To change text properties for a whole column, use a class on the cells, or the CSS `:nth-child()` selector:
+
+```css
+td:nth-child(2),
+th:nth-child(2) {
+  text-align: right;
+}
+```
+
+:::note Why only four?
+Cells are not *inside* a column in the document tree. They are inside rows. So a column cannot pass things like text color down to its cells. It can only paint a background behind them, set a width, and draw borders.
+:::
+
+## Highlighting Columns
+
+A common use is to separate groups of columns, or to call attention to one.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+table {
+  border-collapse: collapse;
+}
+
+col.highlight {
+  background: #fef9c3;
+}
+
+colgroup + colgroup {
+  border-left: 3px solid #0f172a;
+}
+```
+
+```html title="index.html"
+<table>
+  <colgroup>
+    <col />
+  </colgroup>
+  <colgroup>
+    <col />
+    <col class="highlight" />
+  </colgroup>
+  <tr>
+    <th>Plan</th>
+    <th>Basic</th>
+    <th>Pro</th>
+  </tr>
+  <tr>
+    <td>Projects</td>
+    <td>3</td>
+    <td>Unlimited</td>
+  </tr>
+  <tr>
+    <td>Support</td>
+    <td>Email</td>
+    <td>Phone and email</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <colgroup>
+    <col />
+  </colgroup>
+  <colgroup style={{ borderLeft: "3px solid #0f172a" }}>
+    <col />
+    <col style={{ background: "#fef9c3" }} />
+  </colgroup>
+  <tbody>
+    <tr>
+      <th style={head}>Plan</th>
+      <th style={head}>Basic</th>
+      <th style={{ ...head, background: "transparent" }}>Pro</th>
+    </tr>
+    <tr>
+      <td style={cell}>Projects</td>
+      <td style={cell}>3</td>
+      <td style={cell}>Unlimited</td>
+    </tr>
+    <tr>
+      <td style={cell}>Support</td>
+      <td style={cell}>Email</td>
+      <td style={cell}>Phone and email</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Highlighting the recommended plan is a classic pricing-table trick. The yellow comes from one `<col>`, and the dark line marks the start of the plan columns.
+
+:::warning Do not rely on color alone
+A highlighted column draws the eye, but it does not carry meaning for screen reader users. If "Pro" is the recommended plan, say so in text too, such as "Pro (recommended)."
+:::
+
+## Columns and Merged Cells
+
+`<col>` elements describe **grid columns**, counted from the left, whatever the cells do. If a cell uses `colspan`, it covers several grid columns, and each of those columns still has its own `<col>`.
+
+```html
+<colgroup>
+  <col />
+  <col class="q1" />
+  <col class="q1" />
+</colgroup>
+<tr>
+  <th>Name</th>
+  <th colspan="2">Q1</th>   <!-- covers columns 2 and 3 -->
+</tr>
+```
+
+So a column highlight remains under the "Q1" heading, no matter how it is merged. You learned merging in [Colspan and Rowspan](./colspan-rowspan).
+
+## Accessibility: What Columns Do (and Do Not) Do
+
+It is tempting to think `<colgroup>` also tells screen readers which columns belong together. For the most part, **it does not**.
+
+| Question | Answer |
+| :-- | :-- |
+| Do screen readers announce `<col>` or `<colgroup>`? | Generally **no**. They are mainly for presentation |
+| How do I label a group of columns for assistive technology? | Use `<th scope="colgroup">` over the group (see [Table Headings](./table-headings)) |
+| Can `<colgroup>` replace `<th>`? | **No.** It never labels data |
+| Is it harmful to use? | **No.** It is harmless, and useful for layout |
+
+:::tip A good way to think about it
+`<th>` and `scope` carry **meaning**. `<colgroup>` and `<col>` carry **style**. A good table often has both.
+:::
+
+## Obsolete Attributes to Avoid
+
+Older HTML gave `<col>` and `<colgroup>` several presentation attributes. They are obsolete. Use CSS.
+
+| Old attribute | Use instead |
+| :-- | :-- |
+| `width` | CSS `width` |
+| `align` | CSS `text-align` on cells |
+| `valign` | CSS `vertical-align` on cells |
+| `char`, `charoff` | Not supported. Use CSS or formatting in the data |
+| `bgcolor` | CSS `background` |
+
+Only `span` remains a real, current attribute.
+
+## When Are Column Elements Worth Using?
+
+| Good fit | Poor fit |
+| :-- | :-- |
+| Setting column widths in one place | Tables with only one or two simple columns |
+| Highlighting a column or column group | When you need to change text color or alignment (use cell classes) |
+| Separating groups of columns | When styling can be done with `:nth-child` more simply |
+| Fixed-layout tables that render quickly | Tables whose structure changes by JavaScript |
+
+Many modern tables skip `<colgroup>` and use `:nth-child` or classes. Both are fine. The `<col>` approach is tidy when the **widths** matter, because it keeps them in the markup, separate from the data rows.
+
+## Putting It Together: A Pricing Table
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table class="pricing">
+  <caption>Plans and prices (USD per month)</caption>
+  <colgroup>
+    <col class="feature" />
+    <col />
+    <col class="recommended" />
+    <col />
+  </colgroup>
+  <thead>
+    <tr>
+      <td></td>
+      <th scope="col">Free</th>
+      <th scope="col">Pro (recommended)</th>
+      <th scope="col">Team</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Price</th>
+      <td>0</td>
+      <td>9</td>
+      <td>29</td>
+    </tr>
+    <tr>
+      <th scope="row">Projects</th>
+      <td>3</td>
+      <td>Unlimited</td>
+      <td>Unlimited</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Plans and prices (USD per month)</caption>
+  <colgroup>
+    <col style={{ width: "9rem" }} />
+    <col />
+    <col style={{ background: "#fef9c3" }} />
+    <col />
+  </colgroup>
+  <thead>
+    <tr>
+      <td style={cell}></td>
+      <th scope="col" style={head}>Free</th>
+      <th scope="col" style={{ ...head, background: "transparent" }}>Pro (recommended)</th>
+      <th scope="col" style={head}>Team</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>Price</th>
+      <td style={num}>0</td>
+      <td style={{ ...num, background: "transparent" }}>9</td>
+      <td style={num}>29</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Projects</th>
+      <td style={num}>3</td>
+      <td style={{ ...num, background: "transparent" }}>Unlimited</td>
+      <td style={num}>Unlimited</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The text "(recommended)" is in the heading itself, so the highlight is never the only clue.
+
+## Global Audience Notes
+
+- **Right-to-left pages** reverse the order of columns when `dir="rtl"`. `<col>` elements follow the same order, so the first `<col>` always matches the first column visually, on the right.
+- **Allow room for translation.** Text in some languages is much longer than English. Avoid fixed widths that are too narrow, or use percentages with room to spare.
+- **Don't encode meaning in color only.** Pair highlights with words or symbols.
+
+## Common Mistakes to Avoid
+
+1. **Placing `<colgroup>` after `<thead>` or rows.** It must come before them.
+2. **Putting `<col>` outside a `<colgroup>`.**
+3. **Expecting `text-align` or `color` on `<col>` to work.** Only `background`, `border`, `width`, and `visibility` do.
+4. **Giving a `<colgroup>` both `span` and `<col>` children.** Use only one.
+5. **Writing too few or too many `<col>` elements.** They should match the table's columns.
+6. **Closing `<col>` with `</col>`.** It is a void element.
+7. **Using obsolete attributes** such as `width` or `align` on `<col>`.
+8. **Relying on `<colgroup>` to label columns for screen readers.** Use `<th scope>`.
+9. **Setting widths that add up to more than 100%** in a fixed table.
+10. **Forgetting `border-collapse: collapse`** when you expect column borders to show cleanly.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add a `<colgroup>` with three `<col>` elements to a three-column table.
+2. Give the middle column a light background using a class on its `<col>`.
+3. Use `span="2"` to style two neighboring columns at once.
+4. Set `table-layout: fixed` and give each `<col>` a percentage width.
+5. Create two `<colgroup>` elements and add a border between them.
+6. Try `text-align: right` on a `<col>`, and observe that it does nothing.
+7. Achieve right-aligned numbers instead with `td:nth-child(2)`.
+8. Highlight the "recommended" column in a pricing table, and also say so in the heading.
+9. Make sure the `<colgroup>` sits after the `<caption>` and before `<thead>`.
+10. Bonus: use developer tools to see how the browser maps each `<col>` to a column.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are `<colgroup>` and `<col>` for?</summary>
+
+They describe the table's columns, so you can style or size whole columns at once without adding classes to every cell.
+
+</details>
+
+<details>
+<summary>2. Where does `<colgroup>` go?</summary>
+
+Inside `<table>`, after `<caption>` (if any) and before `<thead>`, `<tbody>`, `<tfoot>`, or rows. `<col>` elements go inside it.
+
+</details>
+
+<details>
+<summary>3. What does `span` do?</summary>
+
+It makes one `<col>` (or a `<colgroup>` with no `<col>` children) cover several columns.
+
+</details>
+
+<details>
+<summary>4. Which CSS properties work on columns?</summary>
+
+`background`, `border`, `width`, and `visibility`. Text properties such as `color` and `text-align` do not work.
+
+</details>
+
+<details>
+<summary>5. Do `<colgroup>` and `<col>` help screen readers understand column groups?</summary>
+
+Generally no. They are presentational. To label a group of columns for assistive technology, use `<th scope="colgroup">`.
+
+</details>
+
+## Key Takeaways
+
+- `<colgroup>` and `<col>` describe columns, so you can style them without touching every cell.
+- Put `<colgroup>` right after `<caption>` and before the row sections. `<col>` is a void element.
+- Use `span` for neighboring columns that share a style.
+- Only `background`, `border`, `width`, and `visibility` work on columns. Use `:nth-child` or classes for the rest.
+- Columns carry style, not meaning. Use `<th>` and `scope` to label columns for accessibility.
+
+You can now structure, label, merge, and size a table. It is time to make it look good. Continue with [Styling Tables](./table-styling), or return to the [Tables overview]/tutorials(/html/tables).

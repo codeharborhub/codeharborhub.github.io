@@ -1,16 +1,585 @@
 ---
-id: table-rows-and-cells
-title: "Structuring Rows and Cells: tr and td Tags"
-sidebar_label: "Rows & Cells (tr, td)"
+id: html-table-rows-and-cells
+title: "HTML Table Rows and Cells"
+sidebar_label: "Rows and Cells"
 sidebar_position: 3
 slug: /html/tables/table-rows-and-cells
-description: "Understand how to define horizontal table rows using tr and insert standard data cells using td tags for clean data alignment."
+description: "Learn how HTML table rows (tr) and cells (td and th) work. Understand the table grid, what can go inside a cell, how to align text and numbers, control wrapping and width, handle empty cells, and avoid common row and cell mistakes with live examples on CodeHarborHub."
 keywords:
+  - HTML table rows
   - HTML tr tag
   - HTML td tag
-  - table row data
-  - table cell layout
+  - HTML table cells
+  - align numbers in table
+  - HTML table cell content
+  - table cell alignment CSS
+  - empty table cells
+  - HTML table grid
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, rows, cells]
+tags: [html, web-development, beginner, tables, tr, td, cells, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+If a table is a grid, then **rows** and **cells** are its building blocks. You already know the basic recipe from [Table Basics](./table-basics): a row holds cells, and cells hold content. This lesson goes one level deeper. You will see how the table grid really works, what you can put inside a cell, and the small CSS touches (like right-aligning numbers) that make a table far easier to read.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How the table grid is built from rows and cells
+- What a row (`<tr>`) can and cannot contain
+- What can go inside a cell, and what to avoid
+- How to align text and numbers, and set vertical alignment
+- How to control wrapping and width
+- How to handle empty cells and mixed `<th>` and `<td>` rows
+- Common mistakes with rows and cells
+
+## The Grid Model
+
+Every table is a grid. Each cell sits at the crossing of one row and one column, just like a spreadsheet's A1, B2, and so on.
+
+```text
+          column 1   column 2   column 3
+row 1   ┌──────────┬──────────┬──────────┐
+        │  1 · 1   │  1 · 2   │  1 · 3   │
+row 2   ├──────────┼──────────┼──────────┤
+        │  2 · 1   │  2 · 2   │  2 · 3   │
+row 3   ├──────────┼──────────┼──────────┤
+        │  3 · 1   │  3 · 2   │  3 · 3   │
+        └──────────┴──────────┴──────────┘
+```
+
+You build it in the code **row by row**, left to right:
+
+```html
+<table>
+  <tr>
+    <td>1 · 1</td> <td>1 · 2</td> <td>1 · 3</td>
+  </tr>
+  <tr>
+    <td>2 · 1</td> <td>2 · 2</td> <td>2 · 3</td>
+  </tr>
+  <tr>
+    <td>3 · 1</td> <td>3 · 2</td> <td>3 · 3</td>
+  </tr>
+</table>
+```
+
+The browser keeps track of each cell's position. Cell "2 · 3" is the third cell in the second row, and it appears in column 3. Later lessons on headings, `scope`, and accessibility all build on this simple idea: **a cell's meaning comes from its row and its column.**
+
+## Table Rows: `<tr>`
+
+The `<tr>` element is one horizontal line of cells.
+
+### What a Row May Contain
+
+| Allowed directly inside `<tr>` | Not allowed |
+| :-- | :-- |
+| `<td>` (data cells) | Text on its own |
+| `<th>` (header cells) | `<p>`, `<div>`, `<span>` |
+| Script-supporting elements (`<script>`, `<template>`) | `<li>`, `<tr>` (a row inside a row) |
+
+<Tabs>
+<TabItem value="wrong" label="Invalid" default>
+
+```html
+<table>
+  <tr>
+    Name: Aisha          <!-- loose text -->
+    <p>Age: 24</p>       <!-- paragraph directly in the row -->
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="right" label="Valid">
+
+```html
+<table>
+  <tr>
+    <td>Name: Aisha</td>
+    <td><p>Age: 24</p></td>
+  </tr>
+</table>
+```
+
+</TabItem>
+</Tabs>
+
+If you need extra content, put it **inside a cell**.
+
+### Styling a Whole Row
+
+You cannot add a `colspan`-style attribute to `<tr>`, and old row attributes such as `align`, `valign`, and `bgcolor` are obsolete. Use CSS to style a row. The row becomes the target, and all its cells inherit the effect.
+
+```css title="style.css"
+tr.highlight {
+  background: #fef9c3;
+}
+
+tbody tr:hover {
+  background: #f1f5f9;
+}
+```
+
+```html
+<tr class="highlight">
+  <td>Today's session</td>
+  <td>10:30</td>
+</tr>
+```
+
+A row hover effect helps readers follow a long row across a wide table.
+
+## Table Cells: `<td>` and `<th>`
+
+Each cell holds one piece of content.
+
+| Element | Use it for | Default look |
+| :-- | :-- | :-- |
+| `<td>` | Data | Regular text, left-aligned |
+| `<th>` | A label for a column or row | Bold, centered |
+
+Both elements are cells. They sit in rows in the same way, and you can use both in the same row. A "row header" cell is a `<th>` at the start of a data row.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Product</th>
+    <th>Price</th>
+    <th>In stock</th>
+  </tr>
+  <tr>
+    <th>Notebook</th>   <!-- a row header: labels the whole row -->
+    <td>3.50</td>
+    <td>Yes</td>
+  </tr>
+  <tr>
+    <th>Pen set</th>
+    <td>6.00</td>
+    <td>No</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Product</th>
+      <th style={head}>Price</th>
+      <th style={head}>In stock</th>
+    </tr>
+    <tr>
+      <th style={cell}>Notebook</th>
+      <td style={cell}>3.50</td>
+      <td style={cell}>Yes</td>
+    </tr>
+    <tr>
+      <th style={cell}>Pen set</th>
+      <td style={cell}>6.00</td>
+      <td style={cell}>No</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here, the first column of the body uses `<th>`. It tells readers (and screen readers) that "Notebook" is the name of the row. You will see why in [Table Headings](./table-headings).
+
+## What Can Go Inside a Cell?
+
+A cell can contain almost anything that can appear in the body of a page.
+
+| Content | Example | Notes |
+| :-- | :-- | :-- |
+| Plain text and numbers | `<td>42</td>` | The most common |
+| Inline formatting | `<td><strong>Free</strong></td>` | Bold, emphasis, code |
+| Links | `<td><a href="#">Read</a></td>` | Use meaningful link text |
+| Images | `<td><img src="..." alt="..." /></td>` | Always include `alt` |
+| Lists | `<td><ul>...</ul></td>` | Good for several values |
+| Paragraphs and line breaks | `<td><p>...</p></td>` | For longer text |
+| Buttons and form fields | `<td><button>...</button></td>` | For editable data tables |
+| Another table | `<td><table>...</table></td>` | Possible, but avoid it |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Course</th>
+    <th>Topics</th>
+    <th>Action</th>
+  </tr>
+  <tr>
+    <td><strong>Intro to HTML</strong></td>
+    <td>
+      <ul>
+        <li>Text</li>
+        <li>Links</li>
+        <li>Images</li>
+      </ul>
+    </td>
+    <td><a href="#">View course</a></td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Course</th>
+      <th style={head}>Topics</th>
+      <th style={head}>Action</th>
+    </tr>
+    <tr>
+      <td style={cell}><strong>Intro to HTML</strong></td>
+      <td style={cell}>
+        <ul style={{ margin: 0, paddingLeft: "1.2rem" }}>
+          <li>Text</li>
+          <li>Links</li>
+          <li>Images</li>
+        </ul>
+      </td>
+      <td style={cell}><a href="#">View course</a></td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip Keep cells short
+A table is for scanning. Short values (a word, a number, a short phrase) make a table easy to read. If a cell needs several paragraphs, ask whether a heading and text, or a list, would work better.
+:::
+
+### Why Nested Tables Are a Bad Idea
+
+Putting a table inside a cell is allowed, but screen readers announce each table separately, which gets confusing. If you find yourself nesting, try one of these instead:
+
+- Split the content into two tables with their own captions.
+- Use a list inside the cell.
+- Use `rowspan` or `colspan` to merge cells (see [Colspan and Rowspan](./colspan-rowspan)).
+
+## Aligning Content in Cells
+
+### Horizontal Alignment
+
+Use CSS `text-align`. The old `align` attribute is obsolete.
+
+| Content type | Best alignment | Why |
+| :-- | :-- | :-- |
+| Text | Left (in left-to-right languages) | Easy to scan down |
+| Numbers | **Right** | Digits line up, so you can compare quickly |
+| Short codes, yes/no, icons | Center | Looks tidy |
+
+Numbers are where alignment matters most. Compare these two tables.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums; /* every digit the same width */
+}
+```
+
+```html title="index.html"
+<tr>
+  <td>Notebook</td>
+  <td class="num">3.50</td>
+</tr>
+<tr>
+  <td>Desk lamp</td>
+  <td class="num">124.00</td>
+</tr>
+```
+
+</TabItem>
+<TabItem value="output" label="Left vs Right">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p><strong>Left-aligned numbers (hard to compare):</strong></p>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr><td style={cell}>Notebook</td><td style={cell}>3.50</td></tr>
+    <tr><td style={cell}>Desk lamp</td><td style={cell}>124.00</td></tr>
+    <tr><td style={cell}>Pen set</td><td style={cell}>16.25</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Right-aligned numbers (easy to compare):</strong></p>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr><td style={cell}>Notebook</td><td style={num}>3.50</td></tr>
+    <tr><td style={cell}>Desk lamp</td><td style={num}>124.00</td></tr>
+    <tr><td style={cell}>Pen set</td><td style={num}>16.25</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+With right alignment, the decimal points line up, and your eye can instantly see which number is biggest. Apply the same alignment to the column's header, so the label sits above its values.
+
+### Vertical Alignment
+
+When one cell is taller than its neighbors (for example, a list next to a single word), use `vertical-align`.
+
+```css title="style.css"
+td {
+  vertical-align: top;   /* top | middle | bottom */
+}
+```
+
+`top` is usually the best choice for tables with mixed content, because each row then starts on the same line.
+
+## Controlling Wrapping and Width
+
+Browsers size columns automatically, based on the content. Long text wraps onto several lines. You can influence this with CSS.
+
+| Goal | CSS |
+| :-- | :-- |
+| Keep a value on one line | `white-space: nowrap;` |
+| Set a column width | `width: 8rem;` on a cell in that column |
+| Set a maximum width | `max-width: 20rem;` |
+| Break long words or URLs | `overflow-wrap: anywhere;` |
+| Fixed, predictable columns | `table-layout: fixed;` on the table |
+
+```css title="style.css"
+td.nowrap {
+  white-space: nowrap;   /* good for dates, prices, codes */
+}
+
+table.fixed {
+  table-layout: fixed;
+  width: 100%;
+}
+```
+
+:::note Set widths on the first row
+Column widths follow the cells, so you only need to set a width on one cell per column, usually in the header row. For cleaner code, you can use `<col>` elements. You will learn that in [Colgroup and Col](./colgroup-and-col).
+:::
+
+## Empty Cells
+
+Sometimes a value is missing. Always keep the cell, so the row has the right number of cells.
+
+| Situation | What to write |
+| :-- | :-- |
+| No value exists yet | An empty `<td></td>`, or a dash `—` |
+| Not applicable | `N/A` or "Not applicable" |
+| Zero is a real value | `0` (do not leave blank) |
+| Unknown | `Unknown` or `?` with a note |
+
+Empty cells can be styled with CSS:
+
+```css
+td:empty {
+  background: #f1f5f9;
+}
+```
+
+For screen reader users, a visible text such as "N/A" or "—" with a short note is clearer than a silent empty cell.
+
+## Putting It Together: A Price List
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Item</th>
+    <th class="num">Qty</th>
+    <th class="num">Price (USD)</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td>Notebook</td>
+    <td class="num">3</td>
+    <td class="num">3.50</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Desk lamp</td>
+    <td class="num">1</td>
+    <td class="num">124.00</td>
+    <td>Backorder, ships in 2 weeks</td>
+  </tr>
+  <tr>
+    <td>Pen set</td>
+    <td class="num">2</td>
+    <td class="num">16.25</td>
+    <td>N/A</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Item</th>
+      <th style={{ ...head, textAlign: "right" }}>Qty</th>
+      <th style={{ ...head, textAlign: "right" }}>Price (USD)</th>
+      <th style={head}>Notes</th>
+    </tr>
+    <tr>
+      <td style={cell}>Notebook</td>
+      <td style={num}>3</td>
+      <td style={num}>3.50</td>
+      <td style={cell}></td>
+    </tr>
+    <tr>
+      <td style={cell}>Desk lamp</td>
+      <td style={num}>1</td>
+      <td style={num}>124.00</td>
+      <td style={cell}>Backorder, ships in 2 weeks</td>
+    </tr>
+    <tr>
+      <td style={cell}>Pen set</td>
+      <td style={num}>2</td>
+      <td style={num}>16.25</td>
+      <td style={cell}>N/A</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice three habits in this table: the unit "(USD)" is in the header, so cells hold only numbers; numbers are right-aligned; and the empty cell is still present.
+
+## A Peek at Cell Attributes
+
+Cells have a few special attributes. You will study them later, so here is just a map:
+
+| Attribute | Used on | Purpose | Lesson |
+| :-- | :-- | :-- | :-- |
+| `colspan` | `td`, `th` | Stretch a cell across several columns | [Colspan and Rowspan](./colspan-rowspan) |
+| `rowspan` | `td`, `th` | Stretch a cell down several rows | [Colspan and Rowspan](./colspan-rowspan) |
+| `scope` | `th` | Says whether a header labels a column or a row | [Table Headings](./table-headings) |
+| `headers` | `td`, `th` | Links a cell to specific header cells by `id` | [Table Accessibility](./table-accessibility) |
+| `abbr` | `th` | A short version of a long heading | [Table Accessibility](./table-accessibility) |
+
+## Common Mistakes to Avoid
+
+1. **Uneven rows.** Every row needs the same number of cells (unless you merge on purpose).
+2. **Loose text or other elements directly inside `<tr>`.** Everything belongs inside a cell.
+3. **Using `<td>` for row or column labels.** Use `<th>`.
+4. **Left-aligned numbers.** Right-align numeric columns.
+5. **Repeating units in every cell.** Put "USD" or "kg" in the header once.
+6. **Deleting empty cells.** Keep them, with a placeholder when helpful.
+7. **Using obsolete attributes** such as `align`, `valign`, `bgcolor`, `width`, and `height` on cells. Use CSS.
+8. **Nesting tables.** Try lists or merged cells instead.
+9. **Stuffing long paragraphs into cells.** Keep cells short.
+10. **Forcing tiny fixed widths** that make text overflow on small screens.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a 4-column, 4-row table of products with a price column.
+2. Right-align the price column, including its header.
+3. Add `font-variant-numeric: tabular-nums` and compare the effect.
+4. Make the first column of the body `<th>` cells.
+5. Put a bulleted list in one cell and `vertical-align: top` on all cells.
+6. Add a row that highlights on hover with `tbody tr:hover`.
+7. Add an empty cell, then fill it with "N/A."
+8. Use `white-space: nowrap` for a date column.
+9. Turn one cell into a link and another into an image with `alt` text.
+10. Bonus: remove one cell on purpose, and see how the row breaks. Fix it.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What can a `<tr>` contain directly?</summary>
+
+Only `<td>` and `<th>` cells (plus script-supporting elements). Any other content must go inside a cell.
+
+</details>
+
+<details>
+<summary>2. Where does a cell get its meaning?</summary>
+
+From its position in the grid: the row it sits in and the column it sits under.
+
+</details>
+
+<details>
+<summary>3. How should numbers be aligned, and why?</summary>
+
+Right-aligned, with `text-align: right`, so the digits and decimal points line up and values are easy to compare.
+
+</details>
+
+<details>
+<summary>4. What should you do when a value is missing?</summary>
+
+Keep the cell, and leave it empty or add a placeholder such as "N/A" or "—".
+
+</details>
+
+<details>
+<summary>5. How do you style a whole row?</summary>
+
+Use CSS on the `<tr>` (a class, or `tr:hover`). Old row attributes like `bgcolor` and `align` are obsolete.
+
+</details>
+
+<details>
+<summary>6. Can you mix `<th>` and `<td>` in the same row?</summary>
+
+Yes. A `<th>` at the start of a row is a row header, and the rest of the row can be `<td>` data cells.
+
+</details>
+
+## Key Takeaways
+
+- A table is a grid. Every cell's meaning comes from its row and its column.
+- A `<tr>` holds only cells. Everything else lives inside a `<td>` or `<th>`.
+- Cells can hold text, links, images, lists, and more, but short content makes the most readable tables.
+- Right-align numbers, use `vertical-align: top` for mixed content, and control wrapping with CSS.
+- Keep every row the same length, use placeholders for empty cells, and put units in the headers.
+
+Now you know how rows and cells work together. Next, learn how to label them properly in [Table Headings](./table-headings), or return to the [Tables overview](/tutorials/html/tables).

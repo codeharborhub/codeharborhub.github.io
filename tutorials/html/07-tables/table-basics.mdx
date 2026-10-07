@@ -1,16 +1,589 @@
 ---
-id: table-basics
-title: "Introduction to HTML Tables and the table Tag"
+id: html-table-basics
+title: "HTML Table Basics"
 sidebar_label: "Table Basics"
 sidebar_position: 2
 slug: /html/tables/table-basics
-description: "Learn the core concepts of creating web tables using the table element, understanding tabular data usage, and avoiding layout misuse."
+description: "Learn the basics of HTML tables. Build your first table with table, tr, th, and td, understand how rows and columns work, add borders with CSS, avoid obsolete attributes, and fix common beginner mistakes with clear examples on CodeHarborHub."
 keywords:
+  - HTML table basics
   - HTML table tag
-  - table element basics
-  - tabular data representation
-  - HTML markup tables
+  - HTML tr th td
+  - how to create a table in HTML
+  - HTML table example
+  - HTML table border CSS
+  - obsolete table attributes
+  - HTML table structure
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, markup, beginner]
+tags: [html, web-development, beginner, tables, table, tr, td, th, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+
+If you have ever used a spreadsheet, you already understand what a table is: a grid of cells in rows and columns. An HTML table is the web version. It is how you show a timetable, a price list, a set of scores, or any data where the position of a value tells you something.
+
+The good news is that you only need **four elements** to build almost any table. The slightly tricky part is that HTML describes tables in an unusual way: you write **rows**, not columns. Once that clicks, everything else falls into place. Let's build your first table step by step.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The four core elements: `<table>`, `<tr>`, `<th>`, and `<td>`
+- How to build a table step by step, one row at a time
+- How columns appear without being declared
+- What browsers show by default, and how to add borders with CSS
+- Which old table attributes to avoid
+- The most common beginner mistakes, and how to fix them
+
+## The Four Core Elements
+
+| Element | Name | What it does |
+| :-- | :-- | :-- |
+| `<table>` | Table | Wraps the whole table |
+| `<tr>` | **T**able **R**ow | Creates one horizontal row |
+| `<th>` | **T**able **H**eader | A heading cell. Bold and centered by default |
+| `<td>` | **T**able **D**ata | A normal data cell |
+
+The nesting is always the same:
+
+```text
+table
+ └─ tr   (a row)
+     ├─ th or td   (a cell)
+     ├─ th or td
+     └─ th or td
+```
+
+A `<table>` contains rows. A row contains cells. Cells contain your content. Nothing else sits directly inside a row.
+
+## Build a Table, Step by Step
+
+Let's make a small table of three courses with their length and level. We will go one piece at a time.
+
+### Step 1: Start with the Table
+
+```html
+<table>
+</table>
+```
+
+An empty table shows nothing. It is just a container.
+
+### Step 2: Add the Header Row
+
+The first row usually holds **headings**: the labels for each column. Use `<tr>` for the row and `<th>` for each heading.
+
+```html
+<table>
+  <tr>
+    <th>Course</th>
+    <th>Weeks</th>
+    <th>Level</th>
+  </tr>
+</table>
+```
+
+Three `<th>` cells mean **three columns**.
+
+### Step 3: Add the Data Rows
+
+Each following row has one `<tr>`, with one `<td>` for each column.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Course</th>
+    <th>Weeks</th>
+    <th>Level</th>
+  </tr>
+  <tr>
+    <td>Intro to HTML</td>
+    <td>4</td>
+    <td>Beginner</td>
+  </tr>
+  <tr>
+    <td>CSS Layouts</td>
+    <td>6</td>
+    <td>Intermediate</td>
+  </tr>
+  <tr>
+    <td>JavaScript Basics</td>
+    <td>8</td>
+    <td>Beginner</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Course</th>
+      <th style={head}>Weeks</th>
+      <th style={head}>Level</th>
+    </tr>
+    <tr>
+      <td style={cell}>Intro to HTML</td>
+      <td style={cell}>4</td>
+      <td style={cell}>Beginner</td>
+    </tr>
+    <tr>
+      <td style={cell}>CSS Layouts</td>
+      <td style={cell}>6</td>
+      <td style={cell}>Intermediate</td>
+    </tr>
+    <tr>
+      <td style={cell}>JavaScript Basics</td>
+      <td style={cell}>8</td>
+      <td style={cell}>Beginner</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo uses CSS for borders and a header background (you will see how in a moment). Your browser would show the same data without them.
+
+## Columns Appear on Their Own
+
+Notice that you never wrote the word "column." The browser lines up the cells for you:
+
+- The **first** cell of every row forms column 1.
+- The **second** cell of every row forms column 2.
+- And so on.
+
+```text
+     col 1            col 2    col 3
+┌──────────────────┬────────┬──────────────┐
+│ Course           │ Weeks  │ Level        │  ← row 1
+│ Intro to HTML    │ 4      │ Beginner     │  ← row 2
+│ CSS Layouts      │ 6      │ Intermediate │  ← row 3
+│ JavaScript Basics│ 8      │ Beginner     │  ← row 4
+└──────────────────┴────────┴──────────────┘
+```
+
+This means **every row should have the same number of cells.** Column widths adjust automatically to fit the longest content in each column.
+
+## What Does a Table Look Like by Default?
+
+Out of the box, a table is plain:
+
+- **No borders** and no background. Only aligned text.
+- Cells are as wide as their content needs, with tiny spacing.
+- `<th>` cells are **bold** and **centered**.
+- `<td>` cells are left-aligned (in left-to-right languages).
+- The table is only as wide as its content.
+
+That is on purpose. HTML describes the *structure*, and CSS handles the look.
+
+## Adding Borders with CSS
+
+The simplest useful style is a border on the table and its cells. Use `border-collapse: collapse` so that neighboring borders merge into one clean line.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #94a3b8;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+th {
+  background: #e2e8f0;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Without vs With">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<p><strong>Without CSS:</strong></p>
+<table>
+  <tbody>
+    <tr><th>Course</th><th>Weeks</th></tr>
+    <tr><td>Intro to HTML</td><td>4</td></tr>
+  </tbody>
+</table>
+
+<p><strong>With CSS:</strong></p>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr><th style={head}>Course</th><th style={head}>Weeks</th></tr>
+    <tr><td style={cell}>Intro to HTML</td><td style={cell}>4</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info Styling is its own lesson
+You will learn borders, stripes, spacing, and alignment in detail in [Styling Tables](./table-styling). For now, remember one idea: **HTML builds the table, CSS makes it pretty.**
+:::
+
+## Whitespace Does Not Matter
+
+HTML ignores extra spaces and line breaks between tags. These two tables are identical:
+
+```html
+<!-- Spread out, easy to read -->
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Age</th>
+  </tr>
+  <tr>
+    <td>Aisha</td>
+    <td>24</td>
+  </tr>
+</table>
+
+<!-- Squeezed onto few lines -->
+<table><tr><th>Name</th><th>Age</th></tr><tr><td>Aisha</td><td>24</td></tr></table>
+```
+
+Use the spread-out version. Indenting each level makes the nesting obvious, and mistakes easier to spot.
+
+## What Can Go Inside a Cell?
+
+A `<td>` or `<th>` can hold nearly anything: text, numbers, links, images, lists, even another table.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Resource</th>
+    <th>Details</th>
+  </tr>
+  <tr>
+    <td><a href="#">HTML guide</a></td>
+    <td><strong>Free</strong>, 4 chapters</td>
+  </tr>
+  <tr>
+    <td>Starter files</td>
+    <td>
+      <ul>
+        <li>index.html</li>
+        <li>style.css</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Resource</th>
+      <th style={head}>Details</th>
+    </tr>
+    <tr>
+      <td style={cell}><a href="#">HTML guide</a></td>
+      <td style={cell}><strong>Free</strong>, 4 chapters</td>
+    </tr>
+    <tr>
+      <td style={cell}>Starter files</td>
+      <td style={cell}>
+        <ul>
+          <li>index.html</li>
+          <li>style.css</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You will explore cells more in [Table Rows and Cells](./table-rows-and-cells).
+
+## Empty Cells
+
+Sometimes there is no value. Keep the cell, and leave it empty or put a clear placeholder in it. **Never delete the cell**, or the row will be shorter than the others.
+
+```html
+<tr>
+  <td>CSS Layouts</td>
+  <td>6</td>
+  <td></td>          <!-- empty, but still there -->
+</tr>
+```
+
+A short dash or "N/A" tells readers that the blank is intentional, which is kinder to people using screen readers.
+
+## An Important Detail: `<tbody>`
+
+You may have noticed that the demos wrap their rows in `<tbody>`. Browsers add a `<tbody>` automatically around loose rows, even if you did not write one. Writing it yourself is cleaner, and the next lessons explain why. For now, both versions are valid:
+
+```html
+<!-- Allowed -->
+<table>
+  <tr>...</tr>
+</table>
+
+<!-- Better habit -->
+<table>
+  <tbody>
+    <tr>...</tr>
+  </tbody>
+</table>
+```
+
+You will learn `<thead>`, `<tbody>`, and `<tfoot>` in [Thead, Tbody, Tfoot](./thead-tbody-tfoot).
+
+## Old Attributes You Should Not Use
+
+Older tutorials style tables with HTML attributes. They are **obsolete**. Use CSS instead.
+
+| Old attribute | What it did | Use this instead |
+| :-- | :-- | :-- |
+| `border="1"` | Added borders | CSS `border` |
+| `cellpadding` | Padding inside cells | CSS `padding` on `th, td` |
+| `cellspacing` | Space between cells | CSS `border-spacing` or `border-collapse` |
+| `width` and `height` | Size of table and cells | CSS `width` and `height` |
+| `align` | Alignment | CSS `text-align`, `margin` |
+| `bgcolor` | Background color | CSS `background` |
+
+## A Real Example: A Simple Schedule
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Time</th>
+    <th>Session</th>
+    <th>Room</th>
+  </tr>
+  <tr>
+    <td>09:00</td>
+    <td>Welcome and setup</td>
+    <td>A</td>
+  </tr>
+  <tr>
+    <td>10:30</td>
+    <td>Build your first page</td>
+    <td>B</td>
+  </tr>
+  <tr>
+    <td>12:00</td>
+    <td>Lunch</td>
+    <td>Hall</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Time</th>
+      <th style={head}>Session</th>
+      <th style={head}>Room</th>
+    </tr>
+    <tr>
+      <td style={cell}>09:00</td>
+      <td style={cell}>Welcome and setup</td>
+      <td style={cell}>A</td>
+    </tr>
+    <tr>
+      <td style={cell}>10:30</td>
+      <td style={cell}>Build your first page</td>
+      <td style={cell}>B</td>
+    </tr>
+    <tr>
+      <td style={cell}>12:00</td>
+      <td style={cell}>Lunch</td>
+      <td style={cell}>Hall</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Times use the 24-hour format, which is clear to readers in most countries.
+
+## Spot the Mistake: Uneven Rows
+
+The most common beginner error is a row with the wrong number of cells.
+
+<Tabs>
+<TabItem value="wrong" label="Broken" default>
+
+```html
+<table>
+  <tr>
+    <th>Course</th>
+    <th>Weeks</th>
+    <th>Level</th>
+  </tr>
+  <tr>
+    <td>Intro to HTML</td>
+    <td>4</td>
+    <!-- forgot the third cell -->
+  </tr>
+</table>
+```
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Course</th>
+      <th style={head}>Weeks</th>
+      <th style={head}>Level</th>
+    </tr>
+    <tr>
+      <td style={cell}>Intro to HTML</td>
+      <td style={cell}>4</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+The last row ends early. The table looks lopsided, and a screen reader cannot tell what the missing "Level" should be.
+
+</TabItem>
+<TabItem value="right" label="Fixed">
+
+```html
+<table>
+  <tr>
+    <th>Course</th>
+    <th>Weeks</th>
+    <th>Level</th>
+  </tr>
+  <tr>
+    <td>Intro to HTML</td>
+    <td>4</td>
+    <td>Beginner</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+</Tabs>
+
+:::tip Count your cells
+Before moving on, count the cells in each row. If the header row has 3 cells, every other row needs 3 too (unless you purposely merge cells, which you will learn in [Colspan and Rowspan](./colspan-rowspan)).
+:::
+
+## Common Mistakes to Avoid
+
+1. **Rows with different cell counts.** Keep them equal.
+2. **Putting `<td>` directly inside `<table>`.** Cells must live inside a `<tr>`.
+3. **Forgetting closing tags.** A missing `</tr>` or `</td>` can scramble the whole table.
+4. **Using `<td>` with bold text for headers.** Use `<th>`, which carries real meaning.
+5. **Using a table for layout.** Tables are for data.
+6. **Using obsolete attributes** such as `border`, `cellpadding`, and `bgcolor`.
+7. **Typing numbers with units in every cell.** Put "kg" or "$" in the header once.
+8. **Leaving out the header row.** Without it, readers do not know what each column means.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a 3-column, 3-row table of your favorite books (title, author, year).
+2. Add a header row using `<th>` cells.
+3. Add borders with CSS: `border-collapse: collapse` plus `border` on `th, td`.
+4. Add `padding` so the text is not cramped.
+5. Add a row with an empty cell, and fill it with "N/A."
+6. Put a link inside one cell and a bulleted list inside another.
+7. Break the table on purpose by removing one cell, and look at what happens. Then fix it.
+8. Build a weekly timetable with the days as columns.
+9. Wrap your rows in `<tbody>`.
+10. Bonus: use your browser's developer tools to inspect the table, and find the `<tbody>` the browser added.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which four elements make up a basic table?</summary>
+
+`<table>` is the container, `<tr>` is a row, `<th>` is a header cell, and `<td>` is a data cell.
+
+</details>
+
+<details>
+<summary>2. Do you create columns in HTML?</summary>
+
+No. You write rows and cells. The cells stacked in the same position across rows form the columns.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `<th>` and `<td>`?</summary>
+
+`<th>` labels a column or row and is bold and centered by default. `<td>` holds ordinary data.
+
+</details>
+
+<details>
+<summary>4. How do you add borders to a table?</summary>
+
+With CSS, for example `border: 1px solid` on `th` and `td`, plus `border-collapse: collapse` on the table. The HTML `border` attribute is obsolete.
+
+</details>
+
+<details>
+<summary>5. Why must every row have the same number of cells?</summary>
+
+The columns are formed by the cells in each position. A missing cell makes the table lopsided, and screen readers cannot match the cells to their headings.
+
+</details>
+
+## Key Takeaways
+
+- A table is built from `<table>`, `<tr>`, `<th>`, and `<td>`. You write **rows**, and columns appear by themselves.
+- Use `<th>` for headings and `<td>` for data. Keep an equal number of cells in every row.
+- Tables have no borders by default. Add them, along with spacing and color, with CSS.
+- Cells can hold text, links, lists, and more. Leave empty cells in place, with a placeholder.
+- Avoid obsolete attributes like `border` and `cellpadding`. Tables are for data, never for layout.
+
+You now have the skeleton of a table. Next, take a closer look at what rows and cells can do in [Table Rows and Cells](./table-rows-and-cells), or return to the [Tables overview](/tutorials/html/tables).
