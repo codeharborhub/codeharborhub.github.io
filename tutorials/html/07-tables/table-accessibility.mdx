@@ -1,16 +1,565 @@
 ---
-id: table-accessibility
-title: "Building Accessible HTML Data Tables"
+id: html-table-accessibility
+title: "Accessible HTML Tables"
 sidebar_label: "Table Accessibility"
-sidebar_position: 8
+sidebar_position: 11
 slug: /html/tables/table-accessibility
-description: "Best practices for accessible tables: using scope, headers, id associations, ARIA roles, and screen-reader-friendly data structures."
+description: "Learn how to build accessible HTML tables. Understand how screen readers navigate tables, use captions, th and scope, the headers and id attributes for complex tables, sortable headers with aria-sort, scrollable regions, layout table pitfalls, and how to test tables on CodeHarborHub."
 keywords:
   - accessible HTML tables
-  - screen reader table navigation
-  - table scope headers attribute
-  - WCAG table guidelines
+  - table accessibility
+  - screen reader tables
+  - th scope headers id
+  - complex table headers attribute
+  - aria-sort sortable table
+  - scrollable table accessibility
+  - layout tables role presentation
+  - WCAG info and relationships
+  - table caption summary
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, accessibility, a11y]
+tags: [html, web-development, beginner, tables, accessibility, aria, wcag, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+When you look at a table, you do something remarkable without noticing. Your eyes land on a number, drift up to find its column heading, slide left to find its row label, and in a fraction of a second you know what the number means. That quick glance is the whole point of a table.
+
+A person using a screen reader cannot glance. They hear one cell at a time. For them to understand "42," the code must tell them **"Tuesday, 11:00 session, 42 attendees."** Your job, as the author, is to put that information in the HTML. The good news: you already know almost all of it. This final lesson of the section pulls everything together and adds a few finishing tools for more complex tables.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How screen reader users move through a table
+- The accessible table checklist
+- How to handle complex tables with `headers` and `id`
+- How to build sortable table headers
+- How to make wide, scrollable tables accessible
+- Why you should not use tables for layout
+- How to test your tables
+
+## How Screen Reader Users Experience a Table
+
+Screen readers treat a table as a **grid they can move through**. Users press navigation keys to go to the next table on the page, then arrow keys (with a modifier key) to move one cell at a time: left, right, up, or down.
+
+When they land on a table, they typically hear:
+
+> "Average score per test, Class 4B. Table with 3 rows and 2 columns."
+
+And as they move from cell to cell, they hear the cell's content **together with its headings**:
+
+> "Test 2. Average: 78."
+
+That announcement works only when your HTML says which cells are headings. Without it, they hear only "78," and must remember the headings from several cells ago.
+
+:::info Why this matters for everyone
+Clear table structure also helps people using voice assistants, braille displays, and automatic data tools, and it makes your content easier for search engines to understand.
+:::
+
+## The Accessible Table Checklist
+
+Most accessible tables need nothing fancy. They need the basics, done well. Here is the full list.
+
+| # | Practice | Element or attribute | Lesson |
+| :-- | :-- | :-- | :-- |
+| 1 | Use a real table **for real data** | `<table>` | [Table Basics](./table-basics) |
+| 2 | Give it a title | `<caption>` | [Caption](./caption) |
+| 3 | Mark headings as headings | `<th>` | [Table Headings](./table-headings) |
+| 4 | Say which cells each heading labels | `scope="col"` and `scope="row"` | [Table Headings](./table-headings) |
+| 5 | Group header, body, and footer | `<thead>`, `<tbody>`, `<tfoot>` | [Thead, Tbody, Tfoot](./thead-tbody-tfoot) |
+| 6 | Keep every row the same length | Equal cell counts | [Table Rows and Cells](./table-rows-and-cells) |
+| 7 | Keep it simple, merging sparingly | Few `colspan` and `rowspan` | [Colspan and Rowspan](./colspan-rowspan) |
+| 8 | Put units in headings | Text | [Table Headings](./table-headings) |
+| 9 | Keep text and color contrast high | CSS | [Styling Tables](./table-styling) |
+| 10 | Make wide tables work on small screens | Responsive technique | [Responsive Tables](./responsive-tables) |
+
+Here is a table that follows all of the basics.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Average score per test, Class 4B (out of 100)</caption>
+  <thead>
+    <tr>
+      <th scope="col">Test</th>
+      <th scope="col">Average</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Test 1</th>
+      <td>72</td>
+    </tr>
+    <tr>
+      <th scope="row">Test 2</th>
+      <td>78</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption style={{ textAlign: "left", fontWeight: 700, paddingBottom: "0.5rem" }}>
+    Average score per test, Class 4B (out of 100)
+  </caption>
+  <thead>
+    <tr>
+      <th scope="col" style={head}>Test</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Average</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>Test 1</th>
+      <td style={num}>72</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Test 2</th>
+      <td style={num}>78</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If you do only this, you have already made the table usable for most people with disabilities.
+
+## Simple vs Complex Tables
+
+Accessibility advice depends on the table's shape.
+
+| | Simple table | Complex table |
+| :-- | :-- | :-- |
+| Headings | One row of column headers, and/or one column of row headers | Several levels of headers, or headers in the middle of the table |
+| Merged cells | None, or only for a title | Many `colspan` and `rowspan` |
+| Needed tools | `<th>` plus `scope` | `<th>`, `id`, and `headers` |
+| Best advice | Do this whenever you can | Simplify, or split into several simple tables |
+
+:::tip Simplify first
+The most accessible complex table is **two simple tables.** Before reaching for advanced attributes, ask whether splitting the data would make it clearer for everyone.
+:::
+
+## Complex Tables: `headers` and `id`
+
+Sometimes you cannot simplify. A table might have two levels of column headers, like "Math" over "Test 1" and "Test 2." The `scope` attribute cannot always describe such a structure, because a data cell is labeled by **more than one heading**, and some headings are not in the first row or column.
+
+For these tables, you link each data cell to its headings **by name**:
+
+1. Give every `<th>` a unique `id`.
+2. On each `<td>`, add a `headers` attribute listing the `id`s of all the headings that label it, separated by spaces.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Exam results</caption>
+  <thead>
+    <tr>
+      <td rowspan="2"></td>
+      <th id="math" colspan="2" scope="colgroup">Math</th>
+      <th id="sci" colspan="2" scope="colgroup">Science</th>
+    </tr>
+    <tr>
+      <th id="m1" scope="col">Test 1</th>
+      <th id="m2" scope="col">Test 2</th>
+      <th id="s1" scope="col">Test 1</th>
+      <th id="s2" scope="col">Test 2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="aisha" scope="row">Aisha</th>
+      <td headers="aisha math m1">92</td>
+      <td headers="aisha math m2">88</td>
+      <td headers="aisha sci s1">85</td>
+      <td headers="aisha sci s2">90</td>
+    </tr>
+    <tr>
+      <th id="mateo" scope="row">Mateo</th>
+      <td headers="mateo math m1">79</td>
+      <td headers="mateo math m2">84</td>
+      <td headers="mateo sci s1">91</td>
+      <td headers="mateo sci s2">87</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Exam results</caption>
+  <thead>
+    <tr>
+      <td rowSpan={2} style={cell}></td>
+      <th id="acc-math" colSpan={2} scope="colgroup" style={{ ...head, textAlign: "center" }}>Math</th>
+      <th id="acc-sci" colSpan={2} scope="colgroup" style={{ ...head, textAlign: "center" }}>Science</th>
+    </tr>
+    <tr>
+      <th id="acc-m1" scope="col" style={head}>Test 1</th>
+      <th id="acc-m2" scope="col" style={head}>Test 2</th>
+      <th id="acc-s1" scope="col" style={head}>Test 1</th>
+      <th id="acc-s2" scope="col" style={head}>Test 2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th id="acc-aisha" scope="row" style={cell}>Aisha</th>
+      <td headers="acc-aisha acc-math acc-m1" style={num}>92</td>
+      <td headers="acc-aisha acc-math acc-m2" style={num}>88</td>
+      <td headers="acc-aisha acc-sci acc-s1" style={num}>85</td>
+      <td headers="acc-aisha acc-sci acc-s2" style={num}>90</td>
+    </tr>
+    <tr>
+      <th id="acc-mateo" scope="row" style={cell}>Mateo</th>
+      <td headers="acc-mateo acc-math acc-m1" style={num}>79</td>
+      <td headers="acc-mateo acc-math acc-m2" style={num}>84</td>
+      <td headers="acc-mateo acc-sci acc-s1" style={num}>91</td>
+      <td headers="acc-mateo acc-sci acc-s2" style={num}>87</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Now the cell "88" explicitly says it belongs to **Aisha**, **Math**, and **Test 2**. A screen reader can announce: "Aisha, Math, Test 2: 88." (The live demo prefixes its `id` values with `acc-` to keep them unique on this page.)
+
+:::warning Powerful, but heavy
+The `headers` and `id` method is reliable, but it is also **a lot of code that must be kept correct**. A single typo breaks the link for that cell. Use it only for tables that truly need it, and consider simplifying first.
+:::
+
+## Long Headings: `abbr`
+
+If a heading is long, screen readers repeat the whole heading for every cell. Give assistive technology a shorter version with `abbr`:
+
+```html
+<th scope="col" abbr="Rainfall">Average monthly rainfall (millimeters)</th>
+```
+
+Support varies between tools, so also write headings that are short in the first place.
+
+## Describing a Table Further
+
+A caption names the table. Sometimes you also want to explain **how to read it** or **what it shows**. Put that in text near the table, and connect it with `aria-describedby`.
+
+```html
+<p id="score-note">
+  Scores rose in every test. Test 3 was the highest at 85.
+</p>
+
+<table aria-describedby="score-note">
+  <caption>Average score per test, Class 4B (out of 100)</caption>
+  ...
+</table>
+```
+
+A summary like this helps everyone: readers who skim, and screen reader users who want the main point before the details.
+
+## Sortable Tables
+
+Many data tables let users sort by clicking a column heading. To make that accessible:
+
+1. Put a real **`<button>`** inside the `<th>`. A button can be reached and activated with the keyboard.
+2. Mark the sorted column with **`aria-sort`** on the `<th>`: `ascending`, `descending`, or `none`.
+3. Make sure the **focus** is clearly visible.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Course catalog (sortable)</caption>
+  <thead>
+    <tr>
+      <th scope="col" aria-sort="ascending">
+        <button type="button">Course</button>
+      </th>
+      <th scope="col" aria-sort="none">
+        <button type="button">Weeks</button>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>CSS Layouts</td><td>6</td></tr>
+    <tr><td>Intro to HTML</td><td>4</td></tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Course catalog (sortable)</caption>
+  <thead>
+    <tr>
+      <th scope="col" aria-sort="ascending" style={head}>
+        <button type="button">Course ▲</button>
+      </th>
+      <th scope="col" aria-sort="none" style={head}>
+        <button type="button">Weeks</button>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style={cell}>CSS Layouts</td><td style={num}>6</td></tr>
+    <tr><td style={cell}>Intro to HTML</td><td style={num}>4</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You would use JavaScript to sort the rows and update `aria-sort` on click. Two details matter:
+
+- Only **one** column should have `aria-sort` set to `ascending` or `descending` at a time.
+- Do not rely on the arrow symbol alone. The `aria-sort` attribute is what tells assistive technology.
+
+## Interactive Tables
+
+Tables that contain form controls (checkboxes, inputs, buttons) need labels like any other form.
+
+```html
+<tr>
+  <th scope="row">Notebook</th>
+  <td>
+    <input type="checkbox" id="pick-1" />
+    <label for="pick-1">Select Notebook</label>
+  </td>
+</tr>
+```
+
+Each control needs its own clear label that makes sense out of context. "Select" repeated ten times is confusing. "Select Notebook" is not. If the label would clutter the layout, you can hide it visually, but keep it available to screen readers.
+
+## Wide Tables: Scrolling Safely
+
+A table wider than the screen is often wrapped in a scrolling container. To keep it accessible, make that container reachable by keyboard and give it a name:
+
+```html
+<div
+  role="region"
+  aria-labelledby="sales-caption"
+  tabindex="0"
+  class="table-wrap"
+>
+  <table>
+    <caption id="sales-caption">Sales by region and month (units)</caption>
+    ...
+  </table>
+</div>
+```
+
+```css title="style.css"
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap:focus-visible {
+  outline: 3px solid #2563eb;
+}
+```
+
+- `tabindex="0"` lets keyboard users focus the container and scroll it with the arrow keys.
+- `role="region"` with `aria-labelledby` gives it a name, so it is announced and can be found.
+- A visible focus outline shows where they are.
+
+You will see this technique in [Responsive Tables](./responsive-tables).
+
+## Do Not Use Tables for Layout
+
+A table implies "this is data in a grid." A screen reader announces tables, counts their rows and columns, and lets users navigate them cell by cell. A page laid out with a table becomes confusing noise.
+
+| Do | Don't |
+| :-- | :-- |
+| Use CSS Grid or Flexbox for page layout | Use `<table>` to place a sidebar and content side by side |
+| Use `<table>` for data | Use `<td>` as general-purpose boxes |
+
+If you must maintain an old layout table, add `role="presentation"` to tell assistive technology to ignore the table semantics:
+
+```html
+<table role="presentation">
+  <tr>
+    <td>Left column</td>
+    <td>Right column</td>
+  </tr>
+</table>
+```
+
+But the best fix is to replace it with CSS layout.
+
+## Do Not Break Table Semantics with CSS
+
+Changing the `display` of table elements (for example, `display: block` on `tr` to make a table stack on phones) can remove their table meaning in some browser and screen reader combinations. The data then loses its rows, columns, and headings.
+
+If you restyle tables for small screens, test with a screen reader, and add the table roles back when needed:
+
+```html
+<table role="table">
+  <thead role="rowgroup">
+    <tr role="row">
+      <th role="columnheader" scope="col">Course</th>
+      ...
+```
+
+The simplest and safest approach is to keep the table a table, and let it scroll inside an accessible container (see above).
+
+## Color, Contrast, and Zoom
+
+- **Contrast:** text should have at least a 4.5 : 1 contrast ratio against its background (3 : 1 for large text). Check header, stripe, and hover colors.
+- **Color alone:** never use only color to mark status (a red cell, a green cell). Add words or symbols, such as "Over budget" or "Passed."
+- **Zoom:** a reader should be able to zoom text to 200% without losing data or needing to scroll in two directions on a typical page. Use `rem` units, and avoid tiny fixed widths.
+- **Focus:** any link, button, or input inside a table needs a visible focus style.
+
+## Language and Global Notes
+
+- Set the **`lang` attribute** on the page, and on any cell or table in another language, so screen readers use the right voice and pronunciation.
+- For **right-to-left** languages, set `dir="rtl"`. Columns reverse their visual order, and the reading order in the HTML stays the same.
+- **Write numbers and dates unambiguously.** "4 March 2026" is clearer than "03/04/26," and a `<time datetime="2026-03-04">` element helps tools understand it.
+- **Name units and currencies** in headings or captions ("USD," "mm," "°C").
+- **Use plain words in headings.** Short labels translate best.
+
+## How to Test Your Tables
+
+You do not need special equipment. Work through these steps.
+
+1. **Read the code.** Does every data table have a `<caption>`, `<th>` cells, and `scope`?
+2. **Turn off CSS.** Does the table still make sense, with headers in the right place?
+3. **Use the keyboard only.** Can you reach every link, button, and scrolling region? Is focus visible?
+4. **Open the accessibility panel** in your browser's developer tools. Check the table's role, name, and headings.
+5. **Listen with a screen reader:** NVDA (Windows, free), VoiceOver (macOS and iOS, built in), or TalkBack (Android). Move through a few cells. Do you hear the headings with each cell?
+6. **Zoom to 200%** and check for overlap and lost content.
+7. **Run an automated checker** such as Lighthouse or axe. Treat the result as a first pass, not the final word.
+8. **Ask real users** when you can.
+
+:::note Automated tools catch only part of it
+A tool can find a missing `<th>` or an empty header, but it cannot tell you whether your headings are meaningful, or whether a simpler table would serve readers better. A short listening test teaches more than a long audit.
+:::
+
+## Final Pre-Publish Checklist
+
+- Is this really **data**, not layout?
+- Does the table have a clear **caption**?
+- Are all headings `<th>` with the right **`scope`**?
+- Are rows grouped in **`<thead>`**, **`<tbody>`**, and **`<tfoot>`** where it makes sense?
+- Does every row have the **same number of cells**?
+- Could this be **split into simpler tables**?
+- For complex tables, are `id` and `headers` **correct**?
+- Are controls inside the table **labeled**?
+- Is a wide table in an **accessible, focusable scrolling region**?
+- Is **contrast** high, and is meaning independent of **color**?
+- Have I **tested** with a keyboard and a screen reader?
+
+## Common Mistakes to Avoid
+
+1. **Using tables for layout.**
+2. **No caption,** so the table has no name.
+3. **Bold `<td>` cells instead of `<th>`.**
+4. **Missing `scope`,** or the wrong value.
+5. **Empty header cells,** with no name for the column.
+6. **Heavy merging** that turns the grid into a puzzle.
+7. **Incorrect `headers` and `id` links.** A typo silently breaks them.
+8. **Unlabeled form controls** inside cells.
+9. **A scrolling table with no keyboard access.**
+10. **Breaking table semantics** by changing `display` and never testing it.
+11. **Color-only meaning,** such as red and green cells with no text.
+12. **Never testing with a screen reader.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Take a table without a caption or `<th>` cells, and make it accessible.
+2. Add `scope="col"` and `scope="row"` to every heading.
+3. Wrap the table sections in `<thead>`, `<tbody>`, and `<tfoot>`.
+4. Rewrite a table that uses bold `<td>` headers so it uses `<th>`.
+5. Build the "Exam results" table, and link its cells with `id` and `headers`.
+6. Write a short summary paragraph, and link it with `aria-describedby`.
+7. Make a header sortable with a `<button>` and `aria-sort`.
+8. Add a checkbox column with proper labels, such as "Select Notebook."
+9. Put a wide table in a region with `tabindex="0"`, `role="region"`, and a visible focus style.
+10. Bonus: turn on a screen reader and move through your table. Write down what you hear for three cells, and fix anything unclear.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a screen reader announce when you move to a cell in a well-built table?</summary>
+
+The cell's content together with its row and column headings, such as "Test 2, Average: 78." This works only when headings are marked with `<th>` and `scope`.
+
+</details>
+
+<details>
+<summary>2. What are the basic building blocks of an accessible table?</summary>
+
+A real `<table>` for real data, a `<caption>`, `<th>` headings with `scope`, `<thead>`, `<tbody>`, and `<tfoot>` where useful, equal row lengths, and simple structure.
+
+</details>
+
+<details>
+<summary>3. When do you need `headers` and `id`?</summary>
+
+For complex tables, where a cell is labeled by several headings at different levels and `scope` alone cannot describe it. Each `<th>` gets an `id`, and each `<td>` lists its headings in `headers`.
+
+</details>
+
+<details>
+<summary>4. How do you make a sortable column heading accessible?</summary>
+
+Put a `<button>` inside the `<th>`, set `aria-sort` on the sorted column, and keep a visible focus style.
+
+</details>
+
+<details>
+<summary>5. How do you keep a scrolling table accessible?</summary>
+
+Put it in a container with `tabindex="0"`, `role="region"`, and `aria-labelledby` pointing to the caption, plus a visible focus outline.
+
+</details>
+
+<details>
+<summary>6. Why should you not use tables for layout?</summary>
+
+Screen readers announce tables as data and make users navigate them cell by cell. Use CSS Grid or Flexbox for layout, or add `role="presentation"` to an old layout table.
+
+</details>
+
+## Key Takeaways
+
+- Accessible tables put the **meaning of each cell in the HTML**: caption, `<th>`, `scope`, and sections.
+- Simple tables need only the basics. For complex ones, simplify first, then use `id` and `headers`.
+- Sortable headers need real buttons and `aria-sort`. Scrolling regions need keyboard access and a name.
+- Never use tables for layout, and do not break table semantics with CSS `display` changes.
+- Keep contrast high, do not rely on color alone, and write clear headings with units and plain words.
+- Test with the keyboard, a screen reader, and zoom. Five minutes of listening is worth more than any rulebook.
+
+That is everything in the Tables section: from `<table>`, `<tr>`, and `<td>` to captions, sections, merged cells, column groups, styling, and accessibility. Head back to the [Tables overview](/tutorials/html/tables) to review the full path, read [Responsive Tables](./responsive-tables) for small screens, or move on to the next section of the HTML course.

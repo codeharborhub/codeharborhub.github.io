@@ -1,16 +1,572 @@
 ---
-id: thead-tbody-tfoot
-title: "Semantic Table Sections: thead, tbody, and tfoot"
-sidebar_label: "thead, tbody & tfoot"
+id: html-thead-tbody-tfoot
+title: "HTML thead, tbody and tfoot"
+sidebar_label: "Thead, Tbody, Tfoot"
 sidebar_position: 6
 slug: /html/tables/thead-tbody-tfoot
-description: "Structure complex data tables logically using thead for header rows, tbody for primary dataset entries, and tfoot for summary footers."
+description: "Learn how to organize HTML tables with thead, tbody, and tfoot. Understand what each section means, the correct order, how to use several tbody groups, style headers and footers, build totals rows, keep headers visible while scrolling, and avoid common mistakes on CodeHarborHub."
 keywords:
-  - HTML thead tbody tfoot
-  - table semantic structure
+  - HTML thead
+  - HTML tbody
+  - HTML tfoot
   - table header body footer
-  - dataset layout HTML
+  - multiple tbody
+  - table totals row
+  - sticky table header
+  - scope rowgroup
+  - HTML table sections
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, semantics, layout]
+tags: [html, web-development, beginner, tables, thead, tbody, tfoot, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+Look at a bank statement or an invoice. At the top, a header row names the columns. In the middle, line after line of details. At the bottom, a totals row that adds everything up. Three clear regions, each with its own job.
+
+HTML lets you describe those regions with three elements: `<thead>`, `<tbody>`, and `<tfoot>`. A table works without them, but with them it becomes **better organized, easier to style, and clearer to assistive technology**. They are a small amount of extra code for a big gain in quality.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<thead>`, `<tbody>`, and `<tfoot>` mean
+- The correct order of table sections
+- How to build a totals row
+- How to use several `<tbody>` groups
+- How to style each section, and keep headers visible
+- Why sections help accessibility and printing
+- Common mistakes
+
+## The Three Sections
+
+| Element | Name | Holds |
+| :-- | :-- | :-- |
+| `<thead>` | Table **head** | The header row(s): column labels |
+| `<tbody>` | Table **body** | The main data rows |
+| `<tfoot>` | Table **foot** | Summary rows: totals, averages, notes |
+
+Each one wraps one or more `<tr>` rows. They do not change how the rows look by default. They change what the rows **mean**.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Monthly expenses (USD)</caption>
+  <thead>
+    <tr>
+      <th scope="col">Item</th>
+      <th scope="col">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Rent</th>
+      <td>800</td>
+    </tr>
+    <tr>
+      <th scope="row">Food</th>
+      <td>300</td>
+    </tr>
+    <tr>
+      <th scope="row">Transport</th>
+      <td>90</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row">Total</th>
+      <td>1,190</td>
+    </tr>
+  </tfoot>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Monthly expenses (USD)</caption>
+  <thead>
+    <tr>
+      <th scope="col" style={head}>Item</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>Rent</th>
+      <td style={num}>800</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Food</th>
+      <td style={num}>300</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Transport</th>
+      <td style={num}>90</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row" style={head}>Total</th>
+      <td style={{ ...num, fontWeight: 700, background: "#e2e8f0" }}>1,190</td>
+    </tr>
+  </tfoot>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Browsers always draw `<thead>` rows at the top and `<tfoot>` rows at the bottom of the table.
+
+## The Order of Table Parts
+
+When all the parts are present, they go in this order inside `<table>`:
+
+```text
+<table>
+  <caption>        1. caption (optional)
+  <colgroup>       2. column groups (optional)
+  <thead>          3. header section (optional)
+  <tbody>          4. one or more bodies
+  <tfoot>          5. footer section (optional)
+</table>
+```
+
+:::info `tfoot` position
+Older versions of HTML required `<tfoot>` to come **before** `<tbody>`, so browsers could draw the footer early on long, streamed tables. Current HTML places `<tfoot>` **after** the `<tbody>` sections, which is far more natural to read. Use the modern order, and you will be fine.
+:::
+
+### The Rules
+
+| Rule | Details |
+| :-- | :-- |
+| `<thead>` and `<tfoot>` | At most **one** of each per table |
+| `<tbody>` | **One or more** |
+| Contents | Only `<tr>` rows |
+| Row cells | Normal: `<th>` and `<td>` |
+
+<Tabs>
+<TabItem value="wrong" label="Invalid" default>
+
+```html
+<table>
+  <tbody>...</tbody>
+  <thead>...</thead>        <!-- head after body -->
+  <tr>...</tr>              <!-- loose row among sections -->
+</table>
+```
+
+</TabItem>
+<TabItem value="right" label="Valid">
+
+```html
+<table>
+  <thead>...</thead>
+  <tbody>...</tbody>
+  <tfoot>...</tfoot>
+</table>
+```
+
+</TabItem>
+</Tabs>
+
+If you use any section element, put **all** of your rows inside one. Mixing loose `<tr>` elements with sections is not allowed.
+
+## `<thead>`: The Head
+
+`<thead>` holds the rows that label the columns. Most tables have one header row, but you can have several (for example, a group label above the column labels).
+
+```html
+<thead>
+  <tr>
+    <th scope="col">Name</th>
+    <th scope="col">Role</th>
+  </tr>
+</thead>
+```
+
+What `<thead>` gives you:
+
+- **Meaning.** Tools know these rows are headings, not data.
+- **A styling hook.** `thead th { ... }` styles the entire header at once.
+- **Repeating headers.** When a long table prints on several pages, browsers can repeat the header on each page.
+- **Sticky headers.** Easy to keep the header visible while scrolling (see below).
+
+## `<tbody>`: The Body
+
+`<tbody>` holds the main data rows.
+
+```html
+<tbody>
+  <tr>
+    <th scope="row">Aisha</th>
+    <td>Developer</td>
+  </tr>
+  <tr>
+    <th scope="row">Mateo</th>
+    <td>Designer</td>
+  </tr>
+</tbody>
+```
+
+Remember from [Table Basics](./table-basics) that browsers add a `<tbody>` for you if you leave it out. Writing it yourself is a good habit. It makes your code match what the browser builds, and it avoids surprises with CSS selectors like `tbody tr`.
+
+### Several `<tbody>` Groups
+
+A table can have **more than one** `<tbody>`. Use this to split rows into logical groups, such as regions, categories, or years. Each group can then be styled on its own.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Sales by region (units)</caption>
+  <thead>
+    <tr>
+      <th scope="col">Product</th>
+      <th scope="col">Units</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <th colspan="2" scope="colgroup">Europe</th>
+    </tr>
+    <tr><th scope="row">Notebook</th><td>420</td></tr>
+    <tr><th scope="row">Pen set</th><td>310</td></tr>
+  </tbody>
+
+  <tbody>
+    <tr>
+      <th colspan="2" scope="colgroup">Asia</th>
+    </tr>
+    <tr><th scope="row">Notebook</th><td>680</td></tr>
+    <tr><th scope="row">Pen set</th><td>540</td></tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Sales by region (units)</caption>
+  <thead>
+    <tr>
+      <th scope="col" style={head}>Product</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Units</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <th colSpan={2} scope="colgroup" style={{ ...cell, background: "#f1f5f9" }}>Europe</th>
+    </tr>
+    <tr><th scope="row" style={cell}>Notebook</th><td style={num}>420</td></tr>
+    <tr><th scope="row" style={cell}>Pen set</th><td style={num}>310</td></tr>
+  </tbody>
+
+  <tbody>
+    <tr>
+      <th colSpan={2} scope="colgroup" style={{ ...cell, background: "#f1f5f9" }}>Asia</th>
+    </tr>
+    <tr><th scope="row" style={cell}>Notebook</th><td style={num}>680</td></tr>
+    <tr><th scope="row" style={cell}>Pen set</th><td style={num}>540</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each group starts with a full-width heading cell (made with `colspan`, which you will learn in [Colspan and Rowspan](./colspan-rowspan)). The `scope="colgroup"` tells assistive technology that "Europe" labels the rows in its group.
+
+:::tip `rowgroup` for the same idea
+When a heading labels a group of rows, you will also see `scope="rowgroup"`. Both express the same idea of "a heading for a section." Use the one your table's structure matches, and test with a screen reader if the table is complex.
+:::
+
+## `<tfoot>`: The Foot
+
+`<tfoot>` holds summary rows: totals, averages, counts, or notes that apply to the whole table.
+
+```html
+<tfoot>
+  <tr>
+    <th scope="row">Total</th>
+    <td>1,190</td>
+  </tr>
+</tfoot>
+```
+
+Good uses:
+
+- A **total** at the bottom of a column of amounts
+- An **average** row for scores
+- A **notes** row, using `colspan` to stretch across all columns
+
+Do not put regular data in `<tfoot>`. It should only hold rows that summarize or explain the rows above.
+
+## Styling the Sections
+
+Because the three sections are real elements, CSS can target each one.
+
+```css title="style.css"
+thead th {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+tbody tr:nth-child(even) {
+  background: #f8fafc;     /* zebra stripes */
+}
+
+tbody tr:hover {
+  background: #e0f2fe;
+}
+
+tfoot th,
+tfoot td {
+  font-weight: 700;
+  border-top: 2px solid #0f172a;
+}
+```
+
+| Goal | Selector |
+| :-- | :-- |
+| Style the header | `thead th` |
+| Stripe the data rows | `tbody tr:nth-child(even)` |
+| Highlight a row on hover | `tbody tr:hover` |
+| Emphasize totals | `tfoot td`, `tfoot th` |
+| Add space between groups | `tbody + tbody { border-top: 8px solid transparent; }` |
+
+Notice that `tbody tr:nth-child(even)` stripes **only data rows**, never the header. Without `<tbody>`, you would have to work around the header row in your CSS.
+
+## Sticky Headers for Long Tables
+
+For a table with many rows, keeping the header visible while you scroll is a big help. `<thead>` makes this simple.
+
+```css title="style.css"
+.table-wrap {
+  max-height: 20rem;
+  overflow: auto;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #e2e8f0;   /* needs a solid background */
+}
+```
+
+```html title="index.html"
+<div class="table-wrap">
+  <table>
+    <thead>...</thead>
+    <tbody>... many rows ...</tbody>
+  </table>
+</div>
+```
+
+The header cells stay at the top of the scrolling area while the body rows move beneath them. Give the cells a solid background, or the text underneath will show through.
+
+## Why Sections Matter
+
+1. **Accessibility.** Assistive technology can tell headers from body from footer, and some tools let users jump between them.
+2. **Printing.** Browsers can repeat `<thead>` (and sometimes `<tfoot>`) on each printed page.
+3. **Styling.** Cleaner CSS, with no tricks to skip the header row.
+4. **Scripting.** JavaScript sorting or filtering can safely target `tbody` without touching the header or totals.
+5. **Readability.** Anyone reading your code can see the structure at a glance.
+
+## When Can You Skip Them?
+
+For a tiny, simple table with a single header row, `<thead>` and `<tbody>` are optional, and the browser fills in a `<tbody>` automatically. But for any table that you will style, sort, print, or show to a screen reader user, use the sections. A good rule: **if the table has a header row, use `<thead>` and `<tbody>`.** Add `<tfoot>` only when you have a summary row.
+
+## Putting It Together: An Invoice
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Invoice 1042 (USD)</caption>
+  <thead>
+    <tr>
+      <th scope="col">Description</th>
+      <th scope="col">Qty</th>
+      <th scope="col">Price</th>
+      <th scope="col">Line total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Notebook</th>
+      <td>3</td>
+      <td>3.50</td>
+      <td>10.50</td>
+    </tr>
+    <tr>
+      <th scope="row">Pen set</th>
+      <td>2</td>
+      <td>16.25</td>
+      <td>32.50</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row" colspan="3">Total</th>
+      <td>43.00</td>
+    </tr>
+  </tfoot>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Invoice 1042 (USD)</caption>
+  <thead>
+    <tr>
+      <th scope="col" style={head}>Description</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Qty</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Price</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Line total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>Notebook</th>
+      <td style={num}>3</td>
+      <td style={num}>3.50</td>
+      <td style={num}>10.50</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Pen set</th>
+      <td style={num}>2</td>
+      <td style={num}>16.25</td>
+      <td style={num}>32.50</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row" colSpan={3} style={{ ...head, textAlign: "right" }}>Total</th>
+      <td style={{ ...num, fontWeight: 700, background: "#e2e8f0" }}>43.00</td>
+    </tr>
+  </tfoot>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The three parts are clear: labels on top, line items in the middle, and a total at the bottom that spans the first three columns.
+
+## Global Audience Notes
+
+- **State the currency** in the caption or header ("USD," "EUR," "INR") so totals are unambiguous.
+- **Number formats differ** (1,190.00 or 1.190,00). Be consistent, and set the page `lang`.
+- **Label totals plainly** ("Total," "Average"). Short words translate well.
+- **For right-to-left pages,** the order of columns flips, but the order of `thead`, `tbody`, and `tfoot` stays the same.
+
+## Common Mistakes to Avoid
+
+1. **Using the wrong order,** such as `<tbody>` before `<thead>`.
+2. **Mixing loose `<tr>` rows with section elements.** Put every row inside a section.
+3. **Using more than one `<thead>` or `<tfoot>`.** Only `<tbody>` can repeat.
+4. **Putting data rows in `<tfoot>`.** It is for summaries only.
+5. **Putting header rows in `<tbody>`** instead of `<thead>`.
+6. **Leaving out `<thead>` on a table with a header row,** which makes styling and accessibility harder.
+7. **Forgetting a solid background on sticky headers.** The body text shows through.
+8. **Striping rows with `tr:nth-child(even)`** and accidentally coloring the header. Use `tbody tr`.
+9. **Putting a caption or colgroup after the sections.** They come first.
+10. **Closing tags missing.** `</thead>`, `</tbody>`, and `</tfoot>` are good habits, even if browsers can sometimes guess.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Take a table you built earlier, and wrap its header row in `<thead>`.
+2. Wrap the data rows in `<tbody>`.
+3. Add a `<tfoot>` with a "Total" row.
+4. Style `thead th` with a dark background and white text.
+5. Add zebra stripes using `tbody tr:nth-child(even)`.
+6. Highlight data rows on hover with `tbody tr:hover`.
+7. Split the data into two `<tbody>` groups with a group heading each.
+8. Make the footer text bold with a thick top border.
+9. Put a long table inside a scrolling `div`, and keep the header visible with `position: sticky`.
+10. Bonus: print the page (or use print preview) and see how the header behaves across pages.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are `<thead>`, `<tbody>`, and `<tfoot>` for?</summary>
+
+They group the rows of a table by role: `<thead>` for the header rows, `<tbody>` for the main data, and `<tfoot>` for summary rows such as totals.
+
+</details>
+
+<details>
+<summary>2. In what order do the sections go?</summary>
+
+`<caption>` and `<colgroup>` first, then `<thead>`, then one or more `<tbody>`, then `<tfoot>`.
+
+</details>
+
+<details>
+<summary>3. How many of each can a table have?</summary>
+
+At most one `<thead>` and one `<tfoot>`, but one or more `<tbody>` sections.
+
+</details>
+
+<details>
+<summary>4. Why would you use several `<tbody>` groups?</summary>
+
+To split the data into logical groups, such as regions or categories, so each group can be labeled and styled separately.
+
+</details>
+
+<details>
+<summary>5. How do you keep a table header visible while scrolling?</summary>
+
+Put the table in a scrolling container, and apply `position: sticky; top: 0;` with a solid background to `thead th`.
+
+</details>
+
+<details>
+<summary>6. What belongs in `<tfoot>`?</summary>
+
+Summary rows such as totals, averages, or notes that apply to the whole table. Not regular data.
+
+</details>
+
+## Key Takeaways
+
+- `<thead>`, `<tbody>`, and `<tfoot>` give the rows of a table meaning: labels, data, and summary.
+- The order is `<thead>`, then one or more `<tbody>`, then `<tfoot>`, after any `<caption>` and `<colgroup>`.
+- Use several `<tbody>` groups for logical sections, each with its own group heading.
+- Sections make styling, sticky headers, printing, sorting, and accessibility much easier.
+- If a table has a header row, use `<thead>` and `<tbody>`. Add `<tfoot>` only for real summary rows.
+
+You have seen `colspan` a few times in this lesson, in group headings and in the total row. It is time to learn how it works. Continue with [Colspan and Rowspan](./colspan-rowspan), or return to the [Tables overview](/tutorials/html/tables).

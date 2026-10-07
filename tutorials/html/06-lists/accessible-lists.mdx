@@ -1,16 +1,547 @@
 ---
-id: accessible-lists
-title: "Best Practices for Accessible HTML Lists"
+id: html-accessible-lists
+title: "Accessible HTML Lists"
 sidebar_label: "Accessible Lists"
-sidebar_position: 6
+sidebar_position: 7
 slug: /html/lists/accessible-lists
-description: "Ensure list structures translate effectively to screen readers, avoid CSS list-style accessibility bugs, and utilize ARIA role considerations."
+description: "Learn how to make HTML lists accessible to everyone. Understand how screen readers announce lists, why real list markup matters, how to label lists, keep list semantics when removing bullets, build accessible navigation, breadcrumbs, and checklists, and test your lists on CodeHarborHub."
 keywords:
   - accessible HTML lists
-  - screen reader list navigation
-  - CSS list style accessibility
-  - ARIA list roles
+  - screen reader lists
+  - list-style none VoiceOver
+  - role list
+  - aria-labelledby list
+  - accessible navigation list
+  - accessible breadcrumbs
+  - accessible checklist HTML
+  - WCAG info and relationships
+  - semantic lists
+  - learn HTML lists
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, accessibility, lists, a11y]
+tags: [html, web-development, beginner, lists, accessibility, aria, wcag, frontend]
 ---
+
+When you look at a list, you take in its shape in an instant: how many items there are, where it starts, where it ends, and which items sit under which. You do not have to think about it.
+
+People who use screen readers do not get that instant view. They hear the page, one piece at a time. Real list markup is how HTML gives them the same overview that your eyes get for free: **"list, five items,"** then each item, then **"end of list."** That one announcement lets someone decide in a second whether to listen to all five items or skip ahead.
+
+This final lesson of the section shows you how to keep that overview intact, and how to avoid the common mistakes that quietly take it away.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How screen readers announce lists, and why that helps
+- Why real list markup beats fake lists
+- How to keep list meaning when you remove bullets
+- How to label lists, navigation, and breadcrumbs
+- How to build accessible checklists and nested lists
+- How to keep the reading order and the visual order matching
+- How to test your lists
+
+## Why Real Lists Matter
+
+A list is not just bullets. It is **information about the content's structure**. WCAG, the international web accessibility standard, calls this "Info and Relationships": structure that is visible on screen must also be available in the code.
+
+When you use a real `<ul>`, `<ol>`, or `<dl>`, assistive technology can:
+
+- **Announce the list and its size,** such as "list, 4 items."
+- **Announce the position,** such as "2 of 4," so people know where they are.
+- **Let users jump** straight to the next or previous list, or skip the whole list.
+- **Keep nesting clear,** such as "nested list, level 2."
+
+Screen readers also use lists to build page overviews. In some, a user can press a key to list every list on the page, the same way they can list every heading or link.
+
+:::info A real example of the difference
+**Real list:** "List, 3 items. Bullet, Flour. Bullet, Eggs. Bullet, Milk. End of list."
+
+**Fake list** (paragraphs with dashes): "Dash, Flour. Dash, Eggs. Dash, Milk." There is no count, no boundary, and no way to skip ahead.
+:::
+
+## Rule 1: Use the Right Element
+
+Most list accessibility problems start with the wrong markup. The fix is always the same: use the element that matches the meaning.
+
+| Your content | Use | Not |
+| :-- | :-- | :-- |
+| Items in any order | `<ul>` | Paragraphs with `•` or `-` |
+| Steps or rankings | `<ol>` | Typed numbers: "1. 2. 3." |
+| Terms and values | `<dl>` | Two columns made with `<div>` or spaces |
+| A menu of links | `<nav>` with `<ul>` | A row of loose `<a>` elements |
+
+<Tabs>
+<TabItem value="bad" label="Not accessible" default>
+
+```html
+<p>
+  • Flour<br />
+  • Eggs<br />
+  • Milk
+</p>
+
+<div>1. Mix</div>
+<div>2. Bake</div>
+```
+
+</TabItem>
+<TabItem value="good" label="Accessible">
+
+```html
+<ul>
+  <li>Flour</li>
+  <li>Eggs</li>
+  <li>Milk</li>
+</ul>
+
+<ol>
+  <li>Mix</li>
+  <li>Bake</li>
+</ol>
+```
+
+</TabItem>
+</Tabs>
+
+You learned the correct structure in [Unordered Lists](./unordered-lists), [Ordered Lists](./ordered-lists), [Description Lists](./description-lists), and [Nested Lists](./nested-lists). Here we focus on keeping it intact.
+
+## Rule 2: Keep the List When You Remove the Bullets
+
+This is the most surprising problem in this section. In some browser and screen reader pairs (notably **Safari with VoiceOver**), setting `list-style: none` on a list also removes its list meaning. The list is no longer announced, and the items sound like loose lines of text.
+
+The reasoning is that, without bullets, the browser guesses you are using the list only for layout. If your content really is a list, as a navigation menu is, tell the browser so with `role="list"`.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1.5rem;
+}
+```
+
+```html title="index.html"
+<nav aria-label="Main">
+  <ul class="menu" role="list">
+    <li><a href="/">Home</a></li>
+    <li><a href="/courses">Courses</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<nav aria-label="Main">
+  <ul
+    role="list"
+    style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", gap: "1.5rem" }}
+  >
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Courses</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip A good rule
+If you remove the bullets or numbers from something that is truly a list, add `role="list"`. If it is not really a list (for example, a layout grid made from `<ul>`), a better fix is to use `<div>` elements instead.
+:::
+
+Some developers use `list-style-type: ""` (an empty string) instead, which hides the marker without triggering the same behavior in Safari. Both work. Whichever you choose, **test with a screen reader** to be sure.
+
+## Rule 3: Give Lists a Name When It Helps
+
+A list with a short heading or label above it is easier to understand. For long pages with several lists, an explicit label tells screen reader users what each list is.
+
+### With a Visible Heading
+
+Connect the list to its heading with `aria-labelledby`:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3 id="needs">What you need</h3>
+<ul aria-labelledby="needs">
+  <li>A laptop</li>
+  <li>An internet connection</li>
+  <li>A text editor</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3 id="needs-demo">What you need</h3>
+<ul aria-labelledby="needs-demo">
+  <li>A laptop</li>
+  <li>An internet connection</li>
+  <li>A text editor</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A screen reader can now announce "What you need, list, 3 items."
+
+### Without a Visible Heading
+
+Use `aria-label` for a hidden name:
+
+```html
+<ul aria-label="Social media links">
+  <li><a href="https://example.com/x">X</a></li>
+  <li><a href="https://example.com/youtube">YouTube</a></li>
+</ul>
+```
+
+:::note Do not overdo labels
+Label a list when the label adds information. A short list right after a clear paragraph that introduces it needs no extra label. And never repeat the word "list" in the label: the screen reader already says it.
+:::
+
+## Rule 4: Introduce the List
+
+A short sentence or heading before a list sets expectations. This helps everyone, not only screen reader users.
+
+<Tabs>
+<TabItem value="weak" label="No context" default>
+
+```html
+<p>Install the tool.</p>
+<ul>
+  <li>Node.js</li>
+  <li>A text editor</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="strong" label="With context">
+
+```html
+<p>Before you start, make sure you have:</p>
+<ul>
+  <li>Node.js</li>
+  <li>A text editor</li>
+</ul>
+```
+
+</TabItem>
+</Tabs>
+
+## Accessible Navigation Menus
+
+Navigation lists need three things:
+
+1. A `<nav>` landmark, so users can jump straight to it.
+2. A `<ul>` of links inside, so users hear how many choices there are.
+3. A unique `aria-label` when the page has more than one `<nav>`.
+
+```html
+<nav aria-label="Main">
+  <ul role="list">
+    <li><a href="/">Home</a></li>
+    <li><a href="/courses" aria-current="page">Courses</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+
+<nav aria-label="Footer">
+  <ul role="list">
+    <li><a href="/privacy">Privacy</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+- `aria-current="page"` marks the link to the current page, so people know where they are.
+- Link text must make sense on its own. "Courses" works, "Click here" does not. Screen reader users often listen to a list of links with no surrounding text.
+
+You can read more about menus in [Navigation Menus](/tutorials/html/links-and-navigation/navigation-menus).
+
+## Accessible Breadcrumbs
+
+Breadcrumbs are an ordered list inside a labeled `<nav>`, with the current page marked.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav aria-label="Breadcrumb">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/html">HTML</a></li>
+    <li><a href="/html/lists" aria-current="page">Lists</a></li>
+  </ol>
+</nav>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<nav aria-label="Breadcrumb">
+  <ol style={{ display: "flex", gap: "0.5rem", listStyle: "none", margin: 0, padding: 0 }}>
+    <li><a href="#">Home</a> /</li>
+    <li><a href="#">HTML</a> /</li>
+    <li><a href="#" aria-current="page">Lists</a></li>
+  </ol>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If you add visual separators such as `/` or `>`, put them in CSS (`li + li::before`), not in the HTML, so they are not read aloud for every step.
+
+## Accessible Checklists
+
+A list that looks like a checklist is not automatically one. Putting a ✓ in front of text only **draws** a check mark. It does not tell a screen reader whether the item is done.
+
+| Goal | Use |
+| :-- | :-- |
+| A list of facts that happen to have check marks (features included in a plan) | `<ul>` with a decorative marker, plus text such as "Included" if the meaning matters |
+| A list the user can **tick off** | Real `<input type="checkbox">` with a `<label>` |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<fieldset>
+  <legend>Today's tasks</legend>
+  <ul role="list">
+    <li>
+      <input type="checkbox" id="t1" />
+      <label for="t1">Read the lesson</label>
+    </li>
+    <li>
+      <input type="checkbox" id="t2" />
+      <label for="t2">Try the example</label>
+    </li>
+    <li>
+      <input type="checkbox" id="t3" />
+      <label for="t3">Finish the practice</label>
+    </li>
+  </ul>
+</fieldset>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<fieldset>
+  <legend>Today's tasks</legend>
+  <ul role="list" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+    <li>
+      <input type="checkbox" id="acc-t1" />
+      <label htmlFor="acc-t1"> Read the lesson</label>
+    </li>
+    <li>
+      <input type="checkbox" id="acc-t2" />
+      <label htmlFor="acc-t2"> Try the example</label>
+    </li>
+    <li>
+      <input type="checkbox" id="acc-t3" />
+      <label htmlFor="acc-t3"> Finish the practice</label>
+    </li>
+  </ul>
+</fieldset>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each checkbox is announced with its name and state ("Read the lesson, checkbox, not checked"), works with the keyboard, and has a large click target thanks to the `<label>`.
+
+:::warning Never rely on a symbol alone
+A red ✗ and a green ✓ in front of items carry meaning only for people who can see them and tell the colors apart. Add a text cue too: "Not included" and "Included."
+:::
+
+## Keep the Visual Order and the Reading Order Together
+
+Screen readers and keyboard users follow the **order in your HTML**, not the order on screen. CSS can move things around visually, and that can create a mismatch.
+
+Be careful with:
+
+- `flex-direction: row-reverse` or `column-reverse`
+- the `order` property in Flexbox and Grid
+- positioning that moves items far from their place in the code
+
+If a list is numbered 1, 2, 3 in the HTML but displays 3, 2, 1, sighted users and screen reader users get different experiences. Instead of reversing with CSS, **write the items in the order you want, and use the `reversed` attribute** on `<ol>` if you need a countdown:
+
+```html
+<ol reversed>
+  <li>Third place</li>
+  <li>Second place</li>
+  <li>First place</li>
+</ol>
+```
+
+## Nested Lists and Depth
+
+Screen readers announce each nesting level, so deep trees become tiring to follow.
+
+- **Keep it to two or three levels.** Beyond that, use headings to split the content.
+- **Always place a nested list inside an `<li>`.** Misplaced lists confuse the reported levels. See [Nested Lists](./nested-lists).
+- **Label each parent clearly.** "Courses" followed by its sub-items is far better than "More."
+
+## List Length and Item Writing
+
+- **Short lists are easy to listen to.** For very long lists (dozens of items), consider grouping them under headings.
+- **Do not use a one-item list.** Screen readers announce "list, 1 item," which is odd. Use a paragraph.
+- **Write items that make sense on their own,** because some users jump from item to item. "Install Node" is clearer than "Do this next."
+- **Start parallel items the same way.** It sounds clean when read aloud and translates well.
+- **Avoid long paragraphs inside items.** If an item needs several sentences, ask whether it should be its own section.
+
+## Description Lists and Accessibility
+
+Description lists are announced reasonably well in modern screen readers, though support has been less consistent than for `<ul>` and `<ol>`. To stay safe:
+
+- Keep terms short and descriptions clear.
+- Do not depend on the layout alone to link a term to its value. Make each description make sense when read in order: "Weight, 1.1 kilograms."
+- Group each pair in a `<div>` for tidy structure.
+- Include units and full meanings, so the content works for readers in every region.
+
+## Language and Direction
+
+- Set `lang` on the page, and on any list in another language, so the screen reader uses the right voice.
+- Right-to-left languages place markers on the right when `dir="rtl"` is set. Use logical CSS properties, like `padding-inline-start`.
+- If you use another numbering system (such as `devanagari`), make sure the page language matches, so the voice reads the numbers correctly.
+
+## Testing Your Lists
+
+You do not need expensive tools. Try these steps:
+
+1. **Look at the structure.** Disable CSS (most browsers have this in developer tools, or use a "no style" extension). Is it still clearly a list?
+2. **Check the accessibility tree.** In Chrome or Firefox developer tools, open the Accessibility panel and find your list. It should show as a list with the right number of items.
+3. **Listen.** Try NVDA (Windows, free), VoiceOver (macOS and iOS, built in), or TalkBack (Android). Tab and arrow through the page, and note what is announced.
+4. **Test after styling.** Rerun the check after you add `list-style: none`, Flexbox, or Grid.
+5. **Run an automated checker,** such as Lighthouse or axe. These find some problems, such as invalid children inside `<ul>`, but not all of them.
+6. **Ask real users** whenever possible.
+
+:::note Automated tools find only part of the problems
+A tool can see that your `<ul>` contains something other than `<li>`. It cannot tell whether your list items are clear, or whether a visual list was built with the wrong element. A short listening test is worth more than a long audit.
+:::
+
+## Quick Checklist
+
+Before you publish, ask:
+
+- Is every list a **real** `<ul>`, `<ol>`, or `<dl>`?
+- Do **only** `<li>` elements sit directly inside `<ul>` and `<ol>`?
+- Are nested lists **inside** `<li>` elements?
+- Did I add `role="list"` where I removed the bullets from a true list?
+- Do navigation lists live in a labeled `<nav>`?
+- Is the current page marked with `aria-current="page"`?
+- Do the visual order and the HTML order match?
+- Are link texts meaningful out of context?
+- Are checkboxes real inputs with labels?
+- Is `lang` set for the page, and for any list in another language?
+
+## Common Mistakes to Avoid
+
+1. **Fake lists** made of `<br />`, dashes, bullets, or typed numbers.
+2. **Removing bullets with `list-style: none`** and forgetting `role="list"` on real lists.
+3. **Putting `<div>`, `<p>`, or text directly inside `<ul>` or `<ol>`.**
+4. **Misplaced nested lists**, beside an `<li>` instead of inside it.
+5. **Using lists only for layout** or indentation.
+6. **One-item lists.**
+7. **Vague link text** like "Click here" or "Read more" in a list of links.
+8. **Reordering list items with CSS only,** so the reading order and visual order differ.
+9. **Using symbols or color alone** to show status.
+10. **Not testing** with a screen reader after styling.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Take a "fake list" made of `<br />` and dashes, and rewrite it as a real `<ul>`.
+2. Add a visible heading above a list and connect them with `aria-labelledby`.
+3. Build a navigation menu inside a `<nav aria-label="Main">`, remove the bullets with CSS, and add `role="list"`.
+4. Mark the current page with `aria-current="page"`.
+5. Build a breadcrumb trail as an `<ol>` in a labeled `<nav>`.
+6. Build a checklist with real checkboxes and labels inside a `<fieldset>`.
+7. Write a countdown with `reversed` instead of reversing it in CSS.
+8. Fix a nested list where the inner list sits beside the `<li>`.
+9. Turn on a screen reader and listen to your page. Count how many "list" announcements you hear.
+10. Bonus: open the browser's Accessibility panel and compare a real list with a fake one.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a screen reader tell users about a real list?</summary>
+
+That it is a list, how many items it has, which item they are on, and when the list ends. Fake lists give none of this.
+
+</details>
+
+<details>
+<summary>2. What can happen when you set `list-style: none` on a list?</summary>
+
+In some browser and screen reader combinations, such as Safari with VoiceOver, the list is no longer announced as a list.
+
+</details>
+
+<details>
+<summary>3. How do you keep list meaning after removing bullets?</summary>
+
+Add `role="list"` to the `<ul>` or `<ol>`, and test with a screen reader.
+
+</details>
+
+<details>
+<summary>4. How do you give a list an accessible name?</summary>
+
+Point to a visible heading with `aria-labelledby`, or add a hidden name with `aria-label`.
+
+</details>
+
+<details>
+<summary>5. How should you build a checklist the user can tick off?</summary>
+
+Use real `<input type="checkbox">` elements with `<label>`s, ideally inside a `<fieldset>` with a `<legend>`. Drawn check marks are only decoration.
+
+</details>
+
+<details>
+<summary>6. Why is it risky to reorder list items with CSS alone?</summary>
+
+Screen readers and keyboard users follow the HTML order, so the experience will not match what sighted users see. Write items in the intended order, or use `reversed` for countdowns.
+
+</details>
+
+## Key Takeaways
+
+- Real list markup gives assistive technology the list's size, position, and nesting. Fake lists give none of it.
+- When you remove bullets from a true list, add `role="list"`, and test.
+- Name lists with `aria-labelledby` or `aria-label` when it helps, and introduce them with a clear sentence or heading.
+- Navigation menus belong in a labeled `<nav>`, breadcrumbs in an `<ol>`, and tickable checklists in real checkboxes.
+- Keep the HTML order and the visual order the same, keep nesting shallow, and write clear, parallel items.
+- Test with the tools your visitors use. Five minutes of listening teaches more than any rulebook.
+
+That completes the Lists section. You can build bullet, numbered, description, and nested lists, style them with CSS, and make them work for everyone. Head back to the [Lists overview](/tutorials/html/lists) to review the full path, or move on to the next section of the HTML course.

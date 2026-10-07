@@ -1,16 +1,632 @@
 ---
-id: responsive-tables
-title: "Creating Responsive HTML Tables for Mobile Screens"
+id: html-responsive-tables
+title: "Responsive HTML Tables"
 sidebar_label: "Responsive Tables"
-sidebar_position: 9
+sidebar_position: 10
 slug: /html/tables/responsive-tables
-description: "Explore techniques for rendering tables on smaller devices, including horizontal scrolling containers, CSS card conversions, and mobile-friendly layouts."
+description: "Learn how to make HTML tables work on phones and small screens. Use scrolling containers, sticky columns, fluid widths, stacked card layouts, and priority columns, understand the accessibility trade-offs of each approach, and choose the right technique for your data on CodeHarborHub."
 keywords:
-  - responsive tables HTML
-  - mobile table design
-  - overflow scroll table
-  - table responsive CSS
+  - responsive HTML tables
+  - table overflow-x scroll
+  - sticky first column table
+  - stacked table mobile CSS
+  - data-label table
+  - table mobile layout
+  - responsive table accessibility
+  - horizontal scroll table
+  - table-layout fixed
+  - container queries table
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, responsive-design, css]
+tags: [html, css, web-development, beginner, tables, responsive, mobile, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left", whiteSpace: "nowrap" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+Tables are wonderful on a big monitor. On a phone, they are a problem. A table with six columns needs room, and a phone screen is about 360 pixels wide. If you do nothing, one of three things happens: the table squeezes until the text wraps into thin columns of two letters each, it pushes the page wider than the screen so the whole page scrolls sideways, or it gets cut off and the right-hand data simply disappears.
+
+Most visitors to your site arrive on a phone, so this matters. The good news is that there are several well-tested ways to handle it, from a one-line fix to a full redesign of the layout. This lesson explains each one, with its strengths and its trade-offs, so you can choose the right technique for your data.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Why tables break on small screens
+- How to set up the page correctly with the viewport meta tag
+- How to make a table scroll sideways, accessibly
+- How to keep the first column visible with sticky positioning
+- How to make a table fluid
+- How to stack a table into cards on small screens, and the risks
+- How to prioritize columns
+- How to choose between techniques
+
+## First, the Viewport
+
+Responsive design starts with one line in your page's `<head>`. Without it, phones pretend to be a wide desktop screen and shrink your page.
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+Most project templates (and Docusaurus) include this already. Check that yours does before you debug anything else.
+
+## Why Tables Are Hard
+
+A table has a natural minimum width. Each column needs enough space for its longest unbreakable piece of content, like a word, a number, or a date. Add up all the columns, and the table needs a certain width, whatever the screen.
+
+| Problem | What you see |
+| :-- | :-- |
+| Table wider than the screen | The whole page scrolls sideways, and the layout looks broken |
+| Cells squeezed too narrow | Words broken into tiny pieces, tall, hard-to-read rows |
+| Content cut off | Data missing, with no hint that there is more |
+
+There is no single perfect answer. Instead, there is a **toolbox**.
+
+## Technique 1: A Scrolling Container
+
+The simplest and most reliable approach: keep the table as it is, and let it **scroll sideways inside its own box**. The page does not move. Only the table area does.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  min-width: 36rem;   /* the table will not squeeze below this */
+}
+```
+
+```html title="index.html"
+<div class="table-wrap">
+  <table>
+    ...
+  </table>
+</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<div style={{ overflowX: "auto", maxWidth: "340px", border: "1px dashed #94a3b8" }}>
+  <table style={{ borderCollapse: "collapse", minWidth: "36rem" }}>
+    <tbody>
+      <tr>
+        <th style={head}>Course</th>
+        <th style={head}>Level</th>
+        <th style={head}>Weeks</th>
+        <th style={head}>Hours</th>
+        <th style={head}>Price (USD)</th>
+      </tr>
+      <tr>
+        <td style={cell}>Intro to HTML</td>
+        <td style={cell}>Beginner</td>
+        <td style={num}>4</td>
+        <td style={num}>16</td>
+        <td style={num}>0</td>
+      </tr>
+      <tr>
+        <td style={cell}>CSS Layouts</td>
+        <td style={cell}>Intermediate</td>
+        <td style={num}>6</td>
+        <td style={num}>24</td>
+        <td style={num}>19</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo box is limited to 340 pixels, like a phone. Drag sideways inside it, and the table scrolls while the surrounding page stays still.
+
+| Pros | Cons |
+| :-- | :-- |
+| One small CSS rule | Users must scroll sideways |
+| Keeps the real table structure, so accessibility stays intact | Not obvious that there is more to see |
+| Works for any number of columns | Hard to compare columns that are far apart |
+
+### Make the Scroll Area Accessible
+
+A box that scrolls must be reachable without a mouse. Keyboard users cannot scroll a region that cannot receive focus.
+
+```html
+<div
+  class="table-wrap"
+  role="region"
+  aria-labelledby="catalog-caption"
+  tabindex="0"
+>
+  <table>
+    <caption id="catalog-caption">Course catalog</caption>
+    ...
+  </table>
+</div>
+```
+
+```css title="style.css"
+.table-wrap:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+- **`tabindex="0"`** lets the keyboard reach the box, so the arrow keys can scroll it.
+- **`role="region"`** and **`aria-labelledby`** give the box a name, so a screen reader can announce it.
+- The **focus outline** shows keyboard users where they are.
+
+:::tip Always do this
+If your table can scroll, use these three things together. You will see the same advice in [Table Accessibility](./table-accessibility).
+:::
+
+### Hint That There Is More
+
+People do not always realize a table scrolls. A simple hint helps, such as a note ("Scroll sideways to see more") or a fading edge made with CSS.
+
+```css title="style.css"
+.table-wrap {
+  overflow-x: auto;
+  background:
+    linear-gradient(to right, #fff 30%, transparent) left / 2rem 100% no-repeat local,
+    linear-gradient(to left,  #fff 30%, transparent) right / 2rem 100% no-repeat local,
+    linear-gradient(to right, rgba(0,0,0,.15), transparent) left / 0.75rem 100% no-repeat scroll,
+    linear-gradient(to left,  rgba(0,0,0,.15), transparent) right / 0.75rem 100% no-repeat scroll;
+}
+```
+
+This draws a soft shadow at an edge when more content waits beyond it. If the gradient code looks heavy, a simple written hint works just as well.
+
+## Technique 2: Keep the First Column Visible
+
+When a table scrolls sideways, the row labels in the first column scroll away, and users lose track of which row they are in. A **sticky first column** keeps it in place.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```css title="style.css"
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap th:first-child,
+.table-wrap td:first-child {
+  position: sticky;
+  left: 0;
+  background: #ffffff;     /* solid, so scrolling content does not show through */
+  z-index: 1;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<div style={{ overflowX: "auto", maxWidth: "340px", border: "1px dashed #94a3b8" }}>
+  <table style={{ borderCollapse: "collapse", minWidth: "36rem" }}>
+    <tbody>
+      <tr>
+        <th style={{ ...head, position: "sticky", left: 0, zIndex: 1 }}>Course</th>
+        <th style={head}>Level</th>
+        <th style={head}>Weeks</th>
+        <th style={head}>Hours</th>
+        <th style={head}>Price (USD)</th>
+      </tr>
+      <tr>
+        <th scope="row" style={{ ...cell, position: "sticky", left: 0, zIndex: 1, background: "#f8fafc", color: "#0f172a" }}>Intro to HTML</th>
+        <td style={cell}>Beginner</td>
+        <td style={num}>4</td>
+        <td style={num}>16</td>
+        <td style={num}>0</td>
+      </tr>
+      <tr>
+        <th scope="row" style={{ ...cell, position: "sticky", left: 0, zIndex: 1, background: "#f8fafc", color: "#0f172a" }}>CSS Layouts</th>
+        <td style={cell}>Intermediate</td>
+        <td style={num}>6</td>
+        <td style={num}>24</td>
+        <td style={num}>19</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Scroll the demo sideways: the course names stay put while the other columns slide past.
+
+:::note Keep the sticky column narrow
+A wide sticky column leaves very little room for scrolling data on a phone. Keep it as short as you can.
+:::
+
+## Technique 3: Fluid Tables
+
+Sometimes a table can simply **shrink and wrap**, without scrolling. That works when:
+
+- There are only a few columns (about two to four).
+- The content is short text.
+- You allow words to wrap.
+
+```css title="style.css"
+table {
+  width: 100%;
+  table-layout: fixed;          /* columns share the width equally (or per <col>) */
+}
+
+th,
+td {
+  overflow-wrap: anywhere;      /* break long words and URLs instead of overflowing */
+  padding: 0.5rem;
+}
+```
+
+You can also shrink the text and padding a little on small screens:
+
+```css title="style.css"
+@media (max-width: 40rem) {
+  th,
+  td {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+```
+
+| Pros | Cons |
+| :-- | :-- |
+| No sideways scrolling | Cells get tall and narrow |
+| Works well for small, simple tables | Breaks down quickly with many columns |
+| Keeps semantics fully intact | Text can become hard to read if it is too small |
+
+Use `<col>` widths (see [Colgroup and Col](./colgroup-and-col)) when you want some columns wider than others.
+
+## Technique 4: Stacked Rows (Cards)
+
+On narrow screens, you can turn each row into a small **card**, with the cell labels shown beside the values. No scrolling is needed, and everything reads top to bottom.
+
+```text
+Wide screen                      Phone screen
+┌────────┬───────┬──────┐        ┌────────────────────┐
+│ Course │ Weeks │ Level│        │ Course: Intro HTML │
+├────────┼───────┼──────┤        │ Weeks:  4          │
+│ HTML   │ 4     │ Begin│        │ Level:  Beginner   │
+│ CSS    │ 6     │ Inter│        ├────────────────────┤
+└────────┴───────┴──────┘        │ Course: CSS        │
+                                 │ Weeks:  6          │
+                                 │ Level:  Intermediate│
+                                 └────────────────────┘
+```
+
+### The Code
+
+First, add a `data-label` to each data cell, repeating its column heading:
+
+```html title="index.html"
+<table class="stack">
+  <caption>Course catalog</caption>
+  <thead>
+    <tr>
+      <th scope="col">Course</th>
+      <th scope="col">Weeks</th>
+      <th scope="col">Level</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" data-label="Course">Intro to HTML</th>
+      <td data-label="Weeks">4</td>
+      <td data-label="Level">Beginner</td>
+    </tr>
+    <tr>
+      <th scope="row" data-label="Course">CSS Layouts</th>
+      <td data-label="Weeks">6</td>
+      <td data-label="Level">Intermediate</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+Then use CSS on small screens to stack the cells, and to show the labels using `attr()`:
+
+```css title="style.css"
+@media (max-width: 40rem) {
+  .stack thead {
+    /* hide the header row visually, but keep it for screen readers */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .stack tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+  }
+
+  .stack th,
+  .stack td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .stack th::before,
+  .stack td::before {
+    content: attr(data-label);
+    font-weight: 600;
+  }
+}
+```
+
+### The Accessibility Warning
+
+This technique is popular, and it is also the **riskiest**. When you change `display` on table elements, some browser and screen reader combinations stop treating the content as a table. The rows, columns, and headings that make it understandable can vanish. The labels added by `::before` are generated content, which some screen readers do not read.
+
+| Pros | Cons |
+| :-- | :-- |
+| No sideways scrolling | Can remove table semantics from assistive technology |
+| Easy to read on a phone | Generated labels may not be read aloud |
+| Looks modern | Hard to compare rows or columns |
+| | Extra code (`data-label` on every cell) |
+
+If you use it, take these precautions:
+
+1. **Keep the header in the HTML**, hidden visually but not removed, as shown above.
+2. **Test with a screen reader** on a real device.
+3. **Add table roles back** if the semantics are lost:
+
+```html
+<table class="stack" role="table">
+  <thead role="rowgroup">
+    <tr role="row">
+      <th role="columnheader" scope="col">Course</th>
+  ...
+  <tbody role="rowgroup">
+    <tr role="row">
+      <th role="rowheader" data-label="Course">Intro to HTML</th>
+      <td role="cell" data-label="Weeks">4</td>
+```
+
+:::warning Consider it carefully
+If your data is for **comparing** (numbers across rows and columns), stacked cards often make the task harder for everyone. Scrolling inside a labeled region is usually the safer choice. Use stacking for simple lists of records, such as contacts or orders, where each row is read on its own.
+:::
+
+## Technique 5: Priority Columns
+
+On a small screen, not every column matters equally. You can show the important columns, and offer the others on demand.
+
+```css title="style.css"
+@media (max-width: 40rem) {
+  .optional {
+    display: none;
+  }
+}
+```
+
+```html
+<th scope="col" class="optional">Hours</th>
+...
+<td class="optional">16</td>
+```
+
+This hides the "Hours" column on narrow screens.
+
+| Pros | Cons |
+| :-- | :-- |
+| Fits the table in the screen without scrolling | **Hides data** from people on small screens |
+| Simple | Setting `display: none` removes the cells from screen readers too, creating different content for different devices |
+
+:::warning Do not hide data without a way back
+Hiding columns means some visitors never see the information. If you use this technique, provide another way to reach it: a "Show all columns" button, a link to a full-width view, or a download of the data. And never hide a column that is essential to understanding a row.
+:::
+
+## Technique 6: Rethink the Data
+
+Sometimes the best answer is **not a table at all** on small screens. Think about what your reader needs.
+
+| If the content is... | Consider... |
+| :-- | :-- |
+| A list of records you read one by one (orders, contacts) | A list of cards, built with real list markup |
+| A comparison between two or three items | Two or three short sections, each with a description list |
+| A big dataset to explore | A scrolling table in a labeled region, plus a **download as CSV** link |
+| A pricing grid | A transposed table (plans as rows) or stacked plan cards |
+
+For one item's properties, a [description list](/tutorials/html/lists/description-lists) is often cleaner than a table with a single row.
+
+## Choosing a Technique
+
+| Situation | Best choice |
+| :-- | :-- |
+| Data table with many columns, users compare values | **Scrolling container** with a sticky first column |
+| Small table, short text, 2 to 4 columns | **Fluid table** that wraps |
+| Simple records that are read row by row | **Stacked cards**, with care |
+| A few columns are optional | **Priority columns**, with a way to see all |
+| Table is really a list of records | A **list** or **description lists** |
+
+A good default: **wrap the table in an accessible scrolling container.** It is simple, keeps the table intact, and works for nearly every table.
+
+## Putting It Together: A Safe Starter
+
+This version combines the safest ideas: a scrolling region, a sticky first column, comfortable spacing, and a minimum width that stops the table from squeezing.
+
+```html title="index.html"
+<div class="table-wrap" role="region" aria-labelledby="plans-caption" tabindex="0">
+  <table class="data-table">
+    <caption id="plans-caption">Plans and prices (USD per month)</caption>
+    <thead>
+      <tr>
+        <th scope="col">Plan</th>
+        <th scope="col">Projects</th>
+        <th scope="col">Storage</th>
+        <th scope="col">Support</th>
+        <th scope="col">Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Free</th>
+        <td>3</td><td>1 GB</td><td>Community</td><td>0</td>
+      </tr>
+      <tr>
+        <th scope="row">Pro</th>
+        <td>Unlimited</td><td>50 GB</td><td>Email</td><td>9</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+```css title="style.css"
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 36rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.data-table tbody th[scope="row"] {
+  position: sticky;
+  left: 0;
+  background: #ffffff;
+}
+```
+
+## Test on Real Screens
+
+- **Resize your browser window** down to 320 pixels wide, the narrowest common phone.
+- **Use the device toolbar** in your browser's developer tools to simulate phones.
+- **Test on a real phone** if you can. Scrolling and touch feel different from a mouse.
+- **Zoom to 200%.** Tables should still be usable.
+- **Try the keyboard.** Can you focus and scroll the region?
+- **Listen with a screen reader,** especially if you restyled table `display` values.
+- **Turn the phone sideways.** Landscape mode gives you extra width, and your table should handle both.
+
+## Global Audience Notes
+
+- **Many visitors use small, older phones** on slow connections. Simple techniques (scrolling, fluid) are lighter than heavy JavaScript solutions.
+- **Translations can be much longer.** A column that fits "Level" in English may need far more room in other languages. Allow wrapping, and avoid fixed pixel widths.
+- **Right-to-left pages** scroll from the right, and sticky columns should use `inset-inline-start` (or `right: 0`) so the label column stays at the correct edge.
+- **Offer data downloads,** such as CSV, for big tables, for people who prefer to work offline or in a spreadsheet.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting the viewport meta tag.**
+2. **Letting a wide table push the whole page sideways** instead of scrolling inside a container.
+3. **A scrolling container that is not keyboard-accessible.** Add `tabindex="0"`, a role, and a name.
+4. **Sticky cells with no background,** so scrolling content shows through.
+5. **Using `display: block` on table elements** and never testing with a screen reader.
+6. **Hiding columns** without any way to reach their data.
+7. **Fixed pixel widths** on columns that overflow small screens.
+8. **Tiny text** to squeeze everything in. Keep it readable.
+9. **Stacking comparison data** so users cannot compare anything.
+10. **Testing only on a desktop browser.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Make a table with six columns, and view it at phone width to see the problem.
+2. Wrap it in a `div` with `overflow-x: auto`.
+3. Add `tabindex="0"`, `role="region"`, and `aria-labelledby` to the wrapper.
+4. Add a visible `:focus-visible` outline to the wrapper.
+5. Make the first column sticky, with a solid background.
+6. Set a `min-width` on the table so it does not squeeze too far.
+7. Try `table-layout: fixed` with `overflow-wrap: anywhere` on a small three-column table.
+8. Build the stacked card layout with `data-label` for a simple contact list.
+9. Add a media query that hides one optional column, and add a "show all" link.
+10. Bonus: test each version with the keyboard, then with a screen reader. Which one was easiest to use?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the simplest way to make a wide table work on a phone?</summary>
+
+Wrap it in a container with `overflow-x: auto`, so the table scrolls sideways inside its own box while the page stays still.
+
+</details>
+
+<details>
+<summary>2. How do you make a scrolling table container accessible?</summary>
+
+Give it `tabindex="0"` so the keyboard can focus it, `role="region"` with `aria-labelledby` (pointing to the caption) so it has a name, and a visible focus outline.
+
+</details>
+
+<details>
+<summary>3. How do you keep the first column visible while scrolling?</summary>
+
+Use `position: sticky; left: 0;` on the first-column cells, with a solid background so other content does not show through.
+
+</details>
+
+<details>
+<summary>4. What is the main risk of stacked card layouts?</summary>
+
+Changing the `display` of table elements can remove table semantics from assistive technology, and generated labels may not be read aloud. Test with a screen reader, keep the header available, and consider adding table roles.
+
+</details>
+
+<details>
+<summary>5. Why be careful with hiding columns on small screens?</summary>
+
+Visitors on small screens would never see that data, and `display: none` also hides it from screen readers. Offer another way to reach it.
+
+</details>
+
+<details>
+<summary>6. What is a good default technique for most data tables?</summary>
+
+An accessible scrolling container: it keeps the real table structure, works with any number of columns, and needs only a little CSS.
+
+</details>
+
+## Key Takeaways
+
+- Tables have a natural minimum width, so on small screens they need help. Start with the viewport meta tag.
+- The safest default is a scrolling container with `overflow-x: auto`, plus `tabindex="0"`, `role="region"`, and a name.
+- Sticky first columns keep row labels visible while scrolling.
+- Fluid tables work for small, simple tables. Stacked cards suit simple records, but need careful testing.
+- Do not hide data without a path back, and do not break table semantics with `display` changes.
+- Test on real phones, with a keyboard, and with a screen reader, and write for small, slow screens and long translations.
+
+You have now covered every part of tables: structure, headings, captions, sections, merged cells, columns, styling, accessibility, and small screens. Return to the [Tables overview](/tutorials/html/tables) to review the full path, or move on to the next section of the HTML course.

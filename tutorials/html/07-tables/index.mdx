@@ -1,16 +1,353 @@
 ---
 id: tables-overview
-title: "Working with HTML Tables"
+title: "HTML Tables"
 sidebar_label: "Tables"
 sidebar_position: 1
 slug: /html/tables
-description: "Master HTML tabular data structure, row/cell formatting, semantic headers, spanning columns and rows, accessible data tables, and responsive layouts with CodeHarborHub."
+description: "Learn how to present data with HTML tables. Understand table, tr, th, and td, captions, thead, tbody, and tfoot, colspan and rowspan, column groups, styling, responsive tables, and accessible tables, with live examples and clear explanations on CodeHarborHub."
 keywords:
-  - HTML tables overview
-  - HTML table tutorial
-  - tabular data HTML
-  - web tables guide
+  - HTML tables
+  - HTML table tag
+  - HTML tr th td
+  - HTML table caption
+  - HTML thead tbody tfoot
+  - HTML colspan rowspan
+  - HTML colgroup
+  - HTML responsive tables
+  - HTML accessible tables
+  - table vs list
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, markup, beginner]
+tags: [html, web-development, beginner, tables, data, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+
+Think about a train timetable, a school report card, a price list, or a sports league table. What do they have in common? The information has **two directions**. You read across to follow one item, and you read down to compare many items. A list cannot do that. A paragraph definitely cannot.
+
+For data that lives in rows and columns, HTML has the **table**. Tables are one of the most powerful (and most misused) parts of HTML. Used well, they make complex data easy to scan and easy for assistive technology to read. Used badly, they create confusing, broken pages. In this section, you will learn to build tables that are clear, well-structured, and friendly to every reader and every screen size.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+In this section, you will be able to:
+
+- Build a table from **`<table>`, `<tr>`, `<th>`, and `<td>`**
+- Understand **rows and cells**, and how they form columns
+- Mark up **heading cells** correctly with `<th>` and `scope`
+- Add a **caption** that names the table
+- Group content into **`<thead>`, `<tbody>`, and `<tfoot>`**
+- Merge cells with **`colspan` and `rowspan`**
+- Style whole columns with **`<colgroup>` and `<col>`**
+- Make tables look good with **CSS**
+- Make wide tables work on small screens with **responsive techniques**
+- Make tables **accessible** to screen reader users
+
+:::info Prerequisites
+You should know what elements and attributes are, and be comfortable with basic text elements. If lists are new to you, review the [Lists](/tutorials/html/lists) section first. It helps to compare the two.
+:::
+
+## Your First Table
+
+Here is a small table with a header row and two rows of data.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>Language</th>
+    <th>Used for</th>
+  </tr>
+  <tr>
+    <td>HTML</td>
+    <td>Structure</td>
+  </tr>
+  <tr>
+    <td>CSS</td>
+    <td>Style</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>Language</th>
+      <th style={head}>Used for</th>
+    </tr>
+    <tr>
+      <td style={cell}>HTML</td>
+      <td style={cell}>Structure</td>
+    </tr>
+    <tr>
+      <td style={cell}>CSS</td>
+      <td style={cell}>Style</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo adds borders and a header background with CSS. By itself, a table has no borders at all, only the data laid out in aligned columns.
+
+## The Anatomy of a Table
+
+A table is built from four main pieces. Learn these four, and you can build most tables.
+
+| Element | Name | Job |
+| :-- | :-- | :-- |
+| `<table>` | Table | The container for everything |
+| `<tr>` | **T**able **R**ow | One horizontal row |
+| `<th>` | **T**able **H**eader cell | A cell that **labels** a column or row. Bold and centered by default |
+| `<td>` | **T**able **D**ata cell | A cell that holds data |
+
+There is no "column" element at the core of a table. **Columns appear on their own** when rows stack up: the first cell of every row forms column 1, the second cell forms column 2, and so on.
+
+```text
+         column 1     column 2
+        ┌───────────┬────────────┐
+ row 1  │ <th>      │ <th>       │   ← header row
+        ├───────────┼────────────┤
+ row 2  │ <td>      │ <td>       │
+        ├───────────┼────────────┤
+ row 3  │ <td>      │ <td>       │
+        └───────────┴────────────┘
+```
+
+:::tip Think in rows
+In HTML, you describe a table **row by row**, from top to bottom, and each row **cell by cell**, from left to right. Columns come for free.
+:::
+
+## The Full Set of Table Elements
+
+Beyond the four basics, HTML has elements that give a table more structure and meaning. You will meet each one in its own lesson.
+
+| Element | Purpose | Lesson |
+| :-- | :-- | :-- |
+| `<caption>` | A title for the table | [Caption](./tables/caption) |
+| `<thead>` | Groups the header rows | [Thead, Tbody, Tfoot](./tables/thead-tbody-tfoot) |
+| `<tbody>` | Groups the main data rows | [Thead, Tbody, Tfoot](./tables/thead-tbody-tfoot) |
+| `<tfoot>` | Groups the footer rows, such as totals | [Thead, Tbody, Tfoot](./tables/thead-tbody-tfoot) |
+| `<colgroup>` and `<col>` | Describe columns, so you can style them | [Colgroup and Col](./tables/colgroup-and-col) |
+
+Here is a fuller table that uses most of them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Monthly sign-ups</caption>
+  <thead>
+    <tr>
+      <th scope="col">Month</th>
+      <th scope="col">Sign-ups</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">January</th>
+      <td>120</td>
+    </tr>
+    <tr>
+      <th scope="row">February</th>
+      <td>180</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row">Total</th>
+      <td>300</td>
+    </tr>
+  </tfoot>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <caption>Monthly sign-ups</caption>
+  <thead>
+    <tr>
+      <th scope="col" style={head}>Month</th>
+      <th scope="col" style={head}>Sign-ups</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row" style={cell}>January</th>
+      <td style={cell}>120</td>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>February</th>
+      <td style={cell}>180</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th scope="row" style={head}>Total</th>
+      <td style={head}>300</td>
+    </tr>
+  </tfoot>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Do not worry about every detail now. Each piece has its own lesson.
+
+## When Should You Use a Table?
+
+Use a table when your content is **data with relationships in two directions**.
+
+| Good use | Why it works |
+| :-- | :-- |
+| Schedules and timetables | Time runs one way, places or events the other |
+| Price and plan comparisons | Features down the side, plans across the top |
+| Scores and statistics | Each row is one team or person, each column a measure |
+| Specifications compared across products | Same properties for many items |
+| Calendars | Days across, weeks down |
+
+### A Simple Test
+
+> **Does the information make sense as a grid, where each cell relates to both its row and its column?**
+
+If yes, use a table. If not, choose another tool:
+
+| If your content is... | Use instead |
+| :-- | :-- |
+| A single group of items | A [list](/tutorials/html/lists/unordered-lists) |
+| One item's properties (name, size, color) | A [description list](/tutorials/html/lists/description-lists) |
+| The visual layout of a page | CSS (Flexbox or Grid) |
+| Text with columns | CSS columns |
+
+## Tables Are for Data, Not for Layout
+
+In the early years of the web, there was no good way to place things side by side, so developers used tables to build whole page layouts: one cell for the logo, one for the menu, one for the content. It worked, but it caused real problems.
+
+- **Screen readers** announce "table, 3 columns, 5 rows" and try to read a page as data when it is not.
+- **Small screens** cannot rearrange a table layout, so pages broke on phones.
+- **Maintenance** was painful, because design and content were tangled together.
+
+Today, CSS **Flexbox** and **Grid** handle layout far better. Keep tables for data.
+
+:::warning Do not use tables for layout
+If you are tempted to use a table to place two things side by side, use CSS Grid or Flexbox instead. A table should always mean "this is data in a grid."
+:::
+
+## Your Learning Path
+
+Follow the lessons in order. Each one builds on the one before.
+
+<DocCardList />
+
+:::note Two bonus lessons
+This section adds two lessons that were not in the original plan: **Colgroup and Col** (`colgroup-and-col.mdx`) and **Styling Tables** (`table-styling.mdx`). Column groups are part of the table model that every complete table course should cover, and tables look unfinished without CSS, so each gets its own page.
+:::
+
+## What Makes a Good Table?
+
+A quick checklist you will understand fully by the end of this section.
+
+1. **It holds real data,** not page layout.
+2. **It has a caption** that says what the table is.
+3. **Its headers use `<th>`,** with `scope` so every cell knows its labels.
+4. **It uses `<thead>`, `<tbody>`, and `<tfoot>`** when the table has meaningful sections.
+5. **It is simple.** Merged cells are used sparingly.
+6. **It is styled with CSS,** not with old HTML attributes like `border` and `bgcolor`.
+7. **It works on small screens,** without hiding data.
+8. **It is accessible,** so people using screen readers can understand it.
+
+## Common Beginner Mistakes
+
+| Mistake | What goes wrong | Where you will fix it |
+| :-- | :-- | :-- |
+| Using tables for page layout | Poor accessibility and broken mobile pages | This page |
+| Using `<td>` for headers and bolding them by hand | Screen readers do not know they are headers | [Table Headings](./tables/table-headings) |
+| No caption | Users do not know what the table is about | [Caption](./tables/caption) |
+| Missing or extra cells in a row | The table looks broken and misaligned | [Table Rows and Cells](./tables/table-rows-and-cells) |
+| Overusing `colspan` and `rowspan` | Complex tables that are hard to navigate | [Colspan and Rowspan](./tables/colspan-rowspan) |
+| Using old attributes like `border` and `cellpadding` | Obsolete HTML | [Styling Tables](./tables/table-styling) |
+| A wide table that breaks the page on phones | Sideways scrolling and cut-off data | [Responsive Tables](./tables/responsive-tables) |
+| No accessible structure | Screen reader users hear a pile of numbers | [Table Accessibility](./tables/table-accessibility) |
+
+## Tables for a Global Audience
+
+Data travels across borders, but how we write it does not. Keep these habits in mind.
+
+- **State units.** "Weight (kg)" in the header is better than repeating "kg" in every cell.
+- **Be careful with number formats.** Some regions write 1,234.56, others 1.234,56. Use clear labels, and consider the `lang` attribute.
+- **Be careful with dates.** "03/04/2026" means March 4 in one country and April 3 in another. Write "4 March 2026," or use `<time datetime="2026-03-04">`.
+- **Right-to-left languages** such as Arabic and Hebrew flip the column order when the page `dir` is set to `rtl`. Use logical CSS properties and test.
+- **Do not rely on color alone** to show up or down trends. Add a symbol or word.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Test yourself. Click a question to reveal the answer.
+
+<details>
+<summary>1. Which four elements make up the core of a table?</summary>
+
+`<table>` (the container), `<tr>` (a row), `<th>` (a header cell), and `<td>` (a data cell).
+
+</details>
+
+<details>
+<summary>2. How are columns created in HTML?</summary>
+
+They are not declared directly. Cells stacked at the same position in each row form a column.
+
+</details>
+
+<details>
+<summary>3. When is a table the right choice?</summary>
+
+When the content is data with relationships in both directions: each cell relates to its row and its column. Schedules, comparisons, and statistics are good examples.
+
+</details>
+
+<details>
+<summary>4. Why should you not use tables for page layout?</summary>
+
+Screen readers treat them as data, they break on small screens, and they mix design with content. Use CSS Grid or Flexbox for layout.
+
+</details>
+
+<details>
+<summary>5. Name three elements that add structure beyond the basics.</summary>
+
+`<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<colgroup>`, and `<col>`. Any three are correct.
+
+</details>
+
+## Key Takeaways
+
+- A table presents **data in rows and columns**, built with `<table>`, `<tr>`, `<th>`, and `<td>`.
+- You write rows and cells. Columns appear automatically.
+- Add meaning with `<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, and `scope`.
+- Use tables for data, never for layout. Use lists or description lists when the data is not a grid.
+- Style with CSS, make tables work on small screens, and make them accessible to everyone.
+- Write units, dates, and numbers clearly, so your data makes sense around the world.
+
+Ready to begin? Start with [Table Basics](./tables/table-basics).

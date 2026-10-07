@@ -1,16 +1,535 @@
 ---
-id: table-headings
-title: "Table Headings and Header Cells: The th Tag"
-sidebar_label: "Headings (th & scope)"
+id: html-table-headings
+title: "HTML Table Headings"
+sidebar_label: "Table Headings"
 sidebar_position: 4
 slug: /html/tables/table-headings
-description: "Learn how to define column and row headers using the th element alongside the scope attribute to improve semantic clarity and screen reader access."
+description: "Learn how to mark up HTML table headings with the th element and the scope attribute. Understand column headers, row headers, the empty corner cell, abbreviations, styling, and how headings help screen reader users understand every cell on CodeHarborHub."
 keywords:
+  - HTML table headings
   - HTML th tag
-  - table header cells
-  - scope attribute table
-  - semantic table headers
+  - HTML scope attribute
+  - th scope col row
+  - row header HTML
+  - column header HTML
+  - HTML table header cell
+  - accessible table headers
+  - th vs td
+  - learn HTML tables
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, tables, headers, accessibility]
+tags: [html, web-development, beginner, tables, th, scope, accessibility, frontend]
 ---
+
+export const cell = { border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left" };
+export const head = { ...cell, background: "#e2e8f0", color: "#0f172a" };
+export const num = { ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+Imagine someone hands you a page of numbers with no labels: 28, 31, 30, 29. What are they? Temperatures? Ages? Scores? The numbers mean nothing until you know what they describe. In a table, **headings give every cell its meaning.**
+
+Sighted readers glance up at the top row, or left at the first column, and understand a cell at once. A screen reader user cannot glance. They depend on your HTML to say which heading belongs to which cell. That is the job of the `<th>` element and its `scope` attribute. In this lesson, you will learn to use them correctly, a skill that makes the biggest single difference in table accessibility.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<th>` is, and how it differs from `<td>`
+- Column headers and row headers
+- How the `scope` attribute links headings to cells
+- How to handle the empty corner cell
+- How to shorten long headings with `abbr`
+- How to style headings
+- Why a bold `<td>` is not a heading
+
+## What Is a `<th>`?
+
+`<th>` stands for **table header cell**. It sits in a row just like a `<td>`, but it carries a different meaning: "this cell is a label for other cells."
+
+| | `<td>` | `<th>` |
+| :-- | :-- | :-- |
+| Meaning | Data | A label for data |
+| Default look | Normal text, left-aligned | **Bold**, centered |
+| Screen readers | Read as a value | Announced as the heading for related cells |
+| Can have `scope` | No | **Yes** |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th>City</th>
+    <th>Temperature (°C)</th>
+  </tr>
+  <tr>
+    <td>Mumbai</td>
+    <td>31</td>
+  </tr>
+  <tr>
+    <td>Cairo</td>
+    <td>28</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th style={head}>City</th>
+      <th style={head}>Temperature (°C)</th>
+    </tr>
+    <tr>
+      <td style={cell}>Mumbai</td>
+      <td style={num}>31</td>
+    </tr>
+    <tr>
+      <td style={cell}>Cairo</td>
+      <td style={num}>28</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+When a screen reader lands on the cell "31," it can say: **"Temperature in degrees Celsius, 31."** That sentence exists only because you used `<th>`.
+
+## Why Not Just Make a `<td>` Bold?
+
+It looks the same, but it means nothing.
+
+<Tabs>
+<TabItem value="bad" label="Looks like a heading" default>
+
+```html
+<tr>
+  <td><strong>City</strong></td>
+  <td><strong>Temperature (°C)</strong></td>
+</tr>
+```
+
+</TabItem>
+<TabItem value="good" label="Is a heading">
+
+```html
+<tr>
+  <th>City</th>
+  <th>Temperature (°C)</th>
+</tr>
+```
+
+</TabItem>
+</Tabs>
+
+With bold `<td>` cells, the browser has no idea these are labels. A screen reader would read "City, Temperature" as two ordinary values, and then "Mumbai, 31" without ever connecting them to their labels. Search engines and other tools also lose the structure.
+
+:::info The rule of thumb
+**Style is CSS's job. Meaning is HTML's job.** If a cell *labels* other cells, it is a `<th>`, whatever it looks like.
+:::
+
+## Column Headers and Row Headers
+
+Headings can label a **column** (reading down) or a **row** (reading across).
+
+### Column Headers
+
+These sit at the top of a column and describe every cell below.
+
+```text
+┌─────────┬────────────┐
+│  City   │ Temperature│   ← column headers (th)
+├─────────┼────────────┤
+│ Mumbai  │    31      │
+│ Cairo   │    28      │
+└─────────┴────────────┘
+```
+
+### Row Headers
+
+These sit at the start of a row and describe every cell to the right. In a table of people, for example, each person's name labels that row.
+
+### Both at Once: A Grid Table
+
+In a two-way table, such as a weekly timetable, you have both. The top row labels the days, and the left column labels the times.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <td></td>
+    <th scope="col">Monday</th>
+    <th scope="col">Tuesday</th>
+  </tr>
+  <tr>
+    <th scope="row">09:00</th>
+    <td>HTML</td>
+    <td>CSS</td>
+  </tr>
+  <tr>
+    <th scope="row">11:00</th>
+    <td>Practice</td>
+    <td>Project</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <td style={cell}></td>
+      <th scope="col" style={head}>Monday</th>
+      <th scope="col" style={head}>Tuesday</th>
+    </tr>
+    <tr>
+      <th scope="row" style={head}>09:00</th>
+      <td style={cell}>HTML</td>
+      <td style={cell}>CSS</td>
+    </tr>
+    <tr>
+      <th scope="row" style={head}>11:00</th>
+      <td style={cell}>Practice</td>
+      <td style={cell}>Project</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Now the cell "CSS" belongs to two headings at once: **Tuesday** and **09:00**. A screen reader can announce it as "Tuesday, 09:00, CSS."
+
+## The `scope` Attribute
+
+`scope` tells the browser (and assistive technology) **which cells a `<th>` labels**.
+
+| Value | Meaning | Use for |
+| :-- | :-- | :-- |
+| `col` | Labels the cells **below** it in its column | Column headers |
+| `row` | Labels the cells **to the right** of it in its row | Row headers |
+| `colgroup` | Labels a whole group of columns | Headers over a `<colgroup>` (advanced) |
+| `rowgroup` | Labels a whole group of rows | Headers over a `<tbody>` (advanced) |
+
+```html
+<th scope="col">Price</th>      <!-- labels everything below -->
+<th scope="row">Notebook</th>   <!-- labels everything to the right -->
+```
+
+### Do I Always Need `scope`?
+
+Modern browsers can often guess: a `<th>` in the first row is probably a column header, and a `<th>` at the start of a row is probably a row header. But **guessing is not guaranteed**, and assistive tools differ. Adding `scope` removes the doubt, so it is a good habit for every `<th>`.
+
+:::tip Simple rule
+Add `scope="col"` to column headers and `scope="row"` to row headers. Leave `colgroup` and `rowgroup` for complex tables.
+:::
+
+### What a Screen Reader Hears
+
+Here is a small price table and how it sounds with correct headings.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th scope="col">Item</th>
+    <th scope="col">Price (USD)</th>
+  </tr>
+  <tr>
+    <th scope="row">Notebook</th>
+    <td>3.50</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th scope="col" style={head}>Item</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Price (USD)</th>
+    </tr>
+    <tr>
+      <th scope="row" style={cell}>Notebook</th>
+      <td style={num}>3.50</td>
+    </tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+On the cell "3.50," a screen reader might say: **"Price in US dollars, Notebook, 3.50."** The user did not have to remember the top row or the left column. The headings travelled with the cell.
+
+## The Empty Corner Cell
+
+In a two-way table, the top-left cell has no heading to describe, since it sits above the row headers and beside the column headers. You have three options:
+
+| Option | Code | When to use |
+| :-- | :-- | :-- |
+| Leave it empty | `<td></td>` | The simplest, usually fine |
+| Label it | `<th scope="col">Time</th>` | When the row headers need a name |
+| Hide a label from sight | `<td><span class="sr-only">Time</span></td>` | Visually empty, but still named for screen readers |
+
+A label such as "Time" in the corner helps everyone, because it names what the row headers are. Choose it when the meaning is not obvious.
+
+```html
+<tr>
+  <th scope="col">Time</th>
+  <th scope="col">Monday</th>
+  <th scope="col">Tuesday</th>
+</tr>
+```
+
+## Long Headings: The `abbr` Attribute
+
+A screen reader repeats a heading for every cell it reads in that column. A long heading, such as "Average monthly rainfall in millimeters," becomes tiring. The `abbr` attribute gives assistive technology a shorter version.
+
+```html
+<th scope="col" abbr="Rainfall">Average monthly rainfall (mm)</th>
+```
+
+Sighted users see the full heading. Some screen readers may announce the short "Rainfall" for each cell. Support varies, so also try to keep headings reasonably short in the first place.
+
+## Styling Headings
+
+Because `<th>` is a real element, you can style it directly with CSS.
+
+```css title="style.css"
+th {
+  background: #e2e8f0;
+  text-align: left;
+}
+
+thead th {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+th[scope="row"] {
+  font-weight: 600;
+  background: #f8fafc;
+}
+```
+
+| Goal | CSS |
+| :-- | :-- |
+| Left-align headings (instead of centered) | `th { text-align: left; }` |
+| Right-align a numeric column's heading | `th.num { text-align: right; }` |
+| Different style for row headers | `th[scope="row"] { ... }` |
+| Different style for column headers | `th[scope="col"] { ... }` |
+| Keep headings visible while scrolling | `thead th { position: sticky; top: 0; }` |
+
+Notice how the `scope` attribute doubles as a **styling hook**, a nice bonus of using it.
+
+## Headings in Different Layouts
+
+### 1. Headings Across the Top (Most Common)
+
+```html
+<tr>
+  <th scope="col">Name</th>
+  <th scope="col">Role</th>
+</tr>
+```
+
+### 2. Headings Down the Side
+
+For data where each row is a "thing" with properties, the first cell of each row can be a row header.
+
+```html
+<tr>
+  <th scope="row">Name</th>
+  <td>Aisha Khan</td>
+</tr>
+<tr>
+  <th scope="row">Role</th>
+  <td>Developer</td>
+</tr>
+```
+
+### 3. Headings on Both Sides
+
+The grid table you built above: `scope="col"` along the top, and `scope="row"` down the left.
+
+### 4. Headings That Span Columns
+
+When a heading covers several columns (for example "Q1" over "Jan, Feb, Mar"), you merge cells with `colspan`. You will learn that in [Colspan and Rowspan](./colspan-rowspan), and the accessible way to label such tables in [Table Accessibility](./table-accessibility).
+
+## Putting It Together: A Report Card
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <tr>
+    <th scope="col">Student</th>
+    <th scope="col">Math</th>
+    <th scope="col">Science</th>
+    <th scope="col">English</th>
+  </tr>
+  <tr>
+    <th scope="row">Aisha</th>
+    <td>92</td>
+    <td>88</td>
+    <td>95</td>
+  </tr>
+  <tr>
+    <th scope="row">Mateo</th>
+    <td>85</td>
+    <td>91</td>
+    <td>79</td>
+  </tr>
+  <tr>
+    <th scope="row">Linh</th>
+    <td>97</td>
+    <td>94</td>
+    <td>90</td>
+  </tr>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table style={{ borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <th scope="col" style={head}>Student</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Math</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>Science</th>
+      <th scope="col" style={{ ...head, textAlign: "right" }}>English</th>
+    </tr>
+    {[
+      ["Aisha", 92, 88, 95],
+      ["Mateo", 85, 91, 79],
+      ["Linh", 97, 94, 90],
+    ].map(([name, math, science, english]) => (
+      <tr key={name}>
+        <th scope="row" style={{ ...cell, background: "#f8fafc" }}>{name}</th>
+        <td style={num}>{math}</td>
+        <td style={num}>{science}</td>
+        <td style={num}>{english}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each score now knows its student and its subject. "Mateo, Science, 91" is what a screen reader user hears.
+
+## Global Audience Notes
+
+- **Write headings in the language of the page,** and keep them short and plain. Translation tools handle short labels best.
+- **Put units in the heading,** such as "Temperature (°C)" or "Price (USD)," instead of repeating them in every cell.
+- **Be specific.** "Date of birth" is clearer than "Date," and "Amount (EUR)" is clearer than "Amount."
+- **In right-to-left languages,** the column order flips when `dir="rtl"` is set, and headings should follow.
+
+## Common Mistakes to Avoid
+
+1. **Bold `<td>` cells instead of `<th>`.** Looks right, means nothing.
+2. **Using `<th>` just to make text bold or centered** in cells that are not labels. Use CSS.
+3. **Leaving out `scope`.** It is easy to add and removes guesswork.
+4. **Wrong `scope` value,** such as `scope="row"` on a top-row heading.
+5. **Empty `<th>` cells.** An empty header has no name. Use `<td>` for an empty corner, or a label.
+6. **Vague headings** like "Value" or "Info."
+7. **Very long headings,** repeated for every cell. Shorten them, or use `abbr`.
+8. **No heading row at all.** Every data table needs labels.
+9. **Putting units in every cell** instead of the heading.
+10. **Relying on color alone** to tell headings from data. The element itself carries the meaning.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a table with a header row using `<th scope="col">`.
+2. Add a first column of row headers using `<th scope="row">`.
+3. Leave the top-left cell empty, then give it a label instead, and compare.
+4. Style `th` so it is left-aligned with a colored background.
+5. Style `th[scope="row"]` differently from `th[scope="col"]`.
+6. Add a unit to a column heading, and remove it from the cells.
+7. Add `abbr` to a long heading.
+8. Make the header row stay visible with `position: sticky`.
+9. Rebuild a table that uses bold `<td>` headers so it uses `<th>` and `scope`.
+10. Bonus: turn on a screen reader and listen to your table cell by cell.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between `<th>` and `<td>`?</summary>
+
+`<th>` labels other cells and is announced as a heading. `<td>` holds data. `<th>` is bold and centered by default.
+
+</details>
+
+<details>
+<summary>2. Why is a bold `<td>` not a good heading?</summary>
+
+It only looks like a heading. Browsers and screen readers do not know it labels other cells, so the connection between headings and data is lost.
+
+</details>
+
+<details>
+<summary>3. What does `scope="col"` mean?</summary>
+
+The `<th>` labels the cells below it in its column. `scope="row"` labels the cells to the right of it in its row.
+
+</details>
+
+<details>
+<summary>4. How do you treat the empty top-left cell in a grid table?</summary>
+
+Leave it as an empty `<td>`, or give it a `<th>` label such as "Time" when the row headers need a name.
+
+</details>
+
+<details>
+<summary>5. What does the `abbr` attribute do on a `<th>`?</summary>
+
+It supplies a shorter version of a long heading for assistive technology that repeats the heading for each cell.
+
+</details>
+
+## Key Takeaways
+
+- `<th>` marks a cell as a **label**. `<td>` marks it as **data**. Meaning belongs in the HTML, and looks belong in the CSS.
+- Use `scope="col"` for column headers and `scope="row"` for row headers.
+- Headings travel with every cell, so a screen reader user always knows what a value means.
+- Keep headings short, specific, and unit-aware, and never leave a `<th>` empty.
+- Style headings with CSS, using `th[scope]` as a handy hook.
+
+Every table needs a heading, but it also needs a title of its own. Learn how to give it one in [Caption](./caption), or return to the [Tables overview](/tutorials/html/tables).

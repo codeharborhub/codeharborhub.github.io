@@ -1,16 +1,483 @@
 ---
-id: unordered-lists
-title: "Creating Unordered Lists with ul and li Tags"
-sidebar_label: "Unordered Lists (<ul>)"
+id: html-unordered-lists
+title: "HTML Unordered Lists"
+sidebar_label: "Unordered Lists"
 sidebar_position: 2
 slug: /html/lists/unordered-lists
-description: "Learn how to build bulleted lists using ul and li tags, adjust bullet styling, and structure unordered collections on web pages."
+description: "Learn how to create HTML unordered (bullet) lists with the ul and li elements. Understand when to use them, what can go inside list items, default styling, real-world examples like feature lists and menus, common mistakes, and best practices on CodeHarborHub."
 keywords:
   - HTML unordered list
-  - ul tag HTML
-  - li list item
-  - bulleted lists HTML
+  - HTML ul tag
+  - HTML li tag
+  - HTML bullet list
+  - ul and li
+  - HTML list items
+  - HTML list-style-type
+  - HTML menu element
+  - ul vs ol
+  - learn HTML lists
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, lists, unordered-list, beginner]
+tags: [html, web-development, beginner, lists, ul, li, frontend]
 ---
+
+Packing for a trip, you might write: *passport, charger, umbrella, sunglasses.* It does not matter which one you pack first. They are just **a group of things that belong together**.
+
+In HTML, that kind of group is an **unordered list**. It is the list you will use most often: for features, ingredients, tags, links, requirements, and many other collections. In this lesson, you will learn how it works, what you can put inside it, and how to use it well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What an unordered list is, and when to use it
+- How `<ul>` and `<li>` work together
+- What can (and cannot) go inside a list
+- What a list looks like by default
+- Real-world patterns: features, links, and menus
+- Common mistakes, and how to avoid them
+
+## The Basics: `<ul>` and `<li>`
+
+An unordered list needs two elements:
+
+| Element | Name | Job |
+| :-- | :-- | :-- |
+| `<ul>` | **U**nordered **L**ist | The container for the whole list |
+| `<li>` | **L**ist **I**tem | One item inside the list |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Pack for the trip</h3>
+<ul>
+  <li>Passport</li>
+  <li>Phone charger</li>
+  <li>Umbrella</li>
+  <li>Sunglasses</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Pack for the trip</h3>
+<ul>
+  <li>Passport</li>
+  <li>Phone charger</li>
+  <li>Umbrella</li>
+  <li>Sunglasses</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each `<li>` becomes a new line with a **bullet marker**. You do not type the bullets yourself. The browser adds them.
+
+:::info Why "unordered"?
+It means the order **does not change the meaning**. Swap "Passport" and "Umbrella," and the list says the same thing. If order does matter, you need an [ordered list](./ordered-lists).
+:::
+
+## Default Appearance
+
+Out of the box, browsers style an unordered list like this:
+
+- Each item starts on a **new line**.
+- Each item gets a **solid round bullet** (called a *disc*).
+- The list is **indented** on the left, usually about 40 pixels, to make room for the bullets.
+- The list has some **space above and below** it.
+
+This is only the default. With CSS, you can change the bullets, remove them, or lay the items out in a row. You will learn that in [Styling Lists](./list-styling). For now, here is a quick preview.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ul style="list-style-type: square;">
+  <li>Square markers</li>
+  <li>Still the same list</li>
+</ul>
+
+<ul style="list-style-type: none;">
+  <li>No markers at all</li>
+  <li>Still the same list</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul style={{ listStyleType: "square" }}>
+  <li>Square markers</li>
+  <li>Still the same list</li>
+</ul>
+
+<ul style={{ listStyleType: "none" }}>
+  <li>No markers at all</li>
+  <li>Still the same list</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip Appearance is CSS's job
+Older HTML used a `type` attribute on `<ul>` to pick bullet shapes. That is now obsolete. Use the CSS property `list-style-type` instead.
+:::
+
+## What Can Go Inside an `<li>`?
+
+A list item can hold almost anything: plain text, links, images, bold text, even paragraphs and other lists.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<ul>
+  <li>Plain text</li>
+  <li>A <a href="#">link</a> inside text</li>
+  <li><strong>Bold text</strong> and <em>emphasis</em></li>
+  <li>
+    A longer item with two paragraphs.
+    <p>The second paragraph stays inside the same item.</p>
+  </li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ul>
+  <li>Plain text</li>
+  <li>A <a href="#">link</a> inside text</li>
+  <li><strong>Bold text</strong> and <em>emphasis</em></li>
+  <li>
+    A longer item with two paragraphs.
+    <p>The second paragraph stays inside the same item.</p>
+  </li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### What Can Go Directly Inside `<ul>`?
+
+This is the part beginners often get wrong. The only elements allowed as **direct children** of `<ul>` are `<li>` elements. (Script-supporting elements like `<script>` and `<template>` are also allowed, but you will rarely need them here.)
+
+<Tabs>
+<TabItem value="wrong" label="Invalid" default>
+
+```html
+<ul>
+  <h4>My list</h4>      <!-- heading inside ul -->
+  <li>One</li>
+  <p>Two</p>            <!-- paragraph inside ul -->
+  Three                 <!-- loose text -->
+</ul>
+```
+
+</TabItem>
+<TabItem value="right" label="Valid">
+
+```html
+<h4>My list</h4>        <!-- heading goes before the list -->
+<ul>
+  <li>One</li>
+  <li>Two</li>
+  <li>Three</li>
+</ul>
+```
+
+</TabItem>
+</Tabs>
+
+Browsers will usually show invalid lists anyway, which is why the mistake goes unnoticed. But screen readers and tools can get confused. Keep the structure clean.
+
+## When to Use an Unordered List
+
+Use `<ul>` when you have a **group of related items where the order does not matter**.
+
+| Good use | Example |
+| :-- | :-- |
+| Features of a product | Fast, Secure, Free |
+| Ingredients | Flour, sugar, eggs |
+| Requirements | Laptop, internet, a text editor |
+| Tags or categories | HTML, CSS, JavaScript |
+| A set of links | Menu items, related articles |
+| Pros and cons | Each side as its own list |
+
+### Not a Good Use
+
+- **Steps that must happen in order:** use [`<ol>`](./ordered-lists).
+- **Terms with definitions:** use [`<dl>`](./description-lists).
+- **A single sentence or idea:** use a paragraph. A list with one item is rarely useful.
+- **Layout only:** if you want items side by side and nothing is really a list, use CSS layout on `<div>` elements instead.
+
+## Real-World Examples
+
+### 1. A Feature List
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Why learn HTML?</h3>
+<ul>
+  <li><strong>Every site uses it.</strong> It is the base of the web.</li>
+  <li><strong>Easy to start.</strong> You need only a text editor.</li>
+  <li><strong>Free.</strong> No cost to learn or to publish.</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Why learn HTML?</h3>
+<ul>
+  <li><strong>Every site uses it.</strong> It is the base of the web.</li>
+  <li><strong>Easy to start.</strong> You need only a text editor.</li>
+  <li><strong>Free.</strong> No cost to learn or to publish.</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### 2. A List of Links
+
+Menus and "related articles" are really lists of links.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Related lessons</h3>
+<ul>
+  <li><a href="/html/text-content/headings">Headings</a></li>
+  <li><a href="/html/links-and-navigation/anchor-element">The anchor element</a></li>
+  <li><a href="/html/images">Images</a></li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Related lessons</h3>
+<ul>
+  <li><a href="#">Headings</a></li>
+  <li><a href="#">The anchor element</a></li>
+  <li><a href="#">Images</a></li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the live demo, the links use `#` so that nothing navigates away. In your project, they point to real pages.
+
+### 3. A Navigation Menu
+
+Placing a list inside `<nav>` marks it as site navigation. With a little CSS, it becomes a horizontal menu. You built one in [Navigation Menus](/tutorials/html/links-and-navigation/navigation-menus).
+
+```html
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/courses">Courses</a></li>
+    <li><a href="/about">About</a></li>
+  </ul>
+</nav>
+```
+
+### 4. Pros and Cons
+
+When you compare two things, give each side its own list under a clear heading.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h4>Pros</h4>
+<ul>
+  <li>Quick to learn</li>
+  <li>Works in every browser</li>
+</ul>
+
+<h4>Cons</h4>
+<ul>
+  <li>Needs CSS for styling</li>
+  <li>Needs JavaScript for behavior</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h4>Pros</h4>
+<ul>
+  <li>Quick to learn</li>
+  <li>Works in every browser</li>
+</ul>
+
+<h4>Cons</h4>
+<ul>
+  <li>Needs CSS for styling</li>
+  <li>Needs JavaScript for behavior</li>
+</ul>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Writing Good List Items
+
+A list is only as useful as its items. These habits make lists easier to scan, and easier to translate.
+
+1. **Keep items short.** Aim for a phrase or one sentence. If an item needs a full paragraph, ask whether a list is the right tool.
+2. **Make items parallel.** Start each one the same way. "Install Node," "Create a folder," "Run the server" reads better than a mix of styles.
+3. **Be consistent with punctuation.** Use a period after every item if they are full sentences, or none if they are short phrases. Do not mix.
+4. **Put the key word first.** People scan the start of each line.
+5. **Introduce the list.** A heading or sentence before it ("You will need:") gives context.
+6. **Do not nest too deep.** One or two levels is plenty. More makes a list hard to follow.
+
+<Tabs>
+<TabItem value="messy" label="Messy" default>
+
+```html
+<ul>
+  <li>you should install node.</li>
+  <li>Creating a folder</li>
+  <li>The server must be run</li>
+</ul>
+```
+
+</TabItem>
+<TabItem value="clean" label="Clean">
+
+```html
+<ul>
+  <li>Install Node.</li>
+  <li>Create a folder.</li>
+  <li>Run the server.</li>
+</ul>
+```
+
+</TabItem>
+</Tabs>
+
+## The `<menu>` Element: A Close Cousin
+
+You may also meet a `<menu>` element. In modern HTML it is a semantic alternative to `<ul>` for **toolbars and sets of commands** (such as Bold, Italic, Underline buttons). It behaves like `<ul>` and contains `<li>` items.
+
+```html
+<menu>
+  <li><button type="button">Bold</button></li>
+  <li><button type="button">Italic</button></li>
+</menu>
+```
+
+For ordinary bullet lists and navigation, stick with `<ul>`. It is the choice everyone expects, and the one with the best tool support.
+
+## Accessibility at a Glance
+
+Screen readers announce a real `<ul>` as "list, 4 items," and let users jump between items. This is one more reason to use true lists.
+
+- **Do not fake lists** with `<br />` and dashes. Assistive technology will not announce them as lists.
+- **Be careful with `list-style: none`.** In some browsers, removing the bullets can also remove the list semantics from screen readers. If you hide the bullets on a list that is still a list, add `role="list"` to `<ul>`. You will see why in [Accessible Lists](./accessible-lists).
+
+## Common Mistakes to Avoid
+
+1. **Putting text, headings, or `<p>` directly inside `<ul>`.** Only `<li>` is allowed there.
+2. **Forgetting to close `<li>` or `<ul>`.** Missing tags can break the layout of everything after the list.
+3. **Using `<ul>` for ordered steps.** If someone must follow the sequence, use `<ol>`.
+4. **Using a list for a single item.** One bullet is just a sentence.
+5. **Faking bullets with characters** like `•`, `-`, or `*` inside paragraphs.
+6. **Using `<ul>` only for indentation.** Use CSS margin or padding for spacing.
+7. **Using the obsolete `type` attribute.** Choose bullet shapes with CSS `list-style-type`.
+8. **Mixed, inconsistent items.** Keep wording and punctuation parallel.
+
+## Practice Time
+
+Open your editor and try these:
+
+1. Write a bullet list of five things you want to learn this year.
+2. Add a heading above the list that introduces it.
+3. Turn one item into a link, and make another one bold.
+4. Make a list of three of your favorite websites as links.
+5. Wrap a list of links in `<nav>` to make a simple menu.
+6. Write "Pros" and "Cons" lists for a tool you use.
+7. Change the bullets to squares, then remove them, using `list-style-type`.
+8. Rewrite a messy list so that all items start the same way.
+9. Bonus: add a second paragraph inside one `<li>`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which two elements make an unordered list?</summary>
+
+`<ul>` is the list container, and each entry inside it is an `<li>`.
+
+</details>
+
+<details>
+<summary>2. When should you choose `<ul>` instead of `<ol>`?</summary>
+
+When the order of the items does not change their meaning, such as ingredients, features, or links.
+
+</details>
+
+<details>
+<summary>3. What are the only elements allowed directly inside `<ul>`?</summary>
+
+`<li>` elements. Headings, paragraphs, and loose text must go inside an `<li>` or outside the list.
+
+</details>
+
+<details>
+<summary>4. How do you change the bullet shape?</summary>
+
+With the CSS property `list-style-type`, for example `square` or `none`. The old `type` attribute is obsolete.
+
+</details>
+
+<details>
+<summary>5. Why is a real list better than dashes and `<br />`?</summary>
+
+Screen readers, search engines, and CSS all understand a real list, but they cannot tell that a fake one is a list.
+
+</details>
+
+## Key Takeaways
+
+- An unordered list is a `<ul>` with `<li>` items, for groups where order does not matter.
+- Only `<li>` elements belong directly inside `<ul>`. An `<li>` itself can hold text, links, images, and more.
+- Browsers add bullets and indentation by default. Change them with CSS, not with HTML attributes.
+- Menus, link groups, and feature lists are all unordered lists in disguise.
+- Write short, parallel items, introduce the list, and always use a real list instead of faking one.
+
+Your lists can now hold a group of things. But what about steps that must happen in a certain sequence? Move on to [Ordered Lists](./ordered-lists), or go back to the [Lists overview](/tutorials/html/lists).

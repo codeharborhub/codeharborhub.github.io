@@ -1,16 +1,566 @@
 ---
-id: description-lists
-title: "Structuring Definition and Description Lists with dl, dt, and dd"
-sidebar_label: "Description Lists (<dl>)"
+id: html-description-lists
+title: "HTML Description Lists"
+sidebar_label: "Description Lists"
 sidebar_position: 4
 slug: /html/lists/description-lists
-description: "Learn how to construct semantic term-value pairings, glossaries, and metadata lists using dl, dt, and dd HTML tags."
+description: "Learn how to create HTML description lists with the dl, dt, and dd elements. Pair terms with meanings for glossaries, FAQs, product specs, and metadata. Covers grouping with div, multiple terms and descriptions, styling, accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML description list
-  - dl dt dd tags
+  - HTML dl tag
+  - HTML dt tag
+  - HTML dd tag
   - HTML definition list
-  - key value pairing HTML
+  - HTML glossary
+  - HTML key value list
+  - dl dt dd
+  - HTML FAQ markup
+  - learn HTML lists
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, lists, description-list, semantics]
+tags: [html, web-development, beginner, lists, dl, dt, dd, frontend]
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+Open a dictionary and you will see a simple pattern: a **word**, followed by its **meaning**. Open a product page and you will see another one: **"Weight"**, followed by **"1.2 kg"**. The same shape appears on contact cards, recipe info boxes, and glossaries. Each time, a **name** is paired with a **value**.
+
+Bullet lists and numbered lists hold *items*. They do not hold *pairs*. For pairs, HTML has the **description list**. It is the least known of the three list types, but once you see it, you will notice places to use it everywhere.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a description list is, and when to use it
+- How `<dl>`, `<dt>`, and `<dd>` work together
+- How to attach several terms or several descriptions to each other
+- How to group pairs with `<div>` for easier styling
+- Real-world patterns: glossaries, product specs, metadata, and FAQs
+- Styling, accessibility, and common mistakes
+
+## The Basics: `<dl>`, `<dt>`, and `<dd>`
+
+A description list has three elements.
+
+| Element | Name | Job |
+| :-- | :-- | :-- |
+| `<dl>` | **D**escription **L**ist | The container for the whole list |
+| `<dt>` | **D**escription **T**erm | The **name** (the word, label, or question) |
+| `<dd>` | **D**escription **D**etails | The **value** (the meaning, answer, or data) |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<dl>
+  <dt>HTML</dt>
+  <dd>The language that gives a web page its structure.</dd>
+
+  <dt>CSS</dt>
+  <dd>The language that controls how a page looks.</dd>
+
+  <dt>JavaScript</dt>
+  <dd>The language that makes a page interactive.</dd>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<dl>
+  <dt>HTML</dt>
+  <dd>The language that gives a web page its structure.</dd>
+
+  <dt>CSS</dt>
+  <dd>The language that controls how a page looks.</dd>
+
+  <dt>JavaScript</dt>
+  <dd>The language that makes a page interactive.</dd>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+By default, browsers show each `<dd>` on a new line, **indented** under its term (usually about 40 pixels). The terms are not bold unless you style them.
+
+:::info Description, not just definition
+Older HTML called this a "definition list," because it was first made for dictionaries. Modern HTML calls it a **description list**, since it fits any name-value pairing: glossary terms, settings, contact details, and more.
+:::
+
+## How It Compares to the Other Lists
+
+| | `<ul>` | `<ol>` | `<dl>` |
+| :-- | :-- | :-- | :-- |
+| Holds | Items | Items in sequence | **Name-value pairs** |
+| Child elements | `<li>` | `<li>` | `<dt>` and `<dd>` |
+| Default look | Bullets | Numbers | Indented details, no markers |
+| Use for | Features, links | Steps, rankings | Glossaries, specs, metadata |
+
+## One Term, Many Descriptions (and the Reverse)
+
+The pairing is flexible. You can attach more than one `<dd>` to a term, or more than one `<dt>` to a description.
+
+### Several Descriptions for One Term
+
+A word can have more than one meaning.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<dl>
+  <dt>Cookie</dt>
+  <dd>A sweet baked snack.</dd>
+  <dd>A small piece of data a website stores in your browser.</dd>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<dl>
+  <dt>Cookie</dt>
+  <dd>A sweet baked snack.</dd>
+  <dd>A small piece of data a website stores in your browser.</dd>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Several Terms for One Description
+
+Two names can share one meaning, such as a short form and a full form.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<dl>
+  <dt>Color</dt>
+  <dt>Colour</dt>
+  <dd>The look of something as shown by the light it reflects.</dd>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<dl>
+  <dt>Color</dt>
+  <dt>Colour</dt>
+  <dd>The look of something as shown by the light it reflects.</dd>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+This is helpful for spelling variants around the world, such as American and British English.
+
+## Grouping Pairs with `<div>`
+
+When you have many pairs, it helps to wrap each group of `<dt>` and `<dd>` in a `<div>`. HTML allows this, and it makes styling much easier, because each pair becomes one box you can lay out on its own.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<dl>
+  <div>
+    <dt>Name</dt>
+    <dd>Aisha Khan</dd>
+  </div>
+  <div>
+    <dt>Role</dt>
+    <dd>Front-end developer</dd>
+  </div>
+  <div>
+    <dt>Location</dt>
+    <dd>Lagos, Nigeria</dd>
+  </div>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<dl>
+  <div>
+    <dt>Name</dt>
+    <dd>Aisha Khan</dd>
+  </div>
+  <div>
+    <dt>Role</dt>
+    <dd>Front-end developer</dd>
+  </div>
+  <div>
+    <dt>Location</dt>
+    <dd>Lagos, Nigeria</dd>
+  </div>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::warning Only a plain `<div>`
+Inside a `<dl>`, the only wrapper allowed is a `<div>` that contains `<dt>` and `<dd>` elements. Do not put `<p>`, `<section>`, or any other element between `<dl>` and its terms and details.
+:::
+
+## What Goes Inside `<dt>` and `<dd>`?
+
+- A **`<dt>`** holds the term. Keep it short and text-like. Do not put headings or sectioning elements inside it.
+- A **`<dd>`** can hold anything flow content allows: text, links, images, paragraphs, and even other lists.
+
+```html
+<dl>
+  <dt>Languages</dt>
+  <dd>
+    <ul>
+      <li>HTML</li>
+      <li>CSS</li>
+      <li>JavaScript</li>
+    </ul>
+  </dd>
+</dl>
+```
+
+## Real-World Examples
+
+### 1. A Glossary
+
+The classic use. Pair the `<dfn>` element (the term being defined) with a `<dt>` for extra clarity.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Web glossary</h3>
+<dl>
+  <dt><dfn>Browser</dfn></dt>
+  <dd>A program that opens and displays web pages.</dd>
+
+  <dt><dfn>Server</dfn></dt>
+  <dd>A computer that stores web pages and sends them to browsers.</dd>
+
+  <dt><dfn>URL</dfn></dt>
+  <dd>The address of a page or file on the web.</dd>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Web glossary</h3>
+<dl>
+  <dt><dfn>Browser</dfn></dt>
+  <dd>A program that opens and displays web pages.</dd>
+
+  <dt><dfn>Server</dfn></dt>
+  <dd>A computer that stores web pages and sends them to browsers.</dd>
+
+  <dt><dfn>URL</dfn></dt>
+  <dd>The address of a page or file on the web.</dd>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You met `<dfn>` in [Semantic Text](/tutorials/html/text-content/semantic-text). Here it marks the exact place where each term is defined.
+
+### 2. Product Details or Specs
+
+Specs are labels paired with values, so `<dl>` is the natural choice. A table works too when you compare many products, but for one item a description list is lighter.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Trail Backpack</h3>
+<dl>
+  <div>
+    <dt>Capacity</dt>
+    <dd>30 liters</dd>
+  </div>
+  <div>
+    <dt>Weight</dt>
+    <dd>1.1 kg</dd>
+  </div>
+  <div>
+    <dt>Colors</dt>
+    <dd>Green, black, orange</dd>
+  </div>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Trail Backpack</h3>
+<dl>
+  <div>
+    <dt>Capacity</dt>
+    <dd>30 liters</dd>
+  </div>
+  <div>
+    <dt>Weight</dt>
+    <dd>1.1 kg</dd>
+  </div>
+  <div>
+    <dt>Colors</dt>
+    <dd>Green, black, orange</dd>
+  </div>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### 3. Article Metadata
+
+Author, date, and category are classic name-value pairs.
+
+```html
+<dl>
+  <dt>Author</dt>
+  <dd>Mateo Alvarez</dd>
+
+  <dt>Published</dt>
+  <dd><time datetime="2026-10-05">5 October 2026</time></dd>
+
+  <dt>Category</dt>
+  <dd><a href="/tutorials/html">HTML</a></dd>
+</dl>
+```
+
+### 4. An FAQ
+
+A question paired with its answer is a name-value pair, too. Many sites use `<dl>` for FAQs.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h3>Frequently asked questions</h3>
+<dl>
+  <dt>Is HTML a programming language?</dt>
+  <dd>No. It is a markup language that describes the structure of content.</dd>
+
+  <dt>Do I need to install anything?</dt>
+  <dd>No. A text editor and a browser are enough.</dd>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<h3>Frequently asked questions</h3>
+<dl>
+  <dt>Is HTML a programming language?</dt>
+  <dd>No. It is a markup language that describes the structure of content.</dd>
+
+  <dt>Do I need to install anything?</dt>
+  <dd>No. A text editor and a browser are enough.</dd>
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip Want collapsible answers?
+For an FAQ where the answers expand and collapse, the `<details>` and `<summary>` elements are a better fit. Choose `<dl>` when all answers should stay visible.
+:::
+
+## Styling a Description List
+
+Browsers give a plain look. A little CSS turns it into a clean "label and value" layout.
+
+<Tabs>
+<TabItem value="code" label="HTML + CSS" default>
+
+```html title="index.html"
+<style>
+  .specs div {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .specs dt {
+    font-weight: 700;
+    min-width: 8rem;
+  }
+  .specs dd {
+    margin: 0;
+  }
+</style>
+
+<dl class="specs">
+  <div><dt>Capacity</dt><dd>30 liters</dd></div>
+  <div><dt>Weight</dt><dd>1.1 kg</dd></div>
+  <div><dt>Colors</dt><dd>Green, black, orange</dd></div>
+</dl>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<dl>
+  {[
+    ["Capacity", "30 liters"],
+    ["Weight", "1.1 kg"],
+    ["Colors", "Green, black, orange"],
+  ].map(([term, detail]) => (
+    <div
+      key={term}
+      style={{
+        display: "flex",
+        gap: "1rem",
+        padding: "0.5rem 0",
+        borderBottom: "1px solid #cbd5e1",
+      }}
+    >
+      <dt style={{ fontWeight: 700, minWidth: "8rem" }}>{term}</dt>
+      <dd style={{ margin: 0 }}>{detail}</dd>
+    </div>
+  ))}
+</dl>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here are other common touches:
+
+- Make `<dt>` **bold** to set it apart.
+- Remove the default `margin-left` on `<dd>` for a compact look.
+- Use CSS Grid (`grid-template-columns`) for aligned label and value columns.
+- Use `<div>` groups to add borders or backgrounds to each pair.
+
+## Description List or Table?
+
+Both show labels and values. How do you pick?
+
+| Use `<dl>` when... | Use `<table>` when... |
+| :-- | :-- |
+| One item has several properties | Many items share the same properties |
+| Each label has one (or a few) values | You need rows **and** columns |
+| You want a lightweight, readable block | You want to compare across rows |
+| Example: one product's specs | Example: ten products side by side |
+
+## Accessibility at a Glance
+
+- Screen readers can announce a description list and move through its terms and details. Support has improved over the years, but it still varies between tools, so keep the content clear without depending on structure alone.
+- **Keep every `<dd>` paired** with a `<dt>`. A detail without a term is confusing.
+- Put the **term first**, then its description.
+- Do not use `<dl>` just to indent text or build a layout. Use CSS for that.
+- Write terms and details so they make sense when read aloud: "Weight, 1.1 kilograms."
+- For a global audience, include units (kg, liters) and spell out formats (such as dates) to avoid confusion across regions.
+
+## Common Mistakes to Avoid
+
+1. **Using `<dl>` for plain bullet items.** If there is no name and value, use `<ul>`.
+2. **Putting `<dd>` before `<dt>`.** The term comes first.
+3. **Wrapping pairs in elements other than `<div>`.** Only a plain `<div>` is allowed inside `<dl>`.
+4. **Putting `<p>` or `<li>` directly inside `<dl>`.** Only `<dt>`, `<dd>`, and grouping `<div>` elements belong there.
+5. **Using headings inside `<dt>`.** Keep terms short and simple.
+6. **Using `<dl>` for layout** such as an image next to a caption. Use `<figure>` or CSS.
+7. **Leaving a term with no details** (or the reverse).
+8. **Forgetting to style it.** The default look is plain, so a little CSS goes a long way.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a glossary with four web terms, and wrap each term in `<dfn>`.
+2. Write a "contact card" with Name, Email, and City as a `<dl>`.
+3. Give one term two descriptions.
+4. Give one description two terms (for example, two spelling variants).
+5. Wrap each pair in a `<div>`, then add a border under each with CSS.
+6. Make the terms bold and give them a fixed width, so the values line up.
+7. Put a bullet list inside one `<dd>`.
+8. Write a three-question FAQ with a `<dl>`.
+9. Add an article's author, date, and category, and use `<time>` for the date.
+10. Bonus: build the same data as a `<table>`, then decide which fits better.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which three elements make a description list?</summary>
+
+`<dl>` is the list, `<dt>` is the term, and `<dd>` is the description of that term.
+
+</details>
+
+<details>
+<summary>2. What kind of content suits a description list?</summary>
+
+Name-value pairs: glossary terms and meanings, product specs, contact details, article metadata, and FAQs.
+
+</details>
+
+<details>
+<summary>3. Can one term have several descriptions?</summary>
+
+Yes. You can place several `<dd>` elements after a `<dt>`, and you can also put several `<dt>` elements before one `<dd>`.
+
+</details>
+
+<details>
+<summary>4. How can you group a term and its details for easier styling?</summary>
+
+Wrap them in a `<div>` inside the `<dl>`. A plain `<div>` is the only wrapper allowed.
+
+</details>
+
+<details>
+<summary>5. How do you choose between `<dl>` and `<table>`?</summary>
+
+Use `<dl>` for one item's properties. Use `<table>` when many items share the same properties and you need to compare across rows and columns.
+
+</details>
+
+## Key Takeaways
+
+- A description list pairs **terms** with **descriptions** using `<dl>`, `<dt>`, and `<dd>`.
+- It fits glossaries, specs, metadata, and FAQs, anywhere you have a name and a value.
+- One term can have several descriptions, and several terms can share one description.
+- A plain `<div>` can group each pair, which makes styling easy.
+- Keep terms short, put the term before the details, and use CSS for appearance and layout.
+
+So far, each list has been flat. What if an item needs its own sub-list? That is the job of [Nested Lists](./nested-lists). You can also go back to the [Lists overview](/tutorials/html/lists).
