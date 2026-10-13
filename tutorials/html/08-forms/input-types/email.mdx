@@ -1,18 +1,485 @@
 ---
-id: input-type-email
-title: "Email Inputs: type='email'"
+id: html-input-email
+title: "HTML Input Type Email"
 sidebar_label: "Email"
 sidebar_position: 3
 slug: /html/forms/input-types/email
-description: "Use input type='email' to enforce browser-native email syntax validation and trigger email-optimized virtual keypads on mobile devices."
+description: "Learn the HTML input type email: built-in format checking, the @ keyboard on phones, the multiple attribute, autocomplete values, trimming, international addresses, why the browser check is not proof, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type email
-  - email input validation
-  - mobile keyboard email
-  - email input multiple attribute
+  - email input validation HTML
+  - input email multiple attribute
+  - autocomplete email username
+  - email pattern attribute
+  - typeMismatch email
+  - international email addresses HTML
+  - email field accessibility
+  - HTML email keyboard mobile
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, email]
+tags: [html, web-development, beginner, forms, input, email, validation, frontend]
 ---
+
+import {useState} from 'react';
+
+export function EmailCheckDemo() {
+  const [message, setMessage] = useState("Type an address, then press Check.");
+  const [ok, setOk] = useState(null);
+  return (
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const input = event.currentTarget.elements.namedItem("email");
+        if (input.validity.valueMissing) {
+          setOk(false);
+          setMessage("Empty: the field is required.");
+        } else if (input.validity.typeMismatch) {
+          setOk(false);
+          setMessage("Not a valid email shape (typeMismatch).");
+        } else {
+          setOk(true);
+          setMessage("Looks like an email address. (Not proof that it exists!)");
+        }
+      }}
+    >
+      <label htmlFor="em-demo">Email</label><br />
+      <input type="email" id="em-demo" name="email" required autoComplete="email" />{" "}
+      <button type="submit">Check</button>
+      <p role="status" style={{margin: "0.5rem 0 0", color: ok === null ? "inherit" : ok ? "#15803d" : "#b91c1c"}}>
+        {message}
+      </p>
+    </form>
+  );
+}
+
+An email address is the key to almost every account online. It is how you sign in, reset a lost password, and get a receipt. So it is one of the most common things a form asks for, and `type="email"` is the input made for it.
+
+It gives you three things for free: a keyboard with an `@` key on phones, a basic format check before the form is sent, and better autofill. But it also comes with a trap: people assume the browser can tell whether an address is **real**. It cannot. In this lesson, you will learn what it does check, what it does not, and how to build a friendly, accessible email field.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="email"` does, and the keyboard and checks it gives you
+- Exactly what counts as "valid" to the browser
+- The `multiple` attribute for several addresses
+- The right `autocomplete` values
+- How trimming and international addresses work
+- Why the server must still confirm the address
+- Accessibility, styling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="email">Email address</label>
+<input type="email" id="email" name="email" autocomplete="email" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="em-basic">Email address</label><br />
+  <input type="email" id="em-basic" name="email" autoComplete="email" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+On the screen, it looks like a plain text box. The differences are behind the scenes:
+
+- **Phones** show a keyboard with `@` and `.` close at hand.
+- **On submit**, the browser checks that the text looks like an email address, and blocks the form with a message if it does not.
+- **Leading and trailing spaces** are removed from the value automatically.
+- **Autofill** can offer the visitor's saved addresses.
+- The value is sent as text: `email=ada%40example.com`.
+
+## What Counts as Valid?
+
+The browser applies a deliberately **simple** rule. The value must look like:
+
+```text
+something @ something
+```
+
+More exactly, it needs a local part, an `@`, and a domain made of allowed characters. That is all.
+
+| Value | Valid to the browser? | Why |
+| :-- | :-- | :-- |
+| `ada@example.com` | Yes | Looks right |
+| `ada@localhost` | **Yes** | No dot is required in the domain |
+| `a@b` | **Yes** | Extremely short, but it has the shape |
+| `ada@example` | **Yes** | Same reason |
+| `ada.example.com` | No | No `@` |
+| `ada@` | No | Nothing after the `@` |
+| `@example.com` | No | Nothing before the `@` |
+| `ada @example.com` | No | A space inside |
+| `ada@@example.com` | No | Two `@` characters |
+| (empty) | **Yes**, unless `required` | An empty field is skipped by format checks |
+
+Two points surprise beginners:
+
+1. **`ada@example` passes.** The shape is right, even though it may not be a real, reachable address.
+2. **An empty field is valid.** Add `required` if the address is mandatory.
+
+:::warning The browser cannot know if an address is real
+`type="email"` checks the **shape** of what was typed. It cannot tell whether the mailbox exists, whether it belongs to the visitor, or whether it has a typing mistake like `gmial.com`. The only proof is to **send a message** to the address and ask the person to click a link inside it.
+:::
+
+## Try It: Checking the Shape
+
+Type different values and press Check. The demo reads the browser's own validity state.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form novalidate>
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" required autocomplete="email" />
+  <button type="submit">Check</button>
+  <p id="result" role="status"></p>
+</form>
+```
+
+```js title="script.js"
+const form = document.querySelector("form");
+const input = document.getElementById("email");
+const result = document.getElementById("result");
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  if (input.validity.valueMissing) {
+    result.textContent = "Empty: the field is required.";
+  } else if (input.validity.typeMismatch) {
+    result.textContent = "Not a valid email shape.";
+  } else {
+    result.textContent = "Looks like an email address.";
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EmailCheckDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Things to notice:
+
+- `typeMismatch` is the browser's name for "this is not the right shape for the type."
+- `valueMissing` means a required field is empty.
+- The `novalidate` attribute turns off the browser's built-in message bubbles, so our own message can show. Normally, you leave it off.
+- Try `ada@example`. It passes, as described above.
+
+You will learn the full validity API in [Form Validation](../form-validation).
+
+## Attributes for Email Inputs
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server | `name="email"` |
+| `id` | Connects the [label](../label-element) | `id="email"` |
+| `value` | The starting address | `value="ada@example.com"` |
+| `placeholder` | A short example (never a label) | `placeholder="name@example.com"` |
+| `required` | Cannot be left empty | `required` |
+| `multiple` | Allows several comma-separated addresses | `multiple` |
+| `minlength`, `maxlength` | Length limits | `maxlength="254"` |
+| `pattern` | An extra rule, as a regular expression | `pattern=".+@example\.com"` |
+| `size` | Visible width in characters | `size="30"` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="team-emails"` |
+| `autocomplete` | Tells the browser what to fill in | `autocomplete="email"` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `inputmode` | Keyboard hint (email already implies one) | `inputmode="email"` |
+| `autocapitalize` | Capitalization on phones | `autocapitalize="none"` |
+| `spellcheck` | Red underlines | `spellcheck="false"` |
+
+A useful default combination for most forms:
+
+```html
+<input
+  type="email"
+  id="email"
+  name="email"
+  autocomplete="email"
+  autocapitalize="none"
+  spellcheck="false"
+  required
+/>
+```
+
+- `autocapitalize="none"` stops a phone from turning `ada` into `Ada`.
+- `spellcheck="false"` removes the distracting red lines under addresses.
+
+## Several Addresses with `multiple`
+
+Add the boolean attribute `multiple`, and the visitor can type more than one address, separated by commas. The browser checks **each** one.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="invite">Invite friends (separate with commas)</label>
+<input
+  type="email"
+  id="invite"
+  name="invite"
+  multiple
+  placeholder="ada@example.com, grace@example.com"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="em-multi">Invite friends (separate with commas)</label><br />
+  <input
+    type="email"
+    id="em-multi"
+    name="invite"
+    multiple
+    placeholder="ada@example.com, grace@example.com"
+    size={40}
+  />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+- Spaces around the commas are fine. The browser trims each address.
+- The value is sent as **one string**: `invite=ada%40example.com%2C+grace%40example.com`. Your server must split it at the commas.
+- Always tell the visitor to use commas, because the field looks like an ordinary box.
+
+## Adding Your Own Rules with `pattern`
+
+The built-in check is loose. If you need more, `pattern` adds a rule **on top of** it. The address must pass both.
+
+```html
+<label for="work">Work email (company addresses only)</label>
+<input
+  type="email"
+  id="work"
+  name="work"
+  pattern=".+@codeharborhub\.com"
+  title="Use your @codeharborhub.com address"
+  required
+/>
+```
+
+- `title` is shown in the browser's message when the pattern fails, so write it as a plain instruction.
+- Use `pattern` for **restrictions you really need**, such as a company domain. Do not try to write a perfect "email regex." Real addresses are far more varied than most patterns allow, and a strict one rejects real people.
+
+You will learn more in [Pattern](../pattern).
+
+## Autocomplete Values
+
+| Situation | `autocomplete` value |
+| :-- | :-- |
+| An email address in a contact or checkout form | `email` |
+| The account name on a sign-in or sign-up form (when it is an email) | `username` |
+
+```html
+<!-- Sign in -->
+<input type="email" name="email" autocomplete="username" />
+<input type="password" name="password" autocomplete="current-password" />
+
+<!-- Contact form -->
+<input type="email" name="email" autocomplete="email" />
+```
+
+On sign-in and sign-up forms, use `username` so password managers connect the address to the password that follows. Everywhere else, use `email`. See [Autocomplete](../autocomplete).
+
+## Trimming and Spaces
+
+The browser **strips leading and trailing spaces** from an email input (and removes line breaks), before checking and sending. So `  ada@example.com  ` arrives as `ada@example.com`.
+
+Still, your server should:
+
+1. **Trim** the value again, since not every client is a browser.
+2. **Lowercase the domain part** when comparing. Domain names are not case sensitive. (The part before the `@` is technically case sensitive, but almost all providers ignore case, so many sites compare the whole address in lowercase.)
+3. Decide how to handle plus-tags, like `ada+news@example.com`. They are **valid** and used by real people to filter mail, so do not reject them.
+
+## International Addresses
+
+Email is not only English letters. Addresses can use non-Latin scripts and accents, and domain names can too (for example, `münchen.de`, or a domain written in Hindi, Arabic, or Chinese).
+
+- Browsers accept **internationalized domain names**, and convert them behind the scenes to a form that works on the network (called Punycode, like `xn--mnchen-3ya.de`).
+- Some addresses have **non-ASCII characters before the `@`** too, which only some providers support.
+- So: **do not restrict an email field to A to Z letters.** A strict pattern locks out real customers.
+
+:::tip Be generous in what you accept
+A good rule is: accept anything that has the shape of an address, then verify by sending a message. That works for every country, language, and mail provider.
+:::
+
+## Confirming the Address (The Real Check)
+
+Because the browser checks only the shape, the dependable way to know an address is **valid and owned by the visitor** is a confirmation message.
+
+1. The visitor submits the form.
+2. Your server sends an email with a unique, expiring link (or code).
+3. The visitor clicks the link, and the address is now **verified**.
+
+Other helpful habits:
+
+- Show a friendly **"Did you mean gmail.com?"** hint for common typos.
+- Do not make visitors type the email twice. A confirmation message catches mistakes better, and typing twice adds friction.
+- Write the confirmation text in plain, translatable language.
+
+## Styling Valid and Invalid States
+
+CSS can react to the state of the field. Use these with care, because showing red the moment someone starts typing is unfriendly.
+
+```css title="style.css"
+input[type="email"] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+}
+
+input[type="email"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Only after the visitor has typed something and left the field */
+input[type="email"]:not(:placeholder-shown):invalid {
+  border-color: #b91c1c;
+}
+```
+
+- `:invalid` matches an empty required field from the first moment. Combining it with `:not(:placeholder-shown)` (and a `placeholder`) waits until the visitor has typed.
+- Never use **colour alone** to show an error. Add a text message too.
+
+## Accessibility at a Glance
+
+- **Always add a label.** "Email address" is clearer than just "Email" when screen reader users move through the page.
+- **Do not use placeholder as the only guide.** Show the format hint in text if it matters.
+- **Use `autocomplete`**, which helps people who find typing hard.
+- **Write helpful errors:** "Enter an email address like name@example.com." Link the message to the field with `aria-describedby`.
+- **Explain `multiple`** (commas) in visible text.
+- **Do not auto-correct** what people type in a way that hides what changed.
+
+## Security Notes
+
+- **Never rely on browser checks.** Anyone can skip the browser and send any text. Validate the address on the server too.
+- **Escape the value** whenever you show it in a page or put it in a query.
+- **Watch for header injection.** If you put a visitor's address into an email header, strip line breaks, or a bad actor may add extra recipients and send spam through your server.
+- **Be careful what you reveal.** On sign-in and reset forms, "If that address has an account, we have sent a link" is safer than "No account with that email."
+- **Keep addresses private.** Treat them as personal data, and collect only what you need.
+
+You will read more in [Secure Form Design](../secure-form-design).
+
+## Common Mistakes to Avoid
+
+1. **Believing the browser proves the address exists.** It only checks the shape.
+2. **Using `type="text"` for emails,** which loses the keyboard and the check.
+3. **Forgetting `required`,** even though an empty field passes the format check.
+4. **A strict pattern** that rejects plus-tags, new domains, or international addresses.
+5. **Forgetting `autocomplete`.** Use `email`, or `username` on sign-in.
+6. **Capitalization and red underlines** on phones. Add `autocapitalize="none"` and `spellcheck="false"`.
+7. **Using `multiple` without explaining** that commas are needed.
+8. **Not trimming on the server.**
+9. **Skipping server-side validation** and email confirmation.
+10. **Asking for the email twice** instead of sending a confirmation.
+11. **Showing an error before the visitor has finished typing.**
+12. **Leaking whether an account exists** in sign-in or reset messages.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled email field and type `ada`, `ada@`, and `ada@example.com`. Notice which are blocked.
+2. Try `ada@example`. Confirm that it passes, then explain why.
+3. Add `required`, and submit an empty form.
+4. Add `multiple`, and enter two addresses separated by a comma.
+5. Add `placeholder` and `autocomplete="email"`.
+6. Add `autocapitalize="none"` and `spellcheck="false"`, and test on a phone if you can.
+7. Add `pattern=".+@example\.com"` with a `title`, and see the message.
+8. Use JavaScript to read `input.validity.typeMismatch`.
+9. Style `:invalid` so it only shows after typing.
+10. Bonus: write the steps of a confirmation-email flow on paper.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `type="email"` give you?</summary>
+
+An `@` keyboard on phones, a basic format check on submit, automatic trimming of spaces, and better autofill.
+
+</details>
+
+<details>
+<summary>2. Is `ada@example` valid to the browser?</summary>
+
+Yes. The browser only checks the shape (something, an `@`, something). A dot in the domain is not required.
+
+</details>
+
+<details>
+<summary>3. Is an empty email field valid?</summary>
+
+Yes, unless it has `required`. Format checks skip empty values.
+
+</details>
+
+<details>
+<summary>4. What does the `multiple` attribute do?</summary>
+
+It allows several addresses separated by commas, and the browser checks each one. The server receives one string and must split it.
+
+</details>
+
+<details>
+<summary>5. How can you really know an address is valid and belongs to the visitor?</summary>
+
+Send a confirmation message with a unique link or code, and have the visitor use it.
+
+</details>
+
+<details>
+<summary>6. Which `autocomplete` value fits a sign-in form, and which fits a contact form?</summary>
+
+`username` on sign-in and sign-up forms, so password managers connect it to the password. `email` in contact and checkout forms.
+
+</details>
+
+## Key Takeaways
+
+- `type="email"` gives a phone keyboard with `@`, a basic shape check, automatic trimming, and autofill.
+- The browser checks only the shape. `ada@example` passes, and an empty field passes unless `required`.
+- `multiple` accepts comma-separated addresses, which the server must split.
+- Use `pattern` only for real restrictions. Strict patterns reject real, international, and plus-tagged addresses.
+- Use `autocomplete="email"`, or `username` on sign-in forms, plus `autocapitalize="none"` and `spellcheck="false"`.
+- Always validate on the server, and **confirm ownership** by sending a message.
+
+An email is a way to reach someone. Next, learn how to ask for a phone number the friendly way, in [Tel](./tel), or return to the [Forms overview](/tutorials/html/forms).

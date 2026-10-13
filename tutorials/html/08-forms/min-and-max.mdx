@@ -1,16 +1,535 @@
 ---
-id: min-and-max
-title: "Numerical and Date Range Bounds: min and max Attributes"
-sidebar_label: "Min & Max Attributes"
-sidebar_position: 15
+id: html-min-and-max
+title: "HTML Min, Max, and Step Attributes"
+sidebar_label: "Min and Max"
+sidebar_position: 16
 slug: /html/forms/min-and-max
-description: "Establish lower and upper bound thresholds for numeric, range, and date/time inputs using min and max attributes."
+description: "Learn the HTML min, max, and step attributes: limiting numbers, ranges, dates, times, months, and weeks, how the step base works, the rangeUnderflow, rangeOverflow, and stepMismatch validity flags, setting today as a minimum date, linking two date fields, money and decimal pitfalls, and why the server must check ranges again."
 keywords:
-  - HTML min attribute
-  - HTML max attribute
-  - number bounds validation
-  - date range limit HTML
+  - HTML min max attribute
+  - HTML step attribute
+  - input type number min max
+  - input type date min max
+  - rangeUnderflow rangeOverflow
+  - stepMismatch
+  - step any
+  - restrict date range input
+  - HTML form validation range
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, validation, attributes]
+tags: [html, web-development, beginner, forms, validation, min, max, step, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+
+export function FlagList({validity}) {
+  const names = ["valueMissing", "badInput", "rangeUnderflow", "rangeOverflow", "stepMismatch", "valid"];
+  if (!validity) return <p style={{margin: "0.25rem 0", color: "#64748b"}}>Type a value to see the flags.</p>;
+  return (
+    <p style={{margin: "0.25rem 0", fontSize: "0.9em"}}>
+      {names.map((name) => (
+        <span key={name} style={{marginRight: "0.75rem", color: validity[name] ? (name === "valid" ? "#15803d" : "#b91c1c") : "#64748b"}}>
+          <code>{name}</code>: {String(validity[name])}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+export function NumberDemo() {
+  const [qty, setQty] = useState(null);
+  const [pct, setPct] = useState(null);
+  const copy = (v) => {
+    const out = {};
+    ["valueMissing", "badInput", "rangeUnderflow", "rangeOverflow", "stepMismatch", "valid"].forEach((k) => (out[k] = v[k]));
+    return out;
+  };
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="mm-qty">Quantity (1 to 10, whole numbers)</label><br />
+        <input
+          type="number"
+          id="mm-qty"
+          name="qty"
+          min={1}
+          max={10}
+          step={1}
+          required
+          onInput={(event) => setQty(copy(event.target.validity))}
+        />
+        <FlagList validity={qty} />
+      </p>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="mm-pct">Discount (0 to 50, in steps of 5)</label><br />
+        <input
+          type="number"
+          id="mm-pct"
+          name="discount"
+          min={0}
+          max={50}
+          step={5}
+          onInput={(event) => setPct(copy(event.target.validity))}
+        />
+        <FlagList validity={pct} />
+      </p>
+      <button type="submit">Check</button>
+    </form>
+  );
+}
+
+export function pad(n) {
+  return String(n).padStart(2, "0");
+}
+
+export function toInputDate(date) {
+  return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+}
+
+export function StayDatesDemo() {
+  const [bounds, setBounds] = useState({today: "", last: ""});
+  const [arrive, setArrive] = useState("");
+  const [leave, setLeave] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 60);
+    setBounds({today: toInputDate(now), last: toInputDate(end)});
+  }, []);
+
+  const leaveMin = arrive || bounds.today;
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setMessage("Dates accepted: " + arrive + " to " + leave + ". (Demo only, nothing was sent.)");
+      }}
+    >
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="mm-arrive">Arrival (from today, up to 60 days ahead)</label><br />
+        <input
+          type="date"
+          id="mm-arrive"
+          name="arrive"
+          min={bounds.today}
+          max={bounds.last}
+          required
+          value={arrive}
+          onChange={(event) => {
+            setArrive(event.target.value);
+            setMessage("");
+            if (leave && event.target.value && leave < event.target.value) setLeave("");
+          }}
+        />
+      </p>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="mm-leave">Departure (not before arrival)</label><br />
+        <input
+          type="date"
+          id="mm-leave"
+          name="leave"
+          min={leaveMin}
+          max={bounds.last}
+          required
+          value={leave}
+          onChange={(event) => {
+            setLeave(event.target.value);
+            setMessage("");
+          }}
+        />
+      </p>
+      <button type="submit">Book</button>
+      <p role="status" style={{margin: "0.5rem 0 0", color: "#15803d"}}>{message}</p>
+    </form>
+  );
+}
+
+Plenty of fields have a **sensible range**. A quantity must be at least 1. A rating goes from 1 to 5. A booking cannot be in the past. A volume slider runs from 0 to 100. HTML gives you three attributes for this: **`min`** and **`max`** set the smallest and largest allowed value, and **`step`** controls which values in between are allowed.
+
+They work on numbers, dates, times, months, weeks, and sliders. This lesson shows how each behaves, how the `step` rule surprises people, and how to read the validity flags when something is out of range.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `min`, `max`, and `step` do, and which input types support them
+- How the browser reacts to a value that is too small, too large, or off-step
+- The `step` base rule, and `step="any"`
+- Limits for dates and times, including "today" and linked date fields
+- The `rangeUnderflow`, `rangeOverflow`, and `stepMismatch` flags
+- Pitfalls with decimals and money
+- Why the server must check ranges again
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/order" method="post">
+  <label for="qty">Quantity (1 to 10)</label>
+  <input type="number" id="qty" name="qty" min="1" max="10" step="1" value="1" required />
+
+  <button type="submit">Add to cart</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="mm-basic">Quantity (1 to 10)</label><br />
+  <input type="number" id="mm-basic" name="qty" min={1} max={10} step={1} defaultValue={1} required />{" "}
+  <button type="submit">Add to cart</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The up and down arrows stay between 1 and 10. Type `0` or `11` and press **Add to cart**: the browser blocks the form with a message such as "Value must be greater than or equal to 1."
+
+| Attribute | Meaning |
+| :-- | :-- |
+| `min` | The **smallest** allowed value |
+| `max` | The **largest** allowed value |
+| `step` | The **spacing** between allowed values. Valid values are `min` plus a whole number of steps |
+
+## Where They Work
+
+| Input type | Value format for `min` and `max` | Default `step` |
+| :-- | :-- | :-- |
+| `number` | A number, like `1` or `0.5` | `1` |
+| `range` | A number (defaults: min `0`, max `100`) | `1` |
+| `date` | `yyyy-mm-dd`, like `2026-12-25` | 1 day |
+| `month` | `yyyy-mm`, like `2026-12` | 1 month |
+| `week` | `yyyy-Www`, like `2026-W52` | 1 week |
+| `time` | `HH:mm`, like `09:30` | 60 seconds |
+| `datetime-local` | `yyyy-mm-ddTHH:mm` | 60 seconds |
+| `text`, `email`, `url`, `tel`, `password`, `search` | **Not supported.** Use `minlength` and `maxlength` | |
+| `checkbox`, `radio`, `file`, `select`, `textarea` | **Not supported** | |
+
+Formats are always the **machine** formats shown above, no matter how the visitor's browser displays them. See the lessons on [Date](./input-types/date), [Time](./input-types/time), [Month](./input-types/month), [Week](./input-types/week), and [Number](./input-types/number).
+
+## What the Browser Does
+
+- **Spinner arrows and pickers** stay within the range. A date picker greys out days outside `min` and `max`.
+- **Typing is not blocked.** A visitor can still type `99` into a field with `max="10"`. The check happens **when the form is submitted**, with a message.
+- **An empty field passes.** `min` and `max` only check values that exist. Add `required` if a value is mandatory.
+- **The validity flags** tell your script what went wrong (below).
+
+## Try It: Watch the Flags
+
+Type values into both fields (try `0`, `5`, `11`, `2.5`, `12`, `abc`), and watch which flags switch on.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="qty">Quantity (1 to 10, whole numbers)</label>
+<input type="number" id="qty" name="qty" min="1" max="10" step="1" required />
+
+<label for="pct">Discount (0 to 50, in steps of 5)</label>
+<input type="number" id="pct" name="discount" min="0" max="50" step="5" />
+
+<pre id="out"></pre>
+```
+
+```js title="script.js"
+const fields = [document.getElementById("qty"), document.getElementById("pct")];
+const out = document.getElementById("out");
+
+function show() {
+  out.textContent = fields
+    .map((field) => {
+      const v = field.validity;
+      return field.name + ": underflow=" + v.rangeUnderflow +
+        ", overflow=" + v.rangeOverflow + ", stepMismatch=" + v.stepMismatch;
+    })
+    .join("\n");
+}
+
+fields.forEach((field) => field.addEventListener("input", show));
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NumberDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+| Flag | `true` when | Example |
+| :-- | :-- | :-- |
+| `rangeUnderflow` | The value is **below** `min` | `0` with `min="1"` |
+| `rangeOverflow` | The value is **above** `max` | `11` with `max="10"` |
+| `stepMismatch` | The value is **not on a valid step** | `12` with `step="5"` |
+| `badInput` | The browser cannot read what was typed | Letters in a number field |
+| `valueMissing` | Empty and `required` | No value |
+
+## Understanding `step`
+
+`step` is the part that surprises people. Valid values are the **step base** plus a whole number of steps. The step base is:
+
+1. the `min` value, if there is one,
+2. otherwise the `value` attribute, if there is one,
+3. otherwise `0` (or the type's usual starting point).
+
+| Markup | Valid values |
+| :-- | :-- |
+| `step="5"` (no min) | `0`, `5`, `10`, `15`... and `-5`, `-10`... |
+| `min="1" step="5"` | `1`, `6`, `11`, `16`... (**not** 5 or 10) |
+| `min="0" max="1" step="0.25"` | `0`, `0.25`, `0.5`, `0.75`, `1` |
+| `step="any"` | **Any** number, with no step check at all |
+
+So `min="1" step="5"` surprises people: the step counts **from `min`**, not from zero.
+
+### `step="any"`
+
+By default, `type="number"` accepts **whole numbers only** (step 1). A decimal like `2.5` gives a `stepMismatch` error. Two ways to allow decimals:
+
+```html
+<input type="number" step="0.1" />   <!-- one decimal place -->
+<input type="number" step="any" />   <!-- any decimal at all -->
+```
+
+### Steps for dates and times
+
+| Type | Unit of `step` | Example |
+| :-- | :-- | :-- |
+| `date` | **Days** | `step="7"` allows every 7th day from the step base |
+| `month` | **Months** | `step="3"` for quarters |
+| `week` | **Weeks** | `step="2"` |
+| `time` | **Seconds** | `step="900"` allows every 15 minutes |
+| `datetime-local` | **Seconds** | `step="1800"` for half-hour slots |
+
+For a time field, setting `step` to less than 60 (such as `step="1"`) also shows the **seconds** box.
+
+## Dates: "From Today" and Linked Fields
+
+A very common need is "no dates in the past," and "the end must not be before the start." The page has to calculate the date, because HTML has no keyword for "today."
+
+Try it. The arrival date is limited to the next 60 days, and the departure picker moves its minimum to match the arrival.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/book" method="post">
+  <label for="arrive">Arrival</label>
+  <input type="date" id="arrive" name="arrive" required />
+
+  <label for="leave">Departure</label>
+  <input type="date" id="leave" name="leave" required />
+
+  <button type="submit">Book</button>
+</form>
+```
+
+```js title="script.js"
+const arrive = document.getElementById("arrive");
+const leave = document.getElementById("leave");
+
+// Format a Date as yyyy-mm-dd in the visitor's local time
+function toInputDate(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+}
+
+const now = new Date();
+const last = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 60);
+
+arrive.min = toInputDate(now);
+arrive.max = toInputDate(last);
+leave.min = toInputDate(now);
+leave.max = toInputDate(last);
+
+// The departure can never be before the arrival
+arrive.addEventListener("change", () => {
+  if (arrive.value) leave.min = arrive.value;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StayDatesDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::warning Do not use `toISOString()` for "today"
+`new Date().toISOString().slice(0, 10)` gives today's date in **UTC**, which can be yesterday or tomorrow for the visitor. Build the string from the **local** year, month, and day, as in the example above.
+:::
+
+### Times that cross midnight
+
+For a `time` field, a `min` that is **later** than `max` is allowed and means an overnight range. For example, `min="22:00" max="06:00"` accepts late evening and early morning. For every other type, a `min` larger than `max` makes the field impossible to fill in correctly, so avoid it. (See [Time](./input-types/time).)
+
+## Decimals and Money
+
+Computers store decimals in binary, so `0.1 + 0.2` is `0.30000000000000004`. With `step`, browsers allow for this, but your own code may not.
+
+- **Money:** `type="number" step="0.01"` works for typing. But in your code and on the server, store money as **whole cents** (or the smallest unit), not as floating-point numbers.
+- **Do not compare decimals with `===`** in JavaScript. Round first, or work in whole units.
+- **Currencies differ.** Some have no minor unit (the Japanese yen), and some have three decimal places (the Kuwaiti dinar). Do not hard-code two decimals if you serve several currencies.
+
+## Slider Ranges
+
+`type="range"` always has a value, so `min`, `max`, and `step` define the whole slider. The defaults are `0`, `100`, and `1`.
+
+```html
+<label for="volume">Volume</label>
+<input type="range" id="volume" name="volume" min="0" max="10" step="1" value="5" />
+```
+
+A slider cannot be left empty, so it never gives `valueMissing`. (See [Range](./input-types/range).)
+
+## Styling
+
+```css title="style.css"
+input:out-of-range {
+  border-color: #b91c1c;
+}
+
+input:in-range {
+  border-color: #15803d;
+}
+```
+
+`:in-range` and `:out-of-range` match fields that have `min` or `max` and a value inside or outside it. As always, add a **text message** too. Colour alone is not enough. For fields that should not look red before the visitor has typed, `:user-invalid` is gentler (see [Form Validation](./form-validation)).
+
+## Accessibility at a Glance
+
+- **Say the range in the label or a hint:** "Quantity (1 to 10)". Screen readers also announce `min` and `max` for numbers and sliders.
+- **Write helpful messages:** "Choose a date from today to 60 days ahead," not "Out of range."
+- **Use the right input type.** A date picker is more accessible than three number fields, and gives keyboard users arrows and shortcuts.
+- **Keep the picker's range and your message in sync** when `min` or `max` change by script.
+- **Do not make a range impossible** (for example, a departure `min` that is after its `max`).
+- **Tell visitors why a date is unavailable** ("Fully booked"), if you block dates in other ways.
+- **Offer a text alternative** for dates and times if the browser's picker is hard to use for your audience.
+
+## Security Notes
+
+- **`min`, `max`, and `step` are not security.** A visitor can edit them in the developer tools, or send a request with any value by hand.
+- **Check every range on the server,** including prices, quantities, discounts, and dates. Never trust a number the browser sends: a `quantity` of `-5` or a `discount` of `100` can cause real harm.
+- **Do not take the price from the form.** Look up the price on the server by product ID.
+- **Check business limits the browser cannot know,** such as stock left, booking availability, or the maximum order per customer.
+- **Watch for huge and special numbers:** very large values, `NaN`, and scientific notation (`1e9`) can cause trouble in code. Convert and range-check them.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Displays differ, values do not.** A visitor in one country sees `25/12/2026`, another sees `12/25/2026`, and both are sent as `2026-12-25`. Set `min` and `max` in the machine format.
+- **Number formats differ.** Some visitors type `1,5` for one and a half, and the browser handles it when the input type is `number`. Read the value on the server as a plain number, not as text.
+- **Weeks start on different days,** and the `week` type uses ISO weeks. Explain this if it matters.
+- **Time zones:** "today" depends on where the visitor is. Check on the server with a clear time zone rule, and store dates in UTC or with their zone.
+- **Calendars:** some visitors use calendars other than the Gregorian one. The value is always Gregorian, even when the picker displays another calendar.
+- **Browser support** for `month` and `week` is incomplete, so plan a fallback.
+
+## Common Mistakes to Avoid
+
+1. **Trusting `min` and `max` as security.** The server must check ranges.
+2. **Using them on text inputs,** where they do nothing. Use `minlength` and `maxlength`.
+3. **Forgetting that `step` counts from `min`.** With `min="1" step="5"`, `5` is not valid.
+4. **Getting `stepMismatch` on decimals** because `step` is `1`. Use `step="0.01"` or `"any"`.
+5. **Writing dates in the wrong format,** instead of `yyyy-mm-dd`.
+6. **Using `toISOString()`** for "today," which uses UTC.
+7. **Setting `min` larger than `max`,** so no value is valid (except for time).
+8. **Expecting typing to be blocked.** The check happens on submit.
+9. **Expecting an empty field to fail.** Add `required`.
+10. **Storing money as floating-point numbers.**
+11. **Taking prices or totals from the form.**
+12. **Not telling visitors the range,** so errors are a surprise.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Make a number field with `min="1"`, `max="10"`, and test both ends.
+2. Type a decimal into it and see `stepMismatch`. Then add `step="0.5"`.
+3. Try `min="1" step="5"` and find which values are valid.
+4. Switch to `step="any"` and compare.
+5. Build a `date` field that cannot be before today, set by script.
+6. Add a second date that cannot be before the first.
+7. Make a `time` field that only allows every 15 minutes.
+8. Make a slider from 0 to 10 and show its value with `<output>`.
+9. Read `validity.rangeUnderflow` and `rangeOverflow` in the console, and write your own messages.
+10. Bonus: write the server-side check for a quantity from 1 to 10 and a booking date within 60 days.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do `min`, `max`, and `step` do?</summary>
+
+`min` and `max` set the smallest and largest allowed value, and `step` sets the spacing between valid values. They work on number, range, date, month, week, time, and datetime-local inputs.
+
+</details>
+
+<details>
+<summary>2. Do they work on text inputs?</summary>
+
+No. For text, use `minlength` and `maxlength`, which limit the number of characters.
+
+</details>
+
+<details>
+<summary>3. Where does `step` count from?</summary>
+
+From the step base: the `min` value if there is one, otherwise the `value` attribute, otherwise zero. So `min="1" step="5"` allows 1, 6, 11, and so on.
+
+</details>
+
+<details>
+<summary>4. How do you allow any decimal in a number field?</summary>
+
+Use `step="any"`, or a specific step such as `step="0.01"`. The default step of 1 allows whole numbers only.
+
+</details>
+
+<details>
+<summary>5. How do you stop visitors choosing a past date?</summary>
+
+Set `min` to today's date, in `yyyy-mm-dd` format, using the visitor's **local** date (not `toISOString()`). HTML has no built-in "today" keyword, so a little script is needed.
+
+</details>
+
+<details>
+<summary>6. Are `min` and `max` enough to protect a price or quantity?</summary>
+
+No. Anyone can bypass them. The server must check every number and date, and should not accept prices from the form at all.
+
+</details>
+
+## Key Takeaways
+
+- `min`, `max`, and `step` limit the **value** of number, range, date, month, week, time, and datetime-local inputs.
+- Out-of-range values give `rangeUnderflow` or `rangeOverflow`, and off-step values give `stepMismatch`.
+- The `step` base is `min`, so `min="1" step="5"` allows 1, 6, 11. Use `step="any"` or a decimal step for decimals.
+- The check runs on submit, not while typing, and empty fields pass unless `required`.
+- Set date limits by script in `yyyy-mm-dd` format using local time, and link start and end fields.
+- Store money as whole cents, and never take prices from the form.
+- These attributes are a convenience. **The server must check every range again.**
+
+Next, learn how browsers fill in forms for visitors, in [Autocomplete](./autocomplete), or return to the [Forms overview](/tutorials/html/forms).

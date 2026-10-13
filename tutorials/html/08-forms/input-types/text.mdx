@@ -1,16 +1,476 @@
 ---
-id: input-type-text
-title: "Text Inputs: type='text'"
+id: html-input-text
+title: "HTML Input Type Text"
 sidebar_label: "Text"
 sidebar_position: 1
 slug: /html/forms/input-types/text
-description: "Learn how to capture single-line text data using input type='text', configuring default values, placeholders, and character limits."
+description: "Learn the HTML input type text: the default single-line text field. Understand its attributes (value, placeholder, maxlength, minlength, size, pattern, readonly, autocomplete, spellcheck, dirname), when to choose a more specific type, how whitespace is handled, names and usernames for a global audience, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type text
+  - input type text attributes
   - single line text input
-  - text field HTML
-  - input placeholder text
+  - maxlength minlength text input
+  - autocomplete name username
+  - dirname attribute
+  - input text size
+  - input text trim whitespace
+  - text vs textarea
+  - HTML text field accessibility
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, text]
+tags: [html, web-development, beginner, forms, input, text, frontend]
 ---
+
+import {useState} from 'react';
+
+export function CounterDemo() {
+  const [value, setValue] = useState("");
+  const max = 40;
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="txt-bio">Short bio</label><br />
+      <input
+        type="text"
+        id="txt-bio"
+        name="bio"
+        maxLength={max}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-describedby="txt-bio-count"
+      />{" "}
+      <span id="txt-bio-count">{value.length} / {max} characters</span>
+    </form>
+  );
+}
+
+If you could keep only one form control, it would be this one. The text input is the plain, everyday box where a visitor types a word or a short phrase: a name, a username, a city, a search term, a coupon code. It is so basic that it is the **default**. An `<input>` with no `type` (or with a type the browser does not know) quietly becomes a text input.
+
+Because it is so common, it is also easy to misuse. People pick `type="text"` for everything, when a more specific type would give them a better keyboard and free checking. In this lesson, you will learn exactly what a text input does, which attributes shape it, and when to reach for a different type instead.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="text"` does, and what it is the default for
+- How whitespace and line breaks are handled
+- The attributes that apply to text inputs
+- Good practice for names, usernames, and codes, for a global audience
+- When a different input type is the better choice
+- Accessibility, styling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="city">City</label>
+<input type="text" id="city" name="city" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="txt-city">City</label><br />
+  <input type="text" id="txt-city" name="city" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A text input is:
+
+- **One line.** If the visitor pastes text that contains a line break, the browser strips the break out, and the lines run together.
+- **Free text.** Any character is allowed, unless you restrict it with `pattern`.
+- **Not trimmed.** Spaces the visitor types, including spaces at the start or end, are kept in the value.
+- **Sent as text.** The value arrives at the server as a string: `city=Lagos`.
+
+These three attributes appear on virtually every text input: `type`, `name` (the key that is sent), and `id` (so the [label](../label-element) can find it).
+
+:::info Default type
+These two lines make identical inputs:
+
+```html
+<input name="city" />
+<input type="text" name="city" />
+```
+
+Writing `type="text"` explicitly is a good habit, because it shows your intention, and makes your code easier for others to read.
+:::
+
+## Attributes for Text Inputs
+
+Text inputs support more attributes than any other type.
+
+### Content
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `value` | The starting text | `value="Lagos"` |
+| `placeholder` | A short example, shown when the field is empty | `placeholder="e.g. Nairobi"` |
+
+### Size and Length
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `size` | The visible width, in characters (a visual hint only) | `size="20"` |
+| `maxlength` | The most characters a visitor can type | `maxlength="40"` |
+| `minlength` | The fewest characters accepted, checked on submit | `minlength="3"` |
+
+`maxlength` and `minlength` get their own lesson: [Minlength and Maxlength](../minlength-and-maxlength).
+
+### Validation
+
+| Attribute | What it does | Lesson |
+| :-- | :-- | :-- |
+| `required` | The field cannot be left empty | [Required](../required) |
+| `pattern` | The text must match a regular expression | [Pattern](../pattern) |
+
+### Behavior
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `readonly` | Shows text that cannot be edited, but is sent | `readonly` |
+| `disabled` | Switches the field off, and it is not sent | `disabled` |
+| `autofocus` | Focuses the field when the page loads | `autofocus` |
+| `list` | Connects to a [datalist](../datalist) of suggestions | `list="cities"` |
+
+### Help for Typing
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `autocomplete` | Tells the browser what the field is, so it can fill it in | `autocomplete="family-name"` |
+| `autocapitalize` | How letters are capitalized on phones | `autocapitalize="words"` |
+| `spellcheck` | Whether to underline misspelled words | `spellcheck="false"` |
+| `inputmode` | Which on-screen keyboard to show | `inputmode="numeric"` |
+| `enterkeyhint` | What the Enter key's label says | `enterkeyhint="next"` |
+| `dirname` | Also sends the text direction (`ltr` or `rtl`) | `dirname="comment.dir"` |
+
+## Showing Limits: A Live Example
+
+`maxlength` stops typing at the limit. People then wonder why their keys stop working, so it is kind to show a counter.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="bio">Short bio</label>
+<input
+  type="text"
+  id="bio"
+  name="bio"
+  maxlength="40"
+  aria-describedby="bio-count"
+/>
+<span id="bio-count">0 / 40 characters</span>
+```
+
+```js title="script.js"
+const bio = document.getElementById("bio");
+const count = document.getElementById("bio-count");
+
+bio.addEventListener("input", () => {
+  count.textContent = bio.value.length + " / " + bio.maxLength + " characters";
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CounterDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Type in the box, and the counter follows. Once you reach 40, the field stops accepting more.
+
+:::tip Use limits with care
+A limit that is too tight frustrates people, especially for names and addresses, which vary hugely around the world. Choose generous limits, and say what they are.
+:::
+
+## Whitespace and Line Breaks
+
+| What the visitor types | What happens |
+| :-- | :-- |
+| Leading or trailing spaces | **Kept** in the value |
+| Several spaces in a row | **Kept** in the value |
+| A pasted line break | **Removed** (the lines join) |
+| Tab key | Moves focus to the next control, and does not insert a tab |
+
+Browsers do not trim a text input for you. A visitor who types ` ada ` with spaces sends exactly that. So **the server should trim the value** before saving or comparing it, so that " ada" and "ada" are not treated as different usernames. For multi-line input, use [`<textarea>`](../textarea) instead.
+
+## Choosing a More Specific Type
+
+`type="text"` accepts anything, so it gives you **no help**. If the information has a known shape, a more specific type is almost always better.
+
+| The visitor is entering... | Use | Why |
+| :-- | :-- | :-- |
+| An email address | [`email`](./email) | `@` keyboard, free format check |
+| A password | [`password`](./password) | Hides the characters |
+| A phone number | [`tel`](./tel) | Phone keypad |
+| A web address | [`url`](./url) | `/` and `.com` keys, URL check |
+| A search term | [`search`](./search) | Clear button, search semantics |
+| A quantity | [`number`](./number) | Number keyboard, min and max |
+| A date or time | [`date`](./date), [`time`](./time) | A picker, no format mistakes |
+| A long message | [`<textarea>`](../textarea) | Multiple lines |
+
+And when `type="text"` **is** the right choice:
+
+- Names, nicknames, and usernames
+- Cities, street addresses, and other free-form place names
+- Titles, subjects, and short descriptions
+- Codes and identifiers (coupon codes, order numbers, postal codes, PINs), usually with `inputmode`, `pattern`, or `autocomplete`
+
+## Names, Usernames, and Codes
+
+### Names
+
+Names are surprisingly hard to get right, because they differ so much around the world.
+
+| Do | Don't |
+| :-- | :-- |
+| Offer one **"Full name"** field when you can | Insist on separate "first" and "last" names. Many people have one name, or several family names, or a different order |
+| Allow spaces, hyphens, apostrophes, accents, and non-Latin letters | Reject characters with a strict `pattern` |
+| Allow long values | Set a very small `maxlength` |
+| Use `autocomplete="name"` | Leave autofill guessing |
+
+```html
+<label for="fullname">Full name</label>
+<input type="text" id="fullname" name="fullname" autocomplete="name" />
+```
+
+If you really need the parts, use the specific tokens:
+
+```html
+<input type="text" name="given" autocomplete="given-name" />
+<input type="text" name="family" autocomplete="family-name" />
+```
+
+### Usernames
+
+A username field benefits from some extra hints:
+
+```html
+<label for="user">Username</label>
+<input
+  type="text"
+  id="user"
+  name="username"
+  autocomplete="username"
+  autocapitalize="none"
+  spellcheck="false"
+  minlength="3"
+  maxlength="30"
+  required
+/>
+```
+
+- `autocapitalize="none"` stops the phone capitalizing the first letter.
+- `spellcheck="false"` removes the red underlines.
+- `autocomplete="username"` helps password managers.
+
+### Codes and Identifiers
+
+Postal codes, coupon codes, and PINs are text, not numbers. They can start with zero, include letters, or carry spaces. Use `type="text"`, and shape the keyboard with `inputmode`.
+
+```html
+<label for="zip">Postal code</label>
+<input
+  type="text"
+  id="zip"
+  name="zip"
+  autocomplete="postal-code"
+  inputmode="text"
+/>
+
+<label for="pin">PIN</label>
+<input
+  type="text"
+  id="pin"
+  name="pin"
+  inputmode="numeric"
+  autocomplete="one-time-code"
+  maxlength="6"
+/>
+```
+
+Postal codes use letters in some countries (the UK, Canada), and different lengths in others. Do not force one format on a worldwide audience.
+
+## Autocomplete Tokens for Text Fields
+
+Choosing the right `autocomplete` value lets browsers fill in the field, which helps everyone and is a real accessibility gain for people who find typing hard.
+
+| Field | `autocomplete` value |
+| :-- | :-- |
+| Full name | `name` |
+| First name | `given-name` |
+| Last name | `family-name` |
+| Username | `username` |
+| Organization | `organization` |
+| Street address | `street-address` |
+| City | `address-level2` |
+| State or region | `address-level1` |
+| Postal code | `postal-code` |
+| Country | `country-name` |
+| One-time code | `one-time-code` |
+
+You will learn more in [Autocomplete](../autocomplete).
+
+## The `dirname` Attribute
+
+Some languages (Arabic, Hebrew, Persian) are written right to left, and some fields mix directions. If the **server** needs to know which direction the text was in, `dirname` sends it along as an extra value.
+
+```html
+<input type="text" name="comment" dirname="comment.dir" />
+```
+
+On submission, the form sends `comment=...&comment.dir=ltr` (or `rtl`). Most sites do not need this, but it is useful for displaying user content correctly later.
+
+## Styling a Text Input
+
+```css title="style.css"
+input[type="text"] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;           /* 16px or more avoids zoom on phones */
+}
+
+input[type="text"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="text"]::placeholder {
+  color: #64748b;            /* readable contrast */
+}
+```
+
+- The default width is about 20 characters. Use CSS `width` rather than `size` for real control.
+- Keep a **visible focus style**.
+- Make sure the placeholder text has enough **contrast**.
+
+## Accessibility at a Glance
+
+- **Always add a label.** A placeholder is not a label. See [Label Element](../label-element).
+- **Use `autocomplete`** so people (and password managers) can fill in details.
+- **Explain limits and formats in text** next to the field, linked with `aria-describedby`, not only in a placeholder.
+- **Do not block pasting.** It prevents password managers and hurts many users.
+- **Do not trim or change what people type** as they type. It disturbs screen readers and moves the cursor.
+- **Make errors clear.** Say which field, what is wrong, and how to fix it.
+
+## Security Note
+
+Whatever a visitor types is **untrusted**. A text field can contain anything, including script tags and database commands. Your server must validate it, and escape it whenever it is displayed or stored in a query. You will study this in [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **Accept all scripts and accents.** A name field must allow "Zoë," "Nguyễn," "李," and "محمد."
+- **Avoid strict patterns** on names, addresses, and phone numbers.
+- **Do not assume a length.** Some names and addresses are very long.
+- **Keep labels short and plain,** so they translate well.
+- **Set `lang`** so keyboards and spell checkers use the right language.
+- **Offer examples that fit your audience,** such as place names or formats from several regions, not only one country.
+
+## Common Mistakes to Avoid
+
+1. **Using `type="text"` for emails, phone numbers, dates, or passwords.** Use the specific type.
+2. **No `name`,** so the value is never sent.
+3. **No label,** or a placeholder as the only label.
+4. **Strict `pattern` or short `maxlength` on names** and addresses.
+5. **Using `type="number"` for postal codes or PINs.** Use `text` with `inputmode`.
+6. **Forgetting that the server must trim** and validate the value.
+7. **Expecting multi-line text.** Use `<textarea>`.
+8. **Setting `size` to control width.** Use CSS.
+9. **Blocking paste.**
+10. **Hiding the focus outline.**
+11. **Forgetting `autocomplete`,** so people retype details they have already given.
+12. **Assuming the value is safe,** and inserting it into a page or query without escaping.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a text input with a label for "Favorite city," and submit it with `method="get"` to see the pair in the address.
+2. Remove the `type` attribute, and confirm it behaves the same.
+3. Add `maxlength="20"`, and try typing past the limit.
+4. Add a character counter with JavaScript.
+5. Add `placeholder` text that shows an example, not a label.
+6. Build a username field with `autocapitalize`, `spellcheck`, and `autocomplete`.
+7. Build a "Full name" field with `autocomplete="name"`.
+8. Make a readonly field, and compare it with a disabled one.
+9. Paste text containing line breaks into a text input, and see what happens.
+10. Bonus: decide which type each of these needs: email, phone, website, age, birthday, password, long message.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the default value of the `type` attribute?</summary>
+
+`text`. An `<input>` with no `type`, or with an unknown one, behaves as a single-line text input.
+
+</details>
+
+<details>
+<summary>2. What happens to a line break pasted into a text input?</summary>
+
+It is removed, and the lines join together. For multiple lines, use `<textarea>`.
+
+</details>
+
+<details>
+<summary>3. Does the browser trim spaces from a text input?</summary>
+
+No. Leading and trailing spaces are kept, so the server should trim the value.
+
+</details>
+
+<details>
+<summary>4. When should you choose a different type instead of `text`?</summary>
+
+When the data has a known shape: email, password, phone, URL, search, number, date, or time. The specific type gives better keyboards, free checks, and better autofill.
+
+</details>
+
+<details>
+<summary>5. Why is `type="number"` a poor choice for a postal code or PIN?</summary>
+
+They are identifiers, not quantities. They may begin with zero or contain letters, and stepper arrows make no sense. Use `type="text"` with `inputmode` or `pattern` instead.
+
+</details>
+
+<details>
+<summary>6. How should you handle name fields for a global audience?</summary>
+
+Offer a single "Full name" field if you can, allow accents, spaces, apostrophes, hyphens, and non-Latin letters, avoid strict patterns and short limits, and use `autocomplete="name"`.
+
+</details>
+
+## Key Takeaways
+
+- `type="text"` is the default: a single-line, free-form text field whose value is sent as a string.
+- It supports the most attributes of any type: `value`, `placeholder`, `size`, `maxlength`, `minlength`, `pattern`, `required`, `readonly`, `autocomplete`, `spellcheck`, `autocapitalize`, `inputmode`, `list`, and `dirname`.
+- Whitespace is not trimmed, and line breaks are stripped, so trim on the server and use `<textarea>` for multiple lines.
+- Use a more specific type whenever the data has a known shape. Use `text` for names, usernames, free-form places, and codes.
+- Be generous with names and addresses, use `autocomplete`, allow pasting, and always label the field.
+- Treat every value as untrusted and validate it on the server.
+
+Text is the plain starting point. Next, learn the type that hides what you type, in [Password](./password), or return to the [Forms overview](/tutorials/html/forms).

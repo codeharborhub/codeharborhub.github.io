@@ -1,16 +1,519 @@
 ---
-id: form-element
-title: "The HTML form Element: Container for User Input"
-sidebar_label: "Form Element (<form>)"
+id: html-form-element
+title: "HTML Form Element"
+sidebar_label: "Form Element"
 sidebar_position: 2
 slug: /html/forms/form-element
-description: "Learn how the form tag serves as the main container for interactive controls, specifying action URLs, submit behaviors, and encoding types."
+description: "Learn the HTML form element: what it does, how browsers collect and send name and value pairs, the main attributes (action, method, enctype, target, autocomplete, novalidate), submitting with buttons and the Enter key, search forms, the form attribute, accessibility, and common mistakes on CodeHarborHub."
 keywords:
+  - HTML form element
   - HTML form tag
-  - form element basics
-  - form submission HTML
-  - form container tag
+  - form attributes
+  - form action method enctype
+  - novalidate attribute
+  - form autocomplete
+  - name value pairs form
+  - HTML form submit
+  - form attribute on input
+  - role search form
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, container, beginner]
+tags: [html, web-development, beginner, forms, form, frontend]
 ---
+
+import {useState} from 'react';
+
+export function SubmitDemo() {
+  const [sent, setSent] = useState(null);
+  return (
+    <div>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          setSent(new URLSearchParams(data).toString());
+        }}
+      >
+        <p>
+          <label htmlFor="fe-name">Name</label><br />
+          <input type="text" id="fe-name" name="name" defaultValue="Ada" />
+        </p>
+        <p>
+          <label htmlFor="fe-topic">Topic</label><br />
+          <select id="fe-topic" name="topic" defaultValue="html">
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+          </select>
+        </p>
+        <p>
+          <label htmlFor="fe-note">Note (this field has no name)</label><br />
+          <input type="text" id="fe-note" defaultValue="I will be ignored" />
+        </p>
+        <button type="submit">Submit</button>
+      </form>
+      <p>
+        <strong>What the browser would send:</strong>{" "}
+        <code>{sent === null ? "(press Submit)" : sent}</code>
+      </p>
+    </div>
+  );
+}
+
+Every form you have ever filled in, from a one-box search bar to a long visa application, begins with the same element: `<form>`. It looks small, but it has an important job. It marks the boundary of the conversation: "everything in here belongs together, and when the visitor submits, **send all of it, to this place, in this way**."
+
+If the fields are the questions on a paper form, the `<form>` element is the **envelope**: it holds the answers, carries an address, and decides how the package travels. In this lesson, you will learn how it works, what its attributes do, and how browsers turn what visitors type into something a server can read.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<form>` element is, and what it does
+- How a browser turns fields into name and value pairs
+- The main form attributes: `action`, `method`, `enctype`, `target`, `autocomplete`, and `novalidate`
+- Three ways a form gets submitted
+- How to build search, login, and newsletter forms
+- How the `form` attribute connects fields outside a form
+- Accessibility basics, and common mistakes
+
+## The Basics
+
+A form is a container. Fields go inside it, and a button submits it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/search" method="get">
+  <label for="q">Search lessons</label>
+  <input type="search" id="q" name="q" />
+  <button type="submit">Search</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form action="/search" method="get" onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="fe-q">Search lessons</label>{" "}
+  <input type="search" id="fe-q" name="q" />{" "}
+  <button type="submit">Search</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Here is what each part does:
+
+| Part | Role |
+| :-- | :-- |
+| `<form>` | The container |
+| `action="/search"` | **Where** to send the data: the address of the server program |
+| `method="get"` | **How** to send it: in the web address |
+| `<input ... name="q">` | A field. `name` is the key it is sent under |
+| `<button type="submit">` | Triggers the submission |
+
+If someone types "tables" and presses Search, the browser goes to:
+
+```text
+/search?q=tables
+```
+
+That `q=tables` is a **name and value pair**: the field's `name`, an equals sign, and what the visitor typed.
+
+:::info The form does not process anything
+`<form>` does not save data, send an email, or log anyone in. It only **packages and sends**. A program on a server, written in a language such as Node.js, Python, PHP, or Java, receives the data and does the work.
+:::
+
+## How a Browser Builds the Data
+
+When a form is submitted, the browser visits every field inside it, and collects those that qualify. For each one, it creates a **name and value pair**. Then it joins all the pairs together.
+
+| A field is included only when it... |
+| :-- |
+| Has a **`name`** attribute that is not empty |
+| Is **not disabled** |
+| Is a checkbox or radio button that is **checked** (unchecked ones are skipped) |
+| Is a `<select>` with a selected option |
+| Is **not** a button, unless that button was the one pressed |
+
+Try it. Change the values, press **Submit**, and look at what would be sent. Notice that the third field has no `name`, so it is silently left out.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SubmitDemo />
+</>
+</BrowserWindow>
+
+The result looks like `name=Ada&topic=html`. Pairs are joined with `&`, and special characters, such as spaces, are encoded (a space becomes `+` or `%20`). The browser does this for you.
+
+:::warning The number one beginner bug
+A field with `id` but **no `name`** looks perfect on screen, but its value is **never sent**. If your server never receives a value, check the `name` first.
+:::
+
+## The Form Attributes
+
+The `<form>` element has several attributes. Each gets its own lesson later, but here is the full map.
+
+| Attribute | What it does | Common values | Lesson |
+| :-- | :-- | :-- | :-- |
+| `action` | The URL that receives the data | `/subscribe`, `https://...` | [Form Action](./form-action) |
+| `method` | How the data is sent | `get`, `post`, `dialog` | [Form Methods](./form-methods) |
+| `enctype` | How the data is encoded (for `post`) | `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain` | [Multipart Form Data](./multipart-form-data) |
+| `target` | Where to show the response | `_self`, `_blank` | This lesson |
+| `autocomplete` | Lets the browser fill in fields | `on`, `off` | [Autocomplete](./autocomplete) |
+| `novalidate` | Turns off the browser's built-in checks | (boolean) | [Form Validation](./form-validation) |
+| `name` | A name for the form, for scripts | `signup` | This lesson |
+| `accept-charset` | Which character encodings are accepted | `UTF-8` | Rarely needed |
+| `rel` | Relationship hints for the target, such as `noopener` | `noopener` | This lesson |
+
+### `action` and `method` in One Look
+
+```html
+<form action="/subscribe" method="post">
+  ...
+</form>
+```
+
+- **`action`:** if you leave it out, the form submits to the current page's own address.
+- **`method`:** defaults to `get` if you leave it out. Use `post` for anything that changes data or is private.
+
+You will study both in detail in the next two lessons.
+
+### `target`: Where the Reply Appears
+
+By default, the response replaces the current page. `target` can change that.
+
+| Value | Result |
+| :-- | :-- |
+| `_self` (default) | The same tab |
+| `_blank` | A new tab |
+
+```html
+<form action="/print-preview" method="post" target="_blank" rel="noopener">
+  ...
+</form>
+```
+
+Opening forms in a new tab is unusual, and can surprise people. Do it only when there is a good reason.
+
+### `autocomplete`
+
+Controls whether the browser may fill in saved values.
+
+```html
+<form action="/login" method="post" autocomplete="on">
+```
+
+For most forms, the default is best. You will learn when and how to adjust it in [Autocomplete](./autocomplete).
+
+### `novalidate`
+
+Browsers check fields such as `required` and `type="email"` before submitting. `novalidate` switches that off for the whole form, which is useful when you run your own validation script.
+
+```html
+<form action="/signup" method="post" novalidate>
+```
+
+Without good custom checks, removing the browser's help makes your form worse. Do not use it unless you replace what it does. (In MDX or React, this attribute is spelled `noValidate`.)
+
+## Three Ways to Submit a Form
+
+1. **Press a submit button:** `<button type="submit">` or `<input type="submit">`.
+2. **Press Enter** while typing in most single-line fields. The browser acts as if the first submit button were pressed.
+3. **Submit from JavaScript:** `form.requestSubmit()` (which runs validation) or `form.submit()` (which does not).
+
+```html
+<form action="/subscribe" method="post">
+  <input type="email" name="email" />
+  <button type="submit">Subscribe</button>   <!-- 1 -->
+</form>                                      <!-- pressing Enter in the input also submits (2) -->
+```
+
+### Reset
+
+A `<button type="reset">` puts every field back to its starting value. Use it rarely. People sometimes press it by mistake and lose their work.
+
+## One Form, One Purpose
+
+A page can have **several forms**, but each should have a single job: a search form in the header, a newsletter form in the footer, a comment form below an article.
+
+| Rule | Why |
+| :-- | :-- |
+| **Do not nest forms** | A `<form>` inside another `<form>` is invalid, and browsers will ignore the inner one |
+| **One submit action per form** | Mixing purposes confuses users and breaks data |
+| **Keep related fields together** | Everything the server needs for one action goes in the same form |
+
+<Tabs>
+<TabItem value="wrong" label="Invalid" default>
+
+```html
+<form action="/signup" method="post">
+  <input type="email" name="email" />
+  <form action="/search" method="get">    <!-- not allowed -->
+    <input type="search" name="q" />
+  </form>
+</form>
+```
+
+</TabItem>
+<TabItem value="right" label="Valid">
+
+```html
+<form action="/search" method="get">
+  <input type="search" name="q" />
+</form>
+
+<form action="/signup" method="post">
+  <input type="email" name="email" />
+</form>
+```
+
+</TabItem>
+</Tabs>
+
+## What Can Go Inside a Form?
+
+Almost anything. Forms hold text, headings, paragraphs, lists, and layout elements, along with the controls.
+
+```html
+<form action="/feedback" method="post">
+  <h2>Tell us what you think</h2>
+  <p>It takes one minute.</p>
+
+  <label for="msg">Your message</label>
+  <textarea id="msg" name="message"></textarea>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+The elements that actually take part in submission are called **form controls**: `<input>`, `<textarea>`, `<select>`, `<button>`, and a few others. Controls are covered in the lessons that follow.
+
+## Fields Outside the Form: The `form` Attribute
+
+Usually, controls sit inside the `<form>`. But sometimes a design puts a button or field elsewhere on the page. The `form` attribute links it back, by the form's `id`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form id="subscribe" action="/subscribe" method="post">
+  <label for="mail">Email</label>
+  <input type="email" id="mail" name="email" />
+</form>
+
+<!-- far away on the page, but still part of the form -->
+<button type="submit" form="subscribe">Subscribe</button>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form id="fe-subscribe" action="/subscribe" method="post" onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="fe-mail">Email</label>{" "}
+  <input type="email" id="fe-mail" name="email" />
+</form>
+
+<p>Some other content on the page...</p>
+
+<button type="submit" form="fe-subscribe">Subscribe</button>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The button sits outside the `<form>` tags, but pressing it submits the form. This also lets one control belong to a form even when the HTML layout (such as a table row) makes nesting awkward.
+
+## Real-World Examples
+
+### 1. A Search Form
+
+A search form is a navigation aid, so give it the search landmark. Search uses `get`, so the address can be bookmarked and shared.
+
+```html
+<form action="/search" method="get" role="search">
+  <label for="site-search">Search the site</label>
+  <input type="search" id="site-search" name="q" />
+  <button type="submit">Search</button>
+</form>
+```
+
+`role="search"` lets screen reader users jump straight to the search box. (Modern HTML also has a dedicated `<search>` element that wraps a search form. `role="search"` on the form works everywhere.)
+
+### 2. A Newsletter Form
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/subscribe" method="post">
+  <h3>Get weekly tips</h3>
+
+  <label for="news-email">Email address</label>
+  <input
+    type="email"
+    id="news-email"
+    name="email"
+    autocomplete="email"
+    required
+  />
+
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form action="/subscribe" method="post" onSubmit={(event) => event.preventDefault()}>
+  <h3>Get weekly tips</h3>
+
+  <label htmlFor="fe-news-email">Email address</label>{" "}
+  <input
+    type="email"
+    id="fe-news-email"
+    name="email"
+    autoComplete="email"
+    required
+  />{" "}
+  <button type="submit">Subscribe</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Press **Subscribe** with the field empty, or with something that is not an email, and your browser will block the submission and explain why.
+
+### 3. A Login Form
+
+```html
+<form action="/login" method="post">
+  <label for="user">Email or username</label>
+  <input type="text" id="user" name="username" autocomplete="username" required />
+
+  <label for="pass">Password</label>
+  <input type="password" id="pass" name="password" autocomplete="current-password" required />
+
+  <button type="submit">Log in</button>
+</form>
+```
+
+:::warning Passwords and `method`
+Never send a password with `method="get"`. It would appear in the address bar, browser history, and server logs. Always use `post`, and make sure the site runs over **HTTPS**.
+:::
+
+## Accessibility at a Glance
+
+- **A form is not a landmark on its own.** It only becomes a "form" landmark for screen readers when it has an accessible name (with `aria-label` or `aria-labelledby`). Name important forms, but there is no need to name every small one.
+- **Search forms** should use `role="search"` (or the `<search>` element).
+- **Use real submit buttons.** A `<div>` styled as a button will not submit with Enter and cannot be reached by keyboard.
+- **Do not remove the Enter key behavior.** Many people submit with Enter.
+- **Keep the order logical.** Tab order follows the source order, so write the fields in the order people should fill them in.
+- **Tell people what happened.** After submission, show a clear confirmation or error message. You will learn more in [Accessible Forms](./accessible-forms).
+
+```html
+<form action="/contact" method="post" aria-labelledby="contact-title">
+  <h2 id="contact-title">Contact us</h2>
+  ...
+</form>
+```
+
+## Common Mistakes to Avoid
+
+1. **Fields without a `name`.** Their values are never sent.
+2. **Forgetting the submit button,** or using `type="button"`, which does not submit.
+3. **Nesting one form inside another.**
+4. **Using `method="get"` for passwords** or other private data.
+5. **Leaving out `action`** and wondering why the page reloads in place. (It submits to itself.)
+6. **Putting a whole page in one `<form>`** just because it contains fields. Group by purpose.
+7. **Using `novalidate`** without adding your own checks.
+8. **Using `<div>` or `<span>` as buttons.**
+9. **Forgetting `enctype="multipart/form-data"`** when uploading files.
+10. **Relying on the browser alone** to check data. The server must check it too.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a one-field search form with `method="get"`, and look at the address after you submit.
+2. Add a second field and see how the address changes.
+3. Remove the `name` from one field and check that its value disappears.
+4. Change the method to `post`, and note that the address no longer shows the data.
+5. Build a newsletter form with an email field and a submit button.
+6. Add `required`, and press Submit with the field empty.
+7. Add `role="search"` to a search form.
+8. Place a submit button outside the form, and link it with the `form` attribute.
+9. Add `novalidate`, and see what changes. Then remove it.
+10. Bonus: use your browser's developer tools (Network tab) to inspect what is sent when you submit a `post` form.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `<form>` element do?</summary>
+
+It groups form controls, and defines where (`action`) and how (`method`) the data is sent when the form is submitted. It does not store or process the data itself.
+
+</details>
+
+<details>
+<summary>2. Which attribute decides the key under which a field's value is sent?</summary>
+
+`name`. A control with no `name` is not included in the submission.
+
+</details>
+
+<details>
+<summary>3. What happens if you leave out `action` and `method`?</summary>
+
+The form submits to the current page's address, using the default method `get`.
+
+</details>
+
+<details>
+<summary>4. Name three ways a form can be submitted.</summary>
+
+Pressing a submit button, pressing Enter in a field, and calling `requestSubmit()` (or `submit()`) from JavaScript.
+
+</details>
+
+<details>
+<summary>5. Can you place a form inside another form?</summary>
+
+No. Nested forms are invalid. Use separate forms, or the `form` attribute to link a control to a form from elsewhere.
+
+</details>
+
+<details>
+<summary>6. What does `novalidate` do?</summary>
+
+It turns off the browser's built-in validation for the whole form. Use it only when you provide your own checks.
+
+</details>
+
+## Key Takeaways
+
+- `<form>` is the envelope: it holds the controls and decides where and how their data is sent.
+- Browsers collect a **name and value pair** from each control that has a `name`, is not disabled, and has a value to send.
+- The key attributes are `action`, `method`, `enctype`, `target`, `autocomplete`, and `novalidate`.
+- A form is submitted by a submit button, the Enter key, or JavaScript. Keep one purpose per form, and never nest forms.
+- Use `role="search"` for search forms, name important forms for screen readers, and send private data with `post` over HTTPS.
+- HTML only packages the data. A server must receive it, check it again, and act on it.
+
+You now know what the envelope is. Next, learn how to write its address in [Form Action](./form-action), or return to the [Forms overview](/tutorials/html/forms).

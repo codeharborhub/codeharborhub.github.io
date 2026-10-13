@@ -1,16 +1,488 @@
 ---
-id: minlength-and-maxlength
-title: "String Length Limits: minlength and maxlength Attributes"
-sidebar_label: "Minlength & Maxlength"
-sidebar_position: 14
+id: html-minlength-and-maxlength
+title: "HTML Minlength and Maxlength Attributes"
+sidebar_label: "Minlength and Maxlength"
+sidebar_position: 15
 slug: /html/forms/minlength-and-maxlength
-description: "Restrict minimum and maximum character counts in text fields and textareas using minlength and maxlength attributes."
+description: "Learn the HTML minlength and maxlength attributes: setting minimum and maximum text lengths on inputs and textareas, how browsers count characters (UTF-16 code units, emoji, and line breaks), the tooShort and tooLong validity flags, accessible character counters, sensible limits for passwords and names, and why the server must enforce limits too."
 keywords:
-  - HTML minlength attribute
-  - HTML maxlength attribute
-  - text input character limit
-  - enforce string bounds HTML
+  - HTML minlength maxlength
+  - maxlength attribute
+  - minlength attribute
+  - character counter textarea
+  - tooShort tooLong validity
+  - input length limit
+  - HTML form validation length
+  - maxlength emoji
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, validation, attributes]
+tags: [html, web-development, beginner, forms, validation, minlength, maxlength, frontend]
 ---
+
+import {useState} from 'react';
+
+export function CounterDemo() {
+  const min = 20;
+  const max = 120;
+  const [text, setText] = useState("");
+  const [touched, setTouched] = useState(false);
+  const length = text.length;
+  const left = max - length;
+  let hint = "Write at least " + min + " characters.";
+  let color = "#64748b";
+  if (length >= min) {
+    hint = "Long enough.";
+    color = "#15803d";
+  } else if (touched && length > 0) {
+    hint = (min - length) + " more characters needed.";
+    color = "#b91c1c";
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="ml-bio">Short bio ({min} to {max} characters)</label><br />
+      <textarea
+        id="ml-bio"
+        name="bio"
+        rows={4}
+        minLength={min}
+        maxLength={max}
+        required
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={() => setTouched(true)}
+        aria-describedby="ml-bio-hint ml-bio-count"
+        style={{width: "100%", maxWidth: "28rem"}}
+      />
+      <p id="ml-bio-count" style={{margin: "0.25rem 0 0", fontSize: "0.9em"}}>
+        {length} / {max} characters ({left} left)
+      </p>
+      <p id="ml-bio-hint" style={{margin: "0 0 0.5rem", fontSize: "0.9em", color}}>{hint}</p>
+      <button type="submit">Save bio</button>
+    </form>
+  );
+}
+
+export function CountingDemo() {
+  const [text, setText] = useState("Hi 👋 café");
+  const codeUnits = text.length;
+  const codePoints = Array.from(text).length;
+  let graphemes = codePoints;
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    graphemes = Array.from(new Intl.Segmenter(undefined, {granularity: "grapheme"}).segment(text)).length;
+  }
+  const bytes = new TextEncoder().encode(text).length;
+  const cell = {padding: "0.2rem 0.75rem 0.2rem 0", borderBottom: "1px solid #e2e8f0"};
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="ml-count">Type anything (try emoji, accents, or 李雷)</label><br />
+      <input
+        type="text"
+        id="ml-count"
+        name="sample"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        style={{width: "100%", maxWidth: "28rem"}}
+      />
+      <table style={{marginTop: "0.5rem", borderCollapse: "collapse"}}>
+        <tbody>
+          <tr><td style={cell}>JavaScript <code>.length</code> (what <code>maxlength</code> counts)</td><td style={cell}><strong>{codeUnits}</strong></td></tr>
+          <tr><td style={cell}>Unicode code points</td><td style={cell}>{codePoints}</td></tr>
+          <tr><td style={cell}>Visible characters (graphemes)</td><td style={cell}>{graphemes}</td></tr>
+          <tr><td style={cell}>Bytes in UTF-8 (what a database may count)</td><td style={cell}>{bytes}</td></tr>
+        </tbody>
+      </table>
+    </form>
+  );
+}
+
+Almost every text field needs a sensible size. A username that is one letter long is useless. A "bio" that is a million characters long can break your page or your database. HTML gives you two attributes for this: **`minlength`** sets the shortest allowed text, and **`maxlength`** sets the longest.
+
+They look simple, but they have a few surprises: what exactly is counted, when each one is checked, and why a hard limit can frustrate visitors. This lesson explains all of it.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `minlength` and `maxlength` do, and where they work
+- How the browser enforces each one
+- How characters are counted (and why emoji can count double)
+- The `tooShort` and `tooLong` validity flags
+- How to build an accessible character counter
+- Choosing sensible limits
+- Why the server must enforce limits too
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/register" method="post">
+  <label for="username">Username (3 to 12 characters)</label>
+  <input
+    type="text"
+    id="username"
+    name="username"
+    minlength="3"
+    maxlength="12"
+    required
+  />
+
+  <button type="submit">Join</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="ml-user">Username (3 to 12 characters)</label><br />
+  <input type="text" id="ml-user" name="username" minLength={3} maxLength={12} required />{" "}
+  <button type="submit">Join</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try it: type `ab` and press **Join**, and the browser says the text is too short. Then type a long word, and notice you **cannot type past 12 characters**.
+
+| Attribute | Meaning | What the browser does |
+| :-- | :-- | :-- |
+| `minlength="3"` | At least 3 characters | Blocks the submit and shows a message when the text is shorter |
+| `maxlength="12"` | At most 12 characters | **Stops the visitor from typing** more than 12 |
+
+## Where They Work
+
+| Control | `minlength` / `maxlength` |
+| :-- | :-- |
+| `text`, `search`, `tel`, `url`, `email`, `password` | **Yes** |
+| `<textarea>` | **Yes** |
+| `type="number"`, `range`, `date`, `time` | **No.** Use `min` and `max` for **values** (see [Min and Max](./min-and-max)) |
+| `<select>`, checkbox, radio, file | No |
+
+:::note Length is not the same as value
+`maxlength="3"` on a text field limits **how many characters** can be typed. `max="999"` on a number field limits **how big the number** can be. They are different tools.
+:::
+
+## How Each One Behaves
+
+### `maxlength`: a hard stop while typing
+
+The browser simply refuses extra characters, so a visitor can never submit text that is too long **by typing**. Two details to know:
+
+- **Pasting:** if someone pastes text that is too long, browsers usually **cut it off silently** at the limit. The visitor may not notice that the end of their text is gone.
+- **Script-set values:** if your JavaScript sets `input.value` to a longer text, the browser allows it, but the field becomes invalid (`tooLong`) when validated.
+
+### `minlength`: checked when submitting
+
+The browser checks `minlength` only on submit (or when your script asks). Two details:
+
+- **An empty field passes.** Add `required` if the field must have a value. (`minlength="3"` alone does **not** make the field required.)
+- **Only after the visitor edits it.** A **pre-filled** value that is too short is not flagged until the visitor changes it, so do not rely on `minlength` to catch bad stored data.
+
+### Together
+
+You can combine them with other rules. The field must pass **all** of them:
+
+```html
+<input type="text" name="code" minlength="6" maxlength="6" pattern="[0-9]+" required />
+```
+
+Make sure `minlength` is **not larger** than `maxlength`, or the field can never be valid.
+
+## Try It: A Character Counter
+
+This textarea needs 20 to 120 characters. Watch the counter, the hint, and what happens when you type or paste past the limit.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="bio">Short bio (20 to 120 characters)</label>
+<textarea
+  id="bio"
+  name="bio"
+  rows="4"
+  minlength="20"
+  maxlength="120"
+  required
+  aria-describedby="bio-hint bio-count"
+></textarea>
+
+<p id="bio-count"></p>
+<p id="bio-hint"></p>
+```
+
+```js title="script.js"
+const bio = document.getElementById("bio");
+const count = document.getElementById("bio-count");
+const hint = document.getElementById("bio-hint");
+const min = Number(bio.minLength);
+const max = Number(bio.maxLength);
+
+function update() {
+  const length = bio.value.length;
+  count.textContent = length + " / " + max + " characters (" + (max - length) + " left)";
+  hint.textContent = length >= min ? "Long enough." : "Write at least " + min + " characters.";
+}
+
+bio.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CounterDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Making the Counter Accessible
+
+- **Link it to the field** with `aria-describedby`, so screen readers read the limit with the field.
+- **Do not announce every key press.** Putting `aria-live="polite"` on a counter that changes with every character makes a screen reader chatter constantly. Instead, announce only at key moments: when the visitor is close to the limit (say, 20 left), and when they reach it.
+- **Do not rely on colour alone.** Say "12 characters left" in words.
+- **Show the limit up front** ("120 characters maximum"), not only after the visitor reaches it.
+
+## How Characters Are Counted
+
+This is where beginners get surprised. Browsers measure `maxlength` in **UTF-16 code units**, the same units as JavaScript's `.length`. Most letters count as 1, but many emoji and rare characters count as **2**.
+
+Type different characters below, and compare the counts:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="sample">Type anything</label>
+<input type="text" id="sample" name="sample" value="Hi 👋 café" />
+<pre id="out"></pre>
+```
+
+```js title="script.js"
+const input = document.getElementById("sample");
+const out = document.getElementById("out");
+
+function show() {
+  const text = input.value;
+  const units = text.length;                          // what maxlength counts
+  const points = Array.from(text).length;             // Unicode code points
+  const graphemes = Array.from(
+    new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)
+  ).length;                                           // what people see
+  const bytes = new TextEncoder().encode(text).length; // UTF-8 bytes
+
+  out.textContent =
+    "length: " + units + "\ncode points: " + points +
+    "\nvisible characters: " + graphemes + "\nUTF-8 bytes: " + bytes;
+}
+
+input.addEventListener("input", show);
+show();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CountingDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+What this means for you:
+
+| Unit | Example | Why it matters |
+| :-- | :-- | :-- |
+| UTF-16 code units | `👋` is **2** | What `maxlength` and `.length` count |
+| Code points | `👋` is 1 | What many languages (Python, for example) count |
+| Visible characters | `👨‍👩‍👧` is 1 (but 8 code units) | What the visitor thinks of as "one character" |
+| UTF-8 bytes | `é` is 2, `李` is 3, `👋` is 4 | What many databases limit |
+
+So a visitor who types four emoji into a field with `maxlength="8"` has used up all 8. Keep your limits **generous**, so these differences do not matter, and **count the same way on the server** (or in bytes, if your database limit is in bytes).
+
+### Line Breaks in a Textarea
+
+In a `textarea`, the browser counts a line break as **one** character for `maxlength`. But when the form is **submitted**, line breaks are sent as two characters (carriage return and line feed). So the server may see a text a little longer than the visitor typed, one extra character per line. Allow some room on the server, or normalise line breaks before checking.
+
+## The `tooShort` and `tooLong` Flags
+
+| Flag | `true` when | Notes |
+| :-- | :-- | :-- |
+| `validity.tooShort` | Shorter than `minlength` | Only after the visitor has edited the field, and only when not empty |
+| `validity.tooLong` | Longer than `maxlength` | Rare, because typing is blocked. Happens with values set by a script |
+| `validity.valueMissing` | Empty and `required` | Use `required` for this |
+
+You can use them to write a clear message:
+
+```js
+const input = document.getElementById("username");
+
+input.addEventListener("input", () => {
+  if (input.validity.tooShort) {
+    input.setCustomValidity("Use at least " + input.minLength + " characters. You have used " + input.value.length + ".");
+  } else {
+    input.setCustomValidity("");
+  }
+});
+```
+
+Always clear the message with an empty string. (See [Form Validation](./form-validation).)
+
+## Choosing Good Limits
+
+| Field | Suggested limits | Why |
+| :-- | :-- | :-- |
+| Username | 3 to 30 | Short enough to display, long enough to be unique |
+| Full name | **No short minimum**, maximum 100 or more | Some real names are one or two characters, and some are very long |
+| Email address | Maximum 254 | The practical limit for an address |
+| Password | **Minimum 8** (or more), maximum **at least 64**, or none | Length is the best defence. Never set a low maximum |
+| Phone number | Maximum about 20 | Allows `+`, spaces, and extensions |
+| Postal code | Maximum about 12 | Varies widely by country |
+| Tweet-style message | A real limit, shown clearly | The limit is part of the design |
+| Comment or bio | Maximum 500 to 5000 | Stops abuse, but still lets people write |
+| Search | Maximum about 200 | Prevents huge queries |
+
+Tips:
+
+- **Do not set a minimum for names.** A one-letter name, or a name in a script where one character is a whole word, is perfectly valid.
+- **Do not set a low maximum on passwords.** A visitor who uses a password manager may have a very long, strong password.
+- **Tell visitors the limit.** A hidden limit that silently cuts their text is frustrating.
+- **Avoid cutting off text silently.** If paste is likely, consider showing a counter and letting the visitor go over, with an error message, instead of using `maxlength`. That way they can edit rather than lose text.
+
+:::tip Hard limit or soft limit?
+`maxlength` is a **hard** limit: typing stops. For long, thoughtful text, a **soft** limit is kinder: leave out `maxlength`, show the counter turning red when over, and block only on submit. The visitor can then paste a long text and trim it themselves.
+:::
+
+## Accessibility at a Glance
+
+- **State the limits in text** before the visitor types ("3 to 12 characters").
+- **Link counters and hints** with `aria-describedby`.
+- **Avoid chatty live regions.** Announce only near the limit.
+- **Do not cut text silently.** If pasted text is shortened, say so.
+- **Give clear errors:** "Use at least 8 characters. You have used 5."
+- **Do not use `maxlength` as the only way** to show a limit. Some assistive technology does not announce it.
+- **Respect autofill and password managers.** Do not set limits that break them.
+
+## Security Notes
+
+- **These attributes are not security.** A visitor can remove them in the developer tools or send a request by hand. The **server must enforce every limit**.
+- **A maximum protects your server.** Without a server-side limit, someone can send megabytes of text in one field, filling your database or slowing your app.
+- **Limit the whole request,** too, not only each field (your web server can set a maximum body size).
+- **Check the unit your database uses.** A column limited to 50 **bytes** can hold far fewer than 50 characters of non-Latin text.
+- **Do not cut strings blindly** on the server in the middle of a multi-part character, which creates broken text. Cut by code point or visible character.
+- **A limit is not a defence against injection.** Escape output and use parameterised queries.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Count fairly.** A name or message in Chinese, Japanese, or Korean carries much more meaning per character than one in English, so a "100 character" limit means very different amounts of text. Think about whether your limit makes sense for every language.
+- **Emoji and combined characters** use several units. Keep limits generous.
+- **Do not set a minimum** for names, where a single character can be valid.
+- **Translate your counter text** ("120 characters left") and use the visitor's number formatting if you show large numbers.
+- **Right-to-left text** works the same way for counting, but check that your counter's layout looks right when mirrored.
+
+## Common Mistakes to Avoid
+
+1. **Relying on `maxlength` alone** for safety. The server must enforce limits.
+2. **Expecting `minlength` to make a field required.** Empty fields pass. Add `required`.
+3. **Setting `minlength` larger than `maxlength`,** so the field is never valid.
+4. **Using `maxlength` on `type="number"`,** where it does nothing. Use `max`.
+5. **Silently cutting pasted text.**
+6. **A very low maximum on passwords.**
+7. **A minimum on names.**
+8. **Counting emoji as one** and then being surprised that the limit is reached early.
+9. **A counter that announces every key press** to screen readers.
+10. **Forgetting that databases count bytes,** not characters.
+11. **Not telling visitors the limit** until they hit it.
+12. **Trusting that a pre-filled short value** will be flagged by `minlength`.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Make a username field with `minlength="3"` and `maxlength="12"`, and test it.
+2. Remove `required` and see that an empty field passes `minlength`.
+3. Try to type, then paste, a text longer than `maxlength`. What happens?
+4. Add a live character counter to a textarea, linked with `aria-describedby`.
+5. Make the counter announce only when 20 characters are left, using a separate `aria-live` message.
+6. Type an emoji into a field with `maxlength="2"`, and count how many fit.
+7. Show `validity.tooShort` in the console as you type.
+8. Replace the browser message with your own, and clear it correctly.
+9. Build a "soft limit" textarea: no `maxlength`, a counter that turns red when over, and a block only on submit.
+10. Bonus: write the server-side check for your username rule, counting in the same way as the browser.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do `minlength` and `maxlength` do?</summary>
+
+`minlength` sets the shortest allowed text, and `maxlength` sets the longest. `maxlength` stops the visitor typing past the limit, and `minlength` is checked when the form is submitted.
+
+</details>
+
+<details>
+<summary>2. Does `minlength` make a field required?</summary>
+
+No. An empty field passes `minlength`. Add `required` if a value is mandatory.
+
+</details>
+
+<details>
+<summary>3. Which controls support them?</summary>
+
+Text-like inputs (`text`, `search`, `tel`, `url`, `email`, `password`) and `textarea`. For numbers, use `min` and `max` instead.
+
+</details>
+
+<details>
+<summary>4. How does the browser count characters?</summary>
+
+In UTF-16 code units, like JavaScript's `.length`. Most characters count as 1, but many emoji count as 2. Databases may count UTF-8 bytes, which is different again.
+
+</details>
+
+<details>
+<summary>5. What is a good way to handle long text such as a bio?</summary>
+
+Show a counter and consider a soft limit: do not set `maxlength`, let the counter warn when the text is over, and block on submit. That way pasted text is not silently cut off.
+
+</details>
+
+<details>
+<summary>6. Is `maxlength` enough to protect the server?</summary>
+
+No. Anyone can bypass it. The server must enforce every limit, including a limit on the size of the whole request.
+
+</details>
+
+## Key Takeaways
+
+- `minlength` and `maxlength` limit the **number of characters** in text-like inputs and textareas.
+- `maxlength` blocks typing past the limit. `minlength` is checked on submit, ignores empty fields, and is only flagged after the visitor edits the value.
+- Characters are counted in UTF-16 code units, so emoji can count as 2, and databases may count bytes.
+- Use `validity.tooShort` and `validity.tooLong` to write clear, specific messages.
+- Show the limits in words, and keep counters quiet for screen readers.
+- Choose generous limits: no minimum for names, and no low maximum for passwords.
+- These attributes are a convenience. **The server must enforce every limit.**
+
+Next, learn how to limit numbers and dates, in [Min and Max](./min-and-max), or return to the [Forms overview](/tutorials/html/forms).

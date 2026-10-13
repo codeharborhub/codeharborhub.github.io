@@ -1,18 +1,490 @@
 ---
-id: input-type-datetime-local
-title: "Local Date and Time Inputs: type='datetime-local'"
-sidebar_label: "Datetime Local"
+id: html-input-datetime-local
+title: "HTML Input Type Datetime-local"
+sidebar_label: "Datetime-local"
 sidebar_position: 10
 slug: /html/forms/input-types/datetime-local
-description: "Select both date and local time simultaneously without specifying time zones using input type='datetime-local'."
+description: "Learn the HTML input type datetime-local: choosing a date and time together, the yyyy-mm-ddThh:mm value format, why it has no time zone, min, max, and step, converting to UTC, setting the current time as a default, daylight saving traps, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type datetime-local
-  - date and time picker
-  - local timestamp input
-  - combined date time field
+  - datetime-local input
+  - date and time picker HTML
+  - datetime-local value format
+  - datetime-local time zone
+  - convert datetime-local to UTC
+  - datetime-local min max step
+  - toISOString datetime-local
+  - datetime-local daylight saving
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, date-time]
+tags: [html, web-development, beginner, forms, input, datetime-local, validation, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+
+export function MeetingDemo() {
+  const [value, setValue] = useState("2026-12-25T15:30");
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  let rows = null;
+  if (ready && value) {
+    const moment = new Date(value);
+    const show = (zone) =>
+      new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: zone,
+      }).format(moment);
+    rows = (
+      <ul style={{margin: "0.5rem 0 0"}}>
+        <li>Your time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone}</li>
+        <li>In UTC: <code>{moment.toISOString()}</code></li>
+        <li>In New York: {show("America/New_York")}</li>
+        <li>In Kolkata: {show("Asia/Kolkata")}</li>
+        <li>In Tokyo: {show("Asia/Tokyo")}</li>
+      </ul>
+    );
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="dtl-demo">Meeting starts</label><br />
+      <input
+        type="datetime-local"
+        id="dtl-demo"
+        name="start"
+        value={value}
+        min="2026-01-01T00:00"
+        onChange={(event) => setValue(event.target.value)}
+        aria-describedby="dtl-demo-out"
+      />
+      <div id="dtl-demo-out" role="status">
+        <p style={{margin: "0.5rem 0 0"}}>Value sent: <code>start={value || "(empty)"}</code></p>
+        {rows}
+      </div>
+    </form>
+  );
+}
+
+Some things happen at an exact **moment**: a webinar, a flight, a delivery slot, an exam start. For these you need both a day and a time, and `type="datetime-local"` lets the visitor pick both in a single field.
+
+The name has a catch worth understanding right away. **"Local"** means the value carries **no time zone**. It says "25 December, half past three" and nothing about *where*. In this lesson, you will learn how the field works, and how to turn that local value into a real, unambiguous moment on your server.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="datetime-local"` shows, and the value format it sends
+- What "local" really means
+- `min`, `max`, and `step`
+- How to set the current time as a default
+- How to convert the value into an exact moment (UTC)
+- Daylight saving traps, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="start">Event starts</label>
+<input type="datetime-local" id="start" name="start" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="dtl-basic">Event starts</label><br />
+  <input type="datetime-local" id="dtl-basic" name="start" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The field has parts for **day, month, year, hour, and minute** (and AM/PM on a 12-hour clock). Clicking it opens a picker in many browsers, and phones show their own native date and time wheels. It looks like a [date](./date) input and a [time](./time) input joined together.
+
+## The Value Format
+
+:::info The value is `yyyy-mm-ddThh:mm`
+A date, the letter `T`, and a 24-hour time, such as `2026-12-25T15:30`. It is the same however the field is displayed.
+:::
+
+| What the visitor sees | What is sent |
+| :-- | :-- |
+| `12/25/2026, 03:30 PM` (US) | `2026-12-25T15:30` |
+| `25/12/2026, 15:30` (UK, India) | `2026-12-25T15:30` |
+| `25.12.2026, 15:30` (Germany) | `2026-12-25T15:30` |
+| (nothing, or incomplete) | an empty string |
+
+```text
+start=2026-12-25T15%3A30
+```
+
+(The `:` is encoded as `%3A` in the address, and your server decodes it back.)
+
+If `step` is under 60 seconds, the value gets seconds too: `2026-12-25T15:30:45`.
+
+The starting `value` in HTML uses the same format. The `T` is required, and a space will not work:
+
+```html
+<input type="datetime-local" name="start" value="2026-12-25T15:30" />
+```
+
+:::note The old `datetime` type is gone
+Years ago, HTML had a `type="datetime"` that included a time zone. No browser supports it any more, and it was removed. Use `datetime-local`, and handle the zone yourself, as explained below.
+:::
+
+## What "Local" Means
+
+The value has **no time zone and no offset**. It is a "wall-clock" reading: what a clock on the wall would show to the person choosing it.
+
+| Visitor in | Picks | Value sent |
+| :-- | :-- | :-- |
+| Mumbai | 25 Dec, 15:30 | `2026-12-25T15:30` |
+| Chicago | 25 Dec, 15:30 | `2026-12-25T15:30` |
+
+Those are **two different moments** (Mumbai's is about 11.5 hours earlier), yet the strings are identical. Your server cannot tell them apart without more information.
+
+That makes `datetime-local` perfect for things that are tied to a **local clock**: "the doctor sees me at 15:30 at the clinic," or "the gym class starts at 18:00." But when the exact moment matters across places, you need to attach a time zone.
+
+## Try It: One Value, Many Moments
+
+Pick a date and time in the field. The panel shows the exact moment that value stands for, if it is read in **your own** time zone, and how that same moment looks elsewhere.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="start">Meeting starts</label>
+<input type="datetime-local" id="start" name="start" value="2026-12-25T15:30" />
+
+<ul>
+  <li>Your zone: <span id="zone"></span></li>
+  <li>In UTC: <code id="utc"></code></li>
+  <li>In New York: <span id="ny"></span></li>
+  <li>In Tokyo: <span id="tokyo"></span></li>
+</ul>
+```
+
+```js title="script.js"
+const input = document.getElementById("start");
+
+function show(date, zone) {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: zone,
+  }).format(date);
+}
+
+function update() {
+  if (!input.value) return;
+  const moment = new Date(input.value);   // read as LOCAL time
+  document.getElementById("zone").textContent =
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
+  document.getElementById("utc").textContent = moment.toISOString();
+  document.getElementById("ny").textContent = show(moment, "America/New_York");
+  document.getElementById("tokyo").textContent = show(moment, "Asia/Tokyo");
+}
+
+input.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MeetingDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The key line is `new Date(input.value)`. A date-time string **without** an offset is read as the **local** time of the device. That is exactly what the visitor meant, so it is correct for this case. `moment.toISOString()` then gives the same moment in UTC, ending in `Z`.
+
+## Turning the Value into a Real Moment
+
+Here is the dependable recipe for events that happen at one exact moment worldwide.
+
+### Option A: Convert in the Browser (the Visitor's Own Zone)
+
+When the visitor means "this time in **my** time zone":
+
+```js
+const input = document.getElementById("start");
+const utc = new Date(input.value).toISOString();   // "2026-12-25T10:00:00.000Z" (for UTC+05:30)
+```
+
+Send `utc` to the server (in a hidden field, or in JSON), and store it. Everyone can later convert it to their own zone for display. Store **UTC** in your database.
+
+### Option B: Send the Local Value and the Zone Name
+
+When the time is for a **specific place** (for example, a clinic), send the local value and the **place's** zone name. Let the server combine them with a date library:
+
+```html
+<label for="when">Appointment</label>
+<input type="datetime-local" id="when" name="when" required />
+
+<label for="zone">Time zone</label>
+<select id="zone" name="zone">
+  <option value="Asia/Kolkata">India (Asia/Kolkata)</option>
+  <option value="Europe/London">UK (Europe/London)</option>
+  <option value="America/New_York">US Eastern (America/New_York)</option>
+</select>
+```
+
+On the server, interpret `2026-12-25T15:30` **in** `Asia/Kolkata`, and convert to UTC for storage.
+
+:::tip Use zone names, not offsets
+Send `Asia/Kolkata` or `America/Chicago`, not `+05:30`. Offsets change with daylight saving time, and a name lets a library apply the right rules for any date, even years ahead.
+:::
+
+## Min, Max, and Step
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `min` | The earliest date and time | `min="2026-12-01T09:00"` |
+| `max` | The latest date and time | `max="2026-12-31T17:00"` |
+| `step` | The gap in **seconds** (default 60) | `step="900"` |
+
+```html
+<label for="slot">Choose a slot (December, quarter hours)</label>
+<input
+  type="datetime-local"
+  id="slot"
+  name="slot"
+  min="2026-12-01T09:00"
+  max="2026-12-31T17:00"
+  step="900"
+  required
+/>
+```
+
+- `min` and `max` use the full `yyyy-mm-ddThh:mm` format.
+- `step` is in **seconds**, as with [time](./time): `900` is 15 minutes, `3600` is an hour, `1` shows seconds.
+- Unlike `time`, a `min` greater than `max` is **not** an overnight range. It is simply an impossible range, and nothing will be valid.
+- HTML cannot block specific hours inside a day (such as lunch), or days (such as holidays). Check them on the server, and explain clearly.
+
+## Setting "Now" as a Default
+
+Pre-filling the current time is common ("when did this happen?"). HTML cannot know the time when the page was written, so use JavaScript, and build the string from the **local** parts:
+
+```js title="script.js"
+function nowLocal() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) +
+    "T" + pad(now.getHours()) + ":" + pad(now.getMinutes())
+  );
+}
+
+const input = document.getElementById("start");
+input.value = nowLocal();
+input.min = nowLocal();          // no moments in the past
+```
+
+:::warning Do not use `toISOString().slice(0, 16)`
+That gives the time in **UTC**, not the visitor's local clock, so the field would show the wrong hour (and sometimes the wrong day). Build the string from `getHours()`, `getDate()`, and the other local getters, as above.
+:::
+
+## Reading the Value in JavaScript
+
+| Property | What it gives |
+| :-- | :-- |
+| `input.value` | The string `yyyy-mm-ddThh:mm` |
+| `input.valueAsNumber` | Milliseconds, as if the value were **UTC** |
+| `input.valueAsDate` | Not supported for this type (it returns `null`) |
+
+To get a proper `Date`, use `new Date(input.value)`, which reads it as the **device's local** time. Avoid `valueAsNumber` unless you know you want the "pretend it is UTC" reading. It does not match the visitor's local moment.
+
+To split the parts:
+
+```js
+const [day, time] = input.value.split("T");   // "2026-12-25", "15:30"
+```
+
+## Daylight Saving Traps
+
+When clocks change, some local times are strange:
+
+- **Spring forward:** In places that move clocks ahead an hour, a time like `02:30` on that day **does not exist**.
+- **Fall back:** When clocks move back an hour, a time like `01:30` happens **twice**.
+
+A `datetime-local` value cannot say which one the visitor meant. Browsers and date libraries make different guesses. To stay safe:
+
+- Do the conversion on the **server** with a time zone library, and decide on a rule (usually "move forward to the next valid time").
+- Show the **result** back to the visitor ("Your meeting is at 15:30 IST, Thursday 25 December") so mistakes are caught.
+- Store **UTC**, plus the original zone name, so you can always show the intended local time.
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="start"` |
+| `value` | The starting value | `value="2026-12-25T15:30"` |
+| `required` | Cannot be empty | `required` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="events"` |
+
+`placeholder`, `maxlength`, `minlength`, `pattern`, and `size` do **not** apply.
+
+## When to Use Date and Time Separately
+
+| Use | When |
+| :-- | :-- |
+| `datetime-local` | One exact event: a meeting, a flight, a webinar start |
+| [`date`](./date) | Only the day matters: a birthday, a delivery day, a deadline day |
+| [`time`](./time) | Only a time of day matters: opening hours, a daily reminder |
+| `date` + select of slots | A calendar day, then fixed time slots that can be marked as taken |
+
+Two separate fields can be easier for some people, especially on desktop, where one combined picker can feel cramped. They also let you control each part's help text and validation.
+
+## Styling a Datetime-local Input
+
+```css title="style.css"
+input[type="datetime-local"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+input[type="datetime-local"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="datetime-local"]:invalid {
+  border-color: #b91c1c;
+}
+```
+
+- The field is **wide**, because it holds many parts. Give it room, or it may be cut off on small screens.
+- The picker popup cannot be styled.
+- Keep a visible focus style, and a comfortable touch size.
+
+## Accessibility at a Glance
+
+- **Always add a label,** such as "Meeting starts."
+- **Say which time zone** applies, in text: "Times are in India Standard Time." This is the most useful hint you can give.
+- **State the allowed range and step:** "Choose a time between 9:00 and 17:00, on the quarter hour."
+- **Use the native input,** which works with keyboards and screen readers better than most custom ones.
+- **Allow typing.** Many people find that quicker than a picker.
+- **Confirm the result** in plain words after submission, such as "Thursday 25 December 2026, 3:30 PM India time."
+- **Give clear errors:** "Choose a time on or after 1 December."
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Parse the string strictly, check it is a real date and time, and enforce the range and availability.
+- **Use the server's clock** for rules like "at least 24 hours from now."
+- **Apply time zones on the server,** with a trusted library. Do not trust an offset sent by the browser without checking it.
+- **Prevent double booking.** Two people can pick the same slot at once, so lock or recheck it when saving.
+
+## Global Audience Notes
+
+- **12-hour and 24-hour clocks** and date order follow the visitor's settings. Write help text in a way that avoids ambiguity: "25 December 2026."
+- **Time zones differ** in whole hours, half hours (India, +05:30), and even 45 minutes (Nepal, +05:45). Never assume whole hours.
+- **Daylight saving** is used in many countries, and not in others. Dates when it starts vary.
+- **Calendars and week starts** vary, though the stored value is always in the Gregorian calendar.
+- **Show times in the viewer's own zone** when you display events, and say the zone name.
+
+## Common Mistakes to Avoid
+
+1. **Believing the value includes a time zone.** It does not.
+2. **Storing the local value as if it were UTC.** Convert it, and store UTC plus a zone name.
+3. **Setting `value` with a space** (`2026-12-25 15:30`) instead of `T`.
+4. **Using `toISOString().slice(0, 16)` for "now,"** which gives UTC time.
+5. **Using `valueAsNumber` as a local timestamp.** It treats the value as UTC.
+6. **Sending an offset** (`+05:30`) instead of a zone name.
+7. **Ignoring daylight saving,** where some times do not exist, and others happen twice.
+8. **Forgetting to say which time zone** the visitor should assume.
+9. **Using a combined field when only a date or only a time is needed.**
+10. **Expecting `min` greater than `max` to mean overnight.** It is not allowed here.
+11. **Not rechecking availability and rules on the server.**
+12. **Relying on `type="datetime"`,** which no longer exists.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `datetime-local` field, choose a value, and submit it with `method="get"`. Read the address.
+2. Set `value="2026-12-25T15:30"`, then try `value="2026-12-25 15:30"` (with a space).
+3. Add `min` and `max` in the full format, and open the picker.
+4. Add `step="900"` for quarter hours, and `step="1"` to show seconds.
+5. Fill the field with the current local time using the `nowLocal()` function.
+6. Log `new Date(input.value).toISOString()`, and compare it with your own time zone.
+7. Show the same moment in two other zones with `Intl.DateTimeFormat` and `timeZone`.
+8. Add a hidden field with `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+9. Build a version using one `date` field plus a select of time slots.
+10. Bonus: write a short note on what should happen when a visitor picks a time that does not exist because of daylight saving.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What format is the value of a `datetime-local` input?</summary>
+
+`yyyy-mm-ddThh:mm`, such as `2026-12-25T15:30`, with a 24-hour time. If `step` is under 60, seconds are included. An incomplete value gives an empty string.
+
+</details>
+
+<details>
+<summary>2. What does "local" mean in `datetime-local`?</summary>
+
+The value has no time zone or offset. It is a wall-clock reading, so the same string from different places means different exact moments.
+
+</details>
+
+<details>
+<summary>3. How do you get an exact moment from the value?</summary>
+
+Convert it using a time zone. In the browser, `new Date(input.value).toISOString()` reads it in the visitor's own zone and gives UTC. For a specific place, send the local value and a zone name (like `Asia/Kolkata`), and convert on the server.
+
+</details>
+
+<details>
+<summary>4. Why send `Asia/Kolkata` and not `+05:30`?</summary>
+
+Offsets change with daylight saving time, but a zone name lets a library apply the right rules for any date.
+
+</details>
+
+<details>
+<summary>5. How do you set the current local time as a default?</summary>
+
+Build the `yyyy-mm-ddThh:mm` string from the local getters (`getFullYear()`, `getMonth()`, `getDate()`, `getHours()`, `getMinutes()`). Do not use `toISOString()`, which is UTC.
+
+</details>
+
+<details>
+<summary>6. What daylight saving problems can a local value hit?</summary>
+
+When clocks jump forward, some times do not exist. When they go back, some times happen twice. Resolve this on the server with a time zone library, and show the result back to the visitor.
+
+</details>
+
+## Key Takeaways
+
+- `type="datetime-local"` picks a date and a time in one field, and sends `yyyy-mm-ddThh:mm`.
+- "Local" means **no time zone**. The same string can mean different moments in different places.
+- To get an exact moment, convert with a time zone: in the browser with `new Date(value).toISOString()`, or on the server with a zone name.
+- Use `min`, `max`, and `step` (in seconds), but enforce rules and availability on the server.
+- Build "now" from local parts, never from `toISOString()`.
+- Tell visitors which time zone applies, confirm the result in plain words, and store UTC plus a zone name.
+
+Next, learn how to pick a whole month, in [Month](./month), or return to the [Forms overview](/tutorials/html/forms).

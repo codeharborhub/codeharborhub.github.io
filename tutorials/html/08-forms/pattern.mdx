@@ -1,16 +1,526 @@
 ---
-id: pattern
-title: "Custom Text Validation: The pattern Attribute and Regular Expressions"
-sidebar_label: "Pattern Attribute (RegEx)"
-sidebar_position: 13
+id: html-pattern
+title: "HTML Pattern Attribute"
+sidebar_label: "Pattern"
+sidebar_position: 14
 slug: /html/forms/pattern
-description: "Enforce exact string formats like zip codes or custom IDs using the pattern attribute paired with regular expressions (RegEx)."
+description: "Learn the HTML pattern attribute: how regular expressions validate text fields, which input types support it, the implicit anchoring rule, writing helpful title messages, common patterns for codes and usernames, why strict patterns for names and phone numbers fail global visitors, the patternMismatch validity flag, and why the server must validate again."
 keywords:
   - HTML pattern attribute
-  - regex form validation
-  - regular expression input
-  - custom field format HTML
+  - pattern regex input
+  - HTML5 input pattern
+  - patternMismatch
+  - pattern title attribute
+  - regular expression form validation
+  - pattern unicode names
+  - pattern postal code
+  - HTML form validation pattern
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, validation, regex]
+tags: [html, web-development, beginner, forms, validation, pattern, regex, frontend]
 ---
+
+import {useState} from 'react';
+
+export function compile(source) {
+  try {
+    return new RegExp("^(?:" + source + ")$", "v");
+  } catch (first) {
+    try {
+      return new RegExp("^(?:" + source + ")$", "u");
+    } catch (second) {
+      return null;
+    }
+  }
+}
+
+export function PatternDemo() {
+  const presets = [
+    {
+      label: "Product code",
+      pattern: "[A-Z]{3}-[0-9]{4}",
+      title: "Three capital letters, a hyphen, and four digits, like ABC-1234",
+      example: "ABC-1234",
+    },
+    {
+      label: "Username",
+      pattern: "[a-z0-9_]{3,16}",
+      title: "3 to 16 characters: lowercase letters, digits, or underscores",
+      example: "ada_99",
+    },
+    {
+      label: "Five-digit ZIP code",
+      pattern: "[0-9]{5}",
+      title: "Five digits, like 90210",
+      example: "90210",
+    },
+    {
+      label: "Hex colour",
+      pattern: "#[0-9a-fA-F]{6}",
+      title: "A hash and six hex digits, like #1a2b3c",
+      example: "#1a2b3c",
+    },
+    {
+      label: "Not only spaces",
+      pattern: ".*\\S.*",
+      title: "Enter at least one character that is not a space",
+      example: "hello",
+    },
+  ];
+  const [index, setIndex] = useState(0);
+  const [value, setValue] = useState("");
+  const preset = presets[index];
+  const regex = compile(preset.pattern);
+  let verdict = "Empty: pattern is skipped for empty fields (add required to demand a value).";
+  let color = "#64748b";
+  if (value !== "") {
+    if (regex && regex.test(value)) {
+      verdict = "Matches. patternMismatch is false.";
+      color = "#15803d";
+    } else {
+      verdict = "No match. patternMismatch is true.";
+      color = "#b91c1c";
+    }
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="pt-preset">Choose a rule</label><br />
+        <select
+          id="pt-preset"
+          value={index}
+          onChange={(event) => {
+            setIndex(Number(event.target.value));
+            setValue("");
+          }}
+        >
+          {presets.map((item, i) => (
+            <option key={item.label} value={i}>{item.label}</option>
+          ))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <code>pattern="{preset.pattern}"</code>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="pt-field">Try a value (for example {preset.example})</label><br />
+        <input
+          type="text"
+          id="pt-field"
+          name="value"
+          pattern={preset.pattern}
+          title={preset.title}
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          aria-describedby="pt-hint"
+        />{" "}
+        <button type="submit">Submit</button>
+      </p>
+      <p id="pt-hint" style={{margin: "0 0 0.4rem", fontSize: "0.9em"}}>{preset.title}</p>
+      <p role="status" style={{margin: 0, color}}>{verdict}</p>
+    </form>
+  );
+}
+
+export function NamesDemo() {
+  const strict = compile("[A-Za-z ]+");
+  const kind = compile("[\\p{L}\\p{M}' .\\-]+");
+  const names = ["Ada Lovelace", "José García", "Nguyễn Thị Minh", "O'Brien", "李雷", "Åsa Öberg", "Anne-Marie"];
+  const mark = (regex, name) => (regex && regex.test(name) ? "accepted" : "rejected");
+  const cell = {padding: "0.2rem 0.75rem 0.2rem 0", borderBottom: "1px solid #e2e8f0"};
+  return (
+    <table style={{borderCollapse: "collapse"}}>
+      <thead>
+        <tr>
+          <th style={{...cell, textAlign: "left"}}>Name</th>
+          <th style={{...cell, textAlign: "left"}}><code>[A-Za-z ]+</code></th>
+          <th style={{...cell, textAlign: "left"}}>Letters from any language</th>
+        </tr>
+      </thead>
+      <tbody>
+        {names.map((name) => (
+          <tr key={name}>
+            <td style={cell}>{name}</td>
+            <td style={{...cell, color: mark(strict, name) === "accepted" ? "#15803d" : "#b91c1c"}}>{mark(strict, name)}</td>
+            <td style={{...cell, color: mark(kind, name) === "accepted" ? "#15803d" : "#b91c1c"}}>{mark(kind, name)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+Sometimes "not empty" and "the right type" are not enough. A product code must look like `ABC-1234`. A username must use only certain characters. A ZIP code must be five digits. The **`pattern`** attribute lets you describe the exact shape of the text with a **regular expression**, and the browser checks it for you.
+
+Used well, `pattern` catches typos early. Used badly, it locks out real people with unusual but perfectly valid names. This lesson shows you how to write patterns, how to explain them to visitors, and when to leave them out.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to add `pattern` and how the browser reads it
+- Which controls support it
+- The anchoring rule that surprises many beginners
+- Writing a helpful `title`
+- Common, safe patterns
+- Why strict patterns for names and phones fail global visitors
+- Reading the `patternMismatch` flag
+- Why the server must check again
+
+## The Basics
+
+A **regular expression** (regex) is a short code that describes a shape of text. For example, `[0-9]{5}` means "exactly five digits."
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/register" method="post">
+  <label for="code">Product code (like ABC-1234)</label>
+  <input
+    type="text"
+    id="code"
+    name="code"
+    pattern="[A-Z]{3}-[0-9]{4}"
+    title="Three capital letters, a hyphen, and four digits, like ABC-1234"
+    required
+  />
+
+  <button type="submit">Check</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="pt-code">Product code (like ABC-1234)</label><br />
+  <input
+    type="text"
+    id="pt-code"
+    name="code"
+    pattern="[A-Z]{3}-[0-9]{4}"
+    title="Three capital letters, a hyphen, and four digits, like ABC-1234"
+    required
+  />{" "}
+  <button type="submit">Check</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Type `abc` and press **Check**: the browser blocks the form and shows a message that includes your `title` text. Type `ABC-1234` and it passes.
+
+## Where `pattern` Works
+
+| Control | Supports `pattern`? |
+| :-- | :-- |
+| `type="text"`, `search`, `tel`, `url`, `email`, `password` | **Yes** |
+| `type="number"`, `date`, `time`, `range`, `color` | No (use `min`, `max`, and `step`) |
+| `type="checkbox"`, `radio`, `file`, `hidden` | No |
+| `<textarea>` | **No** (use `minlength` and `maxlength`, or script) |
+| `<select>` | No |
+
+## Three Rules to Remember
+
+### 1. Write the pattern only, with no slashes
+
+In JavaScript you might write `/[0-9]{5}/`. In HTML, leave out the slashes and flags:
+
+```html
+<input pattern="[0-9]{5}" />    <!-- correct -->
+<input pattern="/[0-9]{5}/" />  <!-- wrong: the slashes become part of the pattern -->
+```
+
+### 2. The pattern must match the whole value
+
+The browser **anchors** the pattern for you, as if it were wrapped in `^(?:` and `)$`. So `[0-9]{5}` matches `90210`, but **not** `902101` or `x90210`. You do not need to write `^` and `$`.
+
+This is different from regex in JavaScript's `.test()`, which finds a match anywhere. If you want to allow extra text, say so with `.*`:
+
+```html
+<!-- contains at least one non-space character -->
+<input pattern=".*\S.*" />
+```
+
+### 3. It is skipped when the field is empty
+
+An empty value never fails `pattern`. Add `required` if you also need a value. (See [Required](./required).)
+
+## Try It: Pick a Rule
+
+Choose a rule, type values, and watch whether they match. Press **Submit** with a wrong value to see the browser's own message, including the `title`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="field">Product code</label>
+<input
+  type="text"
+  id="field"
+  name="value"
+  pattern="[A-Z]{3}-[0-9]{4}"
+  title="Three capital letters, a hyphen, and four digits, like ABC-1234"
+  aria-describedby="hint"
+/>
+<button type="submit">Submit</button>
+<p id="hint">Three capital letters, a hyphen, and four digits, like ABC-1234</p>
+```
+
+```js title="script.js"
+const field = document.getElementById("field");
+
+field.addEventListener("input", () => {
+  console.log("patternMismatch:", field.validity.patternMismatch);
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PatternDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## A Small Regex Cheat Sheet
+
+| Piece | Meaning | Example | Matches |
+| :-- | :-- | :-- | :-- |
+| `[abc]` | Any one of these characters | `[aeiou]` | `e` |
+| `[a-z]` | Any character in a range | `[0-9]` | `7` |
+| `\d` | A digit (0 to 9) | `\d\d` | `42` |
+| `\S` | Any character that is not a space | `\S+` | `hello` |
+| `.` | Any single character | `a.c` | `abc` |
+| `?` | Zero or one of the previous | `colou?r` | `color`, `colour` |
+| `+` | One or more | `[a-z]+` | `hello` |
+| `*` | Zero or more | `.*` | anything |
+| `{n}` | Exactly n | `[0-9]{4}` | `2026` |
+| `{n,m}` | Between n and m | `[a-z]{3,8}` | `ada` |
+| `\|` | Or | `cat\|dog` | `dog` |
+| `( )` | Group | `(ab)+` | `abab` |
+| `\p{L}` | Any letter in any language | `\p{L}+` | `José`, `李雷` |
+
+:::note Escape special characters
+To match a literal `.`, `+`, `?`, `(`, or `-` inside a character class, put a backslash in front: `\.`, `\+`, `\-`. Modern browsers read `pattern` in a stricter mode, where an unescaped `-` in a class can make the whole pattern invalid. An invalid pattern is **silently ignored**, so the field would accept anything. Always test your pattern.
+:::
+
+## Always Write a `title`
+
+When a pattern fails, the browser says something like "Please match the requested format." That does not help anyone. The `title` text is added to that message, so use it to explain the rule in plain words.
+
+```html
+<input
+  type="text"
+  name="username"
+  pattern="[a-z0-9_]{3,16}"
+  title="3 to 16 characters: lowercase letters, digits, or underscores"
+/>
+```
+
+Better still, **show the rule on the page** before the visitor makes a mistake, and link it to the field:
+
+```html
+<label for="username">Username</label>
+<input type="text" id="username" name="username"
+       pattern="[a-z0-9_]{3,16}" aria-describedby="username-hint" />
+<p id="username-hint">3 to 16 characters: lowercase letters, digits, or underscores.</p>
+```
+
+Many screen readers and phones do not show `title` text well, so the visible hint is the reliable one.
+
+## Handy Patterns
+
+| Use | Pattern | Notes |
+| :-- | :-- | :-- |
+| Product or order code | `[A-Z]{3}-[0-9]{4}` | Fixed shapes are ideal for `pattern` |
+| Username | `[a-z0-9_]{3,16}` | Your own system, so you can choose the rules |
+| 5-digit US ZIP | `[0-9]{5}` | Only for US addresses (see below) |
+| Hex colour | `#[0-9a-fA-F]{6}` | Or use `type="color"` |
+| Digits only (like a PIN) | `[0-9]{4,6}` | Also add `inputmode="numeric"` |
+| At least one non-space | `.*\S.*` | Catches a field of only spaces |
+| Letters from any language | `[\p{L}\p{M}' .\-]+` | A generous name check (see below) |
+
+For **PINs** and **codes** that are digits but not quantities, use `type="text"` with `inputmode="numeric"` and `pattern`, not `type="number"`. (See [Number](./input-types/number).)
+
+## Be Careful With Names, Phones, and Addresses
+
+The most common mistake with `pattern` is being **too strict** about real-world data. Look at what a typical "letters only" rule does:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NamesDemo />
+</>
+</BrowserWindow>
+
+The strict rule `[A-Za-z ]+` rejects `José`, `Nguyễn`, `O'Brien`, `Anne-Marie`, and every name written in a non-Latin script. These are real people, and many of them would give up on your form.
+
+Safer approaches:
+
+- **Do not validate names at all** beyond "not empty." Names are far more varied than any rule.
+- If you must check, use a **generous** rule: letters from any language (`\p{L}`), marks (`\p{M}`), spaces, apostrophes, hyphens, and dots.
+- **Phone numbers:** formats differ by country, with `+`, spaces, brackets, and extensions. Use `type="tel"` with no `pattern`, or normalise on the server. (See [Tel](./input-types/tel).)
+- **Postal codes:** they differ everywhere (digits, letters, spaces, or none at all). Choose the rule **after** the visitor picks a country, or skip the pattern.
+- **Email addresses:** use `type="email"`. Writing your own email regex almost always rejects valid addresses.
+
+:::tip A good test
+Before you add a pattern for personal data, ask: "Could a real person in another country, with a valid answer, be blocked by this?" If yes, loosen it or drop it.
+:::
+
+## Reading and Using `patternMismatch`
+
+When a pattern fails, `validity.patternMismatch` is `true`. You can use it to write your own message.
+
+```js
+const input = document.getElementById("code");
+
+input.addEventListener("input", () => {
+  if (input.validity.patternMismatch) {
+    input.setCustomValidity("Use the format ABC-1234 (three capital letters, a hyphen, four digits).");
+  } else {
+    input.setCustomValidity("");
+  }
+});
+```
+
+Remember to **clear** the message with an empty string, or the field stays invalid. For the full toolkit, see [Form Validation](./form-validation).
+
+## Styling
+
+```css title="style.css"
+input:user-invalid {
+  border-color: #b91c1c;
+}
+
+input:user-valid {
+  border-color: #15803d;
+}
+```
+
+Use `:user-invalid`, not `:invalid`, so the field does not turn red before the visitor has typed. And never use colour alone: show a text message too.
+
+## Accessibility at a Glance
+
+- **Show the rule** in visible text next to the field, linked with `aria-describedby`.
+- **Write a `title`,** but do not depend on it.
+- **Do not rely on the placeholder** to show the format. It disappears when typing. A placeholder can show an example, but the rule belongs in a hint.
+- **Give a clear error** that says what to change, not "Invalid format."
+- **Keep rules simple.** Complicated rules ("one capital, one symbol, no repeats...") are hard to remember, so list them.
+- **Do not reject spaces** that visitors paste or type at the end of a value (such as a code copied from an email). Trim them for the visitor.
+
+## Security Notes
+
+- **`pattern` is not security.** Anyone can remove the attribute or send a request by hand. Validate on the server with the same (or stricter) rule. (See [Secure Form Design](./secure-form-design).)
+- **Patterns are not a defence against injection.** Allowing only "safe" characters can help, but the real defences are escaping output and parameterised queries on the server.
+- **Beware of slow regular expressions.** Some patterns with nested repeats, like `(a+)+$`, can take enormous time on certain input. This is called **ReDoS**. Keep patterns simple, and be extra careful with regex on the server, where it can freeze your application.
+- **Do not trust a pattern for passwords.** Complex composition rules do not make passwords safer. Length matters most. (See [Password](./input-types/password).)
+
+## Global Audience Notes
+
+- **Use `\p{L}` instead of `A-Za-z`** if letters may come from any language.
+- **Digits are not always `0-9`.** Some visitors, especially with Arabic or Indic keyboards, may type digits in other scripts. Consider converting them on the server.
+- **Case:** patterns are case-sensitive. If `abc` and `ABC` should both be fine, write both ranges, or lowercase the value on the server.
+- **Do not force one format for dates and numbers.** Use the proper input types so the browser handles local formats.
+- **Length is counted in characters of the browser's string,** which may count an emoji or a combined character as more than one. Keep length rules loose.
+- **Write the hint in the visitor's language,** with an example that makes sense for them.
+
+## Common Mistakes to Avoid
+
+1. **Relying on `pattern` for security.** The server must validate, too.
+2. **Writing the slashes** (`/[0-9]+/`) from JavaScript.
+3. **Adding `^` and `$` and expecting partial matches.** The whole value must always match.
+4. **An invalid pattern** (such as an unescaped `-`) that is silently ignored, so nothing is checked. Test it.
+5. **Forgetting `required`.** An empty value always passes.
+6. **No `title` or visible hint,** so the error is a mystery.
+7. **Too-strict patterns for names, phones, and addresses.**
+8. **Using `pattern` on a `textarea`, `select`, or `number` input,** where it does nothing.
+9. **Writing your own email regex** instead of `type="email"`.
+10. **Using `type="number"` for codes** and then adding a pattern. Use `type="text"` with `inputmode="numeric"`.
+11. **Slow, nested patterns** that invite ReDoS.
+12. **Showing the format only as a placeholder.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Write a pattern for a product code like `ABC-1234`, with a `title`.
+2. Type a value with an extra character at the end, and see that the whole value must match.
+3. Add `required` and compare an empty field with and without it.
+4. Write a username pattern of 3 to 16 lowercase letters, digits, or underscores.
+5. Read `validity.patternMismatch` in the console as you type.
+6. Replace the browser message with your own using `setCustomValidity`, and clear it correctly.
+7. Make a PIN field with `inputmode="numeric"` and `pattern="[0-9]{4,6}"`.
+8. Write the "at least one non-space character" pattern and test a field of spaces.
+9. Test `[A-Za-z ]+` against `José`, then switch to a `\p{L}` pattern.
+10. Bonus: write the server-side check for your product code in a language you know.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `pattern` attribute do?</summary>
+
+It gives a regular expression that the whole value of a text-like input must match. If it does not match, the browser blocks the submit and shows an error.
+
+</details>
+
+<details>
+<summary>2. Do you write slashes or `^` and `$` in `pattern`?</summary>
+
+No. You write only the pattern, such as `[0-9]{5}`. The browser anchors it automatically so the entire value must match.
+
+</details>
+
+<details>
+<summary>3. Does an empty field fail a `pattern`?</summary>
+
+No. Empty values skip the check. Add `required` if a value is mandatory.
+
+</details>
+
+<details>
+<summary>4. Why should you write a `title`, and what is better than a title?</summary>
+
+The `title` is added to the browser's error message to explain the rule. A visible hint linked with `aria-describedby` is better, because `title` text is not shown reliably on phones or to every assistive technology.
+
+</details>
+
+<details>
+<summary>5. Why are strict patterns for names and phone numbers a bad idea?</summary>
+
+Real names and numbers are far more varied than most patterns allow. A rule like `[A-Za-z ]+` rejects accents, apostrophes, hyphens, and non-Latin scripts. Use no pattern, or a generous one such as letters from any language.
+
+</details>
+
+<details>
+<summary>6. Is `pattern` enough for security?</summary>
+
+No. Visitors can remove it or send requests directly. The server must validate every value again.
+
+</details>
+
+## Key Takeaways
+
+- `pattern` takes a regular expression, written with no slashes, that the **whole** value must match.
+- It works on `text`, `search`, `tel`, `url`, `email`, and `password` inputs, not on `textarea`, `select`, or `number`.
+- Empty values skip it, so combine it with `required` when needed.
+- Write a helpful `title` and a visible hint, and escape special characters. An invalid pattern is silently ignored.
+- Be generous with names, phones, and addresses. Use `\p{L}` for letters from any language.
+- Use `validity.patternMismatch` and `setCustomValidity` for your own messages, and style with `:user-invalid`.
+- It is a convenience, not security. **The server must validate again.**
+
+Next, learn how to limit how long a value can be, in [Minlength and Maxlength](./minlength-and-maxlength), or return to the [Forms overview](/tutorials/html/forms).

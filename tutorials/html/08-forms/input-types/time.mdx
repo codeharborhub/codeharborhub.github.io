@@ -7,6 +7,469 @@ slug: /html/forms/input-types/time
 description: "Capture hours, minutes, and seconds using input type='time' with native time pickers and step granularity configuration."
 keywords:
   - HTML input type time
+  - time picker HTML
+  - input time min max
+  - input time step 15 minutes
+  - HH:mm value format
+  - 24 hour time input
+  - opening hours validation HTML
+  - valueAsNumber input time
+  - time input time zone
+  - learn HTML forms
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, forms, input, time, validation, frontend]
+---
+
+import {useState} from 'react';
+
+export function SlotDemo() {
+  const [time, setTime] = useState("10:30");
+  let pretty = "";
+  if (time) {
+    const [h, m] = time.split(":").map(Number);
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    pretty = hour12 + ":" + String(m).padStart(2, "0") + " " + (h < 12 ? "AM" : "PM");
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="tm-slot">Appointment time (09:00 to 17:00)</label><br />
+      <input
+        type="time"
+        id="tm-slot"
+        name="slot"
+        min="09:00"
+        max="17:00"
+        step={1800}
+        value={time}
+        onChange={(event) => setTime(event.target.value)}
+        required
+        aria-describedby="tm-slot-out"
+      />
+      <p id="tm-slot-out" role="status" style={{margin: "0.5rem 0 0"}}>
+        Value sent: <code>slot={time || "(empty)"}</code>
+        {pretty ? <><br />Friendly format: {pretty}</> : null}
+      </p>
+    </form>
+  );
+}
+
+export function OpenDemo() {
+  const [time, setTime] = useState("22:30");
+  const [h, m] = time ? time.split(":").map(Number) : [NaN, NaN];
+  const minutes = h * 60 + m;
+  const open = !Number.isNaN(minutes) && (minutes >= 18 * 60 || minutes <= 2 * 60);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="tm-open">Arrival time (the bar is open 18:00 to 02:00)</label><br />
+      <input
+        type="time"
+        id="tm-open"
+        name="arrival"
+        min="18:00"
+        max="02:00"
+        value={time}
+        onChange={(event) => setTime(event.target.value)}
+        aria-describedby="tm-open-out"
+      />
+      <p id="tm-open-out" role="status" style={{margin: "0.5rem 0 0"}}>
+        {!time ? "Choose a time." : open ? "Open at " + time + "." : "Closed at " + time + "."}
+      </p>
+    </form>
+  );
+}
+
+"Meet at 3 o'clock." "The shop opens at 9." "Remind me at 7:30." Plenty of forms need a **time of day**: an appointment, a pickup window, an alarm. The input for it is `type="time"`. It gives visitors a small time picker, and gives your server a clean, unambiguous value.
+
+Time looks simple, but there are three traps waiting: 12-hour or 24-hour clocks, the missing time zone, and ranges that cross midnight. In this lesson, you will learn how the input behaves, and how to avoid all three.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="time"` shows, and the value format it sends
+- `min`, `max`, and `step`, including opening hours and overnight ranges
+- How to offer 15 or 30 minute slots
+- Reading the time in JavaScript
+- Why a time has no time zone, and what to do about it
+- Accessibility and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="start">Start time</label>
+<input type="time" id="start" name="start" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="tm-basic">Start time</label><br />
+  <input type="time" id="tm-basic" name="start" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The field shows **hours and minutes** (and AM/PM in places that use the 12-hour clock). Clicking it opens a picker in many browsers, and on phones, the device's own time wheel appears. You can also type with the keyboard, or use the `↑` and `↓` arrows on each part.
+
+## The Value Format
+
+:::info The value is always 24-hour `HH:mm`
+However the field **looks**, the value is a 24-hour string: two digits for the hour, a colon, two digits for the minute. For example, `15:30`.
+:::
+
+| What the visitor sees | What is sent |
+| :-- | :-- |
+| `03:30 PM` (12-hour clock) | `15:30` |
+| `15:30` (24-hour clock) | `15:30` |
+| `12:00 AM` | `00:00` |
+| `12:00 PM` | `12:00` |
+| `9:05 AM` | `09:05` |
+| (nothing, or incomplete) | an empty string |
+
+If seconds are involved (see `step` below), the value gets them: `15:30:45`, and even milliseconds, `15:30:45.123`.
+
+When you set a starting value in HTML, use the same 24-hour format:
+
+```html
+<input type="time" name="start" value="09:00" />
+```
+
+:::tip Display is local, value is universal
+Whether the visitor sees AM/PM or a 24-hour clock depends on their language and system settings, not on your page. You do not need to ask. Your server just reads `HH:mm`.
+:::
+
+## Min and Max
+
+`min` and `max` set the earliest and latest allowed times, in the same 24-hour format.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="slot">Appointment time (09:00 to 17:00)</label>
+<input
+  type="time"
+  id="slot"
+  name="slot"
+  min="09:00"
+  max="17:00"
+  step="1800"
+  required
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SlotDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try `08:00`, `09:15`, `10:30`, and `18:00` and submit the form in a real page. The browser tells you when a value is out of range, or not on a 30 minute step. (The demo above shows the value and a friendly 12-hour version, so you can see the difference.)
+
+### Overnight Ranges
+
+What if a place is open from 18:00 until 02:00 the next morning? Set `min` **later** than `max`. The range then **wraps past midnight**.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="arrival">Arrival time (open 18:00 to 02:00)</label>
+<input type="time" id="arrival" name="arrival" min="18:00" max="02:00" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OpenDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+With `min="18:00"` and `max="02:00"`:
+
+| Time | Valid? |
+| :-- | :-- |
+| `17:59` | No |
+| `18:00` | Yes |
+| `23:30` | Yes |
+| `00:30` | Yes |
+| `02:00` | Yes |
+| `02:01` | No |
+
+The demo above computes the same rule in JavaScript, so you can see which times count as open. As always, double-check on the server.
+
+## Step: Slots and Seconds
+
+`step` is measured in **seconds**. The default is `60`, which means whole minutes.
+
+| `step` value | What it allows |
+| :-- | :-- |
+| `60` (default) | Any minute: `10:01`, `10:02` |
+| `300` | Every 5 minutes |
+| `900` | Every 15 minutes: `10:00`, `10:15`, `10:30` |
+| `1800` | Every 30 minutes |
+| `3600` | Every hour |
+| `1` | Every second, and the field **shows seconds** |
+
+```html
+<!-- Quarter-hour slots -->
+<input type="time" name="slot" min="09:00" max="17:00" step="900" />
+
+<!-- A stopwatch-style field with seconds -->
+<input type="time" name="exact" step="1" />
+```
+
+- Steps are counted from the `min` (or from `value`, if there is no `min`).
+- A `step` under 60 reveals a seconds part in the field.
+- Not every browser lets the picker jump by your step. A browser may still allow typing any minute, and then complain on submit. So a clear label helps: "Choose a time on the quarter hour."
+- For **fixed slots** (like 09:00, 09:30, 10:00), a [select](../select) or radio buttons are often clearer. They also let you leave out slots that are already taken, which a time input cannot do.
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="start"` |
+| `value` | The starting time (`HH:mm`) | `value="09:00"` |
+| `required` | Cannot be empty | `required` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `list` | Suggested times from a [datalist](../datalist) | `list="times"` |
+
+`placeholder`, `maxlength`, `minlength`, `pattern`, and `size` do **not** apply to time inputs.
+
+Suggested times work well with a `<datalist>`:
+
+```html
+<label for="meeting">Meeting time</label>
+<input type="time" id="meeting" name="meeting" list="times" />
+
+<datalist id="times">
+  <option value="09:00"></option>
+  <option value="12:00"></option>
+  <option value="15:00"></option>
+</datalist>
+```
+
+## Reading the Time in JavaScript
+
+| Property | What it gives | Example for 15:30 |
+| :-- | :-- | :-- |
+| `input.value` | The string `HH:mm` | `"15:30"` |
+| `input.valueAsNumber` | Milliseconds since midnight | `55800000` |
+| `input.valueAsDate` | A `Date` on 1 January 1970, **UTC** | `1970-01-01T15:30:00.000Z` |
+
+For most jobs, the simplest approach is to split the string:
+
+```js
+const [hours, minutes] = input.value.split(":").map(Number);
+const totalMinutes = hours * 60 + minutes;     // 930
+```
+
+### Showing a Friendly Time
+
+To display a time in the visitor's own style (12-hour or 24-hour), let `Intl` do it:
+
+```js
+const [h, m] = input.value.split(":").map(Number);
+const date = new Date(Date.UTC(1970, 0, 1, h, m));
+
+const text = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "UTC",         // keep the value we put in, do not shift it
+}).format(date);
+// "3:30 PM" or "15:30", depending on the visitor
+```
+
+:::warning Always pass `timeZone: "UTC"` here
+We built the `Date` in UTC, so we must format it in UTC. Without it, the browser shifts the time by the visitor's offset, and the hour changes.
+:::
+
+## A Time Has No Time Zone
+
+The value `15:30` means "half past three" and nothing more. It does not say **where**. A visitor in Mumbai and one in Chicago both send `15:30`, and mean different moments.
+
+That is fine for things that happen at **local time wherever you are**: "the shop opens at 9," or "remind me at 7:30." But for a meeting between people in different places, you need more.
+
+| Situation | What to do |
+| :-- | :-- |
+| Local times, such as opening hours at one shop | `time` alone is enough |
+| An appointment at a known place | Store the time **and** the place's time zone |
+| A meeting across the world | Use [`datetime-local`](./datetime-local), plus a time zone you choose or detect |
+| A deadline | Say the zone in the label: "Deadline (11:59 PM, India time)" |
+
+You can detect the visitor's zone in JavaScript, and send it as a hidden field:
+
+```js
+const zone = Intl.DateTimeFormat().resolvedOptions().timeZone; // "Asia/Kolkata"
+```
+
+```html
+<input type="hidden" name="timezone" id="timezone" />
+```
+
+Name the zone with its IANA name (such as `Asia/Kolkata` or `America/Chicago`), not an offset like `+05:30`, because offsets change with daylight saving time.
+
+## Styling a Time Input
+
+```css title="style.css"
+input[type="time"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+input[type="time"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="time"]:invalid {
+  border-color: #b91c1c;
+}
+```
+
+- The picker popup itself cannot be styled. Only the field can.
+- Keep a visible focus style, and a comfortable touch target.
+- Do not rely on a red border alone for errors. Add text.
+
+## Accessibility at a Glance
+
+- **Always add a label** such as "Appointment time."
+- **State the range and the step in text:** "Open 9:00 AM to 5:00 PM, in half-hour slots." Link it with `aria-describedby`.
+- **Mention the time zone** whenever it matters.
+- **Prefer the native input** to a custom time picker. Native ones work with keyboards and screen readers. Custom wheels and dropdowns rarely do.
+- **Allow typing.** Many people find typing a time quicker than using a picker.
+- **Give clear errors:** "Choose a time between 9:00 AM and 5:00 PM."
+- **Be careful with 12-hour displays.** "12:00 AM" and "12:00 PM" confuse many people. If it matters, write "midnight" or "noon" in your help text.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Parse the string strictly as `HH:mm` (or with seconds), check the ranges, and enforce opening hours.
+- **Check availability on the server.** Two people can choose the same slot at the same moment.
+- **Use the server's clock** for rules like "at least one hour from now," not the visitor's device.
+- **Be exact with time zones** when you compare, store, and display times.
+
+## Global Audience Notes
+
+- **12-hour and 24-hour clocks** are both common. The browser shows the right one for the visitor, so do not force either in your text. Write times in help text in a way that suits your audience, such as "9:00 to 17:00."
+- **Digits and language** in the field follow the visitor's settings.
+- **Daylight saving time** changes the clocks twice a year in some countries, and not at all in others. Some local times do not exist (when clocks jump forward), or happen twice (when they go back). Store a time zone name, and let a library handle the rest.
+- **Business days and weekends** differ. In some countries, the week starts on Sunday, and weekends fall on other days.
+
+## Common Mistakes to Avoid
+
+1. **Using `type="text"` for times,** which invites "3pm," "15.30," and other formats.
+2. **Setting `value` in 12-hour form.** It must be `HH:mm`, in 24 hours.
+3. **Assuming the visitor sees 24-hour time.** The value is 24-hour, and the display varies.
+4. **Forgetting that `step` is in seconds,** and setting `step="15"` for 15 minutes. Use `900`.
+5. **Expecting `min` greater than `max` to be an error.** It means an overnight range.
+6. **Forgetting the time zone** for meetings and deadlines.
+7. **Showing `valueAsDate` in local time,** which shifts the hour.
+8. **Using `placeholder` or `pattern`,** which do not apply.
+9. **Using a time input for fixed slots** that can be taken. A select or radio group is clearer.
+10. **No label,** or an unclear one ("Time").
+11. **Trusting the browser alone** for opening hours and availability.
+12. **Confusing 12:00 AM with 12:00 PM** in text.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="time"` field, choose a time, and submit it with `method="get"`. Read the address.
+2. Change your system to a 24-hour clock (or use another browser), and see how the display changes, while the value does not.
+3. Set `value="09:00"`, then try `value="9:00 AM"`.
+4. Add `min="09:00"` and `max="17:00"`, and try times outside the range.
+5. Add `step="900"`, and then `step="1"` to reveal seconds.
+6. Make an overnight range with `min="18:00" max="02:00"`.
+7. Log `valueAsNumber`, and compute total minutes with `split(":")`.
+8. Use `Intl.DateTimeFormat` with `timeZone: "UTC"` to show a friendly time.
+9. Add a hidden `timezone` field filled with `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+10. Bonus: replace the time input with a `<select>` of 30 minute slots, and compare which is easier to use.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What format is the value of a time input?</summary>
+
+Always 24-hour `HH:mm`, such as `15:30`. If `step` is under 60, seconds are included (`15:30:45`). An incomplete time gives an empty string.
+
+</details>
+
+<details>
+<summary>2. Is `step` measured in minutes?</summary>
+
+No, in **seconds**. The default is 60 (one minute). Use `900` for quarter hours and `1800` for half hours.
+
+</details>
+
+<details>
+<summary>3. What happens when `min` is later than `max`?</summary>
+
+The range wraps past midnight. With `min="18:00" max="02:00"`, times from 18:00 through midnight and up to 02:00 are valid.
+
+</details>
+
+<details>
+<summary>4. Does a time input include a time zone?</summary>
+
+No. `15:30` means half past three, with no place attached. For meetings and deadlines, store a time zone name (like `Asia/Kolkata`) as well, or use `datetime-local` plus a zone.
+
+</details>
+
+<details>
+<summary>5. Why can `valueAsDate` for a time show the wrong hour?</summary>
+
+It is a `Date` on 1 January 1970 in UTC. Showing it in local time shifts the hour. Use `timeZone: "UTC"` when formatting, or just split the string `value`.
+
+</details>
+
+<details>
+<summary>6. When is a select better than a time input?</summary>
+
+For fixed slots, such as every 30 minutes. A select can leave out slots that are already taken, which a time input cannot do.
+
+</details>
+
+## Key Takeaways
+
+- `type="time"` gives a native time picker, and always sends a 24-hour `HH:mm` value, whatever the display.
+- `min` and `max` set the range. A `min` later than `max` makes an overnight range.
+- `step` is in **seconds**: 900 for 15 minutes, 1800 for 30 minutes. A step under 60 shows seconds.
+- A time has **no time zone**. For anything that crosses places, store a zone name, or use `datetime-local`.
+- Format friendly times with `Intl.DateTimeFormat`, passing `timeZone: "UTC"` for values you built in UTC.
+- Label the field, state the allowed range in text, and always re-check times and availability on the server.
+
+Now you can pick a day and an hour separately. Next, learn how to choose both at once, in [Datetime-local](./datetime-local), or return to the [Forms overview](/tutorials/html/forms).
+  - HTML input type time
   - time picker element
   - time selector HTML
   - time input step attribute

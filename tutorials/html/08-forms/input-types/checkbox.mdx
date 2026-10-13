@@ -1,18 +1,519 @@
 ---
-id: input-type-checkbox
-title: "Checkboxes: type='checkbox'"
+id: html-input-checkbox
+title: "HTML Input Type Checkbox"
 sidebar_label: "Checkbox"
 sidebar_position: 14
 slug: /html/forms/input-types/checkbox
-description: "Master multi-select option groups using input type='checkbox', handling checked states, values, and indeterminate DOM properties."
+description: "Learn the HTML input type checkbox: single and grouped checkboxes, the checked attribute, what is sent when a box is ticked or not (and the default value on), required consent boxes, the indeterminate state, select all, fieldset groups, accent-color styling, accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type checkbox
-  - checkbox element
-  - multi select checkboxes
+  - checkbox HTML example
   - checkbox checked attribute
+  - checkbox value on default
+  - checkbox group same name
+  - checkbox indeterminate state
+  - select all checkbox JavaScript
+  - required checkbox consent
+  - checkbox accessibility fieldset legend
+  - accent-color checkbox
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, checkbox]
+tags: [html, web-development, beginner, forms, input, checkbox, accessibility, frontend]
 ---
+
+import {useState, useRef, useEffect} from 'react';
+
+export function SentDemo() {
+  const [sent, setSent] = useState("(press Submit)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const text = new URLSearchParams(new FormData(event.currentTarget)).toString();
+        setSent(text || "(nothing is sent)");
+      }}
+    >
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+        <legend>Which languages do you know?</legend>
+        <label><input type="checkbox" name="lang" value="html" defaultChecked /> HTML</label><br />
+        <label><input type="checkbox" name="lang" value="css" /> CSS</label><br />
+        <label><input type="checkbox" name="lang" value="js" /> JavaScript</label><br />
+        <label><input type="checkbox" name="newsletter" /> Send me the newsletter</label>
+      </fieldset>
+      <p style={{margin: "0.5rem 0"}}><button type="submit">Submit</button></p>
+      <p role="status" style={{margin: 0}}>Sent: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+export function SelectAllDemo() {
+  const items = ["Email updates", "SMS alerts", "Weekly digest"];
+  const [checked, setChecked] = useState([true, false, false]);
+  const master = useRef(null);
+  const count = checked.filter(Boolean).length;
+  const all = count === items.length;
+  const some = count > 0 && !all;
+  useEffect(() => {
+    if (master.current) master.current.indeterminate = some;
+  }, [some]);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+        <legend>Notifications</legend>
+        <label>
+          <input
+            type="checkbox"
+            ref={master}
+            checked={all}
+            onChange={(event) => setChecked(items.map(() => event.target.checked))}
+          />{" "}
+          <strong>Select all</strong>
+        </label>
+        <div style={{marginLeft: "1.5rem"}}>
+          {items.map((item, index) => (
+            <div key={item}>
+              <label>
+                <input
+                  type="checkbox"
+                  name="notify"
+                  value={item}
+                  checked={checked[index]}
+                  onChange={() =>
+                    setChecked(checked.map((value, i) => (i === index ? !value : value)))
+                  }
+                />{" "}
+                {item}
+              </label>
+            </div>
+          ))}
+        </div>
+      </fieldset>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>{count} of {items.length} selected</p>
+    </form>
+  );
+}
+
+Do you agree to the terms? Do you want the newsletter? Which toppings would you like? A **checkbox** is the input for yes-or-no questions, and for picking **any number** of options from a list, including none.
+
+It looks like the easiest input of all. But checkboxes have a famous quirk, and if you do not know it, your forms will quietly lose data: **an unchecked checkbox sends nothing at all.** In this lesson, you will learn exactly what is sent and when, how to group boxes, how to build "select all", and how to make checkboxes accessible and friendly.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to build a single checkbox, and a group of checkboxes
+- What is sent to the server when a box is ticked, and when it is not
+- The `value`, `checked`, `required`, and `disabled` attributes
+- The **indeterminate** state, and a working "select all"
+- Grouping with `<fieldset>` and `<legend>`
+- Styling, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label>
+  <input type="checkbox" name="newsletter" />
+  Send me the newsletter
+</label>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label>
+    <input type="checkbox" name="newsletter" />
+    {" "}Send me the newsletter
+  </label>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A checkbox is a small square. Click it, and a tick appears. Click it again, and the tick goes away. It has exactly two states: **checked** and **unchecked**.
+
+Here the `<label>` **wraps** the input, so clicking the text also toggles the box, which gives a much larger click target. (You can instead use `for` and `id`, as you learned in [Label Element](../label-element). Either works.)
+
+## What Gets Sent
+
+This is the part to understand well.
+
+| State | What the browser sends |
+| :-- | :-- |
+| **Checked** | `name=value` |
+| **Unchecked** | **Nothing at all.** The name is missing entirely |
+| Checked but **disabled** | Nothing |
+
+```html
+<input type="checkbox" name="newsletter" />                    <!-- checked: newsletter=on -->
+<input type="checkbox" name="newsletter" value="yes" />        <!-- checked: newsletter=yes -->
+```
+
+- If you give no `value`, a checked box sends the text **`on`**. That is the default.
+- If you give a `value`, a checked box sends that.
+- If the box is unchecked, the key does not appear in the data at all. On the server, "not there" means "unchecked."
+
+:::warning Missing means "no"
+A server that expects `newsletter=false` for an unchecked box will never see it. Your server code should treat a **missing** key as "unchecked," for example `newsletter = "newsletter" in form`.
+:::
+
+If you really need an explicit "false," a common trick is a hidden input with the same name, placed **before** the checkbox:
+
+```html
+<input type="hidden" name="newsletter" value="no" />
+<input type="checkbox" name="newsletter" value="yes" />
+```
+
+Unchecked sends `newsletter=no`. Checked sends **both**: `newsletter=no&newsletter=yes`. Most servers keep the last one, but some keep the first, or give a list, so check how your framework behaves.
+
+## Try It: See What Is Sent
+
+Tick some boxes and press Submit. The demo shows the exact data the browser would send.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <fieldset>
+    <legend>Which languages do you know?</legend>
+    <label><input type="checkbox" name="lang" value="html" checked /> HTML</label>
+    <label><input type="checkbox" name="lang" value="css" /> CSS</label>
+    <label><input type="checkbox" name="lang" value="js" /> JavaScript</label>
+    <label><input type="checkbox" name="newsletter" /> Send me the newsletter</label>
+  </fieldset>
+  <button type="submit">Submit</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SentDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try these:
+
+- Submit with only HTML ticked: `lang=html`.
+- Tick all three languages: `lang=html&lang=css&lang=js`. The **same name** repeats, once for each ticked box.
+- Tick "Send me the newsletter": it sends `newsletter=on`, since there is no `value`.
+- Untick everything: nothing is sent.
+
+## Checkbox Groups
+
+A group is just several checkboxes that share the **same `name`**. Each has its own `value`.
+
+```html
+<fieldset>
+  <legend>Choose your toppings</legend>
+
+  <label><input type="checkbox" name="topping" value="cheese" /> Cheese</label>
+  <label><input type="checkbox" name="topping" value="mushroom" /> Mushrooms</label>
+  <label><input type="checkbox" name="topping" value="olives" /> Olives</label>
+</fieldset>
+```
+
+On the server, you receive a **list**: `topping=cheese&topping=olives`. How you read the list depends on your language. For example, in JavaScript, `new FormData(form).getAll("topping")` returns `["cheese", "olives"]`.
+
+:::tip Group with fieldset and legend
+A `<fieldset>` with a `<legend>` tells screen readers the question the boxes answer: "Choose your toppings, group. Cheese, checkbox, not checked." Without it, a listener hears "Cheese" and has no idea what it belongs to. You will study this in [Fieldset and Legend](../fieldset-and-legend).
+:::
+
+A group where you can pick **one only** is not for checkboxes. That is a job for [radio buttons](./radio).
+
+## Attributes for Checkboxes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server (shared by a group) | `name="topping"` |
+| `value` | What is sent when checked (default `on`) | `value="cheese"` |
+| `checked` | Starts ticked | `checked` |
+| `required` | Must be **ticked** to submit | `required` |
+| `disabled` | Cannot be changed, and is not sent | `disabled` |
+| `id` | Connects a label that uses `for` | `id="agree"` |
+| `autofocus` | Focus on load | `autofocus` |
+
+`checked` is a boolean attribute: its presence means "yes." It sets the **starting** state only. After the visitor clicks, the state changes, but the attribute does not. In JavaScript, read `input.checked` for the current state, and `input.defaultChecked` for the starting one.
+
+Attributes that do **not** apply to checkboxes: `readonly` (it has no effect on a checkbox, and many people expect it to), `placeholder`, `min`, `max`, `step`, `pattern`, `maxlength`, and `size`.
+
+:::note No `readonly` for checkboxes
+If you want a box that shows a state but cannot be changed, `disabled` is the only built-in way, and a disabled box is **not sent**. To show a fixed state **and** send it, use a disabled checkbox together with a hidden input that carries the value.
+:::
+
+## Required Checkboxes and Consent
+
+On a checkbox, `required` means "this box **must be ticked**." It is perfect for "I agree to the terms."
+
+```html
+<label>
+  <input type="checkbox" name="terms" required />
+  I agree to the <a href="/terms">terms of service</a>
+</label>
+```
+
+If the box is unticked, the browser blocks the form with a message such as "Please check this box if you want to proceed."
+
+Good practice for consent boxes:
+
+- **Never pre-tick them.** Consent that is "ticked for you" is often not valid consent, and many laws (such as GDPR in Europe) forbid it. The visitor must do it on purpose.
+- **Keep each consent separate.** Do not bundle "I agree to the terms **and** the marketing emails" in one box.
+- **Put the link text inside the label,** so it is clear what is being agreed to. A link inside the label still works. Clicking the link opens it, and does not toggle the box.
+- **Do not use `required`** for optional things such as newsletters.
+
+## The Indeterminate State and Select All
+
+A checkbox can look like a third state: a dash instead of a tick. It is called **indeterminate**, and it means "some, but not all." It is used on a "select all" box above a group.
+
+Two facts you must know:
+
+- It is a **visual state only**. It can only be set in JavaScript (`input.indeterminate = true`), and there is no HTML attribute for it.
+- It does **not** change `checked`, and it is **not** sent. A form never sends "indeterminate."
+
+Try the demo. Tick some of the boxes, and watch the "Select all" box change.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<fieldset>
+  <legend>Notifications</legend>
+
+  <label><input type="checkbox" id="all" /> <strong>Select all</strong></label>
+
+  <label><input type="checkbox" name="notify" value="email" checked /> Email updates</label>
+  <label><input type="checkbox" name="notify" value="sms" /> SMS alerts</label>
+  <label><input type="checkbox" name="notify" value="digest" /> Weekly digest</label>
+</fieldset>
+<p id="count" role="status"></p>
+```
+
+```js title="script.js"
+const master = document.getElementById("all");
+const boxes = document.querySelectorAll('input[name="notify"]');
+const count = document.getElementById("count");
+
+function refresh() {
+  const checked = [...boxes].filter((box) => box.checked).length;
+  master.checked = checked === boxes.length;
+  master.indeterminate = checked > 0 && checked < boxes.length;
+  count.textContent = checked + " of " + boxes.length + " selected";
+}
+
+master.addEventListener("change", () => {
+  boxes.forEach((box) => (box.checked = master.checked));
+  refresh();
+});
+
+boxes.forEach((box) => box.addEventListener("change", refresh));
+refresh();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SelectAllDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+How it works:
+
+- When any item changes, we count how many are ticked.
+- **All** ticked: the master is checked. **Some** ticked: the master is indeterminate. **None**: it is plain.
+- Clicking the master ticks or unticks every item.
+- The count in a `role="status"` region is announced to screen reader users without moving focus.
+- The master box has **no `name`**, so it is not sent. Only the real items are.
+
+## Checkbox, Radio, or Switch?
+
+| Choice | Use | Why |
+| :-- | :-- | :-- |
+| **Checkbox** | Any number of options (zero, one, or many), or one yes/no | Independent choices |
+| **[Radio buttons](./radio)** | Exactly one choice from a short list | They exclude each other |
+| **[Select](../select)** | One choice from a long list | Saves space |
+| **Switch** | An instant on/off setting (like "Dark mode") | Looks like a toggle, and applies at once |
+
+A "switch" is usually a checkbox with different styling and `role="switch"`. Use it for settings that take effect **immediately**, and a normal checkbox for answers you **submit** with a form.
+
+```html
+<label>
+  <input type="checkbox" role="switch" name="dark" />
+  Dark mode
+</label>
+```
+
+## Styling Checkboxes
+
+The easiest, safest way to change the colour is `accent-color`. It keeps the native box, with all its accessibility:
+
+```css title="style.css"
+input[type="checkbox"] {
+  accent-color: #2563eb;      /* the tick and fill colour */
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;        /* easy to tap */
+}
+```
+
+You can also react to the state with CSS:
+
+```css
+input[type="checkbox"]:checked + span {
+  font-weight: 600;
+}
+
+input[type="checkbox"]:indeterminate {
+  accent-color: #64748b;
+}
+```
+
+If you must build a **custom look** (with `appearance: none`), keep the real `<input>` in place, so the keyboard, screen readers, and form behaviour all work, and draw the box and tick with CSS. Never replace it with a `<div>` that only looks like a checkbox.
+
+## Accessibility at a Glance
+
+- **Every checkbox needs a label.** Wrap the input, or use `for` and `id`. The label text must say what ticking the box **means**.
+- **Make the label part of the click target,** which helps people with limited fine motor control, and everyone on a phone.
+- **Group related boxes** with `<fieldset>` and `<legend>`.
+- **Keyboard:** `Tab` moves between boxes, and the **Space** bar toggles the focused one. This works for free with real checkboxes.
+- **Keep a visible focus outline,** and a size of at least about 24 pixels (44 pixels of tap area is better).
+- **Do not rely on colour alone** to show checked or unchecked. The tick shape does that.
+- **Write labels as positive statements:** "Send me the newsletter," not "Do not send me the newsletter," which makes ticking confusing.
+- **Say what is required,** and keep error messages clear: "You must accept the terms to continue."
+- **Do not change the state** of one checkbox on another's change without telling the visitor, except in an obvious pattern such as "select all."
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Anyone can send any data. Treat a checkbox as "key present or not," and **check every value** against the list you expect. A visitor can add `topping=anything` by hand.
+- **Never trust a hidden or disabled value** to decide permissions. Such things are visible and changeable.
+- **Check required consent on the server,** and store when and what the visitor agreed to.
+- **Use allow-lists:** for a group, accept only the values you defined.
+
+See [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **Write short, plain labels** that translate easily, and avoid double negatives, which are especially hard in a second language.
+- **Right-to-left languages** place the box on the right, and the text on its left. Real checkboxes and `<label>` follow the page's `dir` automatically.
+- **Consent laws differ** by region. Pre-ticked boxes and bundled consent are not allowed in many places.
+- **Do not assume a tick means the same everywhere.** In some cultures, a tick or a cross can mean "correct." The text of the label removes any doubt.
+
+## Common Mistakes to Avoid
+
+1. **Expecting an unchecked box to send something.** It sends nothing.
+2. **Forgetting the default `value` is `on`.**
+3. **No label,** or a label not connected to the box.
+4. **Giving every checkbox in a group a different `name`** when you wanted one list.
+5. **Using checkboxes for "choose one."** Use radio buttons.
+6. **Pre-ticking consent boxes.**
+7. **Bundling several consents** in one box.
+8. **Using `readonly`,** which has no effect on checkboxes.
+9. **Trying to set `indeterminate` in HTML.** It is JavaScript only, and is never sent.
+10. **Replacing the real input** with a styled `<div>`.
+11. **Tiny boxes and tiny labels** that are hard to tap.
+12. **Not validating on the server.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build one checkbox with a wrapping label. Submit it ticked and unticked, with `method="get"`, and read the address.
+2. Add `value="yes"`, and compare it with the default `on`.
+3. Add `checked`, and then untick it and press the form's reset button.
+4. Build a group of three toppings with the same name, and look at the repeated pairs.
+5. Wrap the group in a `<fieldset>` with a `<legend>`.
+6. Add a required "I agree" box, and try to submit it unticked.
+7. Use `FormData.getAll()` to read the group as a list.
+8. Build "select all" with `indeterminate`.
+9. Style the boxes with `accent-color`, and make the label a comfortable tap size.
+10. Bonus: build the hidden-input trick, and see what your server framework does with two values.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is sent when a checkbox is unchecked?</summary>
+
+Nothing. The name does not appear in the data at all. On the server, a missing key means unchecked.
+
+</details>
+
+<details>
+<summary>2. What is sent when a checked checkbox has no `value`?</summary>
+
+The text `on`, as in `newsletter=on`. With a `value` attribute, it sends that value instead.
+
+</details>
+
+<details>
+<summary>3. How do you make a group of checkboxes?</summary>
+
+Give them the same `name` and different `value`s. The browser sends one pair for each ticked box, such as `topping=cheese&topping=olives`. Group them in a `<fieldset>` with a `<legend>`.
+
+</details>
+
+<details>
+<summary>4. What does `required` mean on a checkbox?</summary>
+
+The box must be ticked before the form can be submitted. It suits "I agree to the terms," but should not be used for optional things.
+
+</details>
+
+<details>
+<summary>5. What is the indeterminate state, and is it sent?</summary>
+
+A dash that shows "some, but not all" on a select-all box. It can only be set in JavaScript, and it is a visual state only. It is not sent, and does not change `checked`.
+
+</details>
+
+<details>
+<summary>6. When should you use radio buttons instead of checkboxes?</summary>
+
+When the visitor must choose exactly one option from a short list. Checkboxes are for any number of choices, or a single yes or no.
+
+</details>
+
+## Key Takeaways
+
+- A checkbox has two states, and sends `name=value` only when **checked**. The default value is `on`. An unchecked box sends nothing.
+- Checkboxes with the **same name** make a group, and the server receives a list. Wrap them in a `fieldset` with a `legend`.
+- `checked` sets the starting state, and `required` means the box must be ticked. `readonly` does nothing.
+- `indeterminate` is JavaScript-only, visual, and never sent. It is the key to a good "select all."
+- Never pre-tick consent, keep each consent separate, and write labels as clear positive statements.
+- Style with `accent-color`, keep the real input, make labels big to tap, and always validate on the server.
+
+Checkboxes let you pick many. Next, learn how to pick exactly one, in [Radio](./radio), or return to the [Forms overview](/tutorials/html/forms).

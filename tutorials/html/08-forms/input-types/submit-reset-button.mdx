@@ -1,16 +1,506 @@
 ---
-id: input-type-submit-reset-button
-title: "Submit, Reset, and Generic Input Buttons"
-sidebar_label: "Submit / Reset / Button"
+id: html-input-submit-reset-button
+title: "HTML Input Types Submit, Reset, and Button"
+sidebar_label: "Submit, Reset, and Button"
 sidebar_position: 19
 slug: /html/forms/input-types/submit-reset-button
-description: "Understand input type='submit', type='reset', and type='button' usage, values, and how they contrast with the button tag."
+description: "Learn the HTML input types submit, reset, button, and image: how the submit button sends a form, how to use several submit buttons with name and value, formaction and formnovalidate overrides, why reset restores default values (not blanks), implicit submission with the Enter key, preventing double submits, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type submit
-  - input type reset
+  - HTML input type reset
   - input type button
-  - form action buttons
+  - input type image submit
+  - multiple submit buttons HTML
+  - formaction formmethod formnovalidate
+  - reset button restores default values
+  - prevent double form submit
+  - implicit submission Enter key
+  - input submit vs button element
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, buttons]
+tags: [html, web-development, beginner, forms, input, submit, reset, button, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function SubmitterDemo() {
+  const [sent, setSent] = useState("(press a button)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const submitter = event.nativeEvent.submitter;
+        const data = new FormData(form);
+        if (submitter && submitter.name) data.append(submitter.name, submitter.value);
+        setSent(new URLSearchParams(data).toString());
+      }}
+    >
+      <label htmlFor="sb-title">Post title</label><br />
+      <input type="text" id="sb-title" name="title" defaultValue="My first post" />
+      <p style={{margin: "0.5rem 0"}}>
+        <input type="submit" name="action" value="Save draft" />{" "}
+        <input type="submit" name="action" value="Publish" />
+      </p>
+      <p role="status" style={{margin: 0}}>Sent: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+export function ResetDemo() {
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="rs-name">Name</label><br />
+      <input type="text" id="rs-name" name="name" defaultValue="Ada Lovelace" /><br />
+      <label htmlFor="rs-city">City</label><br />
+      <input type="text" id="rs-city" name="city" /><br />
+      <label><input type="checkbox" name="news" defaultChecked /> Send me the newsletter</label>
+      <p style={{margin: "0.5rem 0 0"}}>
+        <input type="submit" value="Save" />{" "}
+        <input type="reset" value="Reset form" />
+      </p>
+    </form>
+  );
+}
+
+Every form needs a way to be sent. Press the button, and the browser gathers the fields, checks them, and delivers them to the server. That button is `<input type="submit">`. Its neighbours are `type="reset"`, which puts fields back to how they started, and `type="button"`, a button that does nothing until you give it a job. There is also `type="image"`, a submit button drawn as a picture.
+
+These look like small details, and they hide some real surprises: a reset does **not** empty the form, only the clicked submit button is sent, and pressing Enter quietly uses the first button it finds. In this lesson, you will learn each one, and when to use them.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `type="submit"` sends a form, and how its label is set
+- Using several submit buttons, and how the browser tells them apart
+- The `form*` attributes that override the form's settings
+- What `type="reset"` really does, and why to avoid it
+- `type="button"` and `type="image"`
+- Pressing Enter, and preventing double submissions
+- Accessibility, styling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/subscribe" method="post">
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" required />
+
+  <input type="submit" value="Subscribe" />
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="sb-email">Email address</label><br />
+  <input type="email" id="sb-email" name="email" required />{" "}
+  <input type="submit" value="Subscribe" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+For these three button types, the text on the button comes from the **`value`** attribute. There is no text between tags, because `<input>` has no closing tag.
+
+| Type | What it does when clicked | Label when `value` is missing |
+| :-- | :-- | :-- |
+| `submit` | Checks the form, then **sends** it | "Submit" (in the visitor's language) |
+| `reset` | Puts every field back to its **starting** value | "Reset" |
+| `button` | **Nothing** by itself. Used with JavaScript | Empty |
+| `image` | Sends the form, like `submit`, and adds the click position | The image itself |
+
+:::info Meet the `<button>` element too
+HTML also has a `<button>` element that does the same jobs, but can hold **any content** (text, icons, images, even formatting). Most modern code prefers it. You will study it in [Button](../button). The `<input>` versions are still important to know, because they are everywhere, and they are very simple.
+:::
+
+## The Submit Button
+
+When a visitor clicks a submit button (or presses `Enter` in most fields), the browser does these steps:
+
+1. **Checks** the fields. If any is invalid (`required`, `pattern`, and so on), it stops, and shows messages.
+2. **Builds** the data from fields that have a `name`, and are not `disabled`.
+3. **Sends** it to the form's `action`, using its `method`.
+
+Write a **specific label** so the button says what will happen: "Create account," "Send message," "Place order," "Subscribe." A plain "Submit" tells the visitor nothing.
+
+### Sending the Button's Own Name and Value
+
+If a submit button has a `name`, its `name=value` is added to the data, **but only for the button that was clicked**. The other submit buttons are not sent. This is how one form can offer several actions.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/posts" method="post">
+  <label for="title">Post title</label>
+  <input type="text" id="title" name="title" value="My first post" />
+
+  <input type="submit" name="action" value="Save draft" />
+  <input type="submit" name="action" value="Publish" />
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SubmitterDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Click each button, and compare the data: `title=My+first+post&action=Save+draft`, or `...&action=Publish`. The server reads `action` and decides what to do.
+
+:::warning The label is the value
+For an `<input type="submit">`, the visible label **is** the value that gets sent. If you translate the button to another language, the value changes too, and your server may no longer recognise it. With the `<button>` element, you can send a stable value (`value="publish"`) and show any label. This is a strong reason to prefer `<button>` for multi-action forms. See [Button](../button).
+:::
+
+## Overriding the Form: the `form*` Attributes
+
+A submit button can change **how** its own click is sent, using attributes that start with `form`:
+
+| Attribute | Overrides | Example |
+| :-- | :-- | :-- |
+| `formaction` | The form's `action` | `formaction="/save-draft"` |
+| `formmethod` | The form's `method` | `formmethod="get"` |
+| `formenctype` | The form's `enctype` | `formenctype="multipart/form-data"` |
+| `formtarget` | The form's `target` | `formtarget="_blank"` |
+| `formnovalidate` | Skips validation for this click | `formnovalidate` |
+
+```html
+<form action="/publish" method="post">
+  <label for="body">Article</label>
+  <textarea id="body" name="body" required></textarea>
+
+  <input type="submit" value="Publish" />
+
+  <!-- Saving a draft should work even if the article is incomplete -->
+  <input type="submit" value="Save draft" formaction="/drafts" formnovalidate />
+</form>
+```
+
+`formnovalidate` is especially useful for "Save draft," "Back," and "Skip" buttons, which should work even when required fields are empty. Without it, the browser would block them.
+
+## The Reset Button
+
+```html
+<input type="reset" value="Reset form" />
+```
+
+A reset button restores every field to the value it had **when the page loaded**. Not to empty, as most people expect.
+
+| Field | After a reset |
+| :-- | :-- |
+| Text with `value="Ada"` in the HTML | Back to `Ada` |
+| Text with no `value` | Empty |
+| Checkbox with `checked` in the HTML | Ticked |
+| Checkbox without `checked` | Unticked |
+| `<select>` | The option marked `selected`, or the first one |
+
+Try it. Change the fields, then press **Reset form**.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <label for="name">Name</label>
+  <input type="text" id="name" name="name" value="Ada Lovelace" />
+
+  <label for="city">City</label>
+  <input type="text" id="city" name="city" />
+
+  <label><input type="checkbox" name="news" checked /> Send me the newsletter</label>
+
+  <input type="submit" value="Save" />
+  <input type="reset" value="Reset form" />
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ResetDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+After a reset, "Ada Lovelace" comes back (it is the starting value), the city goes blank, and the newsletter box is ticked again.
+
+### Why Most Forms Should Not Have a Reset Button
+
+- **Accidents are costly.** One mis-click next to "Submit" wipes out minutes of typing, with no undo.
+- **Almost nobody needs it.** People who want to start over can reload the page, or edit a field.
+- **It does not mean "clear."** Visitors expect blank fields, and get the starting values.
+
+If you really need one (for a search filter, a drawing tool, a settings page), follow these rules:
+
+- **Separate it visually** from the main button, and make it look **less important** (a plain or outline style).
+- Place it **away** from the submit button, not next to it.
+- Label it clearly: "Reset filters," "Clear form."
+- For long or valuable forms, **ask for confirmation** first:
+
+```js
+form.addEventListener("reset", (event) => {
+  if (!confirm("Clear everything you have typed?")) event.preventDefault();
+});
+```
+
+## The Plain Button
+
+```html
+<input type="button" value="Add another guest" id="add-guest" />
+```
+
+`type="button"` does **nothing** on its own. It does not submit and it does not reset. You attach behaviour with JavaScript:
+
+```js
+document.getElementById("add-guest").addEventListener("click", () => {
+  // add another guest field
+});
+```
+
+This is the type to use for buttons inside a form that must **not** send it: "Show password," "Add row," "Preview." (With the `<button>` element, the same fix is `type="button"`, because a `<button>` defaults to **submit**.)
+
+## The Image Button
+
+```html
+<input type="image" src="/images/go.png" alt="Search" name="go" />
+```
+
+`type="image"` is a submit button drawn as a picture. It works like `submit`, and also sends the **position** where the visitor clicked, as `go.x=23&go.y=11`. That was useful for clickable maps in the past, and is rare today. If you use it:
+
+- **`alt` is required.** It is the button's accessible name, so write what the button **does** ("Search"), not what the picture shows.
+- Give `width` and `height`, as with any image.
+- Most designs use a `<button>` with an `<img>` inside instead, which is easier to style.
+
+## Pressing Enter: Implicit Submission
+
+Visitors do not always click the button. Pressing `Enter` while typing in a text field **submits** the form too. This is called **implicit submission**.
+
+- The browser acts as if the form's **first submit button** was clicked. (It is called the **default button**.) Its `name` and `value` are sent, and its `formaction` and other overrides apply.
+- If the form has **no** submit button, implicit submission only works when the form has **one** text-like field. With several fields, `Enter` does nothing.
+- `Enter` inside a `<textarea>` adds a new line instead, and does not submit.
+
+So, **put the main action first** in the page's source order. In a form with "Save draft" and "Publish," whichever comes first is the one `Enter` triggers. A common mistake is placing "Reset" or "Delete" first, so a stray `Enter` runs it.
+
+```html
+<!-- Good: Enter publishes -->
+<input type="submit" value="Publish" />
+<input type="submit" value="Save draft" formnovalidate />
+
+<!-- Risky: Enter would save a draft, ignoring validation -->
+<input type="submit" value="Save draft" formnovalidate />
+<input type="submit" value="Publish" />
+```
+
+## Preventing Double Submits
+
+Visitors click twice, and slow connections tempt them to. A double submit can create two orders, or two accounts. Two protections work together:
+
+### 1. In the browser: switch the button off while sending
+
+```js
+form.addEventListener("submit", () => {
+  const button = form.querySelector('[type="submit"]');
+  button.disabled = true;
+  button.value = "Sending...";
+});
+```
+
+Do this in the **`submit` event**, **not** in the button's `click` event. If you disable the clicked button during `click`, the browser may leave out its `name=value` from the data, since a disabled control is not sent. Re-enable the button if the request fails.
+
+### 2. On the server: make the action safe to repeat
+
+Browser tricks can be skipped, and pages get reloaded. Your server should also protect itself, for example with a one-time token in a hidden field (see [Hidden](./hidden)), or by checking for a duplicate before creating a record.
+
+## Disabled Submit Buttons: Think Twice
+
+Some forms keep the submit button **disabled** until every field is valid. It looks tidy, but it causes real problems:
+
+- The visitor cannot tell **why** it will not work.
+- A disabled button cannot be focused, so keyboard and screen reader users may not find it.
+- It hides the browser's helpful messages, which only appear on a **click**.
+
+Better: keep the button **enabled**, and let the browser or your script show clear messages when the visitor tries to submit. Use `disabled` only during the short time a request is being sent.
+
+## Styling the Buttons
+
+```css title="style.css"
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+  padding: 0.7rem 1.25rem;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 2.75rem;          /* a comfortable tap target */
+}
+
+/* The less important button looks quieter */
+input[type="reset"] {
+  background: transparent;
+  color: #2563eb;
+}
+
+input[type="submit"]:hover {
+  background: #1d4ed8;
+}
+
+input[type="submit"]:focus-visible,
+input[type="reset"]:focus-visible,
+input[type="button"]:focus-visible {
+  outline: 3px solid #1e3a8a;
+  outline-offset: 2px;
+}
+
+input[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+```
+
+- `font: inherit` stops the button from using the system font, which is smaller than the page.
+- Keep **good contrast** between the text and the background (at least 4.5:1).
+- A visible **focus** style is needed for keyboard users.
+- Do not use only **colour** to tell a dangerous button from a safe one. Use clear words too.
+
+## Accessibility at a Glance
+
+- **The `value` is the accessible name.** Make it describe the action: "Create account," not "Submit" or "OK."
+- **Use real buttons.** Do not make a `<div>` or `<a>` look like a button, because you would lose the keyboard and form behaviour.
+- **Keep the main button first in the source,** because `Enter` triggers the first submit button. Screen reader and keyboard order follows the source, so keep the visual order the same, rather than rearranging with CSS.
+- **Keep a visible focus style,** and a target of at least about 44 pixels.
+- **Do not disable the submit button** just to show the form is incomplete.
+- **Announce status** after submitting (success or errors) in a `role="status"` or `role="alert"` region, and move focus to an error summary if there are errors.
+- **Use `type="button"` for non-submitting actions** so that they do not accidentally send the form.
+- **Avoid a reset button,** or make it clearly separate, with a clear label.
+
+## Security Notes
+
+- **Validate everything on the server.** `formnovalidate`, `required`, and the other checks happen in the browser, and can be skipped.
+- **Check the `action` value** you receive (`publish` or `delete`) against an allow-list. Anyone can send `action=delete` by hand, so check permissions for each action.
+- **Protect sensitive actions** (delete, pay, change email) with a CSRF token and a signed-in check, and use `method="post"`, never `get`.
+- **Do not trigger changes with a GET request.** A `formmethod="get"` button should only read data.
+- **Rate-limit** submissions, and guard against double submits on the server.
+
+See [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **The default labels** ("Submit," "Reset") are shown in the visitor's browser language, but **your own `value` text is not translated**. Translate it yourself.
+- **Keep button labels short and action-based.** They are easiest to translate, and the clearest.
+- **Do not depend on the label text** on the server (as warned earlier). Use `<button>` with stable values if the site is multilingual.
+- **Right-to-left pages** reverse the order of buttons in a row when you use `flex` or `dir="rtl"`. Check that the main action is still where visitors expect.
+- **Do not rely on icons** like a tick or an arrow to convey meaning across cultures. Add words.
+
+## Common Mistakes to Avoid
+
+1. **Calling the button "Submit"** and nothing more specific.
+2. **Expecting reset to empty the form.** It restores the **starting** values.
+3. **Placing "Reset" or "Delete" next to "Submit"** (or before it, in the source).
+4. **Several submit buttons without a `name`,** so the server cannot tell them apart.
+5. **Depending on the `value` text** of a translated button.
+6. **Forgetting `formnovalidate`** on "Save draft" or "Back" buttons.
+7. **Using `type="button"` where you meant `submit`,** or the reverse.
+8. **Disabling the button in the `click` event,** which can stop its name and value being sent.
+9. **Leaving the submit button disabled** until the form is valid.
+10. **Using `<input type="image">`** without `alt`.
+11. **Making a `<div>` or link act like a button.**
+12. **Trusting the `action` value** (or any button value) on the server without checking permission.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with a text field and `<input type="submit" value="Send">`. Submit it with `method="get"`, and read the address.
+2. Remove the `value` from the button, and see the default label.
+3. Add a second submit button, both with `name="action"`, and compare the addresses.
+4. Add `formaction` and `formnovalidate` to a "Save draft" button, and test with an empty required field.
+5. Add a reset button, and test it on a field with a starting `value`, and one without.
+6. Press `Enter` inside a text field, and see which button was used.
+7. Swap the order of two submit buttons, and press `Enter` again.
+8. Add `type="button"` and make it do something with JavaScript, without submitting.
+9. Disable the submit button in the `submit` event, and re-enable it after 2 seconds.
+10. Bonus: build the reset confirmation with the `reset` event.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Where does the text on an `<input type="submit">` come from?</summary>
+
+From its `value` attribute. If there is no `value`, the browser uses a default such as "Submit" in the visitor's language. The `<input>` has no content between tags.
+
+</details>
+
+<details>
+<summary>2. How does the server tell several submit buttons apart?</summary>
+
+Give each a `name` (and a `value`). Only the **clicked** button's `name=value` is sent, so the server can read, for example, `action=Publish`.
+
+</details>
+
+<details>
+<summary>3. What does `type="reset"` do?</summary>
+
+It restores every field to its **starting** value from the HTML, which is not necessarily empty. Because it can wipe out a lot of typing, most forms should leave it out.
+
+</details>
+
+<details>
+<summary>4. When do you use `type="button"`?</summary>
+
+For buttons that run JavaScript and must **not** send the form, such as "Add another guest" or "Show password." A button of this type does nothing on its own.
+
+</details>
+
+<details>
+<summary>5. Which button runs when the visitor presses Enter in a text field?</summary>
+
+The form's **first submit button** in source order (the default button), including its `name`, `value`, and any `formaction` or `formnovalidate`. Put the main action first.
+
+</details>
+
+<details>
+<summary>6. What does `formnovalidate` do?</summary>
+
+It makes that one submit button skip the browser's validation, so actions like "Save draft" or "Back" work even when required fields are empty.
+
+</details>
+
+## Key Takeaways
+
+- `type="submit"` checks and sends the form. Its `value` is its label, so make it a clear, specific action.
+- With several submit buttons, give each a `name` and `value`. Only the clicked one is sent. The `form*` attributes (`formaction`, `formmethod`, `formnovalidate`, and others) change what one button does.
+- `type="reset"` restores **starting values**, not blanks, and is easy to hit by mistake. Skip it, or keep it far from submit, with confirmation.
+- `type="button"` does nothing alone, and is for JavaScript actions. `type="image"` is a picture submit button that needs `alt`.
+- Pressing Enter triggers the **first** submit button. Put the main action first, and disable the button only while sending, in the `submit` event.
+- Use clear labels, big targets, and visible focus, and always validate and authorize every action on the server.
+
+You now know every input type. Next, move on from `<input>` to the multi-line field, in [Textarea](../textarea), or return to the [Forms overview](/tutorials/html/forms).

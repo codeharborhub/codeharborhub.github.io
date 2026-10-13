@@ -1,15 +1,614 @@
 ---
-id: label-element
-title: "Connecting Labels with Form Controls: label and the for Attribute"
-sidebar_label: "Label Element (<label>)"
+id: html-label-element
+title: "HTML Label Element"
+sidebar_label: "Label Element"
 sidebar_position: 3
 slug: /html/forms/label-element
-description: "Master the label tag and for attribute to improve form usability, extend click targets, and provide proper accessible names for screen readers."
+description: "Learn the HTML label element: how to name every form field with for and id, wrap controls inside labels, why placeholders are not labels, how labels improve clicking and screen reader support, visually hidden labels, hints and required markers, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML label tag
-  - label for attribute
-  - form input labels
-  - form accessibility label
+  - HTML label element
+  - HTML label for attribute
+  - label and input id
+  - implicit and explicit labels
+  - placeholder vs label
+  - accessible form labels
+  - visually hidden label
+  - label click focus input
+  - label checkbox radio
+  - form field hints aria-describedby
+  - learn HTML forms
   - CodeHarborHub HTML
-tags: [html, forms, label, accessibility]
+tags: [html, web-development, beginner, forms, label, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export const visuallyHidden = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  margin: "-1px",
+  padding: 0,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
+
+export function ClickDemo() {
+  const [log, setLog] = useState("Click the words next to the box.");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p>
+        <input
+          type="checkbox"
+          id="lbl-agree-a"
+          onChange={(event) =>
+            setLog(`Box A is now ${event.target.checked ? "checked" : "unchecked"}.`)
+          }
+        />{" "}
+        <label htmlFor="lbl-agree-a">With a label: click me</label>
+      </p>
+      <p>
+        <input
+          type="checkbox"
+          id="lbl-agree-b"
+          onChange={(event) =>
+            setLog(`Box B is now ${event.target.checked ? "checked" : "unchecked"}.`)
+          }
+        />{" "}
+        <span>With no label: clicking this text does nothing</span>
+      </p>
+      <p><em>{log}</em></p>
+    </form>
+  );
+}
+
+Picture a form with three empty boxes and no words next to them. You would have no idea what to type where. Now imagine you could not see the screen, and a voice only said "edit text... edit text... edit text." That is what a form without labels sounds like to someone using a screen reader.
+
+The `<label>` element is the **name tag** of a form field. It is small, and it is one of the most important elements in HTML forms. A correct label makes a form clearer for everyone, easier to tap on a phone, and usable with assistive technology. A missing label is the most common accessibility problem on the web, and also one of the easiest to fix.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a `<label>` does, and why every field needs one
+- The two ways to connect a label to a field: `for` and `id`, or wrapping
+- Why labels make fields easier to click and tap
+- Why a placeholder is **not** a label
+- How to hide a label visually without hiding it from assistive technology
+- How to add hints, required markers, and error text
+- Labels for checkboxes, radio buttons, and other controls
+- Common mistakes
+
+## The Basics
+
+A label is text that describes one form control. It is connected to that control, so the two behave as a pair.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="email">Email address</label>
+<input type="email" id="email" name="email" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="lbl-email">Email address</label><br />
+  <input type="email" id="lbl-email" name="email" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The connection comes from two matching values:
+
+| On the label | On the field | Meaning |
+| :-- | :-- | :-- |
+| `for="email"` | `id="email"` | "This label belongs to the field whose id is `email`" |
+
+:::info Note the difference
+- **`id`** identifies the field **on the page**, so a label (or CSS or JavaScript) can point at it.
+- **`name`** is the key under which the value is **sent to the server**.
+
+They are often the same word, but they do different jobs. A label uses `for` and `id`, never `name`.
+:::
+
+## Two Ways to Connect a Label
+
+### 1. Explicit: `for` and `id`
+
+The label and the field sit separately, and are linked by matching attributes.
+
+```html
+<label for="city">City</label>
+<input type="text" id="city" name="city" />
+```
+
+- Works even when the label and field are far apart in the layout.
+- Is the **most flexible** and the most widely recommended method.
+- Each `id` on the page must be **unique**.
+
+### 2. Implicit: Wrapping
+
+The field is placed **inside** the label. No `for` or `id` is needed.
+
+```html
+<label>
+  City
+  <input type="text" name="city" />
+</label>
+```
+
+- Quick to write, and common for checkboxes and radio buttons.
+- Slightly harder to style when the label text and field must sit in separate columns.
+
+### Using Both
+
+For the best support in all tools, you can combine them. This is harmless, and useful when you are not sure how a tool handles wrapping:
+
+```html
+<label for="city">
+  City
+  <input type="text" id="city" name="city" />
+</label>
+```
+
+:::tip Which should I use?
+Use **explicit** (`for` and `id`) for text fields, and either for checkboxes and radio buttons. If you pick one method and use it consistently, your forms stay easy to maintain.
+:::
+
+## What a Label Gives You
+
+### 1. A Bigger Click Target
+
+Clicking or tapping a label **activates its field**: it puts the cursor in a text box, toggles a checkbox, or selects a radio button. This is a big help on phones, where a tiny checkbox is hard to hit.
+
+Try it. Click the words next to each box:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ClickDemo />
+</>
+</BrowserWindow>
+
+The first box responds to a click on its text because of the label. The second does not, because it has none.
+
+### 2. An Accessible Name
+
+Assistive technology reads the label as the field's **name**. For the email field above, a screen reader says:
+
+> "Email address, edit text, required."
+
+Without a label, it says only "edit text," and the user cannot tell what to enter.
+
+### 3. Voice Control
+
+People who control their computer by voice can say "click Email address" to reach the field. That works only if the field has a label with visible text that matches.
+
+### 4. Better Searching and Testing
+
+Tools that test or automate forms often find fields by their label text, so labeled forms are easier to maintain.
+
+:::note Accessibility rule (WCAG)
+Every form control needs a programmatic **label or name** (WCAG success criterion "Labels or Instructions" and "Name, Role, Value"). It is one of the clearest rules in accessibility, and a missing label is the easiest failure to prevent.
+:::
+
+## A Placeholder Is Not a Label
+
+The `placeholder` attribute shows faint text inside an empty field. It looks like a label, which makes it a tempting shortcut. Do not use it as one.
+
+<Tabs>
+<TabItem value="bad" label="Placeholder only" default>
+
+```html
+<input type="email" name="email" placeholder="Email address" />
+```
+
+</TabItem>
+<TabItem value="good" label="Label plus placeholder">
+
+```html
+<label for="email">Email address</label>
+<input
+  type="email"
+  id="email"
+  name="email"
+  placeholder="name@example.com"
+/>
+```
+
+</TabItem>
+</Tabs>
+
+| Problem with placeholder-only fields | Why it matters |
+| :-- | :-- |
+| **It disappears** when the user starts typing | They forget what the field was for, especially in long forms |
+| **Low contrast** by default | Hard to read for many people |
+| **Not always announced** as the field's name | Support in assistive technology is inconsistent |
+| **Looks "already filled in"** | Some users think the field is done and skip it |
+| **Cannot be clicked** to focus the field | No bigger target |
+| **Often cut off** in other languages | Translated text can be longer |
+
+The right use for a placeholder is a short **example of the format**, such as `name@example.com`. Never use it for the field's name or for instructions that people need to keep seeing.
+
+### "Floating Labels"
+
+A popular design shows the label inside the field and moves it above as the user types. Done well, it is fine, because the label **stays in the HTML** and remains visible. Done badly, it is a placeholder in disguise. If you use floating labels, test them with a screen reader and at high zoom.
+
+## Hiding a Label (Carefully)
+
+Sometimes a design shows a field with no visible label, such as a search box next to a magnifier button. The field **still needs a label** for assistive technology. There are three acceptable ways.
+
+### Option 1: A Visually Hidden Label (best)
+
+Keep a real `<label>`, and hide it **from the eye only**, using a CSS class:
+
+```css title="style.css"
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+```
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/search" method="get" role="search">
+  <label for="q" class="visually-hidden">Search the site</label>
+  <input type="search" id="q" name="q" placeholder="Search..." />
+  <button type="submit">Go</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form action="/search" method="get" role="search" onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="lbl-q" style={visuallyHidden}>Search the site</label>
+  <input type="search" id="lbl-q" name="q" placeholder="Search..." />{" "}
+  <button type="submit">Go</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The label is invisible on screen, but a screen reader announces "Search the site, search edit text." Sighted users get a visual clue from the button and the placeholder.
+
+### Option 2: `aria-label`
+
+Put the name straight on the field:
+
+```html
+<input type="search" name="q" aria-label="Search the site" />
+```
+
+Simple, but it has no visible text, so voice control users and people who translate the page may miss it.
+
+### Option 3: `aria-labelledby`
+
+Point the field at text that already exists on the page:
+
+```html
+<h2 id="search-title">Search</h2>
+<input type="search" name="q" aria-labelledby="search-title" />
+```
+
+:::warning Hide with care
+Do **not** hide a label with `display: none` or `visibility: hidden`, or the `hidden` attribute. That removes it from assistive technology too, and the field is nameless again. Use the visually hidden technique above.
+:::
+
+## Labels for Checkboxes and Radio Buttons
+
+For these controls, the label sits **beside** the box, and is usually written by wrapping.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label>
+  <input type="checkbox" name="news" />
+  Send me weekly tips
+</label>
+
+<p>Your level:</p>
+<label>
+  <input type="radio" name="level" value="beginner" />
+  Beginner
+</label>
+<label>
+  <input type="radio" name="level" value="advanced" />
+  Advanced
+</label>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <p>
+    <label>
+      <input type="checkbox" name="news" />
+      {" "}Send me weekly tips
+    </label>
+  </p>
+
+  <p>Your level:</p>
+  <p>
+    <label>
+      <input type="radio" name="level" value="beginner" />
+      {" "}Beginner
+    </label>
+    <br />
+    <label>
+      <input type="radio" name="level" value="advanced" />
+      {" "}Advanced
+    </label>
+  </p>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each radio button has its **own** label ("Beginner," "Advanced"). The question "Your level:" belongs to the **group**, and the correct element for naming a group is `<fieldset>` with `<legend>`, which you will learn in [Fieldset and Legend](./fieldset-and-legend). A `<label>` names one control. A `<legend>` names a group.
+
+## Which Elements Can Have a Label?
+
+A label can be connected to any **labelable** element:
+
+| Labelable | Example |
+| :-- | :-- |
+| `<input>` (except `type="hidden"`) | Text, email, checkbox, radio, file... |
+| `<textarea>` | A message box |
+| `<select>` | A drop-down |
+| `<button>` | Gets its name from its own text, but a label works too |
+| `<meter>` and `<progress>` | Gauges and progress bars |
+| `<output>` | A calculated result |
+
+An `<input type="hidden">` has no visible control, so it needs no label.
+
+## Hints, Required Markers, and Errors
+
+A label gives the **name**. Extra help belongs in separate text that is **connected** to the field.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="pw">Password</label>
+<input
+  type="password"
+  id="pw"
+  name="password"
+  autocomplete="new-password"
+  aria-describedby="pw-hint"
+  required
+/>
+<p id="pw-hint">At least 12 characters. A short sentence works well.</p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="lbl-pw">Password</label><br />
+  <input
+    type="password"
+    id="lbl-pw"
+    name="password"
+    autoComplete="new-password"
+    aria-describedby="lbl-pw-hint"
+    required
+  />
+  <p id="lbl-pw-hint" style={{ marginTop: "0.25rem", fontSize: "0.9rem" }}>
+    At least 12 characters. A short sentence works well.
+  </p>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+`aria-describedby` points at the hint's `id`. A screen reader reads the label first ("Password"), then the field type, then the hint. The same trick connects **error messages** to fields, which you will see in [Accessible Forms](./accessible-forms).
+
+### Marking Required Fields
+
+If a field is required, say so in the label, and use the `required` attribute too.
+
+```html
+<label for="name">Full name <span aria-hidden="true">*</span></label>
+<input type="text" id="name" name="name" required />
+```
+
+Whatever symbol you pick, **explain it** near the top of the form ("* means required"), or write "(required)" in words. Do not use color alone.
+
+| Approach | Notes |
+| :-- | :-- |
+| "Full name (required)" | The clearest, and the easiest to translate |
+| `*` with a note "* required" | Common, but explain it |
+| Marking the optional fields instead, "(optional)" | Good when most fields are required |
+| Red label color only | Not enough on its own |
+
+## Writing Good Label Text
+
+1. **Be short and clear.** "Email address," not "Please enter the email address that you use."
+2. **Name the content, not the control.** "Email," not "Text box 1."
+3. **Be specific.** "Delivery postcode" beats "Code."
+4. **Put the label near the field,** usually above it, or beside it for checkboxes. Above-field labels also fit narrow phone screens best.
+5. **Use sentence case,** and no ending colon is needed.
+6. **Do not rely on position alone.** Label text must make sense when heard by itself.
+7. **Match the label to the field's purpose,** so that `autocomplete` and voice control work.
+
+## Do Not Put Interactive Content Inside a Label
+
+A label is itself clickable, so nesting other interactive elements inside it causes confusion.
+
+<Tabs>
+<TabItem value="bad" label="Risky" default>
+
+```html
+<label for="terms">
+  I accept the <a href="/terms">terms and conditions</a>
+</label>
+<input type="checkbox" id="terms" name="terms" />
+```
+
+</TabItem>
+<TabItem value="good" label="Safer">
+
+```html
+<input type="checkbox" id="terms" name="terms" />
+<label for="terms">I accept the terms and conditions</label>
+<a href="/terms">Read the terms</a>
+```
+
+</TabItem>
+</Tabs>
+
+In the risky version, clicking the link and clicking the label do different things in the same spot, and it is easy to tick the box by accident when trying to follow the link. Many sites do use links inside labels, so it is not forbidden, but a separate link is clearer and safer.
+
+## Styling Labels
+
+A label is a normal inline element. Common styles:
+
+```css title="style.css"
+label {
+  display: block;            /* put the label above the field */
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.checkbox-label {
+  display: flex;             /* box and text side by side */
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+```
+
+A pointer cursor on clickable labels is a small hint that the label is active.
+
+## Global Audience Notes
+
+- **Write labels in the page's language,** and set the `lang` attribute.
+- **Keep them short.** Translations can run much longer, and long labels wrap badly in narrow layouts.
+- **Do not build sentences from separate pieces** (for example, a label before a field and a unit after it that together form a sentence), because word order differs between languages.
+- **Avoid slang and idioms,** since translation tools handle plain words best.
+- **Be careful with "name" fields.** "Full name" or "Name" suits more cultures than "First name" and "Last name."
+- **Leave room.** Labels in some languages may be much longer than in English.
+
+## Common Mistakes to Avoid
+
+1. **No label at all.** The most common and most serious mistake.
+2. **A `for` that does not match any `id`,** so the label is connected to nothing.
+3. **Duplicate `id` values** on the page, so labels point to the wrong field.
+4. **Using the placeholder as the label.**
+5. **Using `name` in `for`.** It must match the `id`.
+6. **Hiding labels with `display: none`.** It removes them from screen readers.
+7. **One label for a whole group** of radio buttons. Use `<fieldset>` and `<legend>`.
+8. **Putting a long paragraph inside a label.** Move extra help to `aria-describedby` text.
+9. **Using `<p>` or `<span>` in place of `<label>`.** It looks the same, but it is not connected.
+10. **Wrong order of text and fields** that makes the label ambiguous (for example, a label between two fields).
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with name, email, and message fields, each with an explicit label using `for` and `id`.
+2. Click each label, and confirm the matching field gets focus.
+3. Rewrite one field with a wrapping label instead.
+4. Add a checkbox, and make its label clickable.
+5. Replace a placeholder-only field with a label plus a placeholder example.
+6. Create a search field with a visually hidden label.
+7. Add a hint under a password field, and connect it with `aria-describedby`.
+8. Mark one field as required with `required` and the text "(required)" in the label.
+9. Break a `for` on purpose, then notice the click behavior stops. Fix it.
+10. Bonus: open your browser's Accessibility panel, and check the "name" shown for each field.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `<label>` element do?</summary>
+
+It gives a form control its visible and accessible name. Clicking the label activates the control, and screen readers announce the label text for it.
+
+</details>
+
+<details>
+<summary>2. How do you connect a label to a field?</summary>
+
+Either with `for` on the label matching the `id` on the field, or by wrapping the field inside the `<label>`.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `id` and `name` on a field?</summary>
+
+`id` identifies the field on the page, for labels, CSS, and scripts. `name` is the key under which the field's value is sent to the server.
+
+</details>
+
+<details>
+<summary>4. Why is a placeholder not a replacement for a label?</summary>
+
+It disappears when typing, has low contrast, may not be announced as the name, and cannot be clicked to focus the field. Use it only for a short format example.
+
+</details>
+
+<details>
+<summary>5. How can you hide a label visually but keep it accessible?</summary>
+
+Use a visually hidden CSS class, so the label stays in the page for assistive technology. Do not use `display: none`. `aria-label` is a simpler alternative with some trade-offs.
+
+</details>
+
+<details>
+<summary>6. How do you connect a hint to a field?</summary>
+
+Give the hint an `id`, and add `aria-describedby="that-id"` to the field. Screen readers then read the hint after the label.
+
+</details>
+
+## Key Takeaways
+
+- Every form control needs a label. A missing one is the most common form accessibility failure.
+- Connect a label with `for` and a matching `id`, or by wrapping the control. Never use `name` in `for`.
+- Labels enlarge the click and tap target, give fields an accessible name, and support voice control.
+- A placeholder is not a label. Use it only for a format example.
+- If a design hides a label, hide it visually with CSS, never with `display: none`.
+- Put hints and errors in separate text linked with `aria-describedby`, and mark required fields in words, not by color alone.
+- Write short, plain labels that translate well.
+
+Now your fields have names. Next, learn the element that does the real work: the field itself, in [Input Element](./input-element), or return to the [Forms overview](/tutorials/html/forms).

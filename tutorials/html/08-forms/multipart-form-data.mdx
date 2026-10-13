@@ -1,16 +1,523 @@
 ---
-id: multipart-form-data
-title: "Handling File Submissions: enctype='multipart/form-data'"
-sidebar_label: "Form Encoding (enctype)"
-sidebar_position: 19
+id: html-multipart-form-data
+title: "HTML Multipart Form Data (enctype)"
+sidebar_label: "Multipart Form Data"
+sidebar_position: 20
 slug: /html/forms/multipart-form-data
-description: "Master form encoding types (enctype) including application/x-www-form-urlencoded and multipart/form-data for binary file uploads."
+description: "Learn the HTML form enctype attribute: application/x-www-form-urlencoded, multipart/form-data, and text/plain, why file uploads need multipart, what a multipart request body looks like, using FormData with fetch without setting the Content-Type, formenctype on buttons, and safe server-side handling of uploaded files, size limits, and filenames."
 keywords:
-  - HTML enctype attribute
-  - multipart form data
-  - file upload form encoding
-  - form binary data submission
+  - HTML enctype
+  - multipart/form-data
+  - form enctype attribute
+  - file upload HTML form
+  - FormData fetch upload
+  - application/x-www-form-urlencoded
+  - formenctype
+  - multipart boundary
+  - upload file security
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, enctype, file-upload]
+tags: [html, web-development, beginner, forms, enctype, file-upload, multipart, security, frontend]
 ---
+
+import {useState} from 'react';
+
+export function EnctypeDemo() {
+  const [enctype, setEnctype] = useState("multipart/form-data");
+  const [out, setOut] = useState(null);
+  return (
+    <form
+      onSubmit={async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const fd = new FormData();
+        fd.append("title", form.elements.title.value);
+        fd.append("note", form.elements.note.value);
+        const file = form.elements.photo.files[0];
+        if (file) fd.append("photo", file);
+        else fd.append("photo", new File([], ""));
+        let header = "";
+        let body = "";
+        try {
+          if (enctype === "multipart/form-data") {
+            const request = new Request("https://example.com/upload", {method: "POST", body: fd});
+            header = request.headers.get("content-type") || "multipart/form-data";
+            body = await request.text();
+          } else if (enctype === "application/x-www-form-urlencoded") {
+            const params = new URLSearchParams();
+            for (const [key, value] of fd.entries()) {
+              params.append(key, value instanceof File ? value.name : value);
+            }
+            header = "application/x-www-form-urlencoded";
+            body = params.toString();
+          } else {
+            const lines = [];
+            for (const [key, value] of fd.entries()) {
+              lines.push(key + "=" + (value instanceof File ? value.name : value));
+            }
+            header = "text/plain";
+            body = lines.join("\r\n");
+          }
+        } catch (error) {
+          header = "(could not build a preview in this browser)";
+        }
+        if (body.length > 1200) body = body.slice(0, 1200) + "\n… (cut short for display)";
+        setOut({header, body});
+      }}
+    >
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="mp-enc">enctype</label><br />
+        <select id="mp-enc" value={enctype} onChange={(event) => setEnctype(event.target.value)}>
+          <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded (default)</option>
+          <option value="multipart/form-data">multipart/form-data</option>
+          <option value="text/plain">text/plain</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="mp-title">Title</label><br />
+        <input type="text" id="mp-title" name="title" defaultValue="Café menu" />
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="mp-note">Note</label><br />
+        <input type="text" id="mp-note" name="note" defaultValue="Line one" />
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="mp-photo">Pick a small text file (optional)</label><br />
+        <input type="file" id="mp-photo" name="photo" />
+      </p>
+      <button type="submit">Show the request body</button>
+      {out ? (
+        <div role="status" style={{marginTop: "0.75rem"}}>
+          <p style={{margin: "0 0 0.25rem"}}><strong>Content-Type:</strong> <code>{out.header}</code></p>
+          <pre style={{margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all"}}><code>{out.body}</code></pre>
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
+export function FileCheckDemo() {
+  const maxBytes = 2 * 1024 * 1024;
+  const allowed = ["image/png", "image/jpeg", "application/pdf"];
+  const [rows, setRows] = useState([]);
+  const size = (bytes) => (bytes < 1024 ? bytes + " B" : bytes < 1048576 ? (bytes / 1024).toFixed(1) + " KB" : (bytes / 1048576).toFixed(1) + " MB");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="mp-files">Choose files (PNG, JPEG, or PDF, up to 2 MB each)</label><br />
+      <input
+        type="file"
+        id="mp-files"
+        name="files"
+        multiple
+        accept=".png,.jpg,.jpeg,.pdf"
+        onChange={(event) => {
+          const list = Array.from(event.target.files).map((file) => {
+            let problem = "";
+            if (file.size > maxBytes) problem = "Too big";
+            else if (!allowed.includes(file.type)) problem = "Type not allowed (" + (file.type || "unknown") + ")";
+            return {name: file.name, size: size(file.size), problem};
+          });
+          setRows(list);
+        }}
+      />
+      <ul aria-live="polite" style={{margin: "0.5rem 0 0", paddingLeft: "1.25rem"}}>
+        {rows.length === 0 ? <li style={{color: "#64748b"}}>No files chosen yet.</li> : null}
+        {rows.map((row, i) => (
+          <li key={row.name + i} style={{color: row.problem ? "#b91c1c" : "#15803d"}}>
+            {row.name} ({row.size}): {row.problem || "looks fine in the browser"}
+          </li>
+        ))}
+      </ul>
+    </form>
+  );
+}
+
+Most forms send short pieces of text. But what if a visitor wants to **upload a photo**, a PDF, or a video? Plain text encoding cannot carry a file, so HTML gives you a way to change how the data is **packaged**. That setting is the **`enctype`** attribute (short for *encoding type*), and its most important value is **`multipart/form-data`**.
+
+Forgetting this one attribute is the number one reason file uploads "do not work" for beginners: the form submits, and the server receives only the file's **name**, with no file at all. After this lesson, you will never make that mistake.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `enctype` is and the three values it can have
+- Why file uploads need `multipart/form-data`
+- What a multipart request actually looks like
+- How `FormData` and `fetch` handle it, and the one thing you must not do
+- Overriding it with `formenctype`
+- How to check files in the browser, and why the server must check again
+- Safe handling of uploaded files
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/upload" method="post" enctype="multipart/form-data">
+  <label for="title">Title</label>
+  <input type="text" id="title" name="title" required />
+
+  <label for="photo">Photo</label>
+  <input type="file" id="photo" name="photo" accept="image/*" required />
+
+  <button type="submit">Upload</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="mp-t">Title</label><br />
+  <input type="text" id="mp-t" name="title" required /><br />
+  <label htmlFor="mp-p">Photo</label><br />
+  <input type="file" id="mp-p" name="photo" accept="image/*" required /><br />
+  <button type="submit">Upload</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The two requirements for a file upload are:
+
+1. **`method="post"`**. Files cannot travel in a URL, so GET cannot upload files.
+2. **`enctype="multipart/form-data"`**. This packages each field, including the file's bytes, as a separate **part**.
+
+## The Three Values
+
+| `enctype` | What it does | Use it for |
+| :-- | :-- | :-- |
+| `application/x-www-form-urlencoded` | **The default.** Builds one string, `name=value&name2=value2`, with special characters encoded (`%C3%A9`) | Ordinary forms with only text |
+| `multipart/form-data` | Sends each field as its own part, with room for raw file bytes | **Any form with a file input** |
+| `text/plain` | Sends `name=value` lines, with no encoding | Almost nothing. It is hard for a server to read reliably |
+
+`enctype` only matters for **POST** forms. With `method="get"`, the data always goes into the URL, and `enctype` is ignored.
+
+:::warning The classic mistake
+Without `enctype="multipart/form-data"`, a form with `<input type="file">` still submits, but the server receives **only the file's name** as plain text, never the file. There is no error message. If your uploads are mysteriously empty, check this first.
+:::
+
+## Try It: See What Is Sent
+
+Switch between the three `enctype` values and press the button. The demo builds the real request body the browser would produce, without sending it. Pick a small text file, and notice what happens to it in each mode.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form id="f" action="/upload" method="post" enctype="multipart/form-data">
+  <input type="text" name="title" value="Café menu" />
+  <input type="text" name="note" value="Line one" />
+  <input type="file" name="photo" />
+  <button type="submit">Send</button>
+</form>
+```
+
+```js title="script.js"
+const form = document.getElementById("f");
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  // Build the same request the browser would send, without sending it
+  const request = new Request("https://example.com/upload", {
+    method: "POST",
+    body: new FormData(form),
+  });
+
+  console.log(request.headers.get("content-type")); // includes the boundary
+  console.log(await request.text());               // the raw body
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EnctypeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What a Multipart Body Looks Like
+
+A multipart body is a series of **parts** separated by a long random **boundary** string that the browser invents so it never clashes with your data:
+
+```text
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryAbC123
+
+------WebKitFormBoundaryAbC123
+Content-Disposition: form-data; name="title"
+
+Café menu
+------WebKitFormBoundaryAbC123
+Content-Disposition: form-data; name="photo"; filename="menu.png"
+Content-Type: image/png
+
+(the raw bytes of the file go here)
+------WebKitFormBoundaryAbC123--
+```
+
+Each part has its own small header:
+
+| Part header | What it tells the server |
+| :-- | :-- |
+| `name="photo"` | Which form field this part came from (the input's `name`) |
+| `filename="menu.png"` | The file's original name, **as the visitor's computer calls it** (do not trust it) |
+| `Content-Type: image/png` | The type the **browser guessed**, usually from the extension (do not trust it either) |
+
+You never write this yourself. The browser builds it, and your server framework reads it and gives you the fields and files separately. The boundary appears in the `Content-Type` header so the server knows where each part ends.
+
+### Why Not Use the Default?
+
+The default encoding turns **every** character into `%XX` codes. A 5 MB photo would become over 15 MB of mostly `%` signs, and binary bytes could not be represented safely. Multipart sends the file's bytes **as they are**, which is smaller and exact.
+
+For plain text forms, multipart works, too, but is slightly larger. So use it **only when you need a file**.
+
+## Using `fetch` and `FormData`
+
+When you upload with JavaScript, `FormData` builds the multipart body for you:
+
+```js title="script.js"
+const form = document.getElementById("upload");
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const response = await fetch("/upload", {
+    method: "POST",
+    body: new FormData(form),   // multipart, with boundary, built for you
+  });
+
+  console.log(response.ok ? "Uploaded" : "Failed");
+});
+```
+
+:::danger Do not set the Content-Type header yourself
+When the body is a `FormData`, **leave the `Content-Type` header out**. The browser adds `multipart/form-data` **with the correct boundary**. If you write `headers: { "Content-Type": "multipart/form-data" }` by hand, the boundary is missing, and the server cannot read the body. This is the most common `fetch` upload bug.
+:::
+
+You can add extra values to a `FormData` before sending:
+
+```js
+const data = new FormData(form);
+data.append("source", "profile-page");
+data.append("photo", someBlob, "avatar.png");   // a file you made in code
+```
+
+### Showing Progress
+
+`fetch` does not report upload progress. For a progress bar, use `XMLHttpRequest` and its `upload.onprogress` event, or a library. For very large files, split them into chunks, or use direct-to-storage uploads, as below.
+
+## One Form, Different Encodings: `formenctype`
+
+A submit button can override the form's encoding for itself:
+
+```html
+<form action="/profile" method="post" enctype="multipart/form-data">
+  <input type="text" name="name" />
+  <input type="file" name="avatar" />
+
+  <button type="submit">Save with photo</button>
+  <button type="submit" formenctype="application/x-www-form-urlencoded" formaction="/profile/text-only">Save text only</button>
+</form>
+```
+
+See [Submit and Reset Buttons](./input-types/submit-reset-button).
+
+## Checking Files in the Browser
+
+The browser can show visitors a problem **before** a slow upload starts. Pick some files below, and see the checks:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="files">Choose files (PNG, JPEG, or PDF, up to 2 MB each)</label>
+<input type="file" id="files" name="files" multiple accept=".png,.jpg,.jpeg,.pdf" />
+<ul id="list" aria-live="polite"></ul>
+```
+
+```js title="script.js"
+const input = document.getElementById("files");
+const list = document.getElementById("list");
+const maxBytes = 2 * 1024 * 1024;
+const allowed = ["image/png", "image/jpeg", "application/pdf"];
+
+input.addEventListener("change", () => {
+  list.innerHTML = "";
+
+  for (const file of input.files) {
+    const item = document.createElement("li");
+    let problem = "";
+
+    if (file.size > maxBytes) problem = "Too big";
+    else if (!allowed.includes(file.type)) problem = "Type not allowed";
+
+    item.textContent = file.name + " (" + file.size + " bytes): " + (problem || "looks fine");
+    list.append(item);
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FileCheckDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+These checks are **kindness, not security**. `file.type` comes from the file's extension, and anyone can rename `virus.exe` to `photo.png`. Details are in the [File input lesson](./input-types/file).
+
+## Handling Uploads Safely on the Server
+
+An upload is the most dangerous thing a form can do, because you are letting a stranger put a file on your computer. The server must treat every uploaded file as hostile.
+
+| Risk | What to do |
+| :-- | :-- |
+| **Huge files** that fill the disk or memory | Set a **maximum request size** on the web server, and a limit in your application. Stop reading when it is exceeded |
+| **Fake types** (a script named `photo.png`) | Check the real type from the file's **first bytes** ("magic numbers"), not the name or the browser's `Content-Type`. Allow only types you need |
+| **Dangerous filenames** (`../../etc/passwd`, `shell.php`, names with null bytes) | **Never use the visitor's filename** to save the file. Generate your own name (a random ID) and keep the original only as text, escaped, for display |
+| **Running uploaded code** | Store files **outside** the web root, or on separate storage that **cannot execute** scripts. Never serve user uploads from the same place as your code |
+| **Malware** | Scan with antivirus, especially if other people will download the files |
+| **Image tricks** (huge dimensions, hidden data, scripts in SVG) | Re-process images with a trusted library (resize and re-encode), and treat SVG as code, not as a picture |
+| **Serving files back unsafely** | Send a correct `Content-Type`, add `X-Content-Type-Options: nosniff`, and use `Content-Disposition: attachment` for downloads |
+| **Privacy** | Remove metadata (location in photos). Control who may see each file |
+| **Abuse** | Require sign-in, rate-limit uploads, and set a quota per user |
+| **Slow uploads** (many open connections) | Set timeouts, and use a reverse proxy |
+
+For large files, a common modern design is to have the server give the browser a **short-lived signed URL** so the file goes **straight to cloud storage**, never touching your application server. The server then checks and records the result.
+
+See [Secure Form Design](./secure-form-design).
+
+## Accessibility at a Glance
+
+- **Label the file input** clearly, and say what is allowed: "Photo (PNG or JPEG, up to 2 MB)."
+- **Show what was chosen:** the file name and size, in text, so screen reader users know the selection worked.
+- **Give feedback during and after upload** in a `role="status"` area ("Uploading… Done"), not only a visual bar.
+- **Do not rely on drag and drop alone.** Keep the normal file button available for keyboard and screen reader users.
+- **Explain errors** in words: "That file is 5 MB. The limit is 2 MB."
+- **Let visitors remove or replace a file** before sending.
+- **Keep the rest of the form's data** if the upload fails.
+
+## Security Notes at a Glance
+
+- **`enctype` is not security.** It only controls packaging.
+- **Everything in a multipart request can be forged:** the filename, the part's `Content-Type`, and the file's contents.
+- **The server must enforce** size, type, count, and permission checks.
+- **Protect against CSRF** on upload endpoints. A forged upload can fill your storage.
+- **Never `eval`, `include`, or execute** anything uploaded.
+- **Serve uploads from a different domain** (a cookie-free one) where possible, so a stored script cannot read your visitors' sessions.
+
+## Global Audience Notes
+
+- **Filenames contain any script:** accents, Chinese, Arabic, emoji. Browsers send them as UTF-8 in multipart, so your server must read them as UTF-8 and store them safely (or replace them with your own).
+- **File sizes on mobile networks:** photos from modern phones are several megabytes. Consider resizing in the browser before upload, and warn about data costs.
+- **Slow and unreliable connections** break big uploads. Offer retry, or resumable uploads.
+- **File type names** (such as "JPEG") may mean nothing to some visitors. Say "photo" and show examples.
+- **Legal rules** about stored images and documents differ by country (privacy, retention, and children's data). Tell visitors what you keep and for how long.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting `enctype="multipart/form-data"`,** so only the filename arrives.
+2. **Using `method="get"`** with a file input.
+3. **Setting `Content-Type: multipart/form-data` by hand** in `fetch`, which loses the boundary.
+4. **Trusting `file.type`, the extension, or the filename** for security.
+5. **Saving files under the visitor's filename.**
+6. **Storing uploads inside the web root** where they can run.
+7. **No size limit** on the server.
+8. **Believing `accept` blocks other types.** It only guides the picker.
+9. **Using multipart for ordinary text forms** with no need.
+10. **Using `text/plain`** and expecting the server to parse it.
+11. **No upload CSRF protection or rate limit.**
+12. **Not telling the visitor** what is allowed, or what went wrong.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with a file input and `method="post"`, but no `enctype`. Look at what the server (or the demo above) receives.
+2. Add `enctype="multipart/form-data"`, and compare.
+3. Use `new Request(url, { method: "POST", body: new FormData(form) })` and print its `content-type` and body.
+4. Upload a file with `fetch` and `FormData`, without setting any headers.
+5. Add a size and type check that shows a message before sending.
+6. Add a second submit button with `formenctype`.
+7. Let a visitor choose several files with `multiple`, and list their names and sizes.
+8. Write a message for a file that is too big, in plain words.
+9. Write down the safe-handling steps your server needs, in order, for an avatar upload.
+10. Bonus: look at an upload request in your browser's Network tab, and find the boundary and the parts.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `enctype` do?</summary>
+
+It decides how a POST form's data is packaged in the request body. The default is `application/x-www-form-urlencoded`. Use `multipart/form-data` for file uploads.
+
+</details>
+
+<details>
+<summary>2. What two things does a file upload form need?</summary>
+
+`method="post"` and `enctype="multipart/form-data"`. Without the second, only the file's name is sent, not the file.
+
+</details>
+
+<details>
+<summary>3. What is the boundary in a multipart request?</summary>
+
+A random string the browser creates to separate the parts. It is written into the `Content-Type` header so the server knows where each part starts and ends.
+
+</details>
+
+<details>
+<summary>4. What must you never do when using `fetch` with `FormData`?</summary>
+
+Never set the `Content-Type` header yourself. The browser adds it with the correct boundary. Setting it by hand removes the boundary, and the server cannot read the body.
+
+</details>
+
+<details>
+<summary>5. Why can't you trust the filename or the type of an uploaded file?</summary>
+
+Both come from the visitor's side, and can be forged or renamed. The server should generate its own filename, check the real type from the file's first bytes, and store the file where it cannot run.
+
+</details>
+
+<details>
+<summary>6. Does `enctype` make an upload safe?</summary>
+
+No. It only controls packaging. The server must enforce size, type, count, and permission limits, and protect against CSRF and abuse.
+
+</details>
+
+## Key Takeaways
+
+- `enctype` sets how a POST body is encoded: `application/x-www-form-urlencoded` (default), `multipart/form-data`, or `text/plain`.
+- **File uploads need `method="post"` and `enctype="multipart/form-data"`.** Otherwise only the file name arrives.
+- A multipart body is a set of parts split by a boundary, each with a `name`, and files with a `filename` and a type.
+- With `fetch`, pass a `FormData` as the body and **do not set `Content-Type`**.
+- `formenctype` on a button overrides the encoding for that button.
+- Check files in the browser for kindness, and again on the server for safety: size, real type, safe names, safe storage.
+- Treat every upload as hostile, and tell visitors clearly what is allowed.
+
+Next, learn how to make every form usable by everyone, in [Accessible Forms](./accessible-forms), or return to the [Forms overview](/tutorials/html/forms).

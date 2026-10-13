@@ -1,18 +1,510 @@
 ---
-id: input-type-color
-title: "Color Pickers: type='color'"
+id: html-input-color
+title: "HTML Input Type Color"
 sidebar_label: "Color"
 sidebar_position: 13
 slug: /html/forms/input-types/color
-description: "Embed native operating system color pickers to select hexadecimal color codes using input type='color'."
+description: "Learn the HTML input type color: the colour picker, the #rrggbb value format, the black default, input versus change events, preset swatches with datalist, converting hex to RGB, checking contrast for accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type color
   - color picker HTML
-  - hex color selection
-  - color input palette
+  - input color value hex
+  - input color default black
+  - input color datalist swatches
+  - hex to rgb JavaScript
+  - color contrast checker WCAG
+  - input color input change event
+  - color input accessibility
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, color]
+tags: [html, web-development, beginner, forms, input, color, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function toRgb(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+export function luminance(hex) {
+  const [r, g, b] = toRgb(hex).map((channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function contrast(a, b) {
+  const l1 = luminance(a);
+  const l2 = luminance(b);
+  const light = Math.max(l1, l2);
+  const dark = Math.min(l1, l2);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+export function PickerDemo() {
+  const [color, setColor] = useState("#2563eb");
+  const [r, g, b] = toRgb(color);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="col-pick">Favourite colour</label><br />
+      <input
+        type="color"
+        id="col-pick"
+        name="favourite"
+        value={color}
+        onChange={(event) => setColor(event.target.value)}
+        aria-describedby="col-pick-out"
+      />
+      <p id="col-pick-out" role="status" style={{margin: "0.5rem 0 0"}}>
+        Value sent: <code>favourite={color}</code><br />
+        As RGB: <code>rgb({r}, {g}, {b})</code>
+      </p>
+      <div
+        aria-hidden="true"
+        style={{width: "100%", maxWidth: "16rem", height: "2.5rem", borderRadius: "6px", border: "1px solid #64748b", background: color}}
+      />
+    </form>
+  );
+}
+
+export function ContrastDemo() {
+  const [text, setText] = useState("#1e293b");
+  const [back, setBack] = useState("#fef3c7");
+  const ratio = contrast(text, back);
+  const grade = (min) => (ratio >= min ? "Pass" : "Fail");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="col-text">Text colour</label>{" "}
+      <input type="color" id="col-text" name="text" value={text} onChange={(event) => setText(event.target.value)} />{" "}
+      <label htmlFor="col-back">Background</label>{" "}
+      <input type="color" id="col-back" name="background" value={back} onChange={(event) => setBack(event.target.value)} />
+      <p
+        style={{margin: "0.75rem 0 0", padding: "0.75rem 1rem", borderRadius: "6px", color: text, background: back, border: "1px solid #64748b"}}
+      >
+        The quick brown fox jumps over the lazy dog.
+      </p>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        Contrast ratio: <strong>{ratio.toFixed(2)} : 1</strong><br />
+        Normal text (needs 4.5): {grade(4.5)}<br />
+        Large text (needs 3): {grade(3)}
+      </p>
+    </form>
+  );
+}
+
+Pick a theme colour. Tag a note with a colour. Choose a team's brand colour, or the ink in a drawing app. A colour is hard to describe in words, and hex codes like `#2563eb` mean nothing to most people. `type="color"` hands the visitor a **colour picker** instead, and gives you back a clean, exact value.
+
+It is one of the simplest inputs: no `min`, `max`, or `pattern`, and nothing to type. But a few details catch beginners out, especially the black default, the way its events work, and what to do about **accessibility** when colours are involved. In this lesson, you will learn all three.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="color"` shows, and the value it sends
+- Why it is **never empty**, and always starts at black
+- The `input` and `change` events
+- Preset swatches with `list` and `<datalist>`
+- Converting hex to RGB, and checking colour contrast
+- Accessibility and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="favourite">Favourite colour</label>
+<input type="color" id="favourite" name="favourite" value="#2563eb" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PickerDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The field appears as a small **swatch** (a button showing the current colour). Click it, and the browser or operating system opens its own **colour picker**: a palette, sliders, and often hex or RGB boxes. Some browsers also add an **eyedropper** to pick a colour from anywhere on the screen.
+
+What the picker looks like is up to the browser and the device. You cannot change it.
+
+## The Value Format
+
+:::info The value is always `#rrggbb`
+A hash sign and six hexadecimal digits, in **lowercase**, such as `#2563eb`. It is the same however the picker looks.
+:::
+
+| Part | Meaning |
+| :-- | :-- |
+| `#` | Starts every value |
+| `25` | Red, from `00` (none) to `ff` (full) |
+| `63` | Green |
+| `eb` | Blue |
+
+```text
+favourite=%232563eb
+```
+
+(The `#` is encoded as `%23` in the address, and your server decodes it.)
+
+Some more facts:
+
+- The format is **only** this long form. Short codes like `#fff` or names like `red` are not valid values. Writing `value="red"` is ignored.
+- The letters are always **lowercase** in the value, even if you write `value="#2563EB"`.
+- There is **no transparency** (alpha). Some newer browsers are experimenting with extra attributes for alpha and wider colour spaces, but they are not widely supported, so plan on opaque colours only.
+
+## It Is Never Empty
+
+This is the most surprising thing about the colour input. Unlike text, date, or number, **a colour input always has a value**.
+
+- If you set no `value`, it starts as **black**: `#000000`.
+- If you set an invalid `value` (like `value="red"`), it falls back to `#000000`.
+- The visitor cannot clear it. There is no "empty" state.
+- That means `required` has no meaning here, because the field is never empty.
+
+So a submitted form always contains a colour, even if the visitor never touched the picker. Your server cannot tell "chose black" from "did not choose."
+
+Ways to handle it:
+
+| Situation | What to do |
+| :-- | :-- |
+| A colour is optional | Add a checkbox, "Choose a colour," and use the colour only if it is checked. Or disable the picker until then |
+| You want a sensible start | Set `value` to a good default, such as your brand colour |
+| You must know if it was touched | Track the `change` event in JavaScript, and set a hidden field |
+
+```html
+<label>
+  <input type="checkbox" name="use_color" id="use-color" />
+  Use a custom colour
+</label>
+<input type="color" name="color" id="color" value="#2563eb" disabled />
+```
+
+```js
+const box = document.getElementById("use-color");
+const color = document.getElementById("color");
+box.addEventListener("change", () => (color.disabled = !box.checked));
+```
+
+A `disabled` input is not sent, so the colour reaches the server only when the box is checked.
+
+## The `input` and `change` Events
+
+| Event | When it fires |
+| :-- | :-- |
+| `input` | **Continuously**, as the visitor drags around the picker |
+| `change` | Once, when the visitor **finishes** (closes the picker, or commits the colour) |
+
+Use `input` for live previews, such as repainting a card as the colour changes. Use `change` when you want the final choice, such as saving it.
+
+```js
+const input = document.getElementById("favourite");
+const preview = document.getElementById("preview");
+
+input.addEventListener("input", () => {
+  preview.style.background = input.value;      // live preview
+});
+
+input.addEventListener("change", () => {
+  saveColour(input.value);                      // final choice
+});
+```
+
+On some systems, the picker only fires `change` when it closes. Test on the devices you care about.
+
+## Preset Swatches with `list`
+
+You can offer a short list of suggested colours with a `<datalist>`. Chrome and Edge show them as swatches in the picker.
+
+```html
+<label for="brand">Brand colour</label>
+<input type="color" id="brand" name="brand" value="#2563eb" list="brand-colors" />
+
+<datalist id="brand-colors">
+  <option value="#2563eb"></option>
+  <option value="#16a34a"></option>
+  <option value="#dc2626"></option>
+  <option value="#f59e0b"></option>
+  <option value="#7c3aed"></option>
+</datalist>
+```
+
+Support is not universal, and the visitor can still choose any colour. Treat the list as a **helpful hint**, not a limit. If you must restrict choices to a fixed set, use a group of [radio buttons](./radio) with a visible name for each colour, which also works better for accessibility.
+
+## Working with the Value
+
+### Hex to RGB
+
+Colour maths and many drawing APIs want separate red, green, and blue numbers:
+
+```js
+function hexToRgb(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+hexToRgb("#2563eb");   // [37, 99, 235]
+```
+
+Then you can write `rgb(37, 99, 235)` in CSS. The demo above does the same.
+
+### Using the Colour in CSS
+
+Because the value is a valid CSS colour, you can use it straight away:
+
+```js
+document.documentElement.style.setProperty("--accent", input.value);
+```
+
+```css
+button {
+  background: var(--accent);
+}
+```
+
+Letting visitors choose an accent colour for their own page is a neat use, but remember: **their choice can break your contrast** (see the next section).
+
+## Try It: Contrast Check
+
+A colour picker makes it easy to pick text and background colours that are **unreadable**. Colour contrast is measured as a ratio: 1:1 is no difference at all, and 21:1 is black on white. The Web Content Accessibility Guidelines (WCAG) ask for at least **4.5:1** for normal text, and **3:1** for large text.
+
+Change the colours and watch the ratio.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="text">Text colour</label>
+<input type="color" id="text" value="#1e293b" />
+
+<label for="back">Background</label>
+<input type="color" id="back" value="#fef3c7" />
+
+<p id="sample">The quick brown fox jumps over the lazy dog.</p>
+<p id="result" role="status"></p>
+```
+
+```js title="script.js"
+const text = document.getElementById("text");
+const back = document.getElementById("back");
+const sample = document.getElementById("sample");
+const result = document.getElementById("result");
+
+function toRgb(hex) {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+function luminance(hex) {
+  const [r, g, b] = toRgb(hex).map((channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a, b) {
+  const l1 = luminance(a);
+  const l2 = luminance(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+function update() {
+  sample.style.color = text.value;
+  sample.style.background = back.value;
+  const ratio = contrast(text.value, back.value);
+  result.textContent =
+    "Contrast " + ratio.toFixed(2) + ":1 | normal text: " +
+    (ratio >= 4.5 ? "Pass" : "Fail") + " | large text: " +
+    (ratio >= 3 ? "Pass" : "Fail");
+}
+
+text.addEventListener("input", update);
+back.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ContrastDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The formula comes from WCAG: convert each colour to its **relative luminance** (how bright it appears to the eye), and divide the lighter by the darker, each with 0.05 added. If you let visitors set colours that others will read, check the contrast, and warn, or refuse, when it is too low.
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="favourite"` |
+| `value` | The starting colour (`#rrggbb`) | `value="#2563eb"` |
+| `list` | Suggested swatches from a [datalist](../datalist) | `list="brand-colors"` |
+| `disabled` | Switches the picker off, and it is not sent | `disabled` |
+| `autofocus` | Focus on load | `autofocus` |
+
+`required`, `readonly`, `placeholder`, `min`, `max`, `step`, `pattern`, `maxlength`, and `size` do **not** apply to a colour input.
+
+## Styling a Colour Input
+
+You can style the swatch button, but not the picker popup:
+
+```css title="style.css"
+input[type="color"] {
+  width: 3rem;
+  height: 3rem;
+  padding: 0.2rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+input[type="color"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Remove the extra padding inside the swatch (Chrome, Edge, Safari) */
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+/* Firefox */
+input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+```
+
+- Make the swatch big enough to tap (about 44 pixels or more).
+- Keep a **visible focus style.**
+- A swatch that is almost the same colour as the page background is hard to see, so give it a visible border.
+
+## Accessibility at a Glance
+
+- **Always add a label,** such as "Favourite colour." The swatch alone does not say what it is for.
+- **Show the colour as text** too: the hex code, or better, a **name** ("Blue"). Some people cannot tell colours apart, and a screen reader says only "colour picker".
+- **Never use colour as the only way** to share information. If a colour marks a category or a status, add a word, a pattern, or an icon.
+- **Check contrast** when visitors choose colours that others will read. Aim for 4.5:1 for normal text.
+- **Pickers are native,** and generally keyboard friendly, but they vary a lot. Test with a keyboard.
+- **Offer another way** when you can: a short list of named colours in radio buttons, or a text box for a hex code, for people who find a picker hard to use.
+- **Do not rely on the eyedropper or sliders** as the only route. Many pickers also have number boxes.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** A colour value is plain text that anyone can change. Accept only `#` followed by six hexadecimal digits (the pattern `^#[0-9a-fA-F]{6}$`), and reject everything else.
+- **Never paste a visitor's colour into your CSS or HTML unchecked.** A value like `red; background: url(...)` placed into a `style` attribute can break your page, or leak data. Validate it first.
+- **Store the colour as a short string** (or three numbers). Do not store it as free text.
+- **Remember it always has a value.** Decide how to tell "default" from "chosen," as explained earlier.
+
+## Global Audience Notes
+
+- **Colours carry different meanings** in different cultures. Red can mean danger, luck, or mourning. Do not rely on colour alone for meaning.
+- **Colour names differ** in every language. If you display a name for a colour, translate it, or show the hex code too.
+- **Colour vision varies.** Around 1 in 12 men, and 1 in 200 women, have a colour vision difference, in every country. Contrast and non-colour cues help them.
+- **Displays vary.** The same hex code can look different on different screens.
+
+## Common Mistakes to Avoid
+
+1. **Expecting an empty value.** The input always has a colour, black by default.
+2. **Using `required`,** which has no meaning here.
+3. **Setting `value` as `red`, `#fff`, or `rgb(...)`.** Only `#rrggbb` works.
+4. **Forgetting that the server cannot tell "chose black" from "did not choose."**
+5. **Using `change` for live previews,** when `input` is the right event.
+6. **No label,** so people do not know what the swatch is for.
+7. **Using colour as the only signal** for meaning.
+8. **Letting visitors pick text and background colours with no contrast check.**
+9. **Putting an unchecked value into CSS or HTML.**
+10. **Expecting transparency.** There is no alpha channel.
+11. **Trying to style the picker popup,** which is not possible.
+12. **Restricting to a fixed palette with `list`,** which is only a suggestion. Use radio buttons for a real restriction.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="color"` field with no `value`, and submit it. What colour is sent?
+2. Set `value="#2563eb"`, then try `value="blue"` and `value="#fff"`.
+3. Log `input.value` in the `input` and in the `change` events, and compare when each fires.
+4. Make a box that changes colour live as you pick.
+5. Add a `<datalist>` of five colours, and see how your browser shows them.
+6. Convert the value to RGB with `hexToRgb`.
+7. Build the optional-colour pattern with a checkbox that enables the picker.
+8. Build the contrast checker with two pickers.
+9. Write a server-side check (in your language of choice) that accepts only `#rrggbb`.
+10. Bonus: build a set of radio buttons with named colours, and compare it with the picker for accessibility.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What format is the value of a colour input?</summary>
+
+`#rrggbb`: a hash and six lowercase hexadecimal digits, such as `#2563eb`. Short codes, colour names, and `rgb()` values are not valid.
+
+</details>
+
+<details>
+<summary>2. Can a colour input be empty?</summary>
+
+No. It always has a value, and starts at `#000000` (black) when none is set. That is why `required` means nothing here.
+
+</details>
+
+<details>
+<summary>3. What is the difference between the `input` and `change` events?</summary>
+
+`input` fires continuously while the visitor drags in the picker, so use it for live previews. `change` fires once when they finish, so use it for the final choice.
+
+</details>
+
+<details>
+<summary>4. How do you offer preset colours?</summary>
+
+Add a `list` attribute that points to a `<datalist>` of `#rrggbb` options. Some browsers show them as swatches, but the visitor can still choose any colour. For a real restriction, use radio buttons.
+
+</details>
+
+<details>
+<summary>5. Which contrast ratio does WCAG require for normal text?</summary>
+
+At least 4.5:1 for normal text, and 3:1 for large text. A ratio compares the relative luminance of the lighter and darker colours.
+
+</details>
+
+<details>
+<summary>6. Why must the server validate a colour value?</summary>
+
+Anyone can send any text. Accept only `#` plus six hexadecimal digits, because an unchecked value placed into CSS or HTML can break your page or leak data.
+
+</details>
+
+## Key Takeaways
+
+- `type="color"` shows a swatch that opens the browser's colour picker, and sends `#rrggbb` in lowercase.
+- It is **never empty**: the default is black, and `required` has no meaning. Use a checkbox or a hidden field when a colour is optional.
+- Use the `input` event for live previews, and `change` for the final choice.
+- Use `list` with a `<datalist>` for suggested swatches, and radio buttons for a fixed palette.
+- Always label the field, show the colour as text, never rely on colour alone, and check contrast.
+- Validate the value on the server, and never place an unchecked colour into CSS or HTML.
+
+Next, learn the input for yes-or-no choices and multiple selections, in [Checkbox](./checkbox), or return to the [Forms overview](/tutorials/html/forms).

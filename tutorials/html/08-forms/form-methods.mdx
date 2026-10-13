@@ -1,16 +1,499 @@
 ---
-id: form-methods
-title: "HTTP Methods in Forms: GET vs POST"
-sidebar_label: "Form Methods (GET/POST)"
-sidebar_position: 17
+id: html-form-methods
+title: "HTML Form Methods: GET and POST"
+sidebar_label: "Form Methods"
+sidebar_position: 18
 slug: /html/forms/form-methods
-description: "Understand the differences between method='GET' for query searches and method='POST' for secure server data submissions."
+description: "Learn the HTML form method attribute: how GET puts data in the URL and POST sends it in the request body, when to use each one, URL encoding, the post-redirect-get pattern, method dialog, why HTML forms cannot send PUT or DELETE, CSRF and privacy notes, and how to choose the safe method for search, login, and checkout forms."
 keywords:
-  - form method GET vs POST
-  - HTTP GET method form
-  - HTTP POST method form
-  - form submission methods
+  - HTML form method
+  - GET vs POST
+  - form method get post
+  - method attribute HTML form
+  - query string URL encoding
+  - post redirect get
+  - form method dialog
+  - HTML form PUT DELETE
+  - CSRF form POST
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, http, backend]
+tags: [html, web-development, beginner, forms, http, get, post, security, frontend]
 ---
+
+import {useState} from 'react';
+
+export function MethodDemo() {
+  const [method, setMethod] = useState("get");
+  const [result, setResult] = useState(null);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const params = new URLSearchParams();
+        params.append("q", form.elements.q.value);
+        params.append("page", form.elements.page.value);
+        if (method === "get") {
+          setResult({
+            title: "GET: the data goes into the address bar",
+            lines: ["GET /search?" + params.toString() + " HTTP/1.1", "Host: example.com", "", "(no body)"],
+          });
+        } else {
+          const body = params.toString();
+          setResult({
+            title: "POST: the data goes into the request body",
+            lines: [
+              "POST /search HTTP/1.1",
+              "Host: example.com",
+              "Content-Type: application/x-www-form-urlencoded",
+              "Content-Length: " + new TextEncoder().encode(body).length,
+              "",
+              body,
+            ],
+          });
+        }
+      }}
+    >
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Method</legend>
+        <label><input type="radio" name="method" value="get" checked={method === "get"} onChange={() => setMethod("get")} /> GET</label>{" "}
+        <label><input type="radio" name="method" value="post" checked={method === "post"} onChange={() => setMethod("post")} /> POST</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="fm-q">Search for</label><br />
+        <input type="text" id="fm-q" name="q" defaultValue="café & tea" />
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="fm-page">Page</label><br />
+        <input type="number" id="fm-page" name="page" defaultValue={1} min={1} />
+      </p>
+      <button type="submit">Show the request</button>
+      {result ? (
+        <div role="status" style={{marginTop: "0.75rem"}}>
+          <strong>{result.title}</strong>
+          <pre style={{margin: "0.25rem 0 0", whiteSpace: "pre-wrap"}}><code>{result.lines.join("\n")}</code></pre>
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
+export function EncodingDemo() {
+  const [text, setText] = useState("Zoë & Ana = 100% #1?");
+  const params = new URLSearchParams();
+  params.append("name", text);
+  const encoded = params.toString();
+  const cell = {padding: "0.2rem 0.75rem 0.2rem 0", borderBottom: "1px solid #e2e8f0", verticalAlign: "top"};
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="fm-enc">Type text with spaces, accents, and symbols</label><br />
+      <input
+        type="text"
+        id="fm-enc"
+        name="name"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        style={{width: "100%", maxWidth: "28rem"}}
+      />
+      <table style={{marginTop: "0.5rem", borderCollapse: "collapse"}}>
+        <tbody>
+          <tr>
+            <td style={cell}>Typed</td>
+            <td style={cell}><code>{text}</code></td>
+          </tr>
+          <tr>
+            <td style={cell}>Sent in the URL</td>
+            <td style={{...cell, wordBreak: "break-all"}}><code>?{encoded}</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+  );
+}
+
+When a visitor presses **Submit**, the browser sends the form's data to a server. But **how** it sends the data is your choice, and it matters. The **`method`** attribute decides between two ways: **GET** and **POST**.
+
+Choose well, and your forms are easy to bookmark, safe to refresh, and careful with private data. Choose badly, and you can leak passwords into web addresses, or double-charge a customer. This lesson explains both methods clearly, with a simple rule for choosing.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `method` attribute does, and its default
+- How GET and POST differ, with the data visible in a live demo
+- How URL encoding works
+- When to use GET, and when to use POST
+- The Post, Redirect, Get pattern
+- `method="dialog"`, and why HTML forms cannot send PUT or DELETE
+- Privacy and security notes, including CSRF
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A search form: GET -->
+<form action="/search" method="get">
+  <label for="q">Search</label>
+  <input type="search" id="q" name="q" />
+  <button type="submit">Search</button>
+</form>
+
+<!-- A sign-up form: POST -->
+<form action="/signup" method="post">
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" required />
+  <button type="submit">Join</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="fm-search">Search</label><br />
+  <input type="search" id="fm-search" name="q" />{" "}
+  <button type="submit">Search</button>
+</form>
+<hr />
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="fm-join">Email address</label><br />
+  <input type="email" id="fm-join" name="email" required />{" "}
+  <button type="submit">Join</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Both forms look the same to the visitor. The difference is what happens behind the scenes.
+
+- If you leave out `method`, the default is **`get`**.
+- The value is not case-sensitive (`POST` and `post` both work), but lowercase is the usual style.
+- Any other value is treated as `get`.
+
+## GET: Data in the URL
+
+With GET, the browser adds the form data to the **end of the address**, after a `?`. This is called the **query string**.
+
+If a visitor types `html forms` into the search box above, the browser goes to:
+
+```text
+https://example.com/search?q=html+forms
+```
+
+Each field becomes `name=value`, and several fields are joined with `&`:
+
+```text
+/search?q=html+forms&page=2&sort=newest
+```
+
+| About GET | What it means |
+| :-- | :-- |
+| Data is **visible** in the URL | Anyone looking at the screen, the history, or the logs can read it |
+| The page can be **bookmarked** and **shared** | The whole search is saved in the link |
+| The **back button** and **refresh** are safe | Repeating a GET should change nothing |
+| Browsers and servers may **cache** it | Fast, but not for private or changing data |
+| The URL has a **length limit** | Around 2,000 characters is a safe maximum |
+| **Cannot send files** | File uploads need POST |
+
+### What URL Encoding Does
+
+A web address can only hold a small set of safe characters. So the browser **encodes** everything else. A space becomes `+` (or `%20`), and special characters become `%` followed by a code.
+
+Type something below, and see how it would travel:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/search" method="get">
+  <label for="name">Type text with spaces, accents, and symbols</label>
+  <input type="text" id="name" name="name" value="Zoë &amp; Ana = 100% #1?" />
+  <button type="submit">Send</button>
+</form>
+```
+
+```js title="script.js"
+const params = new URLSearchParams();
+params.append("name", "Zoë & Ana = 100% #1?");
+
+console.log(params.toString());
+// name=Zo%C3%AB+%26+Ana+%3D+100%25+%231%3F
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EncodingDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You never have to do this yourself. The browser encodes on the way out, and your server framework decodes on the way in. It matters in two places: when you build links by hand (use `encodeURIComponent` in JavaScript), and when you wonder why a URL looks strange. The `&` and `=` inside the value are encoded, so they cannot be mistaken for separators.
+
+## POST: Data in the Body
+
+With POST, the data is placed in the **body** of the request, not in the address. The URL stays clean:
+
+```text
+POST /signup HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+email=ada%40example.com
+```
+
+| About POST | What it means |
+| :-- | :-- |
+| Data is **not in the URL** | It stays out of the history, bookmarks, and most address logs |
+| It is meant to **change something** | Create an account, place an order, send a message |
+| **Refreshing** asks "Resubmit the form?" | Repeating it may do the action twice |
+| Not cached, **cannot be bookmarked** | Each submission is a new action |
+| **No practical size limit** (the server sets one) | Good for long text and files |
+| **Can send files** | With `enctype="multipart/form-data"` |
+
+:::warning POST is not encryption
+Keeping data out of the URL does **not** make it secret. The body can still be read by anyone on the network if the site uses plain `http`. Always serve forms over **HTTPS**, whichever method you use.
+:::
+
+## Try It: See the Request
+
+Choose a method and press the button. The demo does not send anything; it shows what the browser would send.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/search" method="get" id="f">
+  <input type="text" name="q" value="café &amp; tea" />
+  <input type="number" name="page" value="1" min="1" />
+  <button type="submit">Send</button>
+</form>
+```
+
+```js title="script.js"
+// Show what a GET and a POST would carry (nothing is sent here)
+const form = document.getElementById("f");
+const params = new URLSearchParams(new FormData(form));
+
+console.log("GET  /search?" + params.toString());
+console.log("POST /search   body: " + params.toString());
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MethodDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The same data is sent in both cases. Only the **place** changes: the address for GET, the body for POST.
+
+## Which One Should You Use?
+
+A simple rule: **GET asks, POST does.**
+
+| Use **GET** when... | Use **POST** when... |
+| :-- | :-- |
+| The form **looks something up**: search, filter, sort, paginate | The form **changes something**: sign up, order, comment, delete |
+| Repeating it is harmless | Repeating it could cause harm (a double charge) |
+| The result is worth **bookmarking or sharing** | The data is **private** (passwords, personal details) |
+| The data is **short** and not sensitive | The data is **long**, or includes **files** |
+
+Real examples:
+
+| Form | Method | Why |
+| :-- | :-- | :-- |
+| Site search | `get` | Shareable results page |
+| Filters on a shop (`?color=red&size=m`) | `get` | Bookmarkable, back button works |
+| Log in | `post` | Password must stay out of the URL |
+| Sign up | `post` | Creates an account, private data |
+| Checkout | `post` | Creates an order |
+| Contact form | `post` | Sends a message, private |
+| Upload a photo | `post` | Files need a body |
+| Change password | `post` | Changes state, sensitive |
+
+## Post, Redirect, Get
+
+After a POST, never answer with a normal page, or **refreshing** will resubmit the form. Instead, the server should answer with a **redirect** to a new page (usually "Thank you"), which is loaded with GET:
+
+```text
+1. Visitor submits the form      POST /order
+2. Server saves the order and replies "redirect to /order/123/thanks"
+3. Browser loads the new page    GET /order/123/thanks
+```
+
+Now refreshing only reloads the thank-you page. The order is not placed twice. This is called **Post, Redirect, Get** (PRG), and it is good practice for every form that changes something.
+
+For extra safety against double clicks and network retries, servers can also use a **unique token** per form, so the same submission is only accepted once.
+
+## Forms and Other Methods
+
+### `method="dialog"`
+
+Inside a `<dialog>`, a form with `method="dialog"` **closes the dialog** instead of sending anything to a server:
+
+```html
+<dialog id="confirm">
+  <form method="dialog">
+    <p>Delete this file?</p>
+    <button value="cancel">Cancel</button>
+    <button value="ok">Delete</button>
+  </form>
+</dialog>
+```
+
+The dialog's `returnValue` becomes the `value` of the button that was pressed.
+
+### PUT, PATCH, and DELETE
+
+HTML forms can only send **GET** and **POST**. Any other value in `method` (such as `put` or `delete`) is treated as `get`. For other methods, you have two options:
+
+- **Use JavaScript:** `fetch("/items/5", { method: "DELETE" })`.
+- **Use a method override:** a hidden field such as `<input type="hidden" name="_method" value="delete">`, which many server frameworks understand and turn into the real method on the server. This is a framework feature, not part of HTML.
+
+### Changing the method for one button
+
+A submit button can override the form's method with `formmethod`:
+
+```html
+<form action="/items" method="post">
+  <button type="submit">Save</button>
+  <button type="submit" formmethod="get" formaction="/preview">Preview</button>
+</form>
+```
+
+See [Submit and Reset Buttons](./input-types/submit-reset-button).
+
+## Accessibility at a Glance
+
+- **Warn about resubmission** if your server does not use PRG, or better, use PRG so the question never appears.
+- **Make results pages shareable** for search and filter forms (GET), so keyboard and screen reader users can bookmark and return to them.
+- **Keep the visitor's input** when the server sends the form back with errors, whichever method is used.
+- **Tell visitors when something is sent,** with a clear confirmation page or message, and move focus to it.
+- **Do not make a GET request do a destructive action** (like a "delete" link). Browser tools such as prefetching and search bots can follow links, and so can accidentally trigger it.
+
+## Security Notes
+
+- **Never put secrets in a GET form.** Passwords, tokens, and personal details in the URL end up in browser history, server logs, proxy logs, bookmarks, and the `Referer` header sent to other sites. A login form with `method="get"` is a serious mistake.
+- **GET must never change data.** Browsers, link checkers, and crawlers assume GET is safe to repeat. A "delete account" link or a "like" button that works by GET can be triggered by accident, or by an attacker.
+- **POST forms need CSRF protection.** A malicious page can make a visitor's browser submit a POST to your site while they are signed in. Defend with a **CSRF token** in a hidden field, `SameSite` cookies, and checks on the `Origin` header. (See [Hidden](./input-types/hidden).)
+- **Use HTTPS** for every form, so data is encrypted in transit, whichever method is used.
+- **Validate on the server** whichever method is used. Both GET parameters and POST fields can be changed by anyone.
+- **Limit sizes** on the server, for both URLs and bodies.
+- **Watch for user input shown back on the page.** Escape it, to prevent cross-site scripting.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Encoding handles every language.** Browsers send text as UTF-8, so names and messages in any script travel safely, but your server must **read** them as UTF-8, too. A mismatch gives garbled characters.
+- **Long URLs are a problem** in some regions and networks. Avoid putting large amounts of text in GET.
+- **Shared links** from GET forms may contain the visitor's language, filters, and search terms. Think about whether that is appropriate to share.
+- **Slow and unreliable connections** make double submits more likely. PRG and server-side duplicate checks protect your visitors.
+- **Mobile browsers** may cache GET results heavily. Set sensible cache headers for pages that change.
+
+## Common Mistakes to Avoid
+
+1. **Using GET for login or any private data.** Passwords end up in URLs and logs.
+2. **Using POST for search,** so results cannot be bookmarked or shared.
+3. **Forgetting `method`,** and being surprised that data appears in the URL (the default is `get`).
+4. **Responding to a POST with a normal page,** so refreshing resubmits the form.
+5. **Changing data with a GET link,** such as `/delete?id=5`.
+6. **Expecting `method="put"` or `"delete"` to work.** HTML forms only send GET and POST.
+7. **Assuming POST is secure** without HTTPS.
+8. **No CSRF protection** on forms that change data.
+9. **Sending files** without `method="post"` and `enctype="multipart/form-data"`.
+10. **Building URLs by hand** without `encodeURIComponent`.
+11. **Putting huge text in a GET form,** hitting URL length limits.
+12. **Not reading the data as UTF-8** on the server.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a search form with `method="get"` and look at the address after submitting.
+2. Change it to `method="post"` and see what changes in the address bar.
+3. Remove `method` altogether, and check what the default does.
+4. Add a second field and see how the query string joins them with `&`.
+5. Type an accent, a space, and an `&` in a field, and read the encoded URL.
+6. Build a filter form (colour and size) that works as a bookmarkable link.
+7. Use `URLSearchParams` and `FormData` to print what a form would send.
+8. Make a `<dialog>` with a `method="dialog"` form and read `returnValue`.
+9. Add a "Preview" button with `formmethod="get"` to a POST form.
+10. Bonus: describe the Post, Redirect, Get steps for a checkout in your own words.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the default form method, and what does it do?</summary>
+
+The default is `get`. The browser adds the form data to the URL as a query string (`?name=value&name2=value2`).
+
+</details>
+
+<details>
+<summary>2. How does POST differ from GET?</summary>
+
+POST sends the data in the request body, not in the URL. It is meant for actions that change something, it is not bookmarked or cached, it has no practical size limit, and it can carry files.
+
+</details>
+
+<details>
+<summary>3. What is a simple rule for choosing?</summary>
+
+GET asks and POST does. Use GET for lookups that are safe to repeat (search, filters). Use POST for actions that change data or send private information (sign up, login, checkout, uploads).
+
+</details>
+
+<details>
+<summary>4. What is Post, Redirect, Get?</summary>
+
+After a POST is handled, the server answers with a redirect to a new page loaded by GET. Refreshing then reloads that page and does not submit the form again.
+
+</details>
+
+<details>
+<summary>5. Can an HTML form send PUT or DELETE?</summary>
+
+No. Forms only send GET or POST, and any other value is treated as GET. Use `fetch` in JavaScript, or a framework's method override with a hidden field.
+
+</details>
+
+<details>
+<summary>6. Does POST make data secure?</summary>
+
+No. It only keeps data out of the URL. You still need HTTPS, CSRF protection, and server-side validation.
+
+</details>
+
+## Key Takeaways
+
+- `method` accepts `get` (the default) or `post`. Forms cannot send other HTTP methods, except `dialog` for closing a `<dialog>`.
+- **GET** puts the data in the URL: visible, bookmarkable, cacheable, length-limited, and safe to repeat. Use it for searching and filtering.
+- **POST** puts the data in the body: not in the URL, no practical limit, able to carry files. Use it for actions and private data.
+- The browser URL-encodes values for you (spaces, accents, and symbols).
+- Use **Post, Redirect, Get** so refreshing never repeats an action.
+- Never send secrets by GET, never change data with GET, and protect POST forms against CSRF.
+- Use HTTPS, and validate on the server, whichever method you choose.
+
+Next, learn where the data goes, in [Form Action](./form-action), or return to the [Forms overview](/tutorials/html/forms).

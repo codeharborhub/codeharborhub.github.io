@@ -1,16 +1,468 @@
 ---
-id: input-type-url
-title: "URL Inputs: type='url'"
+id: html-input-url
+title: "HTML Input Type URL"
 sidebar_label: "URL"
-sidebar_position: 6
+sidebar_position: 5
 slug: /html/forms/input-types/url
-description: "Capture well-formed web addresses with input type='url', built-in protocol validation, and mobile URL keypads."
+description: "Learn the HTML input type url for web addresses: what counts as a valid URL, why a scheme like https:// is required, restricting to http and https with pattern, autocomplete, trimming, the javascript: danger, safe ways to display user links, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type url
-  - web address input field
-  - URL input validation
-  - website URL form field
+  - url input validation HTML
+  - input url pattern https
+  - website address form field
+  - javascript url security
+  - rel nofollow ugc noopener
+  - url keyboard mobile
+  - autocomplete url
+  - SSRF form url
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, url]
+tags: [html, web-development, beginner, forms, input, url, validation, security, frontend]
 ---
+
+import {useState} from 'react';
+
+export function UrlCheckDemo() {
+  const [result, setResult] = useState(null);
+  return (
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const input = event.currentTarget.elements.namedItem("site");
+        if (input.validity.valueMissing) {
+          setResult({ok: false, text: "Empty: the field is required."});
+          return;
+        }
+        if (input.validity.typeMismatch) {
+          setResult({ok: false, text: "Not a valid URL (typeMismatch). Did you forget https:// ?"});
+          return;
+        }
+        let scheme = "";
+        try {
+          scheme = new URL(input.value).protocol;
+        } catch (error) {
+          scheme = "?";
+        }
+        const safe = scheme === "http:" || scheme === "https:";
+        setResult({
+          ok: safe,
+          text: safe
+            ? "Valid, and the scheme (" + scheme + ") is safe to link."
+            : "The browser accepts this, but the scheme (" + scheme + ") is NOT safe to link. Your server must reject it.",
+        });
+      }}
+    >
+      <label htmlFor="url-demo">Website</label><br />
+      <input
+        type="url"
+        id="url-demo"
+        name="site"
+        required
+        autoComplete="url"
+        defaultValue="example.com"
+        size={36}
+      />{" "}
+      <button type="submit">Check</button>
+      <p role="status" style={{margin: "0.5rem 0 0", color: result === null ? "inherit" : result.ok ? "#15803d" : "#b91c1c"}}>
+        {result === null ? "Try: example.com, https://example.com, ftp://files.example.com, javascript:alert(1)" : result.text}
+      </p>
+    </form>
+  );
+}
+
+Profiles, portfolios, comment forms, and job applications all ask for a web address. The input made for this is `type="url"`. It gives phone visitors a keyboard with `/` and `.com` keys, and it checks, before the form is sent, that the text really looks like a full web address.
+
+It is also one of the easiest inputs to get **unsafe**. A value that the browser calls "valid" can still be dangerous to put into a link on your page. In this lesson, you will learn what the browser accepts, how to narrow it, and how to treat addresses safely.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="url"` does, and what counts as a valid URL
+- Why the scheme (`https://`) is required
+- How to restrict values to `http` and `https`
+- Autocomplete, trimming, and attributes
+- Why a "valid" URL can still be dangerous, and how to display it safely
+- Accessibility, styling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="site">Your website</label>
+<input
+  type="url"
+  id="site"
+  name="site"
+  placeholder="https://example.com"
+  autocomplete="url"
+/>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="url-basic">Your website</label><br />
+  <input
+    type="url"
+    id="url-basic"
+    name="site"
+    placeholder="https://example.com"
+    autoComplete="url"
+    size={30}
+  />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+What you get:
+
+- **Phones** show a keyboard with `/`, `.`, and often `.com` keys.
+- **On submit**, the browser checks that the value is a valid **absolute URL**, and blocks the form if it is not.
+- **Leading and trailing spaces** (and line breaks) are removed automatically.
+- The value is sent as text: `site=https%3A%2F%2Fexample.com`.
+
+## What Counts as Valid?
+
+An **absolute URL** must start with a **scheme**: letters, then a colon, such as `https:`. That is the one firm requirement. Many beginners type `example.com` and are surprised it fails.
+
+| Value | Valid? | Why |
+| :-- | :-- | :-- |
+| `https://example.com` | Yes | Scheme, then address |
+| `http://example.com/page?x=1` | Yes | Paths and queries are fine |
+| `https://localhost:3000` | Yes | No dot needed |
+| `ftp://files.example.com` | **Yes** | Any scheme is accepted |
+| `mailto:ada@example.com` | **Yes** | It is a URL too |
+| `javascript:alert(1)` | **Yes**, sadly | It has a scheme |
+| `example.com` | No | No scheme |
+| `www.example.com` | No | No scheme |
+| `//example.com` | No | Not absolute |
+| `https://exa mple.com` | No | A space inside |
+| (empty) | **Yes**, unless `required` | Empty values skip the check |
+
+:::warning Valid does not mean safe
+The browser accepts **any** scheme. It will happily pass `javascript:alert(1)`, which, if you later put it into a link, would run code in your visitor's browser. Always limit the schemes on the server. See [the safety section](#displaying-user-links-safely) below.
+:::
+
+## Try It: What the Browser Accepts
+
+Try each suggested value in the demo, and see how the browser and the safety check disagree.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form novalidate>
+  <label for="site">Website</label>
+  <input type="url" id="site" name="site" required autocomplete="url" />
+  <button type="submit">Check</button>
+  <p id="result" role="status"></p>
+</form>
+```
+
+```js title="script.js"
+const form = document.querySelector("form");
+const input = document.getElementById("site");
+const result = document.getElementById("result");
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  if (input.validity.valueMissing) {
+    result.textContent = "Empty: the field is required.";
+  } else if (input.validity.typeMismatch) {
+    result.textContent = "Not a valid URL. Did you forget https:// ?";
+  } else {
+    const scheme = new URL(input.value).protocol;
+    const safe = scheme === "http:" || scheme === "https:";
+    result.textContent = safe
+      ? "Valid and safe to link."
+      : "Valid shape, but this scheme is not safe to link.";
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<UrlCheckDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The starting value `example.com` fails, because it has no scheme. Add `https://` and it passes. Then try `ftp://...` and `javascript:alert(1)`: the browser passes them, but the second check does not.
+
+## Attributes for URL Inputs
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server | `name="site"` |
+| `id` | Connects the [label](../label-element) | `id="site"` |
+| `value` | The starting address | `value="https://"` |
+| `placeholder` | A short example (never a label) | `placeholder="https://example.com"` |
+| `required` | Cannot be left empty | `required` |
+| `pattern` | An extra rule, as a regular expression | `pattern="https?://.+"` |
+| `minlength`, `maxlength` | Length limits | `maxlength="2048"` |
+| `size` | Visible width in characters | `size="40"` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="sites"` |
+| `autocomplete` | Tells the browser what to fill in | `autocomplete="url"` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `inputmode` | Keyboard hint (`url` is already implied) | `inputmode="url"` |
+
+URLs can be long. Most browsers handle around 2,000 characters, so `maxlength="2048"` is a common sensible limit.
+
+## Allowing Only `http` and `https`
+
+For almost every website, you want only web links. Use `pattern` to say so in the browser:
+
+```html
+<label for="site">Website</label>
+<input
+  type="url"
+  id="site"
+  name="site"
+  pattern="https?://.+"
+  title="Start with http:// or https://"
+  placeholder="https://example.com"
+/>
+```
+
+- The browser applies `type="url"` **and** your `pattern`. Both must pass.
+- `https?` means "http, with an optional s".
+- `.+` means "anything after it, at least one character".
+- The `title` text is shown in the error message, so tell visitors what to fix.
+
+You can go further and require **only** `https`:
+
+```html
+<input type="url" name="site" pattern="https://.+" title="Start with https://" />
+```
+
+:::tip A friendly starting value
+Setting `value="https://"` gives visitors a head start, and a hint that a scheme is needed. They then type the rest. If they leave it untouched, the value `https://` is still sent, so treat it as empty on the server.
+:::
+
+:::info Browser checks can be skipped
+Anyone can bypass the browser and send any text. The `pattern` is **a convenience**, not protection. The server must do the same check.
+:::
+
+## Autocomplete
+
+| Field | `autocomplete` value |
+| :-- | :-- |
+| A website address (personal, company) | `url` |
+| A link to a photo or avatar | `photo` |
+
+```html
+<input type="url" name="site" autocomplete="url" />
+```
+
+Autocomplete helps most on contact and profile forms. See [Autocomplete](../autocomplete).
+
+## When Visitors Forget the Scheme
+
+Many people type `example.com` and have no idea why the form complains. You can be kinder in three ways:
+
+1. **Explain it up front:** "Include the https:// at the start."
+2. **Show an example** in the placeholder.
+3. **Fix it for them** with a little JavaScript, on blur:
+
+```js title="script.js"
+const input = document.getElementById("site");
+
+input.addEventListener("blur", () => {
+  const text = input.value.trim();
+  if (text && !/^[a-z][a-z0-9+.-]*:/i.test(text)) {
+    input.value = "https://" + text;
+  }
+});
+```
+
+This adds `https://` when the visitor leaves the field, if no scheme is there. Because it happens on blur (not while typing), it does not disturb screen readers or move the cursor. Make sure the change is visible, so the visitor knows what was sent.
+
+## Displaying User Links Safely
+
+Whenever you take a visitor's URL and show it back as a link on a page, you create a risk. A bad actor can submit something that looks like a website but does harm.
+
+### Danger 1: Dangerous schemes
+
+```html
+<!-- If a user submitted this as their "website"... -->
+<a href="javascript:stealCookies()">My website</a>
+```
+
+Clicking that would run script in your site's context. The fix: on the **server**, parse the value, and **accept only the schemes you want** (usually `http` and `https`). Reject everything else.
+
+### Danger 2: Links that hurt your site or visitors
+
+For links to places you do not control, add `rel` values:
+
+```html
+<a href="https://example.com" rel="noopener noreferrer nofollow ugc" target="_blank">
+  Visitor's website
+</a>
+```
+
+| `rel` value | What it does |
+| :-- | :-- |
+| `noopener` | The new page cannot control your page |
+| `noreferrer` | Does not tell the new site where the visitor came from |
+| `nofollow` | Tells search engines not to give your page's reputation |
+| `ugc` | Marks the link as **user-generated content** |
+
+### Danger 3: Your server fetching the link
+
+If your **server** visits URLs that visitors provide (to make a preview, check a link, or fetch an image), an attacker can point it at your private network, such as `http://localhost/admin` or a cloud "metadata" address. This is called **SSRF** (server-side request forgery). To defend:
+
+- Allow only `http` and `https`.
+- Resolve the address and refuse private and internal ranges.
+- Set time limits and size limits.
+- Do not follow redirects blindly.
+
+You will see more in [Secure Form Design](../secure-form-design).
+
+## Styling a URL Input
+
+```css title="style.css"
+input[type="url"] {
+  width: 100%;
+  max-width: 32rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+}
+
+input[type="url"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+- Web addresses are long, so give the field generous width.
+- URLs are always left to right. In right-to-left pages, add `dir="ltr"` so the address does not appear scrambled:
+
+```html
+<input type="url" name="site" dir="ltr" />
+```
+
+## Accessibility at a Glance
+
+- **Always add a label.** "Website" or "Portfolio link" is clear.
+- **Say that `https://` is needed,** in text linked with `aria-describedby`. A placeholder alone disappears when the visitor types.
+- **Write a clear `title`** with every `pattern`, and a plain error message.
+- **Use `autocomplete="url"`** where it fits.
+- **Make link text meaningful** when you display the address, such as "Ada's portfolio" and not "click here". If the address itself is the text, that is fine.
+- **Tell people** when a link opens in a new tab.
+
+## Global Audience Notes
+
+- **Internationalized domains** (for example, `münchen.de` or addresses in other scripts) are accepted by browsers, which convert them to a network-safe form. Do not block non-English letters.
+- **Paths can contain any language,** such as `https://example.com/काम`. Browsers encode them for you.
+- **Keep the hint short and simple,** so it translates well.
+- **Do not assume `www`** or `.com`. Many sites use other endings.
+
+## Common Mistakes to Avoid
+
+1. **Using `type="text"` for web addresses,** which loses the keyboard and the check.
+2. **Expecting `example.com` to pass.** A scheme is required.
+3. **Believing "valid" means "safe".** `javascript:` URLs pass.
+4. **Placing user URLs into `href` without checking the scheme** on the server.
+5. **Opening user links in a new tab without `rel="noopener noreferrer"`.**
+6. **Forgetting `nofollow ugc`** on links from untrusted visitors.
+7. **A `pattern` without a `title`,** so the error is unhelpful.
+8. **Not explaining that `https://` is needed.**
+9. **Letting your server fetch visitor URLs** without protection from SSRF.
+10. **A tiny `maxlength`,** which cuts real addresses.
+11. **Pre-filling `https://`** and forgetting to treat an untouched value as empty.
+12. **Skipping server-side validation.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="url"` field and submit `example.com`. Read the message.
+2. Submit `https://example.com`. Then try `ftp://example.com` and `localhost:3000`.
+3. Add `placeholder="https://example.com"`.
+4. Add `pattern="https?://.+"` with a `title`, and test `ftp://example.com`.
+5. Add `required`, and submit it empty.
+6. Add `value="https://"` and notice how it guides typing.
+7. Write JavaScript that adds `https://` on blur when no scheme is present.
+8. Use `new URL(value).protocol` to check the scheme.
+9. Add `autocomplete="url"`.
+10. Bonus: write the `<a>` tag, with the right `rel` values, to show a visitor's website safely.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `type="url"` check?</summary>
+
+That the value is a valid absolute URL, meaning it starts with a scheme such as `https:`. An empty value passes unless `required` is set.
+
+</details>
+
+<details>
+<summary>2. Why does `example.com` fail?</summary>
+
+It has no scheme. A URL input needs the full form, such as `https://example.com`.
+
+</details>
+
+<details>
+<summary>3. Does a "valid" URL mean it is safe to link?</summary>
+
+No. Any scheme passes, including `javascript:` and `ftp:`. The server must allow only the schemes it wants, usually `http` and `https`.
+
+</details>
+
+<details>
+<summary>4. How do you limit the field to `http` and `https` in HTML?</summary>
+
+Add `pattern="https?://.+"` with a `title` that explains the format. The server must still enforce it.
+
+</details>
+
+<details>
+<summary>5. Which `rel` values suit links from visitors?</summary>
+
+`noopener noreferrer` for safety when opening a new tab, and `nofollow ugc` to mark the link as untrusted, user-generated content.
+
+</details>
+
+<details>
+<summary>6. What is SSRF?</summary>
+
+Server-side request forgery: tricking your server into visiting an address it should not, such as an internal admin page. Defend by allowing only `http` and `https`, refusing private addresses, and limiting time and size.
+
+</details>
+
+## Key Takeaways
+
+- `type="url"` gives a URL keyboard and checks that the value is an absolute URL with a scheme.
+- Many visitors forget the scheme, so explain it, show an example, or add `https://` for them.
+- The browser accepts **any** scheme, including `javascript:`. Restrict with `pattern` for convenience and with server code for safety.
+- When displaying visitor links, allow only `http` and `https`, and add `rel="noopener noreferrer nofollow ugc"`.
+- If your server fetches visitor URLs, defend against SSRF.
+- Use `autocomplete="url"`, label the field, and always validate on the server.
+
+Addresses are the glue of the web. Next, learn the type made for finding things, in [Search](./search), or return to the [Forms overview](/tutorials/html/forms).

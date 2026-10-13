@@ -1,16 +1,584 @@
 ---
-id: select
-title: "Drop-down Select Menus: The select Element"
-sidebar_label: "Select Menu (<select>)"
-sidebar_position: 6
+id: html-select
+title: "HTML Select Element"
+sidebar_label: "Select"
+sidebar_position: 7
 slug: /html/forms/select
-description: "Build single and multi-selection drop-down menus using the select tag, handling selection states, name binding, and menu sizes."
+description: "Learn the HTML select element for dropdown lists: building a dropdown with option, the placeholder option pattern with required, what is sent, multiple selection and the size attribute, change events, dependent dropdowns, keyboard use, styling limits, accessibility, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML select tag
-  - drop down menu HTML
-  - select multiple attribute
-  - drop down list form
+  - HTML select element
+  - HTML dropdown list
+  - select option HTML
+  - select required placeholder option
+  - select multiple size attribute
+  - select change event JavaScript
+  - dependent dropdown HTML
+  - select vs radio buttons
+  - select vs datalist
+  - select accessibility
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, select, dropdown]
+tags: [html, web-development, beginner, forms, select, dropdown, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function SentDemo() {
+  const [sent, setSent] = useState("(press Submit)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const text = new URLSearchParams(new FormData(event.currentTarget)).toString();
+        setSent(text || "(nothing is sent)");
+      }}
+    >
+      <label htmlFor="sel-country">Country</label><br />
+      <select id="sel-country" name="country" required defaultValue="">
+        <option value="">Choose a country</option>
+        <option value="in">India</option>
+        <option value="ng">Nigeria</option>
+        <option value="br">Brazil</option>
+        <option value="de">Germany</option>
+      </select>
+      <br />
+      <label htmlFor="sel-langs">Languages you speak (hold Ctrl or Cmd to pick several)</label><br />
+      <select id="sel-langs" name="lang" multiple size={4} defaultValue={["en"]}>
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+        <option value="pt">Portuguese</option>
+        <option value="de">German</option>
+      </select>
+      <p style={{margin: "0.5rem 0"}}><button type="submit">Submit</button></p>
+      <p role="status" style={{margin: 0}}>Sent: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+export function DependentDemo() {
+  const cities = {
+    in: ["Mumbai", "Delhi", "Bengaluru"],
+    ng: ["Lagos", "Abuja", "Kano"],
+    br: ["São Paulo", "Rio de Janeiro", "Brasília"],
+  };
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="dep-country">Country</label><br />
+      <select
+        id="dep-country"
+        name="country"
+        value={country}
+        onChange={(event) => {
+          setCountry(event.target.value);
+          setCity("");
+        }}
+      >
+        <option value="">Choose a country</option>
+        <option value="in">India</option>
+        <option value="ng">Nigeria</option>
+        <option value="br">Brazil</option>
+      </select>
+      <br />
+      <label htmlFor="dep-city">City</label><br />
+      <select
+        id="dep-city"
+        name="city"
+        value={city}
+        disabled={!country}
+        onChange={(event) => setCity(event.target.value)}
+        aria-describedby="dep-city-hint"
+      >
+        <option value="">{country ? "Choose a city" : "Choose a country first"}</option>
+        {(cities[country] || []).map((name) => (
+          <option key={name} value={name}>{name}</option>
+        ))}
+      </select>
+      <p id="dep-city-hint" role="status" style={{margin: "0.5rem 0 0"}}>
+        {city ? "You chose " + city + "." : "The city list depends on the country."}
+      </p>
+    </form>
+  );
+}
+
+A **dropdown** is one of the oldest and most familiar controls on the web. You click, a list opens, you choose, and the list closes again. It saves space, it works on every device, and on phones it opens a native picker that people already know how to use. In HTML, the dropdown is the `<select>` element, filled with `<option>` elements.
+
+The idea is easy, but choosing well takes thought: when is a dropdown better than radio buttons? How do you stop a visitor from "answering" without choosing? What gets sent? In this lesson, you will learn all of that, and how to build dropdowns that depend on each other.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `<select>` and `<option>` work together
+- What is sent to the server
+- The placeholder option pattern, with `required`
+- Choosing several options with `multiple` and `size`
+- The `change` event, and dependent dropdowns
+- When to use a select, radios, or something else
+- Keyboard use, styling limits, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="country">Country</label>
+<select id="country" name="country">
+  <option value="in">India</option>
+  <option value="ng">Nigeria</option>
+  <option value="br">Brazil</option>
+  <option value="de">Germany</option>
+</select>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="sel-basic">Country</label><br />
+  <select id="sel-basic" name="country">
+    <option value="in">India</option>
+    <option value="ng">Nigeria</option>
+    <option value="br">Brazil</option>
+    <option value="de">Germany</option>
+  </select>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The pieces:
+
+- **`<select>`** is the control. Its **`name`** is the key sent to the server.
+- **`<option>`** is one choice. The text between its tags is what the visitor **reads**. Its **`value`** is what the server **receives**.
+- A **`<label>`** connects to the select with `for` and `id`, exactly like for an input (see [Label Element](./label-element)).
+
+You will study `<option>`, and grouping with `<optgroup>`, in detail in [Option and Optgroup](./option-and-optgroup). This lesson focuses on the `<select>` itself.
+
+## What Is Sent
+
+For a normal dropdown, the browser sends `name=value` of the chosen option:
+
+```text
+country=ng
+```
+
+| Situation | What is sent |
+| :-- | :-- |
+| An option has a `value` | That `value` (such as `ng`) |
+| An option has **no** `value` | The option's **text** (such as `Nigeria`) |
+| The `<select>` has no `name`, or is `disabled` | Nothing |
+| A normal dropdown | **Always one choice**, because the first option is chosen from the start |
+
+That last row matters, and the next section explains why.
+
+## The Placeholder Option
+
+A normal single dropdown **always has something selected**. If you do not choose a starting option, the browser picks the **first** one. So a visitor can submit the form without ever touching the dropdown, and "India" is sent, as if they had chosen it. That is bad for data quality.
+
+The fix is a **placeholder option**: a first option with an **empty value**, plus `required`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="country">Country</label>
+<select id="country" name="country" required>
+  <option value="">Choose a country</option>
+  <option value="in">India</option>
+  <option value="ng">Nigeria</option>
+  <option value="br">Brazil</option>
+  <option value="de">Germany</option>
+</select>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="sel-req">Country</label><br />
+  <select id="sel-req" name="country" required defaultValue="">
+    <option value="">Choose a country</option>
+    <option value="in">India</option>
+    <option value="ng">Nigeria</option>
+    <option value="br">Brazil</option>
+    <option value="de">Germany</option>
+  </select>{" "}
+  <button type="submit">Submit</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Press Submit without choosing: the browser stops the form with "Please select an item in the list." That works because **`required` fails when the chosen option has an empty `value`**.
+
+Details to get right:
+
+- The placeholder must have `value=""` (an empty value). Leaving out `value` altogether does **not** work, since the text would then be used as the value.
+- It must be the **first option**, so it is selected by default.
+- Write it as an instruction: "Choose a country," not "Country." Without `required`, a visitor who leaves it will send an **empty** `country=`, which your server should treat as "no answer."
+- You may add `disabled` and `selected` to the placeholder, so it cannot be picked again once the visitor has chosen. `required` still works with it. The trade-off is that a visitor cannot go back to "no choice," so many teams prefer a plain, enabled placeholder.
+
+```html
+<option value="" disabled selected>Choose a country</option>   <!-- common variation -->
+```
+
+## Try It: See What Is Sent
+
+The first dropdown uses the placeholder pattern. The second allows several choices. Try both, and press Submit.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <label for="country">Country</label>
+  <select id="country" name="country" required>
+    <option value="">Choose a country</option>
+    <option value="in">India</option>
+    <option value="ng">Nigeria</option>
+    <option value="br">Brazil</option>
+    <option value="de">Germany</option>
+  </select>
+
+  <label for="langs">Languages you speak</label>
+  <select id="langs" name="lang" multiple size="4">
+    <option value="en" selected>English</option>
+    <option value="hi">Hindi</option>
+    <option value="pt">Portuguese</option>
+    <option value="de">German</option>
+  </select>
+
+  <button type="submit">Submit</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SentDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice:
+
+- Choosing two languages sends `lang=en&lang=hi`: **the same name repeats**, once per selected option, just like a group of checkboxes.
+- If you unselect every language, **nothing** is sent for `lang`.
+- In the demo, the page checks `required` itself because the form is not really submitted. In a real page, the browser shows its own message.
+
+## Choosing Several: `multiple` and `size`
+
+| Attribute | What it does |
+| :-- | :-- |
+| `multiple` | Lets the visitor choose more than one option |
+| `size` | How many rows are visible at once (the default is 1, which gives a dropdown) |
+
+```html
+<select name="lang" multiple size="4">
+  ...
+</select>
+```
+
+- With `multiple`, the control turns into a **list box** (all rows visible, with a scrollbar if needed). The `size` sets how many rows show.
+- You can also use `size="5"` **without** `multiple`, for a visible list where only **one** option can be chosen.
+- To pick several options, the visitor must hold **`Ctrl`** (or **`Cmd`** on a Mac) while clicking, or **`Shift`** to select a range. On a phone, they tap several in a pop-up list.
+
+:::warning Multi-select lists are hard to use
+Many people do not know about the `Ctrl` or `Cmd` trick, and one wrong click without it **wipes out** all their choices. For a short list (up to about 7 options), a group of [checkboxes](./input-types/checkbox) is far friendlier. Use `multiple` for long lists, and always tell people how to pick several.
+:::
+
+### Reading the Choice in JavaScript
+
+```js
+const select = document.getElementById("country");
+
+console.log(select.value);                 // "ng" (the chosen option's value)
+console.log(select.selectedIndex);         // 2 (its position, starting at 0)
+console.log(select.selectedOptions[0].text); // "Nigeria" (the text shown)
+
+// For a multiple select:
+const chosen = [...document.getElementById("langs").selectedOptions].map((o) => o.value);
+// ["en", "hi"]
+```
+
+You can also change the choice from code: `select.value = "br"`.
+
+## The `change` Event, and Dependent Dropdowns
+
+A `<select>` fires a **`change`** event when the visitor picks a different option. You can use it to update something else on the page. A classic use is a **dependent dropdown**: the list of cities depends on the country chosen.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="country">Country</label>
+<select id="country" name="country">
+  <option value="">Choose a country</option>
+  <option value="in">India</option>
+  <option value="ng">Nigeria</option>
+  <option value="br">Brazil</option>
+</select>
+
+<label for="city">City</label>
+<select id="city" name="city" disabled>
+  <option value="">Choose a country first</option>
+</select>
+```
+
+```js title="script.js"
+const cities = {
+  in: ["Mumbai", "Delhi", "Bengaluru"],
+  ng: ["Lagos", "Abuja", "Kano"],
+  br: ["São Paulo", "Rio de Janeiro", "Brasília"],
+};
+
+const country = document.getElementById("country");
+const city = document.getElementById("city");
+
+country.addEventListener("change", () => {
+  const list = cities[country.value] || [];
+
+  city.length = 0;                                  // remove old options
+  city.add(new Option(list.length ? "Choose a city" : "Choose a country first", ""));
+
+  list.forEach((name) => city.add(new Option(name, name)));
+  city.disabled = list.length === 0;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DependentDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Good practice for dependent dropdowns:
+
+- **Disable** the second list until the first has a choice, and say why in its placeholder ("Choose a country first").
+- **Reset** the second list whenever the first changes, so an old, no-longer-valid city cannot stay selected.
+- **Keep the logic on the server too.** A visitor can send `country=in&city=Lagos`. Check that the city belongs to the country.
+- For long or changing lists, load the options from the server (with `fetch`) instead of writing them into your script.
+
+## When to Use a Select
+
+| Choice | Best control | Why |
+| :-- | :-- | :-- |
+| One of 2 to about 5 options | [Radio buttons](./input-types/radio) | All options are visible, and picking takes one click |
+| One of about 6 to 15 options | **Select** | Saves space |
+| One of a very long list (countries, languages) | **Select**, or an [input with a datalist](./datalist) | Typing to find an item is quick |
+| One of a huge list, with free text allowed | Input with [datalist](./datalist) | Suggestions, but the visitor can type anything |
+| Several of a short list | [Checkboxes](./input-types/checkbox) | Easier than `Ctrl` or `Cmd` clicking |
+| Several of a long list | `<select multiple>`, or a custom checkbox list | Saves space |
+| A year or a month | Select, or a [number](./input-types/number) or [month](./input-types/month) input | Depends on the range |
+
+A helpful rule: **if people need to compare the options, show them all.** If they just need to pick one they already know ("Germany"), a dropdown is great.
+
+## Keyboard Use
+
+A native select works with the keyboard without any code:
+
+| Key | What happens |
+| :-- | :-- |
+| `Tab` | Moves focus to the select |
+| `Space`, `Enter`, or `Alt` + `↓` | Opens the list |
+| `↑` / `↓` | Moves through the options |
+| Type letters (such as "ger") | Jumps to the option that starts with those letters (type-ahead) |
+| `Enter` | Chooses the highlighted option, and closes the list |
+| `Esc` | Closes the list |
+| `Home` / `End` | First or last option |
+
+Type-ahead is a big reason a long, alphabetical list of countries is still usable. Keep options in a **sensible order** (alphabetical, or grouped), so typing finds them.
+
+## Styling Limits
+
+A `<select>` is one of the **least styleable** controls, because the browser or the operating system draws its list. You can style the closed box, but only a little of the open list.
+
+```css title="style.css"
+select {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.6rem 2rem 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+select:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+select:invalid {
+  color: #64748b;     /* makes the placeholder look like a hint */
+}
+```
+
+- **Do not replace** a select with a custom `div` dropdown unless you have a strong reason. A hand-built one needs a lot of keyboard and screen reader work, and it does not get the native phone picker.
+- `font-size` of at least 16px stops iPhones from zooming in.
+- To change the arrow, use `appearance: none` and add your own icon as a background image. Keep enough right padding so text does not run under it.
+- A newer feature, `appearance: base-select`, lets browsers that support it style the whole select, including the open list. It is not available everywhere yet, so use it only as an **enhancement**, and keep the basic select working.
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server | `name="country"` |
+| `id` | Connects the [label](./label-element) | `id="country"` |
+| `required` | A real choice is needed (see the placeholder pattern) | `required` |
+| `multiple` | Allows several choices | `multiple` |
+| `size` | Number of visible rows | `size="5"` |
+| `disabled` | Greyed out, and **not** sent | `disabled` |
+| `autocomplete` | Autofill hint, such as `country` | `autocomplete="country"` |
+| `autofocus` | Focus on load | `autofocus` |
+| `form` | Connects the select to a form it is not inside | `form="checkout"` |
+
+Useful `autocomplete` values include `country`, `country-name`, `address-level1` (state or region), `bday-month`, `bday-year`, `cc-exp-month`, `cc-exp-year`, and `language`. Matching the value to the **option values** helps browsers fill the field. For countries, use two-letter codes (such as `IN`) if you set `autocomplete="country"`, and names for `country-name`.
+
+There is no `readonly` for selects. To show a fixed value, use `disabled` (not sent), or plain text plus a hidden input.
+
+## Accessibility at a Glance
+
+- **Always add a label,** with `for` and `id`, or by wrapping the select.
+- **Use the native `<select>`.** Screen readers announce the label, the current option, and "1 of 12." Custom dropdowns rarely match that.
+- **Write clear, short option text.** Start with the most important word, so type-ahead and screen reader users can find it.
+- **Keep options in a logical order.** Alphabetical is usually best for long lists. Put common choices first only when you are sure that helps.
+- **Give a clear placeholder** ("Choose a country"), and use `required` with `value=""` to enforce a choice.
+- **Do not change the page** (navigate, submit, or move focus) on `change`, unless you warn people. Keyboard users moving through options with the arrow keys would trigger it by accident. A separate "Go" button is safer.
+- **For `multiple`,** explain how to select several items, and consider checkboxes instead.
+- **Show errors in text,** near the control, and not only in colour.
+- **Keep a visible focus style,** and a large touch target.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Anyone can send `country=anything`, even a value that is not in your list. Accept only the **values you defined** (an allow-list).
+- **Treat an empty value** as "no answer," and handle it.
+- **Validate dependent fields** together (for example, that the city belongs to the country).
+- **Never trust a hidden meaning** in the value, such as a price or a role. Look it up on the server.
+- **Escape option text** if it comes from a database and could contain `<` or `&`.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Translate option text, not option values.** Keep `value` as a stable code (`in`, `ng`), and translate the visible name for each language.
+- **Sort lists using the visitor's language rules.** Alphabetical order differs by language ("Ö" and "Ñ" sort differently). `Intl.Collator` helps.
+- **Use standard codes** (ISO 3166 for countries, ISO 639 for languages), so data matches across systems.
+- **Do not assume the set of options fits everyone.** Lists of genders, titles, or states may not apply in every country. Allow "Other" or "Prefer not to say," and ask only for what you need.
+- **Long country lists** are easier with type-ahead, so make sure the visible names start with the letters people expect, in their own language.
+- **Right-to-left pages** show the arrow and text mirrored automatically with `dir="rtl"`.
+
+## Common Mistakes to Avoid
+
+1. **No placeholder option,** so the first option is sent even when the visitor never chose.
+2. **A placeholder without `value=""`,** so `required` does not work.
+3. **Leaving out `value` on options,** so the visible text (which you may translate) is sent.
+4. **Using a select for 2 or 3 options,** where radio buttons are quicker.
+5. **Using `multiple` for short lists,** where checkboxes are friendlier.
+6. **Not explaining `Ctrl` or `Cmd`** for multiple selection.
+7. **Navigating or submitting on `change`,** which breaks keyboard use.
+8. **Dependent dropdowns that keep an old, invalid value.**
+9. **Trusting the value** without an allow-list on the server.
+10. **No label,** or only the placeholder option as the label.
+11. **Replacing the native select** with a custom `div` dropdown.
+12. **Using `readonly`,** which selects do not have.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled select with four options and `value`s. Submit it with `method="get"`, and read the address.
+2. Remove the `value`s from the options, and see what is sent instead.
+3. Add a placeholder option with `value=""`, and then add `required`.
+4. Leave out `value=""` on the placeholder, and see if `required` still works.
+5. Add `multiple` and `size="4"`, choose several options, and look at the address.
+6. Use JavaScript to log `select.value`, `selectedIndex`, and `selectedOptions`.
+7. Build the country and city dependent dropdowns.
+8. Use only the keyboard: open, move, type-ahead, and choose.
+9. Style the select to match your inputs, and replace the arrow with `appearance: none`.
+10. Bonus: build the same choice as radio buttons, and decide which feels better for 4 options, and for 40.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is sent when a visitor chooses an option in a select?</summary>
+
+`name=value` of the chosen option. If the option has no `value` attribute, its visible text is sent instead.
+
+</details>
+
+<details>
+<summary>2. Why can a normal select be submitted without the visitor choosing?</summary>
+
+A single-choice dropdown always has an option selected, and by default it is the first. To force a real choice, add a first option with `value=""` and put `required` on the select.
+
+</details>
+
+<details>
+<summary>3. What do `multiple` and `size` do?</summary>
+
+`multiple` allows several choices, and turns the control into a list box. `size` sets how many rows are visible. Selected options are sent as repeated pairs, such as `lang=en&lang=hi`.
+
+</details>
+
+<details>
+<summary>4. How do you update one dropdown when another changes?</summary>
+
+Listen for the `change` event on the first, and rebuild the second's options (for example with `new Option(...)`). Disable the second until the first has a choice, and reset it each time.
+
+</details>
+
+<details>
+<summary>5. When should you use radio buttons or checkboxes instead of a select?</summary>
+
+Use radios for one of a few (about 5 or fewer) options, and checkboxes for several of a short list. A select is better for longer lists, where showing every option would take too much space.
+
+</details>
+
+<details>
+<summary>6. Why should the server check a select's value?</summary>
+
+Anyone can send a value that is not in your list. The server must accept only the values you defined, and check related fields (such as city and country) together.
+
+</details>
+
+## Key Takeaways
+
+- `<select>` with `<option>` makes a dropdown. The option's `value` is what is sent, and its text is what is shown.
+- A single select always has a choice. Use a first option with `value=""` plus `required` so the visitor must choose.
+- `multiple` and `size` make a list box, and selected options are sent as repeated pairs. Checkboxes are easier for short lists.
+- Use the `change` event for dependent dropdowns, but never navigate or submit on `change` without warning.
+- Keep the native select for the keyboard, type-ahead, screen readers, and phone pickers. Styling is limited, so do not fight it.
+- Translate the text, keep the values as stable codes, and always check values against an allow-list on the server.
+
+Next, learn more about the options inside a select, and how to group them, in [Option and Optgroup](./option-and-optgroup), or return to the [Forms overview](/tutorials/html/forms).

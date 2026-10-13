@@ -1,16 +1,524 @@
 ---
-id: autocomplete
-title: "Browser Autofill and Security: The autocomplete Attribute"
+id: html-autocomplete
+title: "HTML Autocomplete Attribute"
 sidebar_label: "Autocomplete"
-sidebar_position: 16
+sidebar_position: 17
 slug: /html/forms/autocomplete
-description: "Guide browser autofill engines efficiently, manage user privacy, and specify standardized token values using autocomplete."
+description: "Learn the HTML autocomplete attribute: helping browsers and password managers fill in names, emails, addresses, phone numbers, and payment details, the most useful autocomplete tokens, shipping and billing sections, current-password, new-password, and one-time-code, when autocomplete off is appropriate, accessibility benefits (WCAG 1.3.5), and security and privacy notes."
 keywords:
   - HTML autocomplete attribute
-  - form autofill optimization
-  - turn off autocomplete
-  - autofill security tokens
+  - autocomplete tokens
+  - autocomplete off
+  - autocomplete new-password current-password
+  - autocomplete one-time-code
+  - autocomplete shipping billing
+  - autofill HTML form
+  - WCAG 1.3.5 identify input purpose
+  - given-name family-name postal-code
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, autocomplete, ux]
+tags: [html, web-development, beginner, forms, autocomplete, autofill, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function TokenExplorer() {
+  const fields = [
+    {label: "Full name", type: "text", token: "name", extra: ""},
+    {label: "First name", type: "text", token: "given-name", extra: ""},
+    {label: "Last name", type: "text", token: "family-name", extra: ""},
+    {label: "Email address", type: "email", token: "email", extra: ""},
+    {label: "Phone number", type: "tel", token: "tel", extra: ""},
+    {label: "Street address", type: "text", token: "address-line1", extra: ""},
+    {label: "City", type: "text", token: "address-level2", extra: ""},
+    {label: "State or region", type: "text", token: "address-level1", extra: ""},
+    {label: "Postal code", type: "text", token: "postal-code", extra: ' inputmode="numeric"'},
+    {label: "Country", type: "text", token: "country-name", extra: ""},
+    {label: "Username", type: "text", token: "username", extra: ""},
+    {label: "Current password", type: "password", token: "current-password", extra: ""},
+    {label: "New password", type: "password", token: "new-password", extra: ""},
+    {label: "One-time code", type: "text", token: "one-time-code", extra: ' inputmode="numeric"'},
+    {label: "Card number", type: "text", token: "cc-number", extra: ' inputmode="numeric"'},
+    {label: "Card expiry", type: "text", token: "cc-exp", extra: ""},
+    {label: "Card security code", type: "text", token: "cc-csc", extra: ' inputmode="numeric"'},
+  ];
+  const [index, setIndex] = useState(0);
+  const field = fields[index];
+  const id = "ac-" + field.token;
+  const code =
+    '<label for="' + id + '">' + field.label + '</label>\n' +
+    '<input type="' + field.type + '" id="' + id + '" name="' + field.token + '" autocomplete="' + field.token + '"' + field.extra + ' />';
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="ac-pick">Which field are you building?</label><br />
+        <select id="ac-pick" value={index} onChange={(event) => setIndex(Number(event.target.value))}>
+          {fields.map((item, i) => (
+            <option key={item.token} value={i}>{item.label}</option>
+          ))}
+        </select>
+      </p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap"}}><code>{code}</code></pre>
+    </form>
+  );
+}
+
+export function ReaderDemo() {
+  const formRef = useRef(null);
+  const [rows, setRows] = useState([]);
+  return (
+    <form ref={formRef} onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rd-name">Full name</label><br />
+        <input type="text" id="rd-name" name="name" autoComplete="name" />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rd-email">Email address</label><br />
+        <input type="email" id="rd-email" name="email" autoComplete="email" />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rd-ship">Shipping postal code</label><br />
+        <input type="text" id="rd-ship" name="ship_postal" autoComplete="shipping postal-code" />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rd-pass">New password</label><br />
+        <input type="password" id="rd-pass" name="password" autoComplete="new-password" />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rd-promo">Promo code (one time, do not remember)</label><br />
+        <input type="text" id="rd-promo" name="promo" autoComplete="off" />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rd-misc">Favourite colour (no hint)</label><br />
+        <input type="text" id="rd-misc" name="colour" />
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          const list = [];
+          Array.from(formRef.current.elements).forEach((el) => {
+            if (el.tagName === "INPUT") {
+              list.push({name: el.name, value: el.autocomplete});
+            }
+          });
+          setRows(list);
+        }}
+      >
+        Read each autocomplete value
+      </button>
+      {rows.length > 0 ? (
+        <table style={{marginTop: "0.5rem", borderCollapse: "collapse"}}>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.name}>
+                <td style={{padding: "0.15rem 0.75rem 0.15rem 0"}}><code>{row.name}</code></td>
+                <td style={{padding: "0.15rem 0"}}>{row.value === "" ? "(not set)" : row.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+    </form>
+  );
+}
+
+You have probably used this without noticing. You tap a field, your phone offers your email address, and one tap fills it in. Or your password manager fills a login form in a second. That is **autofill**, and the HTML attribute that guides it is **`autocomplete`**.
+
+Good use of `autocomplete` makes forms **faster to fill in, easier to use, and more accessible**, especially on phones, and for people who find typing hard. Bad use (or switching it off without thinking) makes visitors retype the same details again and again. This lesson shows you how to do it well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `autocomplete` does, and what it does not do
+- The most useful tokens for names, addresses, accounts, and payments
+- Shipping and billing sections
+- `current-password`, `new-password`, and `one-time-code`
+- When `autocomplete="off"` is right, and when it is not
+- The accessibility benefit (WCAG 1.3.5)
+- Privacy and security notes
+
+## The Basics
+
+`autocomplete` tells the browser **what kind of information** a field wants, so it can offer saved values for it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/checkout" method="post">
+  <label for="name">Full name</label>
+  <input type="text" id="name" name="name" autocomplete="name" />
+
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" autocomplete="email" />
+
+  <label for="tel">Phone number</label>
+  <input type="tel" id="tel" name="tel" autocomplete="tel" />
+
+  <button type="submit">Continue</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="ac-name">Full name</label><br />
+  <input type="text" id="ac-name" name="name" autoComplete="name" /><br />
+  <label htmlFor="ac-email">Email address</label><br />
+  <input type="email" id="ac-email" name="email" autoComplete="email" /><br />
+  <label htmlFor="ac-tel">Phone number</label><br />
+  <input type="tel" id="ac-tel" name="tel" autoComplete="tel" /><br />
+  <button type="submit">Continue</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If your browser has saved details, tapping a field offers them, and the browser may fill **several fields at once**. What it offers depends on the browser and on what the visitor has saved, so you may not see suggestions in a fresh browser.
+
+:::note What autocomplete is not
+- It does **not** validate anything.
+- It is **not** the same as [`<datalist>`](./datalist), which shows suggestions **you** provide.
+- It does **not** send anything differently. The submitted value is just what is in the field.
+:::
+
+## The Values You Can Use
+
+The attribute takes a **token** (a keyword) from a fixed list. Here are the ones you will use most.
+
+### Names and contact
+
+| Token | For |
+| :-- | :-- |
+| `name` | The full name |
+| `given-name` | First name |
+| `family-name` | Last name |
+| `additional-name` | Middle name |
+| `honorific-prefix` | Title, like Dr or Ms |
+| `nickname` | A nickname |
+| `email` | Email address |
+| `tel` | Full phone number with country code |
+| `tel-national` | Phone number without the country code |
+| `organization` | Company or organisation |
+| `organization-title` | Job title |
+| `bday` | Birthday (with `type="date"`) |
+| `url` | A website |
+
+### Addresses
+
+| Token | For |
+| :-- | :-- |
+| `street-address` | The whole street address, in one multi-line field |
+| `address-line1`, `address-line2`, `address-line3` | Separate address lines |
+| `address-level2` | City or town |
+| `address-level1` | State, province, or region |
+| `postal-code` | ZIP or postal code |
+| `country` | Country code (like `IN`) |
+| `country-name` | Country name (like "India") |
+
+The "level" names are **generic** on purpose, because countries organise addresses in different ways.
+
+### Accounts and security
+
+| Token | For |
+| :-- | :-- |
+| `username` | Username or account name |
+| `current-password` | The password the visitor already has (sign in) |
+| `new-password` | A **new** password (sign up, change password) |
+| `one-time-code` | A code sent by SMS or an app |
+| `webauthn` | Passkeys (added to a username field) |
+
+### Payments
+
+| Token | For |
+| :-- | :-- |
+| `cc-name` | Name on the card |
+| `cc-number` | Card number |
+| `cc-exp` | Expiry date |
+| `cc-exp-month`, `cc-exp-year` | Expiry month or year, separately |
+| `cc-csc` | Security code |
+| `cc-type` | Card type |
+
+### Other
+
+| Token | For |
+| :-- | :-- |
+| `on` | Allow the browser to decide |
+| `off` | Ask the browser **not** to remember or fill this field |
+| `language` | Preferred language |
+| `sex`, `bday-day`, `bday-month`, `bday-year` | Other personal details, used only when you really need them |
+
+## Try It: Find the Right Token
+
+Choose the kind of field you are building, and see the markup that goes with it, including a helpful `inputmode` where it applies.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Sign in -->
+<label for="username">Username</label>
+<input type="text" id="username" name="username" autocomplete="username" />
+
+<label for="password">Password</label>
+<input type="password" id="password" name="password" autocomplete="current-password" />
+
+<!-- Sign up -->
+<label for="new-password">New password</label>
+<input type="password" id="new-password" name="password" autocomplete="new-password" />
+
+<!-- One-time code -->
+<label for="code">Verification code</label>
+<input type="text" id="code" name="code" autocomplete="one-time-code" inputmode="numeric" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TokenExplorer />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Sign-In and Sign-Up Forms
+
+Password managers depend on the right tokens, so get these right:
+
+```html
+<!-- Sign in -->
+<input type="text" name="username" autocomplete="username" />
+<input type="password" name="password" autocomplete="current-password" />
+
+<!-- Sign up or change password -->
+<input type="text" name="username" autocomplete="username" />
+<input type="password" name="password" autocomplete="new-password" />
+<input type="password" name="confirm" autocomplete="new-password" />
+```
+
+- **`current-password`** tells the manager to offer a **saved** password.
+- **`new-password`** tells it to **suggest a strong new one** (and not to fill the old one).
+- Use `username` (or `email`) for the account field so the manager can pair it with the password.
+- Do **not** stop visitors from pasting passwords. That breaks password managers, which many people rely on for safety.
+
+For SMS and app codes, `autocomplete="one-time-code"` lets phones offer the code from a text message with one tap.
+
+## Shipping and Billing Sections
+
+A checkout often asks for the same fields twice. A **section prefix** lets the browser keep them apart:
+
+```html
+<h2>Shipping address</h2>
+<input name="ship_street" autocomplete="shipping address-line1" />
+<input name="ship_city" autocomplete="shipping address-level2" />
+<input name="ship_zip" autocomplete="shipping postal-code" />
+
+<h2>Billing address</h2>
+<input name="bill_street" autocomplete="billing address-line1" />
+<input name="bill_city" autocomplete="billing address-level2" />
+<input name="bill_zip" autocomplete="billing postal-code" />
+```
+
+Put `shipping` or `billing` **before** the field token. You can also use your own group name that starts with `section-`, such as `section-gift`, to separate other repeated groups, for example `autocomplete="section-gift shipping given-name"`.
+
+## Turning It Off: `autocomplete="off"`
+
+```html
+<input type="text" name="promo" autocomplete="off" />
+<form autocomplete="off"> ... </form>
+```
+
+`off` asks the browser **not to remember or suggest** values. Use it **sparingly**.
+
+| Good reasons | Bad reasons |
+| :-- | :-- |
+| A **one-time** value, such as a promo code or a search that should not be saved | "I want the form to look neat" |
+| Very sensitive details on a shared computer (like some banking or health pages) | Login and sign-up forms (managers should help here) |
+| A field where saved values would be **wrong**, such as a CAPTCHA answer | Name, email, address, and phone fields |
+| A field in an admin tool that edits someone else's record, not the visitor's own | Anything that just makes visitors retype |
+
+Things to know:
+
+- **Browsers may ignore `off`** for login and password fields, and for some address and card fields, because users benefit from saved details. It is a **request**, not a command.
+- **Do not switch off autofill for everything.** It hurts the people who rely on it most, such as visitors with motor, memory, or cognitive differences, and everyone on a phone.
+- **Inventing odd values** (like `autocomplete="nope"`) to defeat autofill is unreliable, and breaks the helpful behaviour. If you need `off`, write `off`.
+
+## Try It: Read Back What You Wrote
+
+This form uses a mix of tokens. Press the button, and your script reads each field's `autocomplete` value, which shows exactly what the browser sees, including the shipping prefix and the unset field.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form id="demo">
+  <input name="name" autocomplete="name" />
+  <input name="email" type="email" autocomplete="email" />
+  <input name="ship_postal" autocomplete="shipping postal-code" />
+  <input name="password" type="password" autocomplete="new-password" />
+  <input name="promo" autocomplete="off" />
+  <input name="colour" />
+  <button type="button" id="read">Read each autocomplete value</button>
+</form>
+```
+
+```js title="script.js"
+const form = document.getElementById("demo");
+
+document.getElementById("read").addEventListener("click", () => {
+  for (const el of form.elements) {
+    if (el.tagName === "INPUT") {
+      console.log(el.name + ": " + (el.autocomplete || "(not set)"));
+    }
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ReaderDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Helping Autofill Work Well
+
+- **Use real labels** and sensible `name` attributes. Browsers use these as clues, too.
+- **Use the right input type:** `email`, `tel`, `password`, `url`. They help the browser, and give the right keyboard.
+- **Add `inputmode`** where useful (like `inputmode="numeric"` for postal codes and one-time codes), and `enterkeyhint` for the keyboard's action key.
+- **Keep one field per piece of data,** where possible. Splitting a phone number or a card number into several small boxes often breaks autofill. If you must, give each box its own token.
+- **Do not hide autofilled fields** off-screen, or make them invisible. Browsers may fill them, and the visitor never sees what was sent.
+- **Let autofill finish.** Do not clear fields or reformat values while the browser is filling them.
+- **Style autofilled fields sensibly.** Browsers add their own background colour. Make sure the text stays readable.
+
+## Accessibility at a Glance
+
+- **It is a requirement, not a bonus.** WCAG 2.1 success criterion **1.3.5, Identify Input Purpose** (level AA), asks that fields collecting information about the visitor use the right `autocomplete` value, so browsers and assistive tools can recognise what each field is for.
+- **It helps real people:** those with motor difficulties (less typing), cognitive or memory differences (no need to remember or re-enter), dyslexia (fewer spelling slips), and anyone using a phone.
+- **Some assistive tools can show icons** next to fields (a phone icon for `tel`), and use the token to make the form easier to understand.
+- **Do not use `off`** on ordinary personal fields.
+- **Keep visible labels.** Autocomplete does not replace labels.
+
+## Security and Privacy Notes
+
+- **Autofill is a convenience, not security.** The value your server receives can be anything, so validate on the server.
+- **Autofill can fill fields the visitor cannot see.** In an old attack, hidden fields in a page were filled with the visitor's saved details and sent on. Modern browsers fill a field only after the visitor chooses a suggestion, but still: **do not add hidden fields that collect personal data** the visitor did not agree to share.
+- **Password managers are good for security.** They create strong, unique passwords and fill only on the right website. Do not fight them with `off` or blocked paste.
+- **Be careful on shared computers.** For pages where the next person on the same device must not see saved values (a library or a kiosk), `off` can be right, and you should also **sign visitors out** after a short idle time.
+- **Never store full card numbers or passwords yourself** in the form, in the page, or in the browser. Use a trusted payment provider.
+- **Pre-filling a form** from your server (for example, an account page) should be done carefully: show only the visitor's own data, and escape it properly.
+
+## Global Audience Notes
+
+- **Addresses work differently everywhere.** The tokens `address-level1` and `address-level2` are generic for this reason. Do not assume "state" and "zip code" labels. Use labels that fit the visitor's country.
+- **Name order differs.** Many cultures put the family name first, and some people have one name only. A single `name` field with `autocomplete="name"` is often the kindest choice.
+- **Phone formats differ.** `tel` gives the full international form, and `tel-national` leaves out the country code. Think about which your system expects.
+- **Browser language matters.** The browser matches fields to saved data in the visitor's own language and region.
+- **Right-to-left pages** work with autofill, but check that the suggestion list and your field layout still look right.
+- **Do not guess from the IP address** and prefill a country for them without letting them change it.
+
+## Common Mistakes to Avoid
+
+1. **Using `autocomplete="off"` on everything,** so visitors retype the same details.
+2. **Using `current-password` on a sign-up form,** or `new-password` on a sign-in form.
+3. **Blocking paste** into password fields.
+4. **Splitting phone or card numbers** into many boxes that autofill cannot fill.
+5. **Inventing values** like `autocomplete="nope"` to fight autofill.
+6. **Forgetting shipping and billing prefixes,** so the browser mixes the two addresses.
+7. **Misspelled tokens** (`autocomplete="e-mail"`), which the browser ignores.
+8. **Leaving out `username`** on sign-in and sign-up forms, so password managers cannot pair the account.
+9. **Using `type="number"`** for postal codes or cards, which removes leading zeros and spoils autofill.
+10. **Hidden fields** that collect personal data without the visitor knowing.
+11. **Assuming every browser suggests the same thing.** Test, but do not rely on seeing suggestions.
+12. **Treating `autocomplete` as validation or security.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add `autocomplete="name"`, `email`, and `tel` to a contact form, and see what your browser offers.
+2. Build a sign-in form with `username` and `current-password`.
+3. Build a sign-up form with `new-password`, and see whether your password manager suggests a password.
+4. Add `autocomplete="one-time-code"` and `inputmode="numeric"` to a verification field.
+5. Build a checkout with `shipping` and `billing` address sections.
+6. Add `autocomplete="off"` to a promo code field only.
+7. Read each field's `autocomplete` property with JavaScript.
+8. Replace a "State" field with the generic `address-level1`, and write a label for a country other than your own.
+9. Check your form against WCAG 1.3.5: does every personal-data field have the right token?
+10. Bonus: take a form from a website you use, and list which fields should have tokens and which do not.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `autocomplete` attribute do?</summary>
+
+It tells the browser what kind of information a field wants (name, email, address, password, and so on), so the browser or password manager can offer saved values. It does not validate or change what is sent.
+
+</details>
+
+<details>
+<summary>2. What is the difference between `current-password` and `new-password`?</summary>
+
+`current-password` asks the password manager to offer the visitor's saved password (sign in). `new-password` asks it to suggest a new, strong password and not to fill the old one (sign up, change password).
+
+</details>
+
+<details>
+<summary>3. How do you keep shipping and billing addresses apart?</summary>
+
+Put a section prefix before the token: `autocomplete="shipping postal-code"` and `autocomplete="billing postal-code"`.
+
+</details>
+
+<details>
+<summary>4. When is `autocomplete="off"` appropriate?</summary>
+
+For one-time values (such as a promo code), for fields where saved values would be wrong, and for very sensitive pages on shared computers. It is not appropriate for ordinary name, email, address, and login fields. Browsers may ignore it anyway.
+
+</details>
+
+<details>
+<summary>5. Why does `autocomplete` matter for accessibility?</summary>
+
+It is required by WCAG 1.3.5 (Identify Input Purpose). It saves typing and memory effort for people with motor and cognitive differences, and lets assistive tools recognise what each field is for.
+
+</details>
+
+<details>
+<summary>6. Is `autocomplete` a security feature?</summary>
+
+No. It is a convenience. The server must still validate every value. Password managers it works with are good for security, so do not block them.
+
+</details>
+
+## Key Takeaways
+
+- `autocomplete` tells browsers and password managers what a field is for, using tokens like `name`, `email`, `tel`, `postal-code`, and `cc-number`.
+- Use `username`, `current-password`, and `new-password` correctly, and `one-time-code` for verification codes.
+- Add `shipping` or `billing` before a token to separate two address groups.
+- Use `autocomplete="off"` rarely. It is a request, and browsers may ignore it.
+- Good autofill is an accessibility requirement (WCAG 1.3.5), and a big help on phones.
+- Keep labels, sensible names, and the right input types, and do not split data into tiny boxes or block paste.
+- It is a convenience, not security. **Validate on the server.**
+
+Next, learn how forms are sent, starting with [Form Methods](./form-methods), or return to the [Forms overview](/tutorials/html/forms).
