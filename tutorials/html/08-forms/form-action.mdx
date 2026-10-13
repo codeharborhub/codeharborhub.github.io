@@ -1,16 +1,512 @@
 ---
-id: form-action
-title: "Specifying Submission Endpoints: The action Attribute"
-sidebar_label: "Form Action Endpoint"
-sidebar_position: 18
+id: html-form-action
+title: "HTML Form Action Attribute"
+sidebar_label: "Form Action"
+sidebar_position: 19
 slug: /html/forms/form-action
-description: "Learn how the action attribute defines destination URLs for form processing and how button formaction overrides default endpoints."
+description: "Learn the HTML form action attribute: where a form sends its data, absolute and relative URLs, what happens when action is left out, the GET query string trap, formaction on buttons, the target attribute, third-party form services, mailto actions, progressive enhancement with fetch, and security notes on HTTPS, CSRF, and the Content-Security-Policy form-action rule."
 keywords:
-  - HTML form action attribute
-  - form submit URL
-  - formaction button override
-  - form handling endpoint
+  - HTML form action
+  - form action attribute
+  - action relative URL
+  - formaction attribute
+  - form target _blank
+  - mailto form action
+  - form action GET query string
+  - progressive enhancement form fetch
+  - CSP form-action
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, action, attributes]
+tags: [html, web-development, beginner, forms, action, http, security, frontend]
 ---
+
+import {useState} from 'react';
+
+export function ResolveDemo() {
+  const pageUrl = "https://example.com/shop/cart/index.html";
+  const presets = [
+    {label: "Root-relative", value: "/checkout"},
+    {label: "Same folder", value: "pay.php"},
+    {label: "Parent folder", value: "../receipt"},
+    {label: "Full address", value: "https://pay.example.org/charge"},
+    {label: "Protocol-relative", value: "//cdn.example.net/form"},
+    {label: "Only a query", value: "?step=2"},
+    {label: "Left out (empty)", value: ""},
+  ];
+  const [value, setValue] = useState("/checkout");
+  let resolved = "";
+  try {
+    resolved = new URL(value, pageUrl).href;
+  } catch (error) {
+    resolved = "(not a valid address)";
+  }
+  const sameSite = resolved.startsWith("https://example.com/");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.5rem"}}>
+        This page is at <code>{pageUrl}</code>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="fa-action">The form's action</label><br />
+        <input
+          type="text"
+          id="fa-action"
+          name="action"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          style={{width: "100%", maxWidth: "28rem"}}
+        />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {presets.map((item) => (
+          <button
+            type="button"
+            key={item.label}
+            onClick={() => setValue(item.value)}
+            style={{marginRight: "0.4rem", marginBottom: "0.4rem"}}
+          >
+            {item.label}
+          </button>
+        ))}
+      </p>
+      <p role="status" style={{margin: 0}}>
+        The data goes to: <strong><code>{resolved}</code></strong><br />
+        <span style={{color: sameSite ? "#15803d" : "#b45309"}}>
+          {sameSite ? "Same website as this page." : "A different website or origin: your visitors' data leaves your site."}
+        </span>
+      </p>
+    </form>
+  );
+}
+
+export function QueryTrapDemo() {
+  const [method, setMethod] = useState("get");
+  const [shown, setShown] = useState(null);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const base = "https://example.com/search?lang=en";
+        const data = new URLSearchParams();
+        data.append("q", form.elements.q.value);
+        if (method === "get") {
+          const url = new URL(base);
+          url.search = data.toString();
+          setShown({
+            lines: ["GET " + url.pathname + url.search],
+            note: "The old ?lang=en was thrown away and replaced by the form's fields.",
+            bad: true,
+          });
+        } else {
+          const url = new URL(base);
+          setShown({
+            lines: ["POST " + url.pathname + url.search, "", data.toString()],
+            note: "With POST, the query string in the action is kept, and the fields go in the body.",
+            bad: false,
+          });
+        }
+      }}
+    >
+      <p style={{margin: "0 0 0.5rem"}}>
+        <code>action="/search?lang=en"</code>
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Method</legend>
+        <label><input type="radio" name="m" checked={method === "get"} onChange={() => setMethod("get")} /> GET</label>{" "}
+        <label><input type="radio" name="m" checked={method === "post"} onChange={() => setMethod("post")} /> POST</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="fa-q">Search for</label><br />
+        <input type="text" id="fa-q" name="q" defaultValue="forms" />
+      </p>
+      <button type="submit">Show the request</button>
+      {shown ? (
+        <div role="status" style={{marginTop: "0.75rem"}}>
+          <pre style={{margin: 0, whiteSpace: "pre-wrap"}}><code>{shown.lines.join("\n")}</code></pre>
+          <p style={{margin: "0.25rem 0 0", color: shown.bad ? "#b91c1c" : "#15803d"}}>{shown.note}</p>
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
+A form collects data. But **where does that data go** when the visitor presses Submit? That is the job of the **`action`** attribute. It holds the **address** (URL) of the page or program that will receive and handle the form.
+
+It looks like a small detail, but the address you choose decides who receives your visitors' information, and one small slip can send private data to the wrong place or lose it entirely. In this lesson, you will learn how to write the address, how the browser works it out, and the traps to avoid.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `action` does, and what happens when you leave it out
+- Absolute and relative addresses, and how the browser resolves them
+- The GET query string trap
+- Overriding the action with `formaction`
+- Opening the result in a new tab with `target`
+- Third-party form services and `mailto:`
+- Adding JavaScript the safe way (progressive enhancement)
+- Security and privacy notes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/contact" method="post">
+  <label for="email">Your email address</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="message">Message</label>
+  <textarea id="message" name="message" required></textarea>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="fa-email">Your email address</label><br />
+  <input type="email" id="fa-email" name="email" required /><br />
+  <label htmlFor="fa-message">Message</label><br />
+  <textarea id="fa-message" name="message" required></textarea><br />
+  <button type="submit">Send</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+When the visitor presses **Send**, the browser packs the fields as `name=value` pairs and sends them to `/contact` on the same website, using the method you chose (see [Form Methods](./form-methods)). The server program at that address reads the data, does the work, and replies with a page.
+
+So `action` answers "**where?**", and `method` answers "**how?**"
+
+## What Goes in `action`
+
+The value is a URL, and the browser resolves it against the **address of the current page**. These are the common shapes:
+
+| Written as | Meaning | Example (page at `https://example.com/shop/cart/index.html`) |
+| :-- | :-- | :-- |
+| `/checkout` | **Root-relative:** from the site's root | `https://example.com/checkout` |
+| `pay.php` | **Relative:** from the current folder | `https://example.com/shop/cart/pay.php` |
+| `../receipt` | **Relative:** one folder up | `https://example.com/shop/receipt` |
+| `https://pay.example.org/charge` | **Absolute:** a full address, often another website | exactly that address |
+| `//cdn.example.net/form` | **Protocol-relative:** same scheme, another host (avoid) | `https://cdn.example.net/form` |
+| `?step=2` | Only a query: same page, new query | `https://example.com/shop/cart/index.html?step=2` |
+| (left out) | **The current page's address** | `https://example.com/shop/cart/index.html` |
+
+### Try It: See Where the Data Goes
+
+Type an action, or press a preset button, and see the full address the browser works out.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Page address: https://example.com/shop/cart/index.html -->
+<form action="../receipt" method="post">
+  <button type="submit">Pay</button>
+</form>
+```
+
+```js title="script.js"
+const page = "https://example.com/shop/cart/index.html";
+
+console.log(new URL("/checkout", page).href);
+// https://example.com/checkout
+
+console.log(new URL("pay.php", page).href);
+// https://example.com/shop/cart/pay.php
+
+console.log(new URL("../receipt", page).href);
+// https://example.com/shop/receipt
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ResolveDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can also read the resolved address in JavaScript: `form.action` always returns the **full** URL, even if the attribute was written short.
+
+### Leaving `action` Out
+
+If there is no `action`, the form is sent to **the address of the page it is on**. This is common in frameworks where one address shows the form (with GET) and handles it (with POST). Leaving the attribute out is fine. An empty `action=""` is not valid HTML, even though browsers treat it the same, so leave it out instead.
+
+### A Word About `<base>`
+
+If the page has a `<base href="...">` element, relative addresses are worked out from **that** base, not from the page's own address. A form that suddenly posts to the wrong place after someone adds `<base>` is a classic puzzle.
+
+## The GET Query String Trap
+
+With `method="get"`, the browser **replaces** any query string already in the action with the form's own fields. Try it:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- The ?lang=en is lost on submit with GET -->
+<form action="/search?lang=en" method="get">
+  <input type="text" name="q" value="forms" />
+  <button type="submit">Search</button>
+</form>
+
+<!-- Fix: carry the value as a hidden field -->
+<form action="/search" method="get">
+  <input type="hidden" name="lang" value="en" />
+  <input type="text" name="q" value="forms" />
+  <button type="submit">Search</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<QueryTrapDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+With **GET**, put extra values in **hidden inputs** (see [Hidden](./input-types/hidden)). With **POST**, a query string in the action is kept, and the fields travel in the body.
+
+## Changing the Action for One Button: `formaction`
+
+A submit button can send the same form somewhere else with `formaction`. Great for "Save" and "Save and publish," or "Preview":
+
+```html
+<form action="/articles/save" method="post">
+  <label for="title">Title</label>
+  <input type="text" id="title" name="title" />
+
+  <button type="submit">Save draft</button>
+  <button type="submit" formaction="/articles/publish">Publish</button>
+  <button type="submit" formaction="/articles/preview" formmethod="get" formtarget="_blank">Preview</button>
+</form>
+```
+
+The `form*` attributes (`formaction`, `formmethod`, `formenctype`, `formtarget`, `formnovalidate`) apply to **that button only**. See [Submit and Reset Buttons](./input-types/submit-reset-button).
+
+## Where the Response Opens: `target`
+
+By default, the response replaces the current page. The form's `target` attribute can change this:
+
+| `target` value | Result |
+| :-- | :-- |
+| `_self` (default) | Same tab |
+| `_blank` | New tab |
+| `_parent`, `_top` | Parent frame, or the whole window (for frames) |
+| A frame name | That `<iframe>` with that `name` |
+
+```html
+<form action="/report" method="post" target="_blank">...</form>
+```
+
+Opening a new tab can surprise visitors, so use it only when there is a good reason (a printable report, a preview). Modern browsers treat `target="_blank"` forms as if `rel="noopener"` was set, so the new page cannot control yours.
+
+## Sending to Another Website
+
+The action can point to a **different** website. That is how many services work: payment providers, newsletter tools, form-handling services, and search engines.
+
+```html
+<form action="https://example-newsletter.com/subscribe/abc123" method="post">
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" required />
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+Things to remember:
+
+- **No "cross-origin" error.** Submitting a form to another site is a normal page navigation, so it is **not blocked** by the browser's CORS rules. That is also why it is risky: the browser will happily send data anywhere the page tells it to.
+- **You send your visitors' data to that company.** Choose providers you trust, name them in your privacy policy, and make sure the form does not collect more than it needs.
+- **The visitor lands on the other site's page** unless the service redirects back. Check the "thank you" flow.
+- **Use `https`.** An `http` action on an `https` page triggers warnings, or is blocked.
+
+### `mailto:` Actions
+
+```html
+<form action="mailto:hello@example.com" method="post" enctype="text/plain">
+```
+
+This looks easy, but it **does not send anything**. It opens the visitor's email program (if they have one set up), with the data pasted in, and they must press Send themselves. It fails for people who use web email, and it exposes your address to harvesters. For a real contact form, use a server-side handler or a form service instead.
+
+### `javascript:` Actions
+
+`action="javascript:..."` is possible but a bad idea. It breaks without JavaScript and is blocked by strict security policies. Use an event listener instead.
+
+## Working With JavaScript: Progressive Enhancement
+
+A good form **works without JavaScript**, and gets better with it. Keep a real `action` and `method`, then take over with JavaScript when it is available:
+
+```html title="index.html"
+<form id="contact" action="/contact" method="post">
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" required />
+  <button type="submit">Send</button>
+  <p id="status" role="status"></p>
+</form>
+```
+
+```js title="script.js"
+const form = document.getElementById("contact");
+const status = document.getElementById("status");
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();                         // stop the normal page change
+  status.textContent = "Sending…";
+
+  try {
+    const response = await fetch(form.action, {  // form.action is the full URL
+      method: form.method,
+      body: new FormData(form),
+    });
+
+    if (!response.ok) throw new Error("Server said " + response.status);
+    status.textContent = "Thank you! We got your message.";
+    form.reset();
+  } catch (error) {
+    status.textContent = "Sorry, that did not work. Please try again.";
+  }
+});
+```
+
+If the script fails to load, the form still submits the normal way. Reading `form.action` and `form.method` keeps your HTML as the single source of truth.
+
+## Accessibility at a Glance
+
+- **Tell visitors what will happen** when they submit ("We will email you a receipt"), especially when the data goes to another site.
+- **Do not open new tabs** without warning. Add "(opens in a new tab)" to the button or nearby text.
+- **After submitting with JavaScript,** announce the result in a `role="status"` area, and move focus to it if it replaces the form.
+- **Do not lose the visitor's data** if sending fails. Keep the fields filled in and show a clear message.
+- **Make sure the form works with only a keyboard,** and that pressing Enter in a field submits it as expected.
+- **A real destination helps robustness:** the form still works with JavaScript off, on slow networks, and in assistive technology that struggles with scripts.
+
+## Security and Privacy Notes
+
+- **Know exactly where the data goes.** Treat the `action` like a destination for money: check it carefully, especially when it is built from variables or user input.
+- **Never build `action` from untrusted input.** If a page puts a value from the URL straight into `action`, an attacker can send visitors' data to their own server.
+- **Use HTTPS** for all form destinations, so data is encrypted in transit. An `http` action on an `https` page is a downgrade, and browsers may warn or block it.
+- **POST forms need CSRF protection** on the receiving server. Use a CSRF token in a hidden field and `SameSite` cookies. (See [Form Methods](./form-methods).)
+- **Do not trust the destination page to validate.** The receiving server must check every value, as nothing in the browser can be trusted.
+- **Use a Content-Security-Policy `form-action` rule** to list the only addresses your forms may post to, for example `form-action 'self' https://pay.example.org`. This stops injected code from adding a form, or changing an action, to send data to an attacker.
+- **Do not collect secrets in forms that go to third parties** unless the service is built for it (a payment provider's hosted fields, for example).
+- **Check redirects.** A server that redirects after a form to an address taken from the request can be abused as an open redirect.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Data protection laws** (such as the GDPR in Europe, and many others worldwide) care **where personal data goes**. If your action sends data to a service in another country, your privacy policy should say so, and you may need consent.
+- **Addresses may contain non-English characters.** Internationalised domain names and paths are converted by the browser, but test them.
+- **Slow and unreliable networks** are common. Handle failure gracefully, keep the visitor's input, and avoid double submissions.
+- **Use `lang`-aware routes carefully.** A relative action like `signup` on `/fr/contact` goes to `/fr/signup`, while `/signup` goes to the root. Check which one you mean.
+- **Third-party services may be blocked** in some countries or by some networks. Offer another way to contact you.
+
+## Common Mistakes to Avoid
+
+1. **A GET form with a query string in `action`.** The query is dropped. Use hidden fields.
+2. **A relative action that points to the wrong place** because the page lives in a different folder, or has a `<base>`.
+3. **Forgetting the `action`,** and wondering why the form reloads the page.
+4. **Using `mailto:`** and expecting a message to arrive.
+5. **Putting a user-supplied value in `action`.**
+6. **An `http://` action on an `https` page.**
+7. **Sending data to a third party** without telling visitors.
+8. **Writing `action="javascript:..."`.**
+9. **No server-side validation** because "the browser checks."
+10. **Opening results in a new tab** without warning.
+11. **Using `preventDefault()` with no fallback,** so the form is dead if the script fails.
+12. **No CSRF protection** on POST destinations.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with `action="/thanks"` and `method="post"`, and see where it sends you.
+2. Remove the `action`, and see which address is used.
+3. Use a relative action like `thanks.html`, and then `../thanks.html`, and compare.
+4. Log `form.action` in the console, and notice it is always the full address.
+5. Make a GET form with `action="/search?lang=en"`, and watch the query get replaced. Then fix it with a hidden field.
+6. Add a "Preview" button with `formaction`, `formmethod="get"`, and `formtarget="_blank"`.
+7. Add `target="_blank"` to a form and tell the visitor with text.
+8. Write JavaScript that sends the form with `fetch`, and still works if the script is removed.
+9. Write a `Content-Security-Policy` header value with a `form-action` rule for your site.
+10. Bonus: list which third-party services your own site's forms send data to, and what each one receives.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `action` attribute do?</summary>
+
+It gives the address (URL) that receives the form's data when it is submitted. The `method` attribute decides how the data is sent.
+
+</details>
+
+<details>
+<summary>2. What happens if you leave out `action`?</summary>
+
+The form is submitted to the address of the page it is on, including the same path and query string.
+
+</details>
+
+<details>
+<summary>3. How are relative addresses worked out?</summary>
+
+Against the current page's address (or the `<base>` element, if there is one). `/checkout` starts from the site's root, `pay.php` from the current folder, and `../receipt` from one folder up.
+
+</details>
+
+<details>
+<summary>4. Why does a query string in `action` disappear with GET?</summary>
+
+With `method="get"`, the browser builds a new query string from the form's fields and replaces the old one. Put extra values in hidden inputs, or use POST.
+
+</details>
+
+<details>
+<summary>5. How do you send the same form to different addresses?</summary>
+
+Give each submit button its own `formaction` (and, if needed, `formmethod` and `formtarget`).
+
+</details>
+
+<details>
+<summary>6. What are the main security rules for `action`?</summary>
+
+Use HTTPS, never build the action from untrusted input, protect POST forms with CSRF tokens, validate on the server, and consider a Content-Security-Policy `form-action` rule so forms can only post to approved addresses.
+
+</details>
+
+## Key Takeaways
+
+- `action` is the **address** that receives the form data. `method` is **how** it is sent.
+- Without `action`, the form goes to its own page. Relative addresses resolve against the current page (or `<base>`).
+- With GET, the form's fields **replace** any query string in the action. Use hidden inputs.
+- `formaction` on a button overrides the address for that button only. `target` decides where the response opens.
+- Forms can post to other sites with no CORS check, so choose destinations carefully, use HTTPS, and tell visitors where their data goes.
+- `mailto:` does not really send, and `javascript:` is fragile. Keep a real action and add `fetch` as an enhancement.
+- Protect the destination with CSRF tokens, server-side validation, and a `form-action` Content-Security-Policy rule.
+
+Next, learn how to send files and mixed data, in [Multipart Form Data](./multipart-form-data), or return to the [Forms overview](/tutorials/html/forms).

@@ -1,16 +1,566 @@
 ---
-id: accessible-forms
-title: "Best Practices for Accessible HTML Forms"
+id: html-accessible-forms
+title: "Accessible HTML Forms"
 sidebar_label: "Accessible Forms"
-sidebar_position: 20
+sidebar_position: 21
 slug: /html/forms/accessible-forms
-description: "Ensure forms comply with WCAG standards using proper labeling, explicit field grouping, clear error messages, and ARIA attributes."
+description: "Learn how to build accessible HTML forms: visible labels, grouping with fieldset and legend, hints and instructions, marking required fields, clear error messages with aria-invalid and aria-describedby, autocomplete, keyboard and focus, touch target size, WCAG 2.2 rules for forms, redundant entry and accessible authentication, and a practical testing checklist."
 keywords:
   - accessible HTML forms
-  - WCAG form accessibility
-  - aria-describedby form errors
-  - screen reader form navigation
+  - form accessibility
+  - WCAG forms
+  - label for input
+  - fieldset legend accessibility
+  - aria-describedby aria-invalid
+  - accessible form errors
+  - placeholder is not a label
+  - WCAG 2.2 target size
+  - form accessibility checklist
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, accessibility, a11y]
+tags: [html, web-development, beginner, forms, accessibility, wcag, a11y, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function audit(form) {
+  const issues = [];
+  const fields = Array.from(form.elements).filter(
+    (el) => ["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName) && !["hidden", "submit", "button", "reset"].includes(el.type)
+  );
+  fields.forEach((el) => {
+    const label = el.name || el.type;
+    const hasName =
+      (el.labels && el.labels.length > 0) ||
+      el.getAttribute("aria-label") ||
+      el.getAttribute("aria-labelledby");
+    if (!hasName) {
+      issues.push("The " + label + " field has no label. Screen readers cannot tell what it is for." + (el.placeholder ? " (A placeholder is not a label.)" : ""));
+    }
+    const wantsAutocomplete = ["name", "email", "tel", "username"].includes(el.name) || ["email", "tel"].includes(el.type);
+    if (wantsAutocomplete && !el.getAttribute("autocomplete")) {
+      issues.push("The " + label + " field is about the visitor but has no autocomplete token.");
+    }
+  });
+  return {count: fields.length, issues};
+}
+
+export function AuditDemo() {
+  const poorRef = useRef(null);
+  const goodRef = useRef(null);
+  const [report, setReport] = useState(null);
+  return (
+    <div>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1.25rem"}}>
+        <form ref={poorRef} onSubmit={(event) => event.preventDefault()} style={{flex: "1 1 14rem"}}>
+          <p style={{margin: "0 0 0.5rem"}}><strong>Form A</strong></p>
+          <input type="text" name="name" placeholder="Your name" /><br />
+          <input type="email" name="email" placeholder="Email" style={{marginTop: "0.4rem"}} /><br />
+          <select name="topic" defaultValue="" style={{marginTop: "0.4rem"}}>
+            <option value="">Choose a topic</option>
+            <option value="help">Help</option>
+            <option value="sales">Sales</option>
+          </select><br />
+          <button type="submit" style={{marginTop: "0.4rem"}}>Send</button>
+        </form>
+        <form ref={goodRef} onSubmit={(event) => event.preventDefault()} style={{flex: "1 1 14rem"}}>
+          <p style={{margin: "0 0 0.5rem"}}><strong>Form B</strong></p>
+          <label htmlFor="au-name">Your name</label><br />
+          <input type="text" id="au-name" name="name" autoComplete="name" /><br />
+          <label htmlFor="au-email">Email address</label><br />
+          <input type="email" id="au-email" name="email" autoComplete="email" /><br />
+          <label htmlFor="au-topic">Topic</label><br />
+          <select id="au-topic" name="topic" defaultValue="">
+            <option value="">Choose a topic</option>
+            <option value="help">Help</option>
+            <option value="sales">Sales</option>
+          </select><br />
+          <button type="submit" style={{marginTop: "0.4rem"}}>Send</button>
+        </form>
+      </div>
+      <p style={{margin: "0.75rem 0 0.5rem"}}>
+        <button
+          type="button"
+          onClick={() => setReport({a: audit(poorRef.current), b: audit(goodRef.current)})}
+        >
+          Run the mini audit
+        </button>
+      </p>
+      {report ? (
+        <div role="status">
+          {[["Form A", report.a], ["Form B", report.b]].map(([title, result]) => (
+            <div key={title} style={{marginBottom: "0.5rem"}}>
+              <strong style={{color: result.issues.length ? "#b91c1c" : "#15803d"}}>
+                {title}: {result.issues.length === 0 ? "no problems found in " + result.count + " fields" : result.issues.length + " problems in " + result.count + " fields"}
+              </strong>
+              <ul style={{margin: "0.25rem 0 0", paddingLeft: "1.25rem"}}>
+                {result.issues.map((text) => (<li key={text}>{text}</li>))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function GroupedDemo() {
+  const [value, setValue] = useState("");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{margin: "0 0 0.75rem"}} aria-describedby="ac-contact-hint">
+        <legend>How should we contact you? (required)</legend>
+        <p id="ac-contact-hint" style={{margin: "0 0 0.4rem", fontSize: "0.9em"}}>We will only use this to answer your message.</p>
+        <label style={{display: "block"}}>
+          <input type="radio" name="contact" value="email" checked={value === "email"} onChange={() => setValue("email")} required /> Email
+        </label>
+        <label style={{display: "block"}}>
+          <input type="radio" name="contact" value="phone" checked={value === "phone"} onChange={() => setValue("phone")} /> Phone
+        </label>
+        <label style={{display: "block"}}>
+          <input type="radio" name="contact" value="none" checked={value === "none"} onChange={() => setValue("none")} /> Please do not contact me
+        </label>
+      </fieldset>
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+
+Think about the last time you filled in a form. You **saw** the labels, **clicked** the box you wanted, **read** the red error message, and **moved** your mouse to the button. Now imagine doing it **without seeing the screen**, or **without using a mouse**, or with a tremor, or while holding a baby in one arm, or in bright sunlight on a small phone.
+
+That is the point of **accessible forms**: forms that work for **everyone**, in every situation. And here is the good news: most of it comes **free** from the HTML elements you have already learned. This lesson pulls it all together into one clear set of habits.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Why accessible forms matter, and who benefits
+- The seven habits that fix most problems
+- Labels, groups, hints, and required markers
+- Clear errors that everyone can find and fix
+- Keyboard, focus, and touch targets
+- The key WCAG 2.2 rules for forms
+- Easy authentication and less retyping
+- A checklist to test any form
+
+## Why It Matters
+
+Accessible forms help far more people than you might think:
+
+| Who | How accessible forms help |
+| :-- | :-- |
+| Screen reader users | Hear each field's label, hints, and errors |
+| Keyboard-only users (including voice control and switch users) | Reach and operate every field without a mouse |
+| People with low vision | Can zoom in, and see clear focus and good contrast |
+| People with motor difficulties | Have big targets and less typing (autofill) |
+| People with dyslexia or cognitive differences | Get plain words, clear instructions, and forgiving errors |
+| People on phones, in sunlight, or in a hurry | Get the right keyboard, big buttons, and clear messages |
+| Everyone, with a temporary injury or a noisy room | Gets a form that just works |
+
+It is also often a **legal requirement** (many countries reference WCAG, the Web Content Accessibility Guidelines, in their laws), and accessible forms usually have **higher completion rates**, which means more sign-ups and sales.
+
+## The Seven Habits
+
+If you remember only seven things, remember these:
+
+1. **Every field has a visible, connected label.**
+2. **Group related fields** with `fieldset` and `legend`.
+3. **Use the right element and input type.** Native controls first.
+4. **Say what is required, and what format is expected,** before the visitor types.
+5. **Write clear errors,** linked to their fields, and move focus to the first problem.
+6. **Make everything work with a keyboard,** with a clearly visible focus.
+7. **Test it** with a keyboard and a screen reader, not only your eyes.
+
+## Try It: A Tiny Accessibility Audit
+
+Below are two forms that look almost the same. Press the button, and a small script inspects each field, using the same information a screen reader sees: is there a label, and is there an `autocomplete` token?
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Form A: looks fine, but is hard to use -->
+<form>
+  <input type="text" name="name" placeholder="Your name" />
+  <input type="email" name="email" placeholder="Email" />
+  <select name="topic">
+    <option value="">Choose a topic</option>
+    <option value="help">Help</option>
+  </select>
+  <button type="submit">Send</button>
+</form>
+
+<!-- Form B: the same fields, done properly -->
+<form>
+  <label for="name">Your name</label>
+  <input type="text" id="name" name="name" autocomplete="name" />
+
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" autocomplete="email" />
+
+  <label for="topic">Topic</label>
+  <select id="topic" name="topic">
+    <option value="">Choose a topic</option>
+    <option value="help">Help</option>
+  </select>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+```js title="script.js"
+function audit(form) {
+  for (const el of form.elements) {
+    if (!["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) continue;
+    if (["hidden", "submit", "button", "reset"].includes(el.type)) continue;
+
+    const hasName =
+      el.labels.length > 0 ||
+      el.getAttribute("aria-label") ||
+      el.getAttribute("aria-labelledby");
+
+    if (!hasName) console.log(el.name + ": no label!");
+  }
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AuditDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Form A has placeholders only. Sighted visitors can read them, but the moment they start typing, the hint vanishes, and screen readers may not announce a placeholder as a name at all. This tiny check catches only a small slice of problems, but it shows the key idea: **accessibility is built into the markup.**
+
+## 1. Labels: the Foundation
+
+Every field needs a **visible** `<label>` connected with `for` and `id`:
+
+```html
+<label for="email">Email address</label>
+<input type="email" id="email" name="email" autocomplete="email" />
+```
+
+| Do | Do not |
+| :-- | :-- |
+| Use a real `<label>` next to the field | Use a placeholder as the only label |
+| Keep the label visible while typing | Hide it, or let it disappear |
+| Connect with `for` and `id` (or wrap the input) | Use a `div` or `span` that only **looks** like a label |
+| Write clear, short labels ("Email address") | Use vague ones ("Info", "Enter here") |
+| Put the label above the field (best for phones and zoom) | Cram labels far away to the side |
+
+A connected label also makes the **click area bigger**: pressing the text focuses the field, or ticks the checkbox. That helps people with limited fine motor control.
+
+If a visible label is truly impossible (a search box next to a clear "Search" button), use `aria-label="Search"`. A visible label is always better. See [Label Element](./label-element).
+
+:::warning A placeholder is not a label
+Placeholders vanish when typing, are often too pale to read, are not reliably announced, and cannot be translated by some tools. Use them for short **examples** only, never for the label.
+:::
+
+## 2. Group Related Fields
+
+Radio buttons and sets of checkboxes need a **group name**, or a screen reader user hears "Email, radio button" without knowing what the question is. Use `fieldset` and `legend`:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<fieldset aria-describedby="contact-hint">
+  <legend>How should we contact you? (required)</legend>
+  <p id="contact-hint">We will only use this to answer your message.</p>
+
+  <label><input type="radio" name="contact" value="email" required /> Email</label>
+  <label><input type="radio" name="contact" value="phone" /> Phone</label>
+  <label><input type="radio" name="contact" value="none" /> Please do not contact me</label>
+</fieldset>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<GroupedDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A screen reader announces: "How should we contact you? (required), group. We will only use this to answer your message. Email, radio button, 1 of 3." Also use groups for address blocks ("Shipping address"), and date parts. See [Fieldset and Legend](./fieldset-and-legend).
+
+## 3. Use the Right Element and Type
+
+- **Native first.** A `<button>`, `<select>`, and `<input type="checkbox">` already have keyboard support, roles, and states. A `<div>` pretending to be a button has none of it, unless you rebuild everything with ARIA.
+- **Right input type:** `email`, `tel`, `url`, `number`, `date`, `search`, `password`. Phones show the right keyboard, and assistive tools know what is expected. For codes, use `inputmode="numeric"`.
+- **Right `autocomplete` token** for personal data (see [Autocomplete](./autocomplete)). It is a WCAG requirement (1.3.5).
+- **The first rule of ARIA:** do not use ARIA if a native element can do the job. Bad ARIA is worse than no ARIA.
+
+## 4. Instructions, Hints, and Required Fields
+
+Tell visitors **before** they type, not only after they fail.
+
+- **Say what is required** with the `required` attribute and a word or marker, and explain the marker at the top: "Fields marked * are required."
+- **Show formats and limits in text:** "Password: at least 8 characters." "Date as day, month, year."
+- **Link hints to fields** with `aria-describedby`, so screen readers read them with the field:
+
+```html
+<label for="pw">Password</label>
+<input type="password" id="pw" name="password" required minlength="8"
+       autocomplete="new-password" aria-describedby="pw-hint" />
+<p id="pw-hint">At least 8 characters. A short sentence works well.</p>
+```
+
+- **Keep hints visible,** not in a hover tooltip. Tooltips fail on touch screens, for keyboard users, and for magnifier users.
+- **Do not use the `title` attribute** to carry important information.
+
+## 5. Errors People Can Find and Fix
+
+This is where many forms fail. A good error experience has five parts:
+
+1. **Tell visitors that something is wrong,** in text (not only a red border).
+2. **Say which field and what to do:** "Email address: enter an address like name@example.com."
+3. **Put the message next to the field,** and link it with `aria-describedby`.
+4. **Mark the field** with `aria-invalid="true"`.
+5. **Move focus** to the first problem (or an error summary at the top), and announce it with `role="alert"`.
+
+```html
+<div role="alert" id="summary">
+  <p>Please fix 1 problem:</p>
+  <ul><li><a href="#email">Email address: enter an address like name@example.com.</a></li></ul>
+</div>
+
+<label for="email">Email address</label>
+<input type="email" id="email" name="email" aria-invalid="true" aria-describedby="email-error" />
+<p id="email-error">Enter an address like name@example.com.</p>
+```
+
+More rules:
+
+- **Do not rely on colour.** Add text, and maybe an icon.
+- **Do not clear what the visitor typed.**
+- **Do not show errors on every key press,** which is noisy for screen reader users.
+- **Do not use a pop-up that vanishes.** Keep errors until fixed.
+- **Suggest how to fix it** whenever you can (WCAG 3.3.3).
+- **For important actions** (money, legal agreements, deleting data), let visitors **review, confirm, or undo** before it is final (WCAG 3.3.4).
+
+The full toolkit is in [Form Validation](./form-validation).
+
+## 6. Keyboard and Focus
+
+Everything must work **with a keyboard alone**:
+
+| Key | What it should do |
+| :-- | :-- |
+| `Tab` / `Shift+Tab` | Move to the next or previous field |
+| `Space` | Tick a checkbox, press a button |
+| `Enter` | Submit the form (in a text field), or press a button |
+| Arrow keys | Move between radios in a group, or options in a select |
+| `Esc` | Close a popup or dialog |
+
+Habits that keep it working:
+
+- **Keep the natural tab order.** It follows the HTML source, so write fields in the right order. Do not use `tabindex` with positive numbers.
+- **Never remove the focus outline** (`outline: none`) without a clear replacement. A visible focus indicator is a must (WCAG 2.4.7), and it should not be hidden behind a sticky header (WCAG 2.4.11 in WCAG 2.2).
+- **Style focus clearly:**
+
+```css title="style.css"
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+```
+
+- **Do not trap focus,** except inside an open modal dialog, which must return focus when closed.
+- **Do not move focus** unexpectedly when a visitor chooses an option or types (WCAG 3.2.2). Changing a `select` should not submit the form on its own.
+- **Do not disable the submit button** to "prevent mistakes." Visitors cannot tell why, and may get stuck. Let them press it, and then explain the problems.
+
+## 7. Size, Contrast, and Layout
+
+- **Touch targets:** at least **24 by 24 CSS pixels** (WCAG 2.2, 2.5.8), and ideally **44 by 44** or more. Add padding to buttons, and use labels as click targets for small checkboxes.
+- **Contrast:** text needs at least **4.5:1**, and borders and icons of controls at least **3:1** (WCAG 1.4.3 and 1.4.11). Pale grey borders on white often fail.
+- **Zoom and reflow:** the form should work at **200% to 400% zoom** with no sideways scrolling (WCAG 1.4.4 and 1.4.10). A single column is easiest.
+- **Spacing and font size:** body text of at least 16px avoids automatic zoom on phones, and keeps text readable.
+- **Consistent order and labels** across forms on your site, with help in the same place (WCAG 3.2.4 and 3.2.6).
+- **A logical heading and structure:** a heading for each step or section of a long form.
+- **Language:** set `lang` on the page, and on foreign phrases.
+
+## 8. Fewer Barriers: Authentication and Retyping
+
+Two WCAG 2.2 rules are very helpful in forms:
+
+- **Redundant entry (3.3.7):** do not make visitors type the same information again in the same process (such as a shipping address that is also the billing address). Offer a "same as shipping" tick box, or pre-fill from earlier steps.
+- **Accessible authentication (3.3.8):** do not make a login depend on remembering, transcribing, or solving a puzzle. In practice:
+  - **Allow pasting** into password fields, so password managers work.
+  - Use `autocomplete="username"`, `current-password`, `new-password`, and `one-time-code`.
+  - Offer another way if you use a CAPTCHA (an audio option, a simple question, or a passkey), or better, avoid CAPTCHAs.
+  - Let visitors **show the password** (see [Password](./input-types/password)).
+
+Also remember **time limits**: if a form times out, warn the visitor first, let them extend it, and never lose their data.
+
+## 9. Long and Multi-Step Forms
+
+- **Ask less.** Every extra field is a barrier. Remove what you do not need.
+- **Break long forms into steps,** each with a clear heading, a progress message ("Step 2 of 4"), and "Back" and "Next" buttons.
+- **Move focus to the new step's heading** when steps change, and announce it.
+- **Save progress,** and keep entered values when going back.
+- **Offer a summary** to review before submitting.
+- **Show a clear confirmation** at the end, with what happens next.
+
+## Testing Your Form
+
+Automatic tools such as Lighthouse and axe find **only some** problems, so always add manual checks.
+
+| Test | What to look for |
+| :-- | :-- |
+| **Keyboard only** (put the mouse away) | Can you reach, see, and use every field and button? Is the order logical? |
+| **Screen reader** (NVDA or JAWS on Windows, VoiceOver on Mac and iPhone, TalkBack on Android) | Is every field announced with its label, group, hint, and error? |
+| **Zoom to 200% and 400%** | Does anything overlap, hide, or need sideways scrolling? |
+| **Contrast checker** | Do text, borders, and focus outlines pass? |
+| **Voice control** (say "click email") | Can you target fields by their visible label? |
+| **Submit with errors** | Are errors announced, linked, and easy to fix? Does focus move? |
+| **Phone** | Are the keyboards right, and the targets big enough? |
+| **No CSS and no JavaScript** | Is it still a usable form? |
+
+:::tip Best of all
+Test with real people who use assistive technology. One session with a screen reader user teaches more than any checklist.
+:::
+
+## Quick Checklist
+
+- [ ] Every field has a visible `<label>` connected with `for` and `id`
+- [ ] Radios and related checkboxes are in a `fieldset` with a `legend`
+- [ ] Native elements and correct `type`, `inputmode`, and `autocomplete` are used
+- [ ] Required fields and formats are explained in text, before the visitor types
+- [ ] Hints are visible and linked with `aria-describedby`
+- [ ] Errors are in text, next to the field, with `aria-invalid`, and focus moves to the first one
+- [ ] Nothing depends on colour alone
+- [ ] Everything works with a keyboard, with a visible focus outline
+- [ ] Targets are at least 24 by 24 px (ideally 44), and contrast passes
+- [ ] The form works at 200% to 400% zoom
+- [ ] Paste is allowed, and nothing is retyped needlessly
+- [ ] The submit button is not disabled in advance
+- [ ] It has been tested with a keyboard and a screen reader
+
+## Accessibility and Security Together
+
+Accessible and secure design agree more than they clash:
+
+- **Do not block paste or password managers.** They are good for accessibility **and** security.
+- **Show clear errors without revealing secrets.** Say "Email or password is incorrect," not which one was wrong.
+- **Give enough time,** with a warning before sessions end, and keep a draft rather than losing data.
+- **Do not use CAPTCHAs that exclude people.** Use risk-based checks, rate limiting, and passkeys.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Write in plain language,** with short sentences. It helps screen readers, translators, and readers who use a second language.
+- **Set `lang`** on the page and on mixed-language text, so screen readers use the right voice.
+- **Use `dir="rtl"`** for right-to-left languages, and check labels, icons, and error positions.
+- **Do not depend on icons or idioms** that may not carry across cultures.
+- **Avoid assumptions** in names, addresses, and phone numbers (see [Pattern](./pattern)).
+- **Translate error messages and hints,** not only labels.
+- **Consider low-bandwidth and old devices:** forms that work without JavaScript reach more people.
+
+## Common Mistakes to Avoid
+
+1. **Placeholder as the only label.**
+2. **Labels not connected** to their fields.
+3. **No `fieldset` and `legend`** for radios and checkbox groups.
+4. **Errors shown only in red,** or only as a pop-up that vanishes.
+5. **Removing the focus outline.**
+6. **A disabled submit button** with no explanation.
+7. **Building custom controls from `div`s** instead of native elements.
+8. **Positive `tabindex` values** that scramble the order.
+9. **Tiny touch targets and low contrast.**
+10. **Blocking paste** in password fields.
+11. **Forcing a retype** of information already given.
+12. **Never testing with a keyboard or a screen reader.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Take a form that uses placeholders only, and add proper visible labels.
+2. Put a set of radio buttons in a `fieldset` with a `legend`.
+3. Add a hint to a password field, and link it with `aria-describedby`.
+4. Mark required fields, and add "Fields marked * are required" at the top.
+5. Use only the keyboard to complete your form. Fix whatever you cannot reach.
+6. Add a clear `:focus-visible` style to every control.
+7. Build an error summary with links to each field, and `aria-invalid` on the fields.
+8. Check your touch targets and make small ones larger.
+9. Turn on a screen reader (VoiceOver, NVDA, or TalkBack), and listen to your form.
+10. Bonus: run an automated checker, then fix the problems it cannot find by reading the checklist above.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why is a placeholder not a substitute for a label?</summary>
+
+A placeholder disappears when typing, is often low in contrast, is not reliably announced as the field's name, and cannot be clicked to focus the field. A visible `<label>` connected with `for` and `id` solves all of that.
+
+</details>
+
+<details>
+<summary>2. When do you need `fieldset` and `legend`?</summary>
+
+For groups of related controls, especially radio buttons and sets of checkboxes, so a screen reader announces the question (the legend) along with each option. Also for blocks such as an address.
+
+</details>
+
+<details>
+<summary>3. What makes an error message accessible?</summary>
+
+It is text (not only colour), says what is wrong and how to fix it, sits next to the field and is linked with `aria-describedby`, marks the field with `aria-invalid="true"`, and focus moves to the first problem or to an error summary announced with `role="alert"`.
+
+</details>
+
+<details>
+<summary>4. Why not disable the submit button until the form is valid?</summary>
+
+Visitors cannot tell why it is disabled, and keyboard and screen reader users may never discover what is missing. Leave it enabled, and show clear errors when it is pressed.
+
+</details>
+
+<details>
+<summary>5. What do the WCAG 2.2 rules on redundant entry and accessible authentication ask for?</summary>
+
+Redundant entry (3.3.7): do not make visitors type the same information again in one process. Accessible authentication (3.3.8): do not make login depend on memory tests or puzzles. Allow pasting and password managers, and offer alternatives to CAPTCHAs.
+
+</details>
+
+<details>
+<summary>6. How should you test form accessibility?</summary>
+
+Use a keyboard only, a screen reader, zoom to 200% to 400%, a contrast checker, and a phone, and add automated tools. Automated tools catch only some problems, so manual testing is essential, and testing with real users is best.
+
+</details>
+
+## Key Takeaways
+
+- Accessible forms help everyone, and mostly come from using the **right HTML**: labels, fieldsets, native controls, and correct input types.
+- Every field needs a **visible label**, connected with `for` and `id`. A placeholder is not a label.
+- Group radios and related checkboxes with `fieldset` and `legend`.
+- Explain requirements and formats **before** the visitor types, with visible hints linked by `aria-describedby`.
+- Errors must be **text**, specific, next to the field, linked, marked with `aria-invalid`, and focus should move to the first one.
+- Keep a **natural tab order** and a **visible focus**, use big targets and good contrast, and never disable the submit button in advance.
+- Avoid retyping, allow paste and password managers, and offer alternatives to CAPTCHAs.
+- Test with a keyboard, a screen reader, zoom, and real people.
+
+One lesson remains: the habits that keep your visitors' data safe, in [Secure Form Design](./secure-form-design). Or return to the [Forms overview](/tutorials/html/forms).

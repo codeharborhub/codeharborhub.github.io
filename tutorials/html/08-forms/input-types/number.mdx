@@ -1,18 +1,543 @@
 ---
-id: input-type-number
-title: "Numeric Inputs: type='number'"
+id: html-input-number
+title: "HTML Input Type Number"
 sidebar_label: "Number"
-sidebar_position: 4
+sidebar_position: 7
 slug: /html/forms/input-types/number
-description: "Capture numeric values using input type='number', managing spinner controls, minimum and maximum ranges, and step increments."
+description: "Learn the HTML input type number: min, max, and step, how validation works (rangeUnderflow, rangeOverflow, stepMismatch, badInput), decimals and money, spinner arrows and mouse-wheel surprises, when not to use number (phones, postal codes, card numbers), and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type number
-  - numeric input field
-  - input step attribute
-  - number spinner HTML
+  - input number min max step
+  - step any decimal input
+  - stepMismatch rangeOverflow
+  - valueAsNumber
+  - input number spinner hide
+  - inputmode numeric decimal
+  - when not to use input number
+  - quantity input HTML
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, numbers]
+tags: [html, web-development, beginner, forms, input, number, validation, frontend]
 ---
+
+import {useState} from 'react';
+
+export function QuantityDemo() {
+  const [qty, setQty] = useState("2");
+  const price = 12.5;
+  const n = qty === "" ? NaN : Number(qty);
+  const valid = Number.isInteger(n) && n >= 1 && n <= 10;
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="num-qty">Quantity (1 to 10)</label><br />
+      <input
+        type="number"
+        id="num-qty"
+        name="quantity"
+        min={1}
+        max={10}
+        step={1}
+        value={qty}
+        onChange={(event) => setQty(event.target.value)}
+        aria-describedby="num-qty-total"
+      />
+      <p id="num-qty-total" role="status" style={{margin: "0.5rem 0 0"}}>
+        {valid
+          ? "Total: " + (n * price).toFixed(2) + " (" + n + " × " + price.toFixed(2) + ")"
+          : "Enter a whole number from 1 to 10."}
+      </p>
+    </form>
+  );
+}
+
+export function StepDemo() {
+  const [message, setMessage] = useState("Type a value and press Check.");
+  return (
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const input = event.currentTarget.elements.namedItem("amount");
+        const v = input.validity;
+        if (v.valueMissing) setMessage("Empty (valueMissing).");
+        else if (v.badInput) setMessage("Not a number (badInput).");
+        else if (v.rangeUnderflow) setMessage("Below the minimum (rangeUnderflow).");
+        else if (v.rangeOverflow) setMessage("Above the maximum (rangeOverflow).");
+        else if (v.stepMismatch) setMessage("Not on a step: use 0, 5, 10, 15 ... 100 (stepMismatch).");
+        else setMessage("Valid! Value is " + input.valueAsNumber + ".");
+      }}
+    >
+      <label htmlFor="num-step">Amount (0 to 100, in steps of 5)</label><br />
+      <input type="number" id="num-step" name="amount" min={0} max={100} step={5} required />{" "}
+      <button type="submit">Check</button>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>{message}</p>
+    </form>
+  );
+}
+
+Quantities, ages, ratings, prices: a lot of what we type into forms is a number. HTML has `type="number"` for exactly that, and it comes with extras: a numeric keyboard on phones, small up and down arrows, and built-in checks for minimum, maximum, and step.
+
+But `type="number"` is also the most **misused** input type. It is for **amounts you could add up**, and not for things that merely look like digits, like phone numbers and postal codes. In this lesson, you will learn how to use it well, and how to tell when to choose something else.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="number"` does, and what it accepts
+- The `min`, `max`, and `step` attributes
+- The validity states the browser reports
+- How to handle decimals and money
+- When **not** to use `number`
+- Spinner arrows, scrolling surprises, and styling
+- Accessibility and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="qty">Quantity</label>
+<input type="number" id="qty" name="quantity" min="1" max="10" value="1" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="num-basic">Quantity</label><br />
+  <input type="number" id="num-basic" name="quantity" min={1} max={10} defaultValue={1} />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You get:
+
+- **Spinner arrows** (up and down) on desktop, which add or subtract the `step`.
+- **Arrow keys** `↑` and `↓` do the same when the field is focused.
+- A **numeric keyboard** on phones.
+- **Checks** on submit: it must be a number, and it must respect `min`, `max`, and `step`.
+- A value that arrives at the server as text: `quantity=3`.
+
+## Min, Max, and Step
+
+| Attribute | What it does | Default |
+| :-- | :-- | :-- |
+| `min` | The smallest allowed value | None |
+| `max` | The largest allowed value | None |
+| `step` | The gap between allowed values | `1` |
+
+```html
+<!-- A rating from 1 to 5 -->
+<input type="number" name="rating" min="1" max="5" step="1" />
+
+<!-- A percentage with one decimal -->
+<input type="number" name="percent" min="0" max="100" step="0.1" />
+
+<!-- Any decimal at all -->
+<input type="number" name="measure" step="any" />
+```
+
+### How Step Really Works
+
+Valid values are counted **from the `min`** (or from `value`, if there is no `min`), in jumps of `step`. This surprises people.
+
+| Attributes | Allowed values |
+| :-- | :-- |
+| `step="1"` (the default) | Whole numbers only: `1`, `2`, `3`. A value like `2.5` is **rejected** |
+| `min="0" step="5"` | `0`, `5`, `10`, `15`, ... |
+| `min="1" step="5"` | `1`, `6`, `11`, `16`, ... (not `5` or `10`) |
+| `step="0.01"` | Two decimal places, like `9.99` |
+| `step="any"` | Any number, with no step check |
+
+:::warning Decimals fail with the default step
+With the default `step="1"`, typing `9.99` makes the browser say "Please enter a valid value. The two nearest valid values are 9 and 10." If you want decimals, set `step="0.01"` (or `step="any"`).
+:::
+
+## Try It: What Counts as Valid?
+
+Type different values into the field below, then press Check. The demo reads the browser's own validity state.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form novalidate>
+  <label for="amount">Amount (0 to 100, in steps of 5)</label>
+  <input type="number" id="amount" name="amount" min="0" max="100" step="5" required />
+  <button type="submit">Check</button>
+  <p id="result" role="status"></p>
+</form>
+```
+
+```js title="script.js"
+const form = document.querySelector("form");
+const input = document.getElementById("amount");
+const result = document.getElementById("result");
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const v = input.validity;
+
+  if (v.valueMissing) result.textContent = "Empty.";
+  else if (v.badInput) result.textContent = "Not a number.";
+  else if (v.rangeUnderflow) result.textContent = "Below the minimum.";
+  else if (v.rangeOverflow) result.textContent = "Above the maximum.";
+  else if (v.stepMismatch) result.textContent = "Not on a step.";
+  else result.textContent = "Valid! Value is " + input.valueAsNumber;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StepDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try `12`, `-5`, `105`, `50`, and `abc`. Each lands in a different branch.
+
+| Validity flag | Meaning |
+| :-- | :-- |
+| `valueMissing` | A required field is empty |
+| `badInput` | The text is not a number at all |
+| `rangeUnderflow` | Below `min` |
+| `rangeOverflow` | Above `max` |
+| `stepMismatch` | Not one of the allowed steps |
+
+Also useful: `input.valueAsNumber` gives the value as a real number (or `NaN`), and `input.value` gives it as text.
+
+## A Practical Example: Quantity and Total
+
+Here is the kind of thing `number` is made for: a quantity that feeds a calculation.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="qty">Quantity (1 to 10)</label>
+<input type="number" id="qty" name="quantity" min="1" max="10" step="1" value="2" />
+<p id="total" role="status"></p>
+```
+
+```js title="script.js"
+const qty = document.getElementById("qty");
+const total = document.getElementById("total");
+const price = 12.5;
+
+function update() {
+  const n = qty.valueAsNumber;
+  const valid = Number.isInteger(n) && n >= 1 && n <= 10;
+  total.textContent = valid
+    ? "Total: " + (n * price).toFixed(2)
+    : "Enter a whole number from 1 to 10.";
+}
+
+qty.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<QuantityDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="quantity"` |
+| `value` | The starting number | `value="1"` |
+| `required` | Cannot be empty | `required` |
+| `placeholder` | A short hint, shown when empty | `placeholder="e.g. 3"` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `list` | Suggested values from a [datalist](../datalist) | `list="sizes"` |
+| `autocomplete` | Autofill hint | `autocomplete="off"` |
+| `inputmode` | Phone keyboard hint | `inputmode="decimal"` |
+
+Attributes that do **not** apply to number inputs: `maxlength`, `minlength`, `pattern`, and `size`. Limit digits with `min` and `max` instead. (A common beginner error is adding `maxlength` and wondering why nothing happens.)
+
+An empty number field is valid, unless it is `required`.
+
+## What the Field Accepts
+
+Because the field accepts any valid number, it also allows a few characters you may not expect:
+
+| Typed | Result |
+| :-- | :-- |
+| `-5` | A negative number (blocked only if `min` is 0 or more) |
+| `3.14` | A decimal (needs a suitable `step`) |
+| `1e3` | Scientific notation, meaning 1000 |
+| `+7` | Accepted in some browsers |
+| `abc` | Most browsers block letters (except `e`). Text that is not a number counts as `badInput`, and the `value` reads as empty |
+| `1,5` | Depends on the visitor's language settings. Some browsers accept a comma as the decimal separator, and still **send** `1.5` |
+
+The value **sent to the server** always uses a plain `.` as the decimal separator, and no thousands separators, whatever the visitor's language. So `1,5` shown on the screen is submitted as `1.5`. That is one reason to prefer `type="number"` for amounts: it handles local number formats for you.
+
+## Decimals and Money
+
+### Decimals
+
+Set a `step` that matches the precision you need:
+
+```html
+<label for="weight">Weight (kg)</label>
+<input type="number" id="weight" name="weight" min="0" step="0.1" />
+```
+
+### Money
+
+```html
+<label for="amount">Amount (USD)</label>
+<input
+  type="number"
+  id="amount"
+  name="amount"
+  min="0.01"
+  step="0.01"
+  inputmode="decimal"
+  required
+/>
+```
+
+On the **server**, avoid floating-point arithmetic for money. Convert to whole **cents** (or the smallest unit) and work with integers. Computers cannot store `0.1 + 0.2` exactly, and the error grows when sums add up.
+
+```js
+// Instead of: 0.1 + 0.2 = 0.30000000000000004
+const cents = Math.round(Number("0.10") * 100) + Math.round(Number("0.20") * 100); // 30
+```
+
+## When NOT to Use `type="number"`
+
+Ask: **"Would anyone ever add, subtract, or compare these values?"** If not, it is an identifier, not a number.
+
+| Information | Use instead | Why `number` fails |
+| :-- | :-- | :-- |
+| Phone number | [`tel`](./tel) | Needs `+`, spaces, and leading zeros |
+| Postal or ZIP code | [`text`](./text) with `inputmode` | Leading zeros, letters, spaces |
+| Credit card number | `text` with `inputmode="numeric"` and `autocomplete="cc-number"` | Spinners, scrolling, and long digit strings lose precision |
+| PIN, OTP, or code | `text` with `inputmode="numeric"` and `autocomplete="one-time-code"` | Leading zeros are lost |
+| ID numbers (national ID, order number) | `text` | They may contain letters, or begin with zero |
+| Year of birth | `number` or a [select](../select) | Fine, with `min` and `max` |
+| Full date | [`date`](./date) | A picker prevents mistakes |
+| A rating or slider | [`range`](./range) | Better for a feel-based value |
+
+For numeric codes, this combination gives a number keypad without the pitfalls:
+
+```html
+<input
+  type="text"
+  name="pin"
+  inputmode="numeric"
+  pattern="[0-9]{6}"
+  maxlength="6"
+  autocomplete="one-time-code"
+/>
+```
+
+## Spinner Arrows and Scroll Surprises
+
+### Mouse Wheel
+
+In some browsers, if a number field is focused and the mouse hovers over it, **scrolling the wheel changes the value**. A visitor scrolling down a long page can silently alter a quantity or price. If that is a risk, blur the field on wheel, or use a different design:
+
+```js
+document.querySelectorAll('input[type="number"]').forEach((input) => {
+  input.addEventListener("wheel", () => input.blur(), {passive: true});
+});
+```
+
+### Hiding the Arrows
+
+Some designs hide the spinners. It is purely cosmetic, and the keyboard arrows still work.
+
+```css title="style.css"
+/* Chrome, Edge, Safari */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+```
+
+Keep the arrows when they help, such as for quantities. For something with a very wide range (like an amount), they are of little use.
+
+## Plus and Minus Buttons
+
+Many shops show `−` and `+` buttons next to a quantity, which are friendlier than tiny arrows on a touch screen. If you build them:
+
+- Use real `<button type="button">` elements with text labels such as "Decrease quantity" and "Increase quantity" (`aria-label` is fine for icons).
+- Keep the real number input, so the value is still typed, announced, and submitted.
+- Use `input.stepUp()` and `input.stepDown()`, which respect `min`, `max`, and `step`:
+
+```js
+document.getElementById("plus").addEventListener("click", () => qty.stepUp());
+document.getElementById("minus").addEventListener("click", () => qty.stepDown());
+```
+
+## Styling a Number Input
+
+```css title="style.css"
+input[type="number"] {
+  width: 8rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  text-align: right;         /* numbers read best right-aligned */
+}
+
+input[type="number"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="number"]:invalid {
+  border-color: #b91c1c;
+}
+```
+
+- A narrow width signals that a short number is expected.
+- Right-aligned digits line up neatly when several fields are stacked.
+- Do not rely on the red border alone. Show the error in text too.
+
+## Accessibility at a Glance
+
+- **Always add a label,** and put the **unit** in it ("Weight (kg)", "Amount (USD)").
+- **Say the allowed range** in text: "Choose from 1 to 10." Link it with `aria-describedby`.
+- **Show clear errors** that name the problem and the fix: "Enter a whole number from 1 to 10."
+- **Do not rely on spinners.** Make sure typing a number works.
+- **Be careful with live updates.** If a total changes as someone types, announce it politely with `role="status"`.
+- **Large touch targets** for plus and minus buttons (at least about 44 by 44 pixels).
+- **Remember that screen readers** may read the spinner as "spin button", and announce the range from `min` and `max`.
+
+## Security Notes
+
+- **The browser's checks can be skipped.** Re-check type, range, and step on the server.
+- **Never trust a price or total sent by the browser.** Look up the price on the server, and calculate the total there.
+- **Parse numbers safely** and handle `NaN`, huge values, and negative values.
+- **Watch for integer overflow** in quantities, and set sensible limits.
+
+See [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **Number formats vary.** `1,234.56` in one country is `1.234,56` in another. A `type="number"` input shows the format in the visitor's language, but always submits `1234.56`. Do not use `type="text"` for amounts unless you handle formats yourself.
+- **Digits vary.** Some languages use different digit shapes (such as Arabic-Indic or Devanagari digits). Browsers may convert them. Parse on the server in a way that copes.
+- **Units differ.** Say which one you expect (kg or lb, cm or inches), or let people choose.
+- **Currency.** Put the currency in the label, not just a symbol.
+
+## Common Mistakes to Avoid
+
+1. **Using `type="number"` for phone numbers, postal codes, or card numbers.**
+2. **Forgetting `step`,** so decimals such as `9.99` are rejected.
+3. **Using `maxlength` or `pattern`,** which do nothing on a number input.
+4. **Forgetting that an empty number field is valid** unless it is `required`.
+5. **Not stating the unit** in the label.
+6. **Assuming only digits can be typed.** `e`, `-`, and `.` can appear.
+7. **Reading `value` as a number.** It is text. Use `valueAsNumber`, or convert it.
+8. **Using floating-point math for money.** Work in whole cents.
+9. **Ignoring accidental mouse-wheel changes.**
+10. **Trusting prices and totals from the browser.**
+11. **No server-side check** of range and type.
+12. **Relying on color alone** to show an error.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a quantity field with `min="1"`, `max="10"`, and a label, and try the arrows.
+2. Type `2.5` in a default number field, and read the error.
+3. Add `step="0.5"`, and try `2.5` again.
+4. Set `min="1" step="5"`, and find out which values are valid.
+5. Use `step="any"`, and test decimals.
+6. Build a price field with `min="0.01"` and `step="0.01"`.
+7. Read `input.valueAsNumber` and `input.validity.stepMismatch` in the console.
+8. Build `+` and `−` buttons with `stepUp()` and `stepDown()`.
+9. Hide the spinners with CSS, and confirm the arrow keys still work.
+10. Bonus: decide which type each needs: phone, quantity, ZIP code, age, PIN, rating, price.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do `min`, `max`, and `step` do?</summary>
+
+`min` and `max` set the smallest and largest allowed values. `step` sets the gap between valid values, counted from `min`. The default step is 1.
+
+</details>
+
+<details>
+<summary>2. Why does `9.99` fail in a default number input?</summary>
+
+The default `step` is 1, so only whole numbers are valid. Use `step="0.01"` for two decimal places, or `step="any"` for any decimal.
+
+</details>
+
+<details>
+<summary>3. Which attributes do not work on `type="number"`?</summary>
+
+`maxlength`, `minlength`, `pattern`, and `size`. Limit values with `min` and `max` instead.
+
+</details>
+
+<details>
+<summary>4. Why should you not use `type="number"` for a phone number or postal code?</summary>
+
+They are identifiers, not quantities. They may start with zero, contain letters or `+`, and spinner arrows make no sense. Use `tel`, or `text` with `inputmode`.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `value` and `valueAsNumber`?</summary>
+
+`value` is always a string, such as `"3"`. `valueAsNumber` is a real number, such as `3`, or `NaN` when the field is empty or invalid.
+
+</details>
+
+<details>
+<summary>6. How should you handle money on the server?</summary>
+
+Look up the price on the server, never trust a total from the browser, and calculate with whole cents (integers), not floating-point decimals.
+
+</details>
+
+## Key Takeaways
+
+- `type="number"` is for quantities you could add up: it gives a numeric keyboard, spinner arrows, and checks for range and step.
+- Use `min`, `max`, and `step`. Remember that the default step is 1, so decimals need `step="0.01"` or `step="any"`.
+- Read the validity flags (`rangeUnderflow`, `rangeOverflow`, `stepMismatch`, `badInput`), and use `valueAsNumber`.
+- Do **not** use it for phone numbers, postal codes, card numbers, PINs, or IDs. Use `tel`, or `text` with `inputmode`.
+- The submitted value always uses `.` as the decimal separator, even when the display is localized.
+- Always re-check on the server, never trust browser-supplied totals, and use whole cents for money.
+
+Numbers count things. Next, learn how to pick a calendar day, in [Date](./date), or return to the [Forms overview](/tutorials/html/forms).

@@ -1,16 +1,564 @@
 ---
-id: fieldset-and-legend
-title: "Grouping Form Fields: fieldset and legend Tags"
-sidebar_label: "Fieldset & Legend"
-sidebar_position: 10
+id: html-fieldset-and-legend
+title: "HTML Fieldset and Legend Elements"
+sidebar_label: "Fieldset and Legend"
+sidebar_position: 11
 slug: /html/forms/fieldset-and-legend
-description: "Organize related form sections semantically with fieldset containers and provide accessible section captions using legend elements."
+description: "Learn the HTML fieldset and legend elements: grouping related form controls, naming a group for screen readers, radio and checkbox groups, split date fields, address blocks, disabling a whole group with the disabled attribute, styling the border and legend, nesting rules, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML fieldset tag
-  - HTML legend tag
-  - group form controls
-  - accessible fieldset legend
+  - HTML fieldset
+  - HTML legend
+  - fieldset legend accessibility
+  - group radio buttons fieldset
+  - fieldset disabled attribute
+  - fieldset legend styling
+  - fieldset vs div role group
+  - nested fieldset
+  - form grouping HTML
+  - legend heading
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, fieldset, semantics]
+tags: [html, web-development, beginner, forms, fieldset, legend, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function GroupDemo() {
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px", marginBottom: "0.75rem"}}>
+        <legend>Delivery speed</legend>
+        <label><input type="radio" name="fs-speed" value="standard" defaultChecked /> Standard (5 days)</label><br />
+        <label><input type="radio" name="fs-speed" value="express" /> Express (2 days)</label>
+      </fieldset>
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+        <legend>Contact preferences</legend>
+        <label><input type="checkbox" name="fs-contact" value="email" defaultChecked /> Email</label><br />
+        <label><input type="checkbox" name="fs-contact" value="sms" /> SMS</label><br />
+        <label><input type="checkbox" name="fs-contact" value="post" /> Post</label>
+      </fieldset>
+    </form>
+  );
+}
+
+export function DisabledDemo() {
+  const [same, setSame] = useState(true);
+  const [sent, setSent] = useState("(press Submit)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setSent(new URLSearchParams(new FormData(event.currentTarget)).toString());
+      }}
+    >
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px", marginBottom: "0.75rem"}}>
+        <legend>Shipping address</legend>
+        <label htmlFor="fs-ship">Street</label><br />
+        <input type="text" id="fs-ship" name="ship_street" defaultValue="12 Park Road" />
+      </fieldset>
+      <label>
+        <input type="checkbox" checked={same} onChange={() => setSame(!same)} /> Billing address is the same as shipping
+      </label>
+      <fieldset
+        disabled={same}
+        style={{border: "1px solid #64748b", borderRadius: "6px", marginTop: "0.75rem"}}
+      >
+        <legend>Billing address</legend>
+        <label htmlFor="fs-bill">Street</label><br />
+        <input type="text" id="fs-bill" name="bill_street" required defaultValue="" />
+      </fieldset>
+      <p style={{margin: "0.75rem 0"}}><button type="submit">Submit</button></p>
+      <p role="status" style={{margin: 0}}>Sent: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+Some questions in a form only make sense **together**. "Standard," "Express," and "Pick up" are not three separate questions: they are three answers to one question, "How should we deliver it?" A date of birth is three boxes (day, month, and year) that answer one question. A billing address is a set of fields that belong to each other.
+
+A sighted visitor sees these groups from the layout. But a screen reader user, who moves through the form one control at a time, has no layout to look at. The `<fieldset>` and `<legend>` elements fix that. They group related controls, and give the group a **name** that is read out with every control inside it. In this lesson, you will learn how they work, when to use them, and how to switch off or restyle a whole group.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<fieldset>` and `<legend>` do, and the rules they follow
+- Why radio and checkbox groups **need** them
+- The `disabled` attribute on a fieldset
+- Good uses: groups of options, split dates, addresses, and sections
+- Styling the border and the legend
+- Nesting, alternatives, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <fieldset>
+    <legend>Delivery speed</legend>
+
+    <label><input type="radio" name="speed" value="standard" checked /> Standard (5 days)</label>
+    <label><input type="radio" name="speed" value="express" /> Express (2 days)</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Contact preferences</legend>
+
+    <label><input type="checkbox" name="contact" value="email" checked /> Email</label>
+    <label><input type="checkbox" name="contact" value="sms" /> SMS</label>
+    <label><input type="checkbox" name="contact" value="post" /> Post</label>
+  </fieldset>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<GroupDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+By default, browsers draw a **thin box** around the fieldset, with the legend text sitting in the top border. You can restyle all of that with CSS, as you will see.
+
+The rules:
+
+| Element | What it is | Rules |
+| :-- | :-- | :-- |
+| `<fieldset>` | A group of related form controls | Goes inside (or next to) a form. Can contain any form controls, labels, text, and other elements |
+| `<legend>` | The **caption** (the name) of its fieldset | Must be the **first child** of the `<fieldset>`. Use only one per fieldset |
+
+## Why Groups Matter for Screen Readers
+
+Compare how a screen reader presents the same radio buttons with and without a group.
+
+**Without a fieldset**, a listener hears only:
+
+> "Standard (5 days), radio button, 1 of 2, selected."
+> "Express (2 days), radio button, 2 of 2."
+
+Standard what? A speed? A price? A plan? The question has been lost.
+
+**With a fieldset and legend**, they hear:
+
+> "Delivery speed, group. Standard (5 days), radio button, 1 of 2, selected."
+
+The legend gives the **question**, and each control gives an **answer**. This is the single most important reason to learn this lesson.
+
+:::tip The rule of thumb
+**Every group of radio buttons needs a `<fieldset>` and a `<legend>`.** A group of checkboxes that answer one question needs one too. Each individual control still needs its own `<label>`. The legend does not replace those labels.
+:::
+
+## Choosing Between a Label and a Legend
+
+| For... | Use |
+| :-- | :-- |
+| **One** control (a text box, a select, a single checkbox) | A [`<label>`](./label-element) |
+| A **group** of related controls that answer one question | A `<fieldset>` with a `<legend>` (and a `<label>` for each control inside) |
+
+The legend is the question. The labels are the answers, or the names of the parts.
+
+## Good Uses
+
+### 1. Radio button groups
+
+You saw this above. The legend is the question, and each radio has its own label.
+
+### 2. Checkbox groups
+
+```html
+<fieldset>
+  <legend>Which languages do you know?</legend>
+
+  <label><input type="checkbox" name="lang" value="html" /> HTML</label>
+  <label><input type="checkbox" name="lang" value="css" /> CSS</label>
+  <label><input type="checkbox" name="lang" value="js" /> JavaScript</label>
+</fieldset>
+```
+
+A **single** "I agree" checkbox needs only a label. A fieldset would be overkill.
+
+### 3. Split fields that make one answer
+
+A date of birth made of three boxes is one question:
+
+```html
+<fieldset>
+  <legend>Date of birth</legend>
+
+  <label for="dob-day">Day</label>
+  <input type="text" id="dob-day" name="dob-day" inputmode="numeric" autocomplete="bday-day" size="3" />
+
+  <label for="dob-month">Month</label>
+  <input type="text" id="dob-month" name="dob-month" inputmode="numeric" autocomplete="bday-month" size="3" />
+
+  <label for="dob-year">Year</label>
+  <input type="text" id="dob-year" name="dob-year" inputmode="numeric" autocomplete="bday-year" size="5" />
+</fieldset>
+```
+
+A screen reader says "Date of birth, group. Day, edit text." The same idea works for a card expiry date (month and year), or a phone number split into parts.
+
+### 4. A block of related fields
+
+An address, a payment section, or a "Your details" step:
+
+```html
+<fieldset>
+  <legend>Shipping address</legend>
+
+  <label for="street">Street</label>
+  <input type="text" id="street" name="street" autocomplete="shipping street-address" />
+
+  <label for="city">City</label>
+  <input type="text" id="city" name="city" autocomplete="shipping address-level2" />
+
+  <label for="postcode">Postal code</label>
+  <input type="text" id="postcode" name="postcode" autocomplete="shipping postal-code" />
+</fieldset>
+```
+
+When a form has **two** similar blocks (shipping and billing), the legend tells them apart. Without it, the screen reader would say "Street, edit text" twice with no clue which is which.
+
+### 5. When not to use it
+
+Do **not** wrap every pair of fields, or a whole short form, in a fieldset. A form with three text boxes (name, email, message) needs no groups. Too many groups make a form tiring to listen to, because the legend is announced each time the visitor enters a group. Use fieldsets where they **add meaning**.
+
+## Try It: Disabling a Whole Group
+
+A `<fieldset>` can have the **`disabled`** attribute, which switches off **every control inside it** in one go. It is a handy way to turn off a whole section, such as a billing address that is the same as the shipping address.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <fieldset>
+    <legend>Shipping address</legend>
+    <label for="ship">Street</label>
+    <input type="text" id="ship" name="ship_street" value="12 Park Road" />
+  </fieldset>
+
+  <label>
+    <input type="checkbox" id="same" checked />
+    Billing address is the same as shipping
+  </label>
+
+  <fieldset id="billing" disabled>
+    <legend>Billing address</legend>
+    <label for="bill">Street</label>
+    <input type="text" id="bill" name="bill_street" required />
+  </fieldset>
+
+  <button type="submit">Submit</button>
+</form>
+```
+
+```js title="script.js"
+const same = document.getElementById("same");
+const billing = document.getElementById("billing");
+
+same.addEventListener("change", () => {
+  billing.disabled = same.checked;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DisabledDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try it:
+
+- With the box **ticked**, the billing group is greyed out. Press Submit, and only `ship_street` is sent. The disabled `required` field does **not** block the form.
+- **Untick** the box, and the billing group comes alive. Now the required field must be filled in, and `bill_street` is sent.
+
+What a `disabled` fieldset does:
+
+| Effect | Detail |
+| :-- | :-- |
+| **Controls are greyed out** | Inputs, selects, textareas, and buttons inside cannot be used or focused |
+| **Values are not sent** | Disabled controls are left out of the form data |
+| **Validation is skipped** | A disabled `required` field cannot block the form |
+| **Applies to all descendants** | Even deeply nested controls |
+| **Exception** | Controls inside the fieldset's **first `<legend>`** stay enabled |
+
+:::note Disabled is not hidden
+A disabled group is still **visible** (and still read out by screen readers, as "dimmed" or "unavailable"). If a section should disappear entirely, hide it too (with the `hidden` attribute on a wrapper), and keep the fieldset `disabled` so its values are not sent and not validated.
+:::
+
+If you do not want to **grey out** the controls, but just want to hide the group and skip it, use `hidden` **and** `disabled` together:
+
+```js
+section.hidden = true;
+fieldset.disabled = true;
+```
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `disabled` | Disables all controls inside | `disabled` |
+| `name` | A name for scripts (it is **not** sent to the server) | `name="billing"` |
+| `form` | Connects the fieldset to a form it is not inside | `form="checkout"` |
+
+The `name` lets you reach the group in JavaScript: `form.elements.billing`, and read its `elements` list. The fieldset itself has no value and sends nothing.
+
+## Styling Fieldset and Legend
+
+The default look (a box with a title in the border) is old fashioned, and has some odd rules. Many designs reset it, and then restyle.
+
+### A Clean Reset
+
+```css title="style.css"
+fieldset {
+  min-width: 0;           /* fixes a bug where fieldsets refuse to shrink on small screens */
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+```
+
+`min-width: 0` matters, because by default a fieldset will not become narrower than its content, which can cause a horizontal scroll on phones.
+
+### A Card Style
+
+```css
+fieldset {
+  min-width: 0;
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+legend {
+  padding: 0 0.5rem;      /* space around the title in the border */
+  font-weight: 700;
+}
+```
+
+### Things to Know
+
+- **A legend is a special element.** It sits in the fieldset's top border by default, and it is hard to move with normal CSS (it ignores `float` and many `position` tricks, and `display: flex` on a fieldset has been buggy in some browsers).
+- If you want a **full control of layout**, put a wrapper `<div>` inside the fieldset, and apply `display: grid` or `flex` to that.
+- To make the legend behave like a normal heading, a common trick is `legend { float: left; width: 100%; }` followed by a `legend + * { clear: both; }`. It works in current browsers, but test it. Often, the plain reset above is enough.
+- You may put a **heading inside the legend**, for a group that is also a section of the page:
+
+```html
+<fieldset>
+  <legend><h2>Payment details</h2></legend>
+  ...
+</fieldset>
+```
+
+This is allowed, and screen readers announce both the group name and the heading. Use it sparingly, and only when the legend is really a section heading.
+
+- **Do not remove the legend visually** with `display: none`, because screen readers then lose the group name. If you want it hidden on screen, use a **visually hidden** style (see below). But a visible question is nearly always better, since sighted people benefit from it too.
+
+```css
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+```
+
+```html
+<fieldset>
+  <legend class="visually-hidden">Delivery speed</legend>
+  ...
+</fieldset>
+```
+
+## Nesting Fieldsets
+
+You can put a fieldset inside another, for example, "Payment" containing "Card expiry." Be careful:
+
+- Screen readers announce **both** legends, so the listener hears "Payment, group. Card expiry, group. Month..." Two levels are the most you should use.
+- Deep nesting is tiring to listen to, and hard to style.
+- If you find you need three levels, the form is probably too complex. Break it into **steps** or pages.
+
+```html
+<fieldset>
+  <legend>Payment</legend>
+
+  <label for="card">Card number</label>
+  <input type="text" id="card" name="card" inputmode="numeric" autocomplete="cc-number" />
+
+  <fieldset>
+    <legend>Expiry date</legend>
+    <label for="exp-m">Month</label> <input type="text" id="exp-m" name="exp-m" size="3" autocomplete="cc-exp-month" />
+    <label for="exp-y">Year</label> <input type="text" id="exp-y" name="exp-y" size="5" autocomplete="cc-exp-year" />
+  </fieldset>
+</fieldset>
+```
+
+## Alternatives: `role="group"` and `aria-labelledby`
+
+Sometimes you cannot use a `<fieldset>`, for example, in a layout that fights its styling, or in a component library. A `<div>` with `role="group"` and a label does the same job for assistive technology:
+
+```html
+<div role="group" aria-labelledby="speed-title">
+  <p id="speed-title">Delivery speed</p>
+  <label><input type="radio" name="speed" value="standard" /> Standard</label>
+  <label><input type="radio" name="speed" value="express" /> Express</label>
+</div>
+```
+
+For a set of radio buttons, `role="radiogroup"` is the more exact role.
+
+But a real `<fieldset>` is better when you can use one, since it is built into the browser, works everywhere, and needs no extra attributes. And, only the `<fieldset>` can **disable** its contents. ARIA never changes the behaviour of controls, it only describes them.
+
+## Accessibility at a Glance
+
+- **Group related controls** (especially radios and checkboxes) with `<fieldset>` and `<legend>`.
+- **Make the legend a clear question or title:** "Delivery speed," "Date of birth," "Which languages do you know?" It is read before **every** control in the group, so keep it **short**.
+- **Keep a label on every control inside.** The legend does not replace labels.
+- **Use the legend as the first child.** If it is anywhere else, browsers may not treat it as the group's caption.
+- **Do not hide legends** with `display: none` or `visibility: hidden`. Use a visually hidden style if you must.
+- **Do not overuse groups,** or nest them deeply.
+- **Do not use fieldset for layout.** Use it for **meaning**, and use CSS for appearance.
+- **For `disabled` groups,** explain why a section is unavailable ("Same as shipping address") so that visitors understand.
+- **Make required groups clear.** For a required radio group, say so in the legend text or help text ("Delivery speed (required)"), and put `required` on the radios.
+- **Show group-level errors** near the legend, and link them with `aria-describedby` on the fieldset: "Choose a delivery speed to continue."
+
+```html
+<fieldset aria-describedby="speed-error">
+  <legend>Delivery speed</legend>
+  ...
+  <p id="speed-error">Choose a delivery speed to continue.</p>
+</fieldset>
+```
+
+## Security Notes
+
+- **A disabled fieldset is not a security tool.** Anyone can send a value for a "disabled" field by hand, so the server must decide which fields to **accept**, and validate them.
+- **Do not trust the `name` of a fieldset,** since it is never sent.
+- **Treat every field in a group as untrusted,** as always.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Keep legends short and plain,** so that they translate well, and are quick to hear.
+- **Translated legends can be longer.** Do not set a fixed width on the legend.
+- **Right-to-left pages** mirror the legend and the border automatically with `dir="rtl"`.
+- **Do not rely on a visual box** for grouping. In some cultures and reading systems, the layout is read differently, and the **text** of the legend is what is always understood.
+- **Date and address groups** differ between countries (the order of day and month, the parts of an address). Let the legend say what is asked, and choose the fields with your audience in mind.
+
+## Common Mistakes to Avoid
+
+1. **Radio buttons with no fieldset and legend.**
+2. **Putting the `<legend>` anywhere except first,** or using more than one.
+3. **Using a legend instead of labels,** so individual controls have no names.
+4. **Wrapping every field in its own fieldset.**
+5. **Deeply nested fieldsets,** which are tiring to hear.
+6. **Hiding the legend** with `display: none`.
+7. **Using `<fieldset>` for page layout,** instead of grouping by meaning.
+8. **Writing long legends,** which are read for every control.
+9. **Forgetting `min-width: 0`,** so the fieldset causes horizontal scrolling on phones.
+10. **Disabling a group with no explanation.**
+11. **Expecting a disabled fieldset's values to be sent.**
+12. **Trusting a disabled fieldset** to stop a value being submitted by hand.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build three radio buttons with labels, without a fieldset. Turn on a screen reader (or imagine one), and note what is missing.
+2. Wrap them in `<fieldset>` and `<legend>`, and compare.
+3. Group three checkboxes that answer one question.
+4. Build a date of birth with day, month, and year fields in one fieldset.
+5. Build "Shipping address" and "Billing address" groups with the same field names (with prefixes).
+6. Add `disabled` to the billing fieldset, and submit. Which values are sent?
+7. Add a checkbox that toggles `fieldset.disabled` in JavaScript.
+8. Reset the default style, and then build a card-style fieldset.
+9. Make the legend visually hidden, and think about when that is a good idea.
+10. Bonus: replace a fieldset with `role="group"` and `aria-labelledby`, and list what you lose.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do `<fieldset>` and `<legend>` do?</summary>
+
+`<fieldset>` groups related form controls. Its first child, `<legend>`, gives the group a name that screen readers announce with each control inside it.
+
+</details>
+
+<details>
+<summary>2. Which groups especially need a fieldset and legend?</summary>
+
+Groups of radio buttons, and groups of checkboxes that answer one question. Also split fields that make one answer (such as a date of birth), and blocks of fields such as an address.
+
+</details>
+
+<details>
+<summary>3. Does a legend replace the labels of the controls inside?</summary>
+
+No. The legend names the group (the question), while each control still needs its own label (the answer, or the name of that part).
+
+</details>
+
+<details>
+<summary>4. What happens when you put `disabled` on a fieldset?</summary>
+
+Every control inside is greyed out and cannot be focused. Their values are not sent, and they are skipped by validation. Controls inside the first legend are the exception.
+
+</details>
+
+<details>
+<summary>5. Where must the legend go, and how many can there be?</summary>
+
+The legend must be the **first child** of the fieldset, and a fieldset should have only one.
+
+</details>
+
+<details>
+<summary>6. What can you use if you cannot use a fieldset?</summary>
+
+A `<div>` with `role="group"` (or `role="radiogroup"`) and `aria-labelledby` pointing to a visible title. But a real fieldset is better when possible, because it is built in, and only a fieldset can disable its contents.
+
+</details>
+
+## Key Takeaways
+
+- `<fieldset>` groups related controls, and `<legend>` (its first child) names the group. Screen readers read the legend with every control inside.
+- Every radio group, and every checkbox group that answers one question, needs a fieldset and a legend. Each control still needs its own label.
+- Use groups for meaning: option sets, split date fields, and blocks like shipping and billing addresses. Do not wrap everything, and avoid deep nesting.
+- `disabled` on a fieldset switches off all controls inside: they are greyed out, not sent, and skip validation.
+- Reset the default style with `border: 0`, `padding: 0`, and `min-width: 0`, or build a card style. Never hide the legend with `display: none`.
+- Keep legends short and clear, and always validate on the server.
+
+Groups give a form structure. Next, learn how the browser checks what visitors type, in [Form Validation](./form-validation), or return to the [Forms overview](/tutorials/html/forms).

@@ -1,16 +1,537 @@
 ---
-id: input-type-radio
-title: "Radio Buttons: type='radio'"
-sidebar_label: "Radio Button"
+id: html-input-radio
+title: "HTML Input Type Radio"
+sidebar_label: "Radio"
 sidebar_position: 15
 slug: /html/forms/input-types/radio
-description: "Build mutually exclusive single-select option groups using input type='radio' tied together by matching name attributes."
+description: "Learn the HTML input type radio: radio button groups with the same name, the value attribute, what is sent, checked and required, keyboard arrow-key behaviour, why you cannot untick a radio, fieldset and legend, an Other option with a text field, styling, accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type radio
-  - radio button group
-  - single select radio input
-  - radio input name attribute
+  - radio button HTML example
+  - radio group same name
+  - radio button checked required
+  - radio button keyboard arrow keys
+  - radio vs checkbox vs select
+  - radio button other option text field
+  - fieldset legend radio group
+  - uncheck radio button
+  - accent-color radio
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, radio]
+tags: [html, web-development, beginner, forms, input, radio, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function ShippingDemo() {
+  const [sent, setSent] = useState("(press Submit)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const text = new URLSearchParams(new FormData(event.currentTarget)).toString();
+        setSent(text || "(nothing is sent)");
+      }}
+    >
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+        <legend>Delivery speed</legend>
+        <label><input type="radio" name="speed" value="standard" defaultChecked /> Standard (5 days)</label><br />
+        <label><input type="radio" name="speed" value="express" /> Express (2 days)</label><br />
+        <label><input type="radio" name="speed" value="pickup" /> Pick up in store</label>
+      </fieldset>
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px", marginTop: "0.5rem"}}>
+        <legend>Gift wrap?</legend>
+        <label><input type="radio" name="gift" value="yes" /> Yes</label>{" "}
+        <label><input type="radio" name="gift" value="no" /> No</label>
+      </fieldset>
+      <p style={{margin: "0.5rem 0"}}><button type="submit">Submit</button></p>
+      <p role="status" style={{margin: 0}}>Sent: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+export function OtherDemo() {
+  const [choice, setChoice] = useState("");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+        <legend>How did you hear about us?</legend>
+        {["friend", "search", "social"].map((value) => (
+          <div key={value}>
+            <label>
+              <input
+                type="radio"
+                name="source"
+                value={value}
+                checked={choice === value}
+                onChange={() => setChoice(value)}
+              />{" "}
+              {value === "friend" ? "A friend" : value === "search" ? "A search engine" : "Social media"}
+            </label>
+          </div>
+        ))}
+        <div>
+          <label>
+            <input
+              type="radio"
+              name="source"
+              value="other"
+              checked={choice === "other"}
+              onChange={() => setChoice("other")}
+            />{" "}
+            Other
+          </label>
+        </div>
+        <div style={{marginLeft: "1.5rem", marginTop: "0.25rem"}}>
+          <label htmlFor="rd-other">If other, please tell us</label><br />
+          <input
+            type="text"
+            id="rd-other"
+            name="source_other"
+            disabled={choice !== "other"}
+            required={choice === "other"}
+          />
+        </div>
+      </fieldset>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {choice ? "Chosen: " + choice : "Nothing chosen yet."}
+      </p>
+    </form>
+  );
+}
+
+Standard or express delivery? Small, medium, or large? Yes or no? Whenever a visitor must pick **exactly one** option from a short list, the right tool is a group of **radio buttons**.
+
+The name comes from old car radios, where pressing one preset button popped out the others. Radios work the same way: choose one, and the previous one switches off. In this lesson, you will learn how to make a group, what is sent, how the keyboard works, and one important rule: **a radio group cannot be un-chosen once something is selected**, so you must plan for that.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How radio buttons are grouped, and why `name` matters
+- The `value`, `checked`, and `required` attributes
+- What is sent to the server
+- How the keyboard moves between radios
+- An "Other" option with a text field
+- When to use radios, checkboxes, or a select
+- Accessibility, styling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<fieldset>
+  <legend>Choose a size</legend>
+
+  <label><input type="radio" name="size" value="small" /> Small</label>
+  <label><input type="radio" name="size" value="medium" /> Medium</label>
+  <label><input type="radio" name="size" value="large" /> Large</label>
+</fieldset>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+    <legend>Choose a size</legend>
+    <label><input type="radio" name="size" value="small" /> Small</label>{" "}
+    <label><input type="radio" name="size" value="medium" /> Medium</label>{" "}
+    <label><input type="radio" name="size" value="large" /> Large</label>
+  </fieldset>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each radio is a small circle. Click one, and a dot appears inside it. Click another in the same group, and the first dot disappears. Only **one** can be on at a time.
+
+## The Group Rule: Same `name`
+
+What makes radios into a group is **a shared `name`**. That is the only connection between them.
+
+| Radios with... | Result |
+| :-- | :-- |
+| The **same** `name` | One group. Choosing one clears the others |
+| **Different** names | Separate groups, or separate single radios that you can never turn off |
+
+```html
+<!-- Group 1: size -->
+<input type="radio" name="size" value="small" />
+<input type="radio" name="size" value="large" />
+
+<!-- Group 2: colour (independent of group 1) -->
+<input type="radio" name="colour" value="red" />
+<input type="radio" name="colour" value="blue" />
+```
+
+Within a group, each radio needs its **own `value`**. That is what tells the server which one was chosen.
+
+:::warning Radios without a `value`
+If you leave `value` out, a chosen radio sends the text `on`, for every radio in the group. You can no longer tell them apart. **Always give each radio in a group a different `value`.**
+:::
+
+## What Gets Sent
+
+| State of the group | What the browser sends |
+| :-- | :-- |
+| One radio chosen | `name=value` of that one radio |
+| **Nothing** chosen | **Nothing at all.** The name is missing |
+| The chosen radio is `disabled` | Nothing |
+
+Only the selected radio's pair is sent: `size=medium`. The others are never mentioned.
+
+## Try It: See What Is Sent
+
+Choose options in each group and press Submit.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <fieldset>
+    <legend>Delivery speed</legend>
+    <label><input type="radio" name="speed" value="standard" checked /> Standard (5 days)</label>
+    <label><input type="radio" name="speed" value="express" /> Express (2 days)</label>
+    <label><input type="radio" name="speed" value="pickup" /> Pick up in store</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Gift wrap?</legend>
+    <label><input type="radio" name="gift" value="yes" /> Yes</label>
+    <label><input type="radio" name="gift" value="no" /> No</label>
+  </fieldset>
+
+  <button type="submit">Submit</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ShippingDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice:
+
+- The delivery group starts with Standard chosen (`checked`), so it always sends something.
+- The **gift** group starts with nothing chosen. Press Submit without choosing, and `gift` is not in the data at all.
+- Two groups, two independent answers: `speed=express&gift=yes`.
+
+## Attributes for Radios
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | Defines the group, and the key sent | `name="speed"` |
+| `value` | What is sent when this radio is chosen | `value="express"` |
+| `checked` | Starts chosen (use it on **one** radio per group) | `checked` |
+| `required` | The group must have a choice | `required` |
+| `disabled` | Cannot be chosen, and is not sent | `disabled` |
+| `id` | Connects a label that uses `for` | `id="speed-express"` |
+| `autofocus` | Focus on load | `autofocus` |
+
+- **`checked`** on more than one radio in a group: the last one wins. Use it on only one.
+- **`required`** on **any one** radio makes the whole group required, but it is clearest to put it on **every** radio of the group, so that no one removes it by mistake.
+- Like checkboxes, radios have no working `readonly`, and none of `placeholder`, `min`, `max`, `step`, `pattern`, `maxlength`, or `size`.
+
+```html
+<fieldset>
+  <legend>Do you accept the terms?</legend>
+  <label><input type="radio" name="terms" value="yes" required /> Yes</label>
+  <label><input type="radio" name="terms" value="no" required /> No</label>
+</fieldset>
+```
+
+If the visitor submits without choosing, the browser says "Please select one of these options."
+
+## The Radio You Cannot Untick
+
+Once a radio in a group is chosen, **the visitor cannot clear the group** by clicking the same radio again. The only ways back to "nothing chosen" are the form's reset button, or JavaScript. This has big consequences for design.
+
+1. **Decide the start state deliberately.**
+   - If one option is a **safe, common default** (like "Standard delivery"), pre-select it with `checked`.
+   - If the choice matters and you do **not** want to bias the visitor (a survey, a consent, a rating), start with **nothing chosen**, and use `required`.
+2. **Offer a neutral option** when "no answer" is valid, such as **"No preference"** or **"Prefer not to say."** That gives visitors a way to go back.
+3. **Never use a single radio on its own** for a yes-or-no. A lone radio can be turned on, and never off. Use a [checkbox](./checkbox) instead.
+
+```html
+<fieldset>
+  <legend>Preferred contact method</legend>
+  <label><input type="radio" name="contact" value="email" /> Email</label>
+  <label><input type="radio" name="contact" value="phone" /> Phone</label>
+  <label><input type="radio" name="contact" value="none" /> No preference</label>
+</fieldset>
+```
+
+## Keyboard Behaviour
+
+Radios have special keyboard rules, different from checkboxes. It is one of the strong reasons to keep the native input.
+
+| Key | What happens |
+| :-- | :-- |
+| `Tab` | Moves **into** the group (to the chosen radio, or the first one if none is chosen), and then **out** of the group. It does **not** step through each radio |
+| `↓` or `→` | Moves to the next radio **and chooses it** |
+| `↑` or `←` | Moves to the previous radio **and chooses it** |
+| `Space` | Chooses the focused radio, if it is not already chosen |
+
+So a whole group is **one tab stop**, and the arrow keys move within it. This is correct and expected. Do not add `tabindex` to the radios to "fix" it.
+
+:::info Arrow keys select
+In a radio group, moving with an arrow key also **selects** the radio. That means a keyboard user changes their answer as they move. This is standard behaviour, and screen readers announce it.
+:::
+
+## An "Other" Option with a Text Field
+
+A very common pattern is "Other (please specify)." The text field should only be needed when "Other" is chosen. Try it:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<fieldset>
+  <legend>How did you hear about us?</legend>
+
+  <label><input type="radio" name="source" value="friend" /> A friend</label>
+  <label><input type="radio" name="source" value="search" /> A search engine</label>
+  <label><input type="radio" name="source" value="social" /> Social media</label>
+  <label><input type="radio" name="source" value="other" id="other" /> Other</label>
+
+  <label for="other-text">If other, please tell us</label>
+  <input type="text" id="other-text" name="source_other" disabled />
+</fieldset>
+```
+
+```js title="script.js"
+const radios = document.querySelectorAll('input[name="source"]');
+const otherText = document.getElementById("other-text");
+
+radios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    const isOther = document.getElementById("other").checked;
+    otherText.disabled = !isOther;
+    otherText.required = isOther;
+    if (isOther) otherText.focus();
+  });
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OtherDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Why it is built this way:
+
+- The text field is **disabled** until "Other" is chosen, so it is not sent when it is not needed.
+- It becomes **required** only when "Other" is chosen.
+- The label "If other, please tell us" is visible, and tied to the field.
+- Focusing the field when "Other" is chosen saves a click. (Do this only when the visitor chose "Other" themselves.)
+
+## Radio, Checkbox, or Select?
+
+| Situation | Best choice | Why |
+| :-- | :-- | :-- |
+| Pick exactly **one** of 2 to about 5 options | **Radio buttons** | All options are visible at once |
+| Pick **one** of many options (6 or more) | [**Select**](../select) | Saves space |
+| Pick **any number** of options | [**Checkboxes**](./checkbox) | Choices are independent |
+| A single yes or no | **One checkbox** (or two radios: Yes / No) | A lone radio cannot be turned off |
+| An instant setting (like "Dark mode") | A switch (a checkbox with `role="switch"`) | It applies at once |
+| A number on a scale (1 to 10) | [`range`](./range), or radios for a small scale | Depends on the look you want |
+
+A useful rule: **if people need to compare the options, show them all** with radios.
+
+## Styling Radio Buttons
+
+The simplest safe styling uses `accent-color`:
+
+```css title="style.css"
+input[type="radio"] {
+  accent-color: #2563eb;
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+input[type="radio"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;      /* easy to tap */
+  margin-right: 1rem;
+}
+```
+
+For **card-style** choices (a big clickable panel for each option), keep the real radio in the label, and style the label:
+
+```html
+<label class="card">
+  <input type="radio" name="plan" value="pro" />
+  <span>Pro plan: $12 a month</span>
+</label>
+```
+
+```css
+.card {
+  display: block;
+  padding: 1rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.card:has(input:checked) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.card:has(input:focus-visible) {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+The `:has()` selector lets the label react to the radio inside it. Keep the focus style on the label, so keyboard users can see where they are. Never remove the radio itself.
+
+## Accessibility at a Glance
+
+- **Always group radios with `<fieldset>` and `<legend>`.** The legend is the **question**, and screen readers read it before the options: "Delivery speed, group. Standard, radio button, 1 of 3, selected."
+- **Label every radio** with a wrapping `<label>`, or `for` and `id`. Click on the text selects it.
+- **Keep the native keyboard behaviour,** with one tab stop and arrow keys.
+- **Keep options few and clear.** Over about 6 options, a select is easier.
+- **Make the options mutually exclusive** and complete, so every visitor has an answer that fits. Add "Other," or "Not applicable," when needed.
+- **Keep a visible focus indicator,** and a large target (about 44 pixels).
+- **Explain errors clearly:** "Choose a delivery speed to continue," near the group, not just a red circle.
+- **Do not rely on colour alone** to show which is chosen. The dot shape does that.
+- **If you build a custom radio group** with `div`s and `role="radiogroup"`, you must add all the keyboard handling yourself. The native input is far simpler.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Anyone can send any data, such as `speed=free`. Accept only the **values you defined** (an allow-list).
+- **Handle a missing key.** If no radio is chosen, the field is absent. Decide whether that is allowed, or an error.
+- **Never trust a price or a permission** that comes from a radio's value. Look up the real price for `plan=pro` on the server.
+- **Check required choices on the server,** too.
+
+See [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **Keep option labels short and parallel,** so they translate cleanly.
+- **Do not assume the options fit everyone.** Questions about gender, title, or nationality should have inclusive choices, or a text field, or "Prefer not to say," and only be asked when really needed.
+- **Right-to-left languages** place the circle on the right, and the label to its left. Real radios and `<label>` follow the page's `dir` automatically.
+- **Order options logically** (for example, by speed or size) and consistently across languages.
+- **Avoid double negatives** and idioms in questions.
+
+## Common Mistakes to Avoid
+
+1. **Different `name`s in one group,** so more than one can be chosen.
+2. **The same `name` across groups** that should be separate.
+3. **Missing or identical `value`s,** so the server cannot tell the options apart.
+4. **Using a single radio** for a yes or no. It cannot be turned off.
+5. **No neutral option** when "no answer" is valid.
+6. **`checked` on several radios** in one group.
+7. **No `<fieldset>` and `<legend>`,** so the question is lost for screen readers.
+8. **Using radios for "choose any."** Use checkboxes.
+9. **Using radios for a very long list.** Use a select.
+10. **Adding `tabindex` to every radio,** which breaks the arrow-key behaviour.
+11. **Replacing the radio with a styled `div`.**
+12. **Not validating the value on the server,** or not handling a missing choice.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a group of three radios with the same `name`, and different `value`s. Submit with `method="get"`, and read the address.
+2. Remove the `name` from one radio, and see how it behaves.
+3. Remove the `value`s, and see what is sent.
+4. Add `checked` to one radio, and then add `required` to the group with nothing pre-selected.
+5. Try to untick a chosen radio by clicking it again. What happens?
+6. Add a "No preference" option.
+7. Move through the group with `Tab` and the arrow keys.
+8. Wrap the group in a `<fieldset>` and `<legend>`.
+9. Build the "Other" pattern with a disabled text field.
+10. Bonus: build card-style choices with `:has()`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What puts radio buttons into one group?</summary>
+
+A shared `name`. Choosing one radio in the group clears the others. Each radio needs its own `value`.
+
+</details>
+
+<details>
+<summary>2. What is sent when no radio in a group is chosen?</summary>
+
+Nothing. The name is missing from the data, so the server must handle a missing key.
+
+</details>
+
+<details>
+<summary>3. Can a visitor untick a radio by clicking it again?</summary>
+
+No. Once chosen, the group stays chosen until the form is reset, or JavaScript clears it. So offer a neutral option like "No preference" when needed.
+
+</details>
+
+<details>
+<summary>4. How does the keyboard work in a radio group?</summary>
+
+`Tab` enters and leaves the group as one stop. The arrow keys move between the radios and choose each one, and `Space` chooses the focused radio.
+
+</details>
+
+<details>
+<summary>5. How do you make a radio group required?</summary>
+
+Add `required` to the radios (any one makes the group required, but putting it on all of them is clearest). The browser then blocks the form until one is chosen.
+
+</details>
+
+<details>
+<summary>6. When should you use a select instead of radio buttons?</summary>
+
+When there are many options (around 6 or more) and showing them all would take too much space. Radios are best for a short list that people want to compare.
+
+</details>
+
+## Key Takeaways
+
+- Radios let a visitor pick **exactly one** option. The shared `name` makes the group, and each radio needs its own `value`.
+- Only the chosen radio's `name=value` is sent. If none is chosen, nothing is sent.
+- A group cannot be un-chosen by clicking, so choose the start state deliberately, and offer a neutral option when "no answer" is valid.
+- A radio group is **one tab stop**, and the arrow keys move and select within it. Keep the native input.
+- Always wrap a group in `<fieldset>` and `<legend>`, and label each radio.
+- Use radios for short lists, a select for long ones, checkboxes for "any number," and always validate against an allow-list on the server.
+
+Radios pick one choice from a list. Next, learn how to let visitors upload a file, in [File](./file), or return to the [Forms overview](/tutorials/html/forms).

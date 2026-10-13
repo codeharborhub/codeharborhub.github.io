@@ -1,18 +1,506 @@
 ---
-id: input-type-date
-title: "Date Pickers: type='date'"
+id: html-input-date
+title: "HTML Input Type Date"
 sidebar_label: "Date"
 sidebar_position: 8
 slug: /html/forms/input-types/date
-description: "Integrate native browser calendar popups using input type='date', setting min/max date constraints, and managing ISO date formats."
+description: "Learn the HTML input type date: the date picker, the yyyy-mm-dd value format, min, max, and step, valueAsDate, time zone and off-by-one-day traps, setting today as the minimum, birthdays and autocomplete, accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type date
   - date picker HTML
-  - native calendar input
-  - date constraints min max
+  - input date min max
+  - yyyy-mm-dd value format
+  - valueAsDate valueAsNumber
+  - input date today minimum
+  - date of birth input HTML
+  - showPicker input date
+  - date input time zone problem
+  - autocomplete bday
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, date]
+tags: [html, web-development, beginner, forms, input, date, validation, frontend]
 ---
+
+import {useState} from 'react';
+
+export function StayDemo() {
+  const [start, setStart] = useState("2026-12-20");
+  const [end, setEnd] = useState("2026-12-25");
+  const toUtc = (text) => {
+    const [y, m, d] = text.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  let message = "Choose both dates.";
+  if (start && end) {
+    const nights = Math.round((toUtc(end) - toUtc(start)) / 86400000);
+    message = nights > 0
+      ? "Stay: " + nights + (nights === 1 ? " night" : " nights")
+      : "Check-out must be after check-in.";
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="dt-in">Check-in</label><br />
+      <input
+        type="date"
+        id="dt-in"
+        name="checkin"
+        value={start}
+        min="2026-01-01"
+        max="2027-12-31"
+        onChange={(event) => setStart(event.target.value)}
+      /><br />
+      <label htmlFor="dt-out">Check-out</label><br />
+      <input
+        type="date"
+        id="dt-out"
+        name="checkout"
+        value={end}
+        min={start || "2026-01-01"}
+        max="2027-12-31"
+        onChange={(event) => setEnd(event.target.value)}
+        aria-describedby="dt-msg"
+      />
+      <p id="dt-msg" role="status" style={{margin: "0.5rem 0 0"}}>{message}</p>
+      <p style={{margin: "0.25rem 0 0"}}>Value sent: <code>checkin={start || "(empty)"}</code>, <code>checkout={end || "(empty)"}</code></p>
+    </form>
+  );
+}
+
+Booking a trip, choosing a delivery day, entering a birthday: picking a **date** is one of the most common jobs a form has. Typing dates by hand is a minefield. Is `03/04/2026` the third of April or the fourth of March? It depends on the country. `type="date"` solves this by giving the visitor a **calendar picker** and giving your server **one unambiguous format**.
+
+In this lesson, you will learn how the date input works, how to limit the choices, how to avoid the classic time zone trap, and when a different design (like a birthday) works better.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="date"` shows, and what value it sends
+- The `min`, `max`, and `step` attributes
+- Setting "today" as the earliest date
+- Reading dates in JavaScript, and the off-by-one-day trap
+- What to do for birthdays and far-away dates
+- Accessibility and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="day">Choose a day</label>
+<input type="date" id="day" name="day" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="dt-basic">Choose a day</label><br />
+  <input type="date" id="dt-basic" name="day" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+What you get:
+
+- A field split into **day, month, and year** parts, with a small calendar icon. Clicking it opens a **calendar picker**.
+- The field looks different depending on the visitor's **browser and language**: `12/25/2026` for some, `25.12.2026` or `25/12/2026` for others.
+- Phones show their own native date wheel or calendar.
+- Only real dates are possible. February 30 cannot be entered.
+
+## The Value Format
+
+This is the most important fact in the whole lesson:
+
+:::info The value is always `yyyy-mm-dd`
+No matter how the field **looks** to the visitor, the value your code (and your server) receives is always the same: year, month, day, with dashes. For example, `2026-12-25`.
+:::
+
+```text
+day=2026-12-25
+```
+
+| What the visitor sees | What is sent |
+| :-- | :-- |
+| `12/25/2026` (US) | `2026-12-25` |
+| `25/12/2026` (UK, India) | `2026-12-25` |
+| `25.12.2026` (Germany) | `2026-12-25` |
+| `2026/12/25` (Japan) | `2026-12-25` |
+| (nothing chosen, or incomplete) | an empty string |
+
+This is the ISO 8601 date format, which is easy to sort, compare, and store. It also means your page does not need to guess the visitor's country.
+
+When you set a starting value in HTML, you must use the same format:
+
+```html
+<input type="date" name="day" value="2026-12-25" />
+```
+
+Writing `value="25/12/2026"` does nothing. The field stays empty.
+
+## Min, Max, and Step
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `min` | The earliest allowed date | `min="2026-01-01"` |
+| `max` | The latest allowed date | `max="2027-12-31"` |
+| `step` | The gap in **days** between allowed dates | `step="7"` |
+
+```html
+<label for="delivery">Delivery date</label>
+<input
+  type="date"
+  id="delivery"
+  name="delivery"
+  min="2026-12-01"
+  max="2026-12-31"
+  required
+/>
+```
+
+- Dates outside the range are greyed out in the picker, and rejected on submit.
+- `step` counts in days, from `min`. With `min="2026-12-07"` and `step="7"`, only 7 December and every 7th day after it are valid. That suits weekly events, but picker support varies, so treat it as a hint and verify on the server.
+- You **cannot** disable specific days (like holidays or weekends) with HTML alone. Use your server for the real rule, and give a clear message when a chosen day is unavailable.
+
+## Try It: A Booking Range
+
+Two date fields work together here. The check-out field's `min` follows the check-in date, so it cannot be earlier. Change the dates.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="in">Check-in</label>
+<input type="date" id="in" name="checkin" value="2026-12-20" min="2026-01-01" max="2027-12-31" />
+
+<label for="out">Check-out</label>
+<input type="date" id="out" name="checkout" value="2026-12-25" min="2026-12-20" max="2027-12-31" />
+
+<p id="nights" role="status"></p>
+```
+
+```js title="script.js"
+const checkin = document.getElementById("in");
+const checkout = document.getElementById("out");
+const nights = document.getElementById("nights");
+
+function toUtc(text) {
+  const [y, m, d] = text.split("-").map(Number);
+  return Date.UTC(y, m - 1, d);
+}
+
+function update() {
+  checkout.min = checkin.value;              // cannot leave before arriving
+  if (!checkin.value || !checkout.value) {
+    nights.textContent = "Choose both dates.";
+    return;
+  }
+  const count = Math.round((toUtc(checkout.value) - toUtc(checkin.value)) / 86400000);
+  nights.textContent = count > 0
+    ? "Stay: " + count + (count === 1 ? " night" : " nights")
+    : "Check-out must be after check-in.";
+}
+
+checkin.addEventListener("input", update);
+checkout.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StayDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice that the "Value sent" line always shows `yyyy-mm-dd`, whichever way your browser displays the date.
+
+## Setting Today as the Minimum
+
+A common need: "no dates in the past." HTML cannot say "today," because the page is written ahead of time. So use a little JavaScript:
+
+```js title="script.js"
+const input = document.getElementById("delivery");
+
+function todayLocal() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return now.getFullYear() + "-" + month + "-" + day;
+}
+
+input.min = todayLocal();
+```
+
+:::warning Do not use `toISOString()` for "today"
+`new Date().toISOString().slice(0, 10)` gives the date in **UTC**, not the visitor's own time zone. Late in the evening, in a time zone ahead of UTC (like India), or early in the morning, in one behind it (like the US), that gives **yesterday's or tomorrow's date**. Build the string from the local parts, as shown above.
+:::
+
+## Reading the Date in JavaScript
+
+You have three choices, and one trap.
+
+| Property | What it gives | Example |
+| :-- | :-- | :-- |
+| `input.value` | The string `yyyy-mm-dd` | `"2026-12-25"` |
+| `input.valueAsDate` | A `Date` at **midnight UTC** | `2026-12-25T00:00:00.000Z` |
+| `input.valueAsNumber` | Milliseconds since 1970 (UTC midnight) | `1798156800000` |
+
+### The Off-by-One-Day Trap
+
+```js
+const date = input.valueAsDate;                 // midnight UTC on Dec 25
+console.log(date.toLocaleDateString());         // in the US, might say 12/24/2026 !
+```
+
+Midnight UTC is still the **evening before** in countries west of Greenwich. So when you show the date in the visitor's local time, it appears one day early.
+
+The fixes:
+
+- **Format with UTC:** `date.toLocaleDateString("en-GB", { timeZone: "UTC" })`.
+- **Or just use the string.** If you only need to show, store, or send the date, keep `input.value` as it is. A calendar date has no time zone, and treating it as text avoids the whole problem.
+- **Do calculations in UTC,** as the booking demo does, with `Date.UTC(year, month - 1, day)`.
+
+:::tip A date is not a moment
+"December 25" is a **calendar day**. It has no hour and no time zone. Avoid turning it into a `Date` at a specific time unless you must. When you need a real moment (like a meeting start), pair the date with a [time](./time) and a time zone, or use [datetime-local](./datetime-local).
+:::
+
+## Opening the Picker from a Button
+
+Most browsers open the calendar when the visitor clicks the icon (or, in some, anywhere in the field). If you want a button to open it:
+
+```js
+const input = document.getElementById("day");
+document.getElementById("open").addEventListener("click", () => {
+  if (input.showPicker) input.showPicker();
+  else input.focus();
+});
+```
+
+`showPicker()` must be called from a user action, like a click.
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="day"` |
+| `value` | The starting date (`yyyy-mm-dd`) | `value="2026-12-25"` |
+| `required` | Cannot be empty | `required` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `autocomplete` | Autofill hint, e.g. `bday` | `autocomplete="bday"` |
+| `list` | Suggested dates from a [datalist](../datalist) | `list="holidays"` |
+
+`maxlength`, `minlength`, `pattern`, `placeholder`, and `size` do **not** apply to date inputs.
+
+## Birthdays and Faraway Dates
+
+`type="date"` is a good picker for dates **near today**. For a **birthday**, though, the visitor may have to click back through decades one month at a time, which is slow, especially on desktop browsers.
+
+Better options:
+
+### Option 1: Date Input with Autofill
+
+Many browsers fill the whole date from saved details:
+
+```html
+<label for="dob">Date of birth</label>
+<input
+  type="date"
+  id="dob"
+  name="dob"
+  autocomplete="bday"
+  min="1900-01-01"
+  max="2026-12-31"
+  required
+/>
+```
+
+The user can also **type** the date in the field's segments, which is quick for those who know the format.
+
+### Option 2: Three Separate Fields
+
+Common for official forms. Clear, and works everywhere:
+
+```html
+<fieldset>
+  <legend>Date of birth</legend>
+
+  <label for="dob-day">Day</label>
+  <input type="text" id="dob-day" name="dob-day" inputmode="numeric"
+         autocomplete="bday-day" maxlength="2" size="3" />
+
+  <label for="dob-month">Month</label>
+  <input type="text" id="dob-month" name="dob-month" inputmode="numeric"
+         autocomplete="bday-month" maxlength="2" size="3" />
+
+  <label for="dob-year">Year</label>
+  <input type="text" id="dob-year" name="dob-year" inputmode="numeric"
+         autocomplete="bday-year" maxlength="4" size="5" />
+</fieldset>
+```
+
+The [fieldset and legend](../fieldset-and-legend) group them, so a screen reader announces "Date of birth" before each part. You assemble and validate the date on the server.
+
+### Option 3: Selects
+
+A month `<select>` plus number fields for day and year also works, and removes confusion about month order.
+
+:::info Do you really need a birthday?
+Often you only need to know whether someone is "over 18." Ask for the minimum you need, and explain why you are asking. Date of birth is personal data.
+:::
+
+## Browser Differences
+
+- The **look** of the field and the picker is up to the browser and operating system. You cannot style the calendar popup itself.
+- **Old browsers** (and very old Safari versions) treat `type="date"` as plain text. Modern browsers all support it. Put a hint of the format in the label or help text, as a safe fallback: "Format: yyyy-mm-dd".
+- **Week starts and calendars.** The picker shows the week start of the visitor's language. The value is always the Gregorian calendar, even when the display uses another.
+
+## Styling a Date Input
+
+```css title="style.css"
+input[type="date"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 2.75rem;        /* comfortable touch target */
+}
+
+input[type="date"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="date"]:invalid {
+  border-color: #b91c1c;
+}
+```
+
+- Safari on iPhone may show the field narrower or taller than others. Setting `min-height` and `font-size` helps keep it consistent. A font size of at least 16px also stops iOS from zooming in.
+- Keep a visible focus style.
+
+## Accessibility at a Glance
+
+- **Always add a label,** such as "Check-in date."
+- **State the allowed range in text:** "Choose a date in December 2026." Link it with `aria-describedby`.
+- **Native pickers are generally accessible,** and work with a keyboard and screen readers. Prefer them to a custom calendar, which is hard to build well.
+- **Give clear errors:** "Check-out must be after check-in," not just "Invalid."
+- **Do not rely on the picker alone.** Let people type the date, too, since many prefer it.
+- **If you build a custom calendar,** you need full keyboard support and ARIA, which is a big job. Use the native input unless you have a strong reason.
+- **Related dates:** keep their labels clear ("Check-in," "Check-out") and put them near each other in a logical order.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Anyone can send any text. Parse it strictly as `yyyy-mm-dd`, check it is a real date, and enforce the range.
+- **Enforce business rules there** too: closed days, holidays, how far ahead people may book.
+- **Do not trust the visitor's clock** for "today." Use your server's date when rules depend on it.
+- **Time zones matter for deadlines.** If something closes "at the end of December 25," decide whose midnight you mean, and say so.
+
+## Global Audience Notes
+
+- **Do not print ambiguous dates.** In text, write "25 December 2026" (or use `Intl.DateTimeFormat`) so no one confuses day and month.
+- **Let the browser localize** the field. It follows the visitor's language settings.
+- **Mind different calendars and week starts.** Some regions begin the week on Sunday, Monday, or Saturday.
+- **Avoid assuming everyone has a birthday on record,** or knows their exact birth date. Offer an alternative where it is important.
+
+## Common Mistakes to Avoid
+
+1. **Using `type="text"` for dates,** which invites `03/04` confusion.
+2. **Setting `value` in the wrong format.** It must be `yyyy-mm-dd`.
+3. **Expecting the value to look like what is shown.** It is always `yyyy-mm-dd`.
+4. **Hard-coding "today"** as a `min` in the HTML.
+5. **Using `toISOString()` for today's date,** which gives the UTC date.
+6. **Showing `valueAsDate` in local time,** causing off-by-one-day errors.
+7. **Trying to disable weekends or holidays** with HTML alone.
+8. **Using a date picker for a birthday** decades in the past, with no other option.
+9. **Using `placeholder`, `maxlength`, or `pattern`,** which do not apply.
+10. **No label,** or a label that is unclear ("Date").
+11. **Not checking the range** and rules on the server.
+12. **Forgetting that a date has no time zone,** and mixing it with times.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="date"` field, pick a date, and submit it with `method="get"`. Read the address.
+2. Switch your browser language (or use another device), and see the field display change, while the value stays the same.
+3. Set `value="2026-12-25"`, then try `value="25/12/2026"`.
+4. Add `min` and `max`, and open the picker to see greyed-out days.
+5. Make a "today or later" field with JavaScript.
+6. Build the check-in and check-out pair, with the second `min` following the first.
+7. Log `valueAsDate` and `valueAsNumber` in the console.
+8. Reproduce the off-by-one-day issue, and fix it with `timeZone: "UTC"`.
+9. Build a birthday with three text fields, grouped in a `fieldset`.
+10. Bonus: add `autocomplete="bday"` and see if your browser offers to fill it.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What format is the value of a date input?</summary>
+
+Always `yyyy-mm-dd`, such as `2026-12-25`, no matter how the field is displayed. It is empty if no complete valid date is chosen.
+
+</details>
+
+<details>
+<summary>2. What do `min`, `max`, and `step` do on a date input?</summary>
+
+`min` and `max` set the earliest and latest dates, written as `yyyy-mm-dd`. `step` is in days. Dates outside the range are rejected.
+
+</details>
+
+<details>
+<summary>3. How do you set today as the earliest date?</summary>
+
+With JavaScript, build a `yyyy-mm-dd` string from the **local** date parts and assign it to `input.min`. Avoid `toISOString()`, which uses UTC.
+
+</details>
+
+<details>
+<summary>4. Why can `valueAsDate` show the wrong day?</summary>
+
+It is midnight UTC. In time zones behind UTC, that is the evening before when shown in local time. Format with `timeZone: "UTC"`, or just use the string `value`.
+
+</details>
+
+<details>
+<summary>5. Can you disable weekends or holidays with HTML alone?</summary>
+
+No. Check them in JavaScript for feedback, and on the server for the real rule, with a clear message.
+
+</details>
+
+<details>
+<summary>6. What is a good way to ask for a birthday?</summary>
+
+Use `autocomplete="bday"` on a date field, or three labeled fields (day, month, year) in a `fieldset`, since scrolling a calendar back many decades is slow. Ask only if you need it.
+
+</details>
+
+## Key Takeaways
+
+- `type="date"` gives a native calendar picker, and always sends `yyyy-mm-dd`, whatever the display.
+- Use `min` and `max` for limits, and JavaScript for "today." Build it from local date parts.
+- A date is a **calendar day**, not a moment. Beware of time zones and the off-by-one-day trap with `valueAsDate`.
+- HTML cannot block specific days, so enforce rules on the server.
+- For birthdays, prefer `autocomplete="bday"` or separate day, month, and year fields.
+- Always label the field, state the allowed range in text, and re-check on the server.
+
+Dates tell us which day. Next, learn how to pick the hour and minute, in [Time](./time), or return to the [Forms overview](/tutorials/html/forms).

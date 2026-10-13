@@ -1,18 +1,494 @@
 ---
-id: input-type-month
-title: "Month and Year Pickers: type='month'"
+id: html-input-month
+title: "HTML Input Type Month"
 sidebar_label: "Month"
 sidebar_position: 11
 slug: /html/forms/input-types/month
-description: "Collect specific year and month values using input type='month' for credit card expiry or monthly selection workflows."
+description: "Learn the HTML input type month: picking a year and month, the yyyy-mm value format, min, max, and step in months, valueAsNumber (months since 1970), browser support and a text fallback with pattern, card expiry and billing periods, accessibility, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type month
-  - month year picker HTML
-  - monthly date selection
-  - card expiration month input
+  - month picker HTML
+  - input month yyyy-mm
+  - input month min max
+  - input month browser support fallback
+  - month input Firefox Safari
+  - credit card expiry input HTML
+  - valueAsNumber input month
+  - billing period month input
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, date]
+tags: [html, web-development, beginner, forms, input, month, validation, frontend]
 ---
+
+import {useState} from 'react';
+
+export function MonthDemo() {
+  const [value, setValue] = useState("2026-12");
+  let label = "";
+  let months = null;
+  if (/^\d{4}-\d{2}$/.test(value)) {
+    const [y, m] = value.split("-").map(Number);
+    label = new Intl.DateTimeFormat("en-GB", {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(Date.UTC(y, m - 1, 1)));
+    months = (y - 1970) * 12 + (m - 1);
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="mo-demo">Billing month</label><br />
+      <input
+        type="month"
+        id="mo-demo"
+        name="billing"
+        min="2026-01"
+        max="2027-12"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-describedby="mo-demo-out"
+      />
+      <p id="mo-demo-out" role="status" style={{margin: "0.5rem 0 0"}}>
+        Value sent: <code>billing={value || "(empty)"}</code>
+        {label ? <><br />Friendly: {label}</> : null}
+        {months !== null ? <><br />valueAsNumber (months since Jan 1970): {months}</> : null}
+      </p>
+    </form>
+  );
+}
+
+Not every date needs a day. A credit card expires in a **month**. A subscription renews for a **month**. A report covers a **month**, and a course starts in a **month**. For these, asking for a full date is awkward, and a plain text box invites "12/26", "Dec 2026", and "2026-12" all at once.
+
+`type="month"` asks for exactly what you need: a **year and a month**, and nothing else. It is a small, friendly input, with one big catch: browser support is not complete. In this lesson, you will learn how to use it, and how to build a reliable fallback.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="month"` shows, and the value it sends
+- `min`, `max`, and `step`
+- Reading the value in JavaScript (and a surprise about `valueAsNumber`)
+- Browser support, and a safe fallback
+- Good uses, and cases where a different design is better
+- Accessibility and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="billing">Billing month</label>
+<input type="month" id="billing" name="billing" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="mo-basic">Billing month</label><br />
+  <input type="month" id="mo-basic" name="billing" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In browsers that support it (such as Chrome and Edge on desktop, and most mobile browsers), you see a field with a **month and a year**, and a picker that lists the months. In browsers that do not, you see an **ordinary text box**. More on this soon.
+
+## The Value Format
+
+:::info The value is `yyyy-mm`
+A four-digit year, a dash, and a two-digit month, such as `2026-12`. It is the same however the field is displayed.
+:::
+
+| What the visitor sees | What is sent |
+| :-- | :-- |
+| `December 2026` | `2026-12` |
+| `diciembre de 2026` (Spanish) | `2026-12` |
+| `2026年12月` (Japanese) | `2026-12` |
+| `March 2027` | `2027-03` |
+| (nothing, or incomplete) | an empty string |
+
+```text
+billing=2026-12
+```
+
+The starting `value` in HTML uses the same format:
+
+```html
+<input type="month" name="billing" value="2026-12" />
+```
+
+There is **no day** in the value. If your server needs a full date, it must choose one itself (for example, the first day of the month).
+
+## Min, Max, and Step
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `min` | The earliest month | `min="2026-01"` |
+| `max` | The latest month | `max="2027-12"` |
+| `step` | The gap in **months** (default 1) | `step="3"` |
+
+```html
+<label for="start">Course starts</label>
+<input
+  type="month"
+  id="start"
+  name="start"
+  min="2026-09"
+  max="2027-09"
+  step="3"
+  required
+/>
+```
+
+- `min` and `max` use the `yyyy-mm` format.
+- `step` counts in **months**, from `min`. With `min="2026-09"` and `step="3"`, valid months are September 2026, December 2026, March 2027, and so on, which suits quarterly intakes.
+- Months outside the range are greyed out in the picker, and rejected on submit.
+
+## Try It: Month Value and Its Forms
+
+Pick a month in the field. The panel shows the value that is sent, a friendly name for the month, and the `valueAsNumber`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="billing">Billing month</label>
+<input type="month" id="billing" name="billing" min="2026-01" max="2027-12" value="2026-12" />
+<p id="out" role="status"></p>
+```
+
+```js title="script.js"
+const input = document.getElementById("billing");
+const out = document.getElementById("out");
+
+function update() {
+  if (!input.value) {
+    out.textContent = "Choose a month.";
+    return;
+  }
+
+  const [year, month] = input.value.split("-").map(Number);
+  const name = new Intl.DateTimeFormat("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+
+  out.textContent =
+    "Sent: " + input.value + " | " + name +
+    " | valueAsNumber: " + input.valueAsNumber;
+}
+
+input.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MonthDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Reading the Value in JavaScript
+
+| Property | What it gives | Example for `2026-12` |
+| :-- | :-- | :-- |
+| `input.value` | The string `yyyy-mm` | `"2026-12"` |
+| `input.valueAsDate` | A `Date` at midnight UTC on the **first** of the month | `2026-12-01T00:00:00.000Z` |
+| `input.valueAsNumber` | **Months** since January 1970 | `683` |
+
+:::warning `valueAsNumber` is not milliseconds here
+For `date`, `time`, and `datetime-local`, `valueAsNumber` is a count of milliseconds. For `month` it is the number of **months** since January 1970. December 2026 is month `683` (that is, `(2026 - 1970) * 12 + 11`). Mixing the two up leads to some very strange dates.
+:::
+
+The most dependable approach is to split the string:
+
+```js
+const [year, month] = input.value.split("-").map(Number);   // 2026, 12
+```
+
+To show a friendly name, use `Intl.DateTimeFormat`. Because we build the date in UTC, we format in UTC too (otherwise some visitors would see the **previous** month):
+
+```js
+const text = new Intl.DateTimeFormat(undefined, {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+}).format(new Date(Date.UTC(year, month - 1, 1)));
+```
+
+## Browser Support and a Safe Fallback
+
+This is the catch. `type="month"` is **not supported everywhere**:
+
+| Browser | Support |
+| :-- | :-- |
+| Chrome, Edge (desktop and Android) | Yes |
+| Safari on iPhone and iPad | Yes |
+| Firefox (desktop) | **No**, shows a text box |
+| Safari on desktop | **No**, shows a text box |
+
+Where it is not supported, the field behaves like `type="text"`. The visitor can type anything, and the browser checks nothing, so the **value might be `Dec 2026`**. (Support changes over time, so test in the browsers your visitors use.)
+
+You can build a fallback in plain HTML. A `pattern` is ignored by browsers that **do** support month, but applied by those that fall back to text:
+
+```html
+<label for="billing">Billing month</label>
+<input
+  type="month"
+  id="billing"
+  name="billing"
+  placeholder="yyyy-mm"
+  pattern="[0-9]{4}-(0[1-9]|1[0-2])"
+  title="Use the format yyyy-mm, such as 2026-12"
+  required
+/>
+<p id="billing-hint">If you see a plain text box, type the year, a dash, and the month, such as 2026-12.</p>
+```
+
+- `placeholder` and `pattern` are not part of the month input in browsers that support it, so they cause no harm, but they help where it falls back.
+- The hint text tells people what to type in a plain box.
+- **Always validate on the server,** because a fallback text box can send anything.
+
+### A Fully Reliable Alternative: Two Fields
+
+If your audience uses many browsers, two ordinary fields are more dependable, and often easier to use:
+
+```html
+<fieldset>
+  <legend>Billing month</legend>
+
+  <label for="m">Month</label>
+  <select id="m" name="month" required>
+    <option value="">Choose</option>
+    <option value="01">January</option>
+    <option value="02">February</option>
+    <option value="03">March</option>
+    <option value="04">April</option>
+    <option value="05">May</option>
+    <option value="06">June</option>
+    <option value="07">July</option>
+    <option value="08">August</option>
+    <option value="09">September</option>
+    <option value="10">October</option>
+    <option value="11">November</option>
+    <option value="12">December</option>
+  </select>
+
+  <label for="y">Year</label>
+  <input type="number" id="y" name="year" min="2026" max="2035" required />
+</fieldset>
+```
+
+The [fieldset and legend](../fieldset-and-legend) group them, so screen readers announce "Billing month" first. Month names in a select remove all doubt about order, in any language.
+
+## Good Uses and Poor Uses
+
+| Good use for `month` | Why |
+| :-- | :-- |
+| A report or statement period | Only the month matters |
+| A subscription start or billing month | No exact day is needed |
+| A course or program intake | Quarterly or yearly starts, with `step` |
+| A graduation month or start month | A rough date is enough |
+| A "month of birth" for an age range | Rarely, and only if truly needed |
+
+| Poor use | Better choice |
+| :-- | :-- |
+| An exact event | [`date`](./date) or [`datetime-local`](./datetime-local) |
+| A card expiry on a payment form | Two fields (see below) |
+| A birthday | Day, month, and year fields, or `date` |
+| Many years in the past or future | A select for the month, and a number field for the year |
+
+### Card Expiry Dates
+
+Card expiry looks like a natural fit for `type="month"`, but payment forms have special needs: autofill, and different formats across card providers. The most dependable way is two fields with the standard autofill tokens:
+
+```html
+<label for="cc-month">Expiry month</label>
+<select id="cc-month" name="cc-month" autocomplete="cc-exp-month"> ... </select>
+
+<label for="cc-year">Expiry year</label>
+<select id="cc-year" name="cc-year" autocomplete="cc-exp-year"> ... </select>
+```
+
+Better still, use a payment provider's hosted fields, so card numbers never touch your own server.
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="billing"` |
+| `value` | The starting month (`yyyy-mm`) | `value="2026-12"` |
+| `required` | Cannot be empty | `required` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="starts"` |
+
+On browsers that support it, `placeholder`, `maxlength`, `minlength`, `pattern`, and `size` have no effect.
+
+## Setting the Current Month as a Default
+
+HTML cannot know today's month, so use JavaScript, with the **local** date:
+
+```js title="script.js"
+const now = new Date();
+const month = String(now.getMonth() + 1).padStart(2, "0");
+const thisMonth = now.getFullYear() + "-" + month;
+
+const input = document.getElementById("billing");
+input.value = thisMonth;
+input.min = thisMonth;     // nothing in the past
+```
+
+Avoid `new Date().toISOString().slice(0, 7)`, which uses UTC, and can be a month off near the end or start of a month.
+
+## Styling a Month Input
+
+```css title="style.css"
+input[type="month"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+input[type="month"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="month"]:invalid {
+  border-color: #b91c1c;
+}
+```
+
+- The picker popup cannot be styled.
+- Because some browsers show a plain text box, make sure the field **looks fine either way**, and keep the help text visible.
+
+## Accessibility at a Glance
+
+- **Always add a label,** such as "Billing month."
+- **State the format and range in text:** "Choose a month from January 2026 to December 2027." Link it with `aria-describedby`.
+- **Give a hint for fallback browsers:** "Type the year, a dash, and the month: 2026-12."
+- **Use the native input where supported.** Custom pickers are hard to make accessible.
+- **Allow typing.** Many people prefer to type the month and year.
+- **Give clear errors:** "Choose a month between January 2026 and December 2027."
+- **Write month names in full** in text ("March," not "03"), so no one has to guess.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Parse the string strictly as `yyyy-mm`, check the month is 01 to 12, and enforce the range. A fallback text box can send anything.
+- **Decide how to turn a month into a date** (such as the first day) in **one** place on the server, and document it.
+- **Use the server's clock** for rules like "no months in the past."
+- **Be careful with payment data.** Never log or store full card details unless you are certified to do so. Prefer a payment provider.
+
+## Global Audience Notes
+
+- **Month names and order** follow the visitor's language in the field. Your server still receives `yyyy-mm`.
+- **Do not print a bare "12/26"** in text. It could mean December 2026 or the 12th of 2026, depending on the country. Write "December 2026."
+- **Calendars differ,** though the value is always in the Gregorian calendar.
+- **Fiscal years** often start in other months (April in India and the UK, October in the US government). If your "month" means a fiscal month, say so in the label.
+
+## Common Mistakes to Avoid
+
+1. **Assuming every browser supports `type="month"`.** Firefox and desktop Safari show a text box.
+2. **No fallback hint or `pattern`** for those browsers.
+3. **Setting `value` in the wrong format.** It must be `yyyy-mm`.
+4. **Expecting a day in the value.** There is none.
+5. **Treating `valueAsNumber` as milliseconds.** It counts months since January 1970.
+6. **Showing `valueAsDate` in local time,** which can show the previous month.
+7. **Using `toISOString().slice(0, 7)` for "this month,"** which uses UTC.
+8. **Using `month` for exact events** that need a day.
+9. **Using `month` for card expiry** instead of two autofill-friendly fields.
+10. **Forgetting that `step` counts months,** not days.
+11. **No label,** or an unclear one.
+12. **Trusting the browser alone** and skipping server-side checks.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="month"` field and submit it with `method="get"`. Read the address.
+2. Open it in Chrome, and then in Firefox, and compare what you see.
+3. Set `value="2026-12"`, then try `value="12/2026"`.
+4. Add `min="2026-01"` and `max="2027-12"`, and open the picker.
+5. Use `step="3"` with `min="2026-09"` to allow quarterly months.
+6. Log `valueAsNumber`, and check that December 2026 gives `683`.
+7. Add `placeholder` and `pattern` as a fallback, and test by changing the type to `text`.
+8. Format the month name with `Intl.DateTimeFormat` and `timeZone: "UTC"`.
+9. Build the two-field version with a select and a number input in a `fieldset`.
+10. Bonus: fill in the current month with JavaScript, using local date parts.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What format is the value of a month input?</summary>
+
+`yyyy-mm`, such as `2026-12`. It has no day, and it is the same however the field is displayed. An incomplete choice gives an empty string.
+
+</details>
+
+<details>
+<summary>2. What does `step="3"` mean on a month input?</summary>
+
+Valid months are three months apart, counted from `min`. With `min="2026-09"`, that allows September, December, March, and so on.
+
+</details>
+
+<details>
+<summary>3. What does `valueAsNumber` give for a month input?</summary>
+
+The number of months since January 1970 (not milliseconds). December 2026 is `683`.
+
+</details>
+
+<details>
+<summary>4. Which common browsers show a plain text box for `type="month"`?</summary>
+
+Firefox and Safari on desktop. Chrome, Edge, and mobile Safari support it. Test in the browsers your visitors use.
+
+</details>
+
+<details>
+<summary>5. How can you make a month field work where it is unsupported?</summary>
+
+Add a `placeholder` and a `pattern` (such as `[0-9]{4}-(0[1-9]|1[0-2])`), explain the format in text, or use a select for the month and a number field for the year. Always validate on the server.
+
+</details>
+
+<details>
+<summary>6. Why is a card expiry better as two separate fields?</summary>
+
+Two fields with the `cc-exp-month` and `cc-exp-year` autofill tokens work reliably across browsers and card formats, and are easier to fill in. A payment provider's hosted fields are better still.
+
+</details>
+
+## Key Takeaways
+
+- `type="month"` picks a year and month, and sends `yyyy-mm`, with no day.
+- `min` and `max` use the same format. `step` counts **months**, which suits quarterly or yearly starts.
+- `valueAsNumber` is months since January 1970. Splitting the string is the safest way to read it.
+- Browser support is incomplete. Give a text fallback with `pattern`, a format hint, and server-side checks, or use a select and a number field.
+- Choose `month` for periods and billing months, not for exact events, birthdays, or card expiry.
+- Label the field, state the format and range in text, and always validate on the server.
+
+Next, learn how to pick a week of the year, in [Week](./week), or return to the [Forms overview](/tutorials/html/forms).

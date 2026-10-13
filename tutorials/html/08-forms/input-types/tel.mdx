@@ -1,16 +1,411 @@
 ---
-id: input-type-tel
-title: "Telephone Inputs: type='tel'"
-sidebar_label: "Telephone"
-sidebar_position: 5
+id: html-input-tel
+title: "HTML Input Type Tel"
+sidebar_label: "Tel"
+sidebar_position: 4
 slug: /html/forms/input-types/tel
-description: "Learn how input type='tel' invokes mobile phone keypads and pairs with regular expressions for international telephone format validation."
+description: "Learn the HTML input type tel for phone numbers: the phone keypad, why the browser does not validate or format numbers, pattern and inputmode, autocomplete values, international formats (E.164), tel links, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type tel
-  - telephone input field
   - phone number input HTML
-  - mobile keypad tel
+  - input tel pattern
+  - autocomplete tel
+  - international phone number form
+  - E.164 phone format
+  - tel link HTML
+  - inputmode tel
+  - phone number validation
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, mobile]
+tags: [html, web-development, beginner, forms, input, tel, phone, frontend]
 ---
+
+import {useState} from 'react';
+
+export function CleanDemo() {
+  const [value, setValue] = useState("+91 98765-43210");
+  const cleaned = value.replace(/(?!^\+)[^\d]/g, "");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="tel-demo">Phone number</label><br />
+      <input
+        type="tel"
+        id="tel-demo"
+        name="phone"
+        autoComplete="tel"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-describedby="tel-demo-out"
+      />
+      <p id="tel-demo-out" style={{margin: "0.5rem 0 0"}}>
+        Typed: <code>{value || "(empty)"}</code><br />
+        Cleaned for storage: <code>{cleaned || "(empty)"}</code>
+      </p>
+    </form>
+  );
+}
+
+Phone numbers are how businesses confirm orders, send delivery updates, and call back customers. The input made for them is `type="tel"`.
+
+Here is the surprise: unlike `type="email"` or `type="url"`, the tel type does **no checking at all**. It does not know what a valid phone number looks like, because the answer changes from country to country. What it does give you is a **phone keypad** on mobile devices, and a clear signal to browsers about what the field holds. In this lesson, you will learn what it does, how to add your own rules sensibly, and how to handle numbers for a worldwide audience.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="tel"` does, and what it does not do
+- Why the browser cannot validate phone numbers for you
+- How to use `pattern`, `inputmode`, and `autocomplete`
+- How to handle international numbers (E.164)
+- How to link a number so it can be called
+- Accessibility, styling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="phone">Phone number</label>
+<input type="tel" id="phone" name="phone" autocomplete="tel" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="tel-basic">Phone number</label><br />
+  <input type="tel" id="tel-basic" name="phone" autoComplete="tel" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+On a desktop computer, it looks and behaves exactly like a text box. On a phone, it brings up a **numeric keypad** with digits, `+`, `*`, and `#`, so the visitor can type a number comfortably.
+
+| Feature | `type="tel"` |
+| :-- | :-- |
+| Keypad on phones | Yes |
+| Checks the format | **No** |
+| Strips spaces | **No** (only line breaks are removed) |
+| Accepts letters | **Yes**, since there is no filter |
+| Autofill | Yes, with `autocomplete` |
+| Sent as | Text, such as `phone=%2B919876543210` |
+
+:::info Why no built-in check?
+Phone numbers vary enormously. Some countries use 8 digits, some use 11. Some include area codes in brackets, some use extensions, and some allow letters (like `1-800-FLOWERS`). No single browser rule could fit everyone, so browsers do not try.
+:::
+
+## Telephone Number or Number?
+
+A very common mistake is to use `type="number"` for phone numbers. Do not.
+
+| | `type="tel"` | `type="number"` |
+| :-- | :-- | :-- |
+| Leading zeros (`0712...`) | Kept | May be lost |
+| `+` for country code | Allowed | Not allowed |
+| Spaces and dashes | Allowed | Not allowed |
+| Spinner arrows | None | Shown, which makes no sense for a phone |
+| Scrolling changes value | No | Sometimes, by accident |
+| Meaning | An **identifier** you dial | A **quantity** you calculate with |
+
+A phone number is something you **dial**, not something you add up. Always use `tel`.
+
+## Attributes for Tel Inputs
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server | `name="phone"` |
+| `id` | Connects the [label](../label-element) | `id="phone"` |
+| `value` | The starting number | `value="+1 555 0100"` |
+| `placeholder` | A short example (never a label) | `placeholder="+44 20 7946 0000"` |
+| `required` | Cannot be left empty | `required` |
+| `pattern` | A regular expression the value must match | `pattern="[0-9+ ()-]{7,20}"` |
+| `minlength`, `maxlength` | Length limits | `maxlength="20"` |
+| `size` | Visible width | `size="20"` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="saved-numbers"` |
+| `autocomplete` | Tells the browser what to fill in | `autocomplete="tel"` |
+| `inputmode` | Keyboard hint | `inputmode="tel"` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+
+There is no `min`, `max`, or `step`. Those belong to numbers.
+
+## Adding Your Own Rules
+
+Because the browser does not check, any rule is yours to write. The tool is `pattern`.
+
+### A Gentle Pattern for a Worldwide Audience
+
+```html
+<label for="phone">Phone number</label>
+<input
+  type="tel"
+  id="phone"
+  name="phone"
+  pattern="\+?[0-9\s().\-]{7,20}"
+  title="Use digits, and optionally +, spaces, dashes, or brackets. 7 to 20 characters."
+  autocomplete="tel"
+  required
+/>
+```
+
+This accepts an optional `+`, then digits, spaces, dots, brackets, and dashes, 7 to 20 characters in all. It blocks letters, but allows the many ways people format numbers.
+
+### A Strict Pattern for One Country
+
+If your service works in one country only, you can be more exact. For example, an Indian mobile number is 10 digits starting with 6, 7, 8, or 9:
+
+```html
+<label for="mobile">Mobile number (India)</label>
+<input
+  type="tel"
+  id="mobile"
+  name="mobile"
+  pattern="[6-9][0-9]{9}"
+  maxlength="10"
+  inputmode="numeric"
+  title="Enter a 10-digit mobile number starting with 6, 7, 8, or 9"
+  autocomplete="tel-national"
+  required
+/>
+```
+
+:::tip Always write a `title`
+When a `pattern` fails, the browser shows a generic message, "Please match the requested format," plus your `title`. Without a clear `title`, nobody knows what the format is.
+:::
+
+:::warning Do not over-restrict
+A tight pattern on a global site turns away real customers. If you serve several countries, accept a wide range of characters, and then clean and check the number on the server (see below).
+:::
+
+You will study `pattern` fully in [Pattern](../pattern).
+
+## Try It: Clean Before You Store
+
+Whatever format people type, your database should hold **one consistent format**. The usual choice is **E.164**: a `+`, the country code, and the number, with no spaces or punctuation, such as `+919876543210`.
+
+The demo shows what the visitor typed, and a cleaned version. Change the number and watch.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="phone">Phone number</label>
+<input type="tel" id="phone" name="phone" autocomplete="tel" value="+91 98765-43210" />
+<p>Cleaned for storage: <code id="clean"></code></p>
+```
+
+```js title="script.js"
+const input = document.getElementById("phone");
+const out = document.getElementById("clean");
+
+function clean(text) {
+  // Keep digits, and a + only at the start
+  return text.replace(/(?!^\+)[^\d]/g, "");
+}
+
+function update() {
+  out.textContent = clean(input.value) || "(empty)";
+}
+
+input.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CleanDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+This kind of cleaning is a helper. It is **not** validation. A string of digits can still be a number that does not exist. A phone-number library on the server (such as Google's libphonenumber, available for most languages) knows the real rules for each country, and can tell you whether a number is plausible.
+
+## Autocomplete Values
+
+| What the field holds | `autocomplete` value |
+| :-- | :-- |
+| A complete number, with country code | `tel` |
+| The number without the country code | `tel-national` |
+| The country code only (for example, `+91`) | `tel-country-code` |
+| The area code | `tel-area-code` |
+| The local number | `tel-local` |
+| An extension | `tel-extension` |
+
+For one field, use `autocomplete="tel"`. For a form that splits the number into a code field and a number field, use `tel-country-code` and `tel-national`.
+
+```html
+<input type="tel" name="phone" autocomplete="tel" />
+```
+
+Prefer **one** field to a set of split boxes. Splitting a phone number into three parts makes pasting and autofill hard, and it fails for countries whose numbers have another shape.
+
+## International Numbers
+
+If you serve people in many countries, a few habits help a lot:
+
+1. **Accept the `+` and the country code.** Say so in the hint: "Include your country code, like +44."
+2. **Show an example** in the hint text: `+1 415 555 0132`.
+3. **Allow spaces, dots, dashes, and brackets** when typing, and remove them on the server.
+4. **Offer a country picker** (a [select](../select)) only if it helps. Otherwise, let people type the `+` themselves.
+5. **Store E.164** (`+` and digits only) in your database. It is the same everywhere and works for sending text messages and calls.
+6. **Do not assume a length.** Numbers range from about 7 to 15 digits (the E.164 maximum).
+7. **Do not require a number** unless you truly need it. Many people do not want to share one.
+
+## Linking a Number with `tel:`
+
+Showing a number on a page? Make it tappable, so a phone can dial with one touch.
+
+```html
+<a href="tel:+919876543210">+91 98765 43210</a>
+```
+
+- Use **E.164 in the `href`** (the `+`, then digits only), but show a friendly format as the link text.
+- On computers, the link may open a calling app, or do nothing, so always show the number as text too.
+- `tel:` is one of several special link types, like `mailto:`, that you met in the links section.
+
+## Styling a Tel Input
+
+```css title="style.css"
+input[type="tel"] {
+  width: 100%;
+  max-width: 20rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+}
+
+input[type="tel"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+- Numbers are easiest to read when they are not squeezed, so give the field comfortable width.
+- If you support right-to-left languages (Arabic, Hebrew), numbers still read left to right. Add `dir="ltr"` to the input so a `+` does not jump to the wrong side:
+
+```html
+<input type="tel" name="phone" dir="ltr" />
+```
+
+## Accessibility at a Glance
+
+- **Always add a label.** "Phone number" is clear. Say "optional" in the label if it is not required.
+- **Say what format you accept** in text, linked with `aria-describedby`, not only in a placeholder.
+- **Explain why you ask.** "We only call about your delivery" builds trust.
+- **Use `autocomplete`**, which helps people who find typing difficult.
+- **Write a clear `title`** for any `pattern`, and give a helpful error message.
+- **Do not split the number** into many tiny boxes.
+- **For links,** write link text that makes sense out of context, such as "Call us: +91 98765 43210".
+
+## Security and Privacy Notes
+
+- **Validate on the server.** The browser checks nothing here, so your server must clean and verify the value.
+- **Treat numbers as personal data.** Collect only what you need, and protect it.
+- **Confirm ownership** when it matters. Send a one-time code by text message (use `autocomplete="one-time-code"` on the field where the code is entered).
+- **Escape the value** when you show it in a page.
+- **Beware of abuse.** Attackers use sign-up forms to send text messages to strangers. Limit how often a number can be used.
+
+See [Secure Form Design](../secure-form-design).
+
+## Common Mistakes to Avoid
+
+1. **Using `type="number"`** for phone numbers.
+2. **Using `type="text"`,** which loses the phone keypad.
+3. **Assuming `type="tel"` validates.** It does not.
+4. **A `pattern` with no `title`,** so people see an unhelpful message.
+5. **A pattern that fits only one country** on a worldwide site.
+6. **Rejecting `+`, spaces, or brackets,** which are normal.
+7. **Splitting the number into several boxes.**
+8. **Storing the number exactly as typed.** Normalize it (E.164).
+9. **Making the number required** when it is not truly needed.
+10. **Forgetting `autocomplete="tel"`.**
+11. **A `tel:` link with spaces and brackets** in the `href`.
+12. **No server-side check,** or no confirmation when the number matters.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled phone field with `type="tel"` and open it on a phone (or a phone emulator in your browser tools) to see the keypad.
+2. Type letters into it. Notice that the browser does not stop you.
+3. Add `pattern="\+?[0-9\s().\-]{7,20}"` with a `title`, and submit invalid and valid numbers.
+4. Add `autocomplete="tel"`.
+5. Write a 10-digit pattern for one country, and add `maxlength`.
+6. Use JavaScript to remove spaces and dashes from the value.
+7. Add a `tel:` link for the same number.
+8. Add `dir="ltr"` and test it inside a page with `dir="rtl"`.
+9. Compare `type="tel"` and `type="number"` by typing `+44 020`.
+10. Bonus: list the steps for confirming a phone number with a one-time code.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `type="tel"` do?</summary>
+
+It shows a phone keypad on mobile devices and tells browsers the field holds a phone number. On a computer, it looks like a text box.
+
+</details>
+
+<details>
+<summary>2. Does `type="tel"` check that the value is a valid phone number?</summary>
+
+No. Phone formats vary by country, so browsers do no checking. Use `pattern` for simple rules and a server-side library for real validation.
+
+</details>
+
+<details>
+<summary>3. Why not use `type="number"` for a phone number?</summary>
+
+A phone number is something you dial, not a quantity. `number` can drop leading zeros, rejects `+`, spaces, and dashes, and shows pointless spinner arrows.
+
+</details>
+
+<details>
+<summary>4. What is E.164, and why store numbers in it?</summary>
+
+It is the international format: a `+`, the country code, and digits only, such as `+919876543210`. It is consistent everywhere and works for calls and text messages.
+
+</details>
+
+<details>
+<summary>5. Why should a `pattern` always come with a `title`?</summary>
+
+When the pattern fails, the browser shows a generic message. The `title` is added to it, so it tells the visitor what format you expect.
+
+</details>
+
+<details>
+<summary>6. How do you make a phone number tappable on a page?</summary>
+
+Use a link with the `tel:` scheme: `<a href="tel:+919876543210">+91 98765 43210</a>`. Use digits only in the `href`, and a readable format as the link text.
+
+</details>
+
+## Key Takeaways
+
+- `type="tel"` gives mobile visitors a phone keypad, and does **no validation** at all.
+- Never use `type="number"` for phone numbers. They are identifiers you dial, not quantities.
+- Add rules with `pattern` and a clear `title`, but stay generous on a worldwide site.
+- Use `autocomplete="tel"`, keep **one** field, and prefer a single international format.
+- Store numbers in E.164 (`+` and digits), and validate on the server, with a library when you can.
+- Link numbers with `tel:` and confirm ownership with a code when it matters.
+
+Phone numbers are identifiers. Next, learn how to collect a web address, in [URL](./url), or return to the [Forms overview](/tutorials/html/forms).

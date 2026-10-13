@@ -1,16 +1,512 @@
 ---
-id: input-type-range
-title: "Range Sliders: type='range'"
-sidebar_label: "Range Slider"
+id: html-input-range
+title: "HTML Input Type Range"
+sidebar_label: "Range"
 sidebar_position: 17
 slug: /html/forms/input-types/range
-description: "Create visual range sliders using input type='range', setting numerical bounds with min, max, step, and connecting to datalists."
+description: "Learn the HTML input type range: the slider, its min, max, and step defaults, the always-present midpoint value, showing the value with the output element, tick marks with datalist, pairing a slider with a number field, keyboard controls, styling the track and thumb, accessibility with aria-valuetext, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type range
-  - range slider element
-  - slider control HTML
-  - input range min max
+  - range slider HTML
+  - input range min max step
+  - input range default value
+  - output element range slider
+  - range slider tick marks datalist
+  - style range slider thumb track
+  - aria-valuetext slider
+  - range and number input sync
+  - input event vs change event slider
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, range]
+tags: [html, web-development, beginner, forms, input, range, slider, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function VolumeDemo() {
+  const [volume, setVolume] = useState(40);
+  const label = volume === 0 ? "Muted" : volume + " percent";
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="rg-volume">Volume</label><br />
+      <input
+        type="range"
+        id="rg-volume"
+        name="volume"
+        min={0}
+        max={100}
+        step={5}
+        value={volume}
+        onChange={(event) => setVolume(Number(event.target.value))}
+        aria-valuetext={label}
+      />{" "}
+      <output htmlFor="rg-volume">{label}</output>
+      <p style={{margin: "0.5rem 0 0"}}>Value sent: <code>volume={volume}</code></p>
+    </form>
+  );
+}
+
+export function BudgetDemo() {
+  const min = 0;
+  const max = 2000;
+  const [budget, setBudget] = useState(500);
+  const clamp = (n) => Math.min(max, Math.max(min, n));
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{border: "1px solid #64748b", borderRadius: "6px"}}>
+        <legend>Monthly budget (USD)</legend>
+        <label htmlFor="rg-budget">Slide to choose</label><br />
+        <input
+          type="range"
+          id="rg-budget"
+          min={min}
+          max={max}
+          step={50}
+          value={budget}
+          onChange={(event) => setBudget(Number(event.target.value))}
+          aria-valuetext={"$" + budget}
+          list="rg-budget-ticks"
+        />
+        <datalist id="rg-budget-ticks">
+          <option value="0" label="0"></option>
+          <option value="1000" label="1000"></option>
+          <option value="2000" label="2000"></option>
+        </datalist>
+        <br />
+        <label htmlFor="rg-budget-num">Or type an exact amount</label><br />
+        <input
+          type="number"
+          id="rg-budget-num"
+          name="budget"
+          min={min}
+          max={max}
+          step={1}
+          value={budget}
+          onChange={(event) => setBudget(clamp(Number(event.target.value)))}
+        />
+      </fieldset>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>Budget: ${budget} a month</p>
+    </form>
+  );
+}
+
+Volume. Brightness. Price range. How much do you agree, from 1 to 10? Some values are not about exact numbers, but about **where on a scale** something sits. For these, a **slider** feels natural: drag a handle along a track. In HTML, that is `type="range"`.
+
+A slider is friendly and quick, but it is also easy to misuse. It has **no empty state**, it is bad at precise values, and its default look gives no clue what the number is. In this lesson, you will learn how to set up a range, show its value, add tick marks, pair it with a number box, style it, and make it accessible.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `type="range"` works, and its defaults for `min`, `max`, `step`, and the starting value
+- Showing the current value with `<output>`
+- Tick marks with a `<datalist>`
+- Pairing a slider with a number field for precision
+- The `input` and `change` events, and keyboard controls
+- Styling, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="volume">Volume</label>
+<input type="range" id="volume" name="volume" min="0" max="100" step="5" value="40" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="rg-basic">Volume</label><br />
+  <input type="range" id="rg-basic" name="volume" min={0} max={100} step={5} defaultValue={40} />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A horizontal track with a draggable **thumb**. Drag it, or click on the track, and the value changes. The look depends on the browser and the operating system.
+
+## Min, Max, Step, and the Starting Value
+
+| Attribute | What it does | Default |
+| :-- | :-- | :-- |
+| `min` | The lowest value (the far left) | `0` |
+| `max` | The highest value (the far right) | `100` |
+| `step` | The gap between values | `1` |
+| `value` | The starting position | The **midpoint** between `min` and `max` |
+
+```html
+<!-- 0 to 100, in steps of 1, starting at 50 -->
+<input type="range" name="a" />
+
+<!-- 1 to 10, starting at 5 -->
+<input type="range" name="b" min="1" max="10" value="5" />
+
+<!-- 0 to 1 in tenths -->
+<input type="range" name="c" min="0" max="1" step="0.1" />
+
+<!-- Any value (smooth, no snapping) -->
+<input type="range" name="d" min="0" max="1" step="any" />
+```
+
+Unlike most inputs, a range **is never empty**. If you set no `value`, the thumb starts in the middle (50 for the default 0 to 100). A value outside the range is moved to the nearest end, and a value off the `step` is snapped to the nearest valid one.
+
+## What Is Sent
+
+A range always sends its current value, as text: `volume=40`. Because it can never be empty, `required` has no meaning on it, and **a range is always sent**, even if the visitor never touched it.
+
+:::warning "Did not answer" looks like "chose the middle"
+Because the thumb starts in the middle, your server cannot tell "chose 50" from "ignored the slider." That makes sliders risky for **surveys and ratings**. If you must know whether the visitor answered, use radio buttons, or add a checkbox ("I have an opinion"), or track the first `input` event in JavaScript.
+:::
+
+## Show the Value with `<output>`
+
+The slider alone does not display its number. A visitor sees only the thumb position, and cannot tell if they set 40 or 45. Add an `<output>` element, which is made for showing a calculated result.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="volume">Volume</label>
+<input type="range" id="volume" name="volume" min="0" max="100" step="5" value="40" />
+<output for="volume" id="volume-out">40 percent</output>
+```
+
+```js title="script.js"
+const slider = document.getElementById("volume");
+const output = document.getElementById("volume-out");
+
+function update() {
+  const text = slider.value === "0" ? "Muted" : slider.value + " percent";
+  output.textContent = text;
+  slider.setAttribute("aria-valuetext", text);
+}
+
+slider.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<VolumeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The pieces:
+
+- **`<output for="volume">`** says which input(s) the result comes from. It also acts as a live region, which many screen readers announce politely when its text changes.
+- **`input` event**: fires **continuously** as the thumb moves, so the number follows the drag. The **`change`** event fires only when the visitor lets go. Use `input` for live feedback, and `change` for saving.
+- **`aria-valuetext`** gives screen readers a meaningful phrase. Without it, they read just "40." With it, they say "40 percent," or "Muted."
+
+## Tick Marks with `<datalist>`
+
+You can mark special values along the track with the `list` attribute and a `<datalist>`:
+
+```html
+<label for="size">Text size</label>
+<input type="range" id="size" name="size" min="12" max="24" step="2" list="sizes" />
+
+<datalist id="sizes">
+  <option value="12" label="Small"></option>
+  <option value="16" label="Normal"></option>
+  <option value="24" label="Large"></option>
+</datalist>
+```
+
+Each `<option>` adds a tick at its value, and in browsers that support it, the `label` is shown beneath it. Support is **uneven**: some browsers show ticks only, some show labels, and some show nothing. If the labels matter, write your own labels in HTML and CSS under the slider, and keep the `<datalist>` as a bonus. You will study `<datalist>` in [Datalist](../datalist).
+
+## Try It: Slider Plus Number Field
+
+A slider is great for **rough** choices and bad at **exact** ones. Dragging to exactly 1,350 out of 2,000 on a phone is frustrating. The fix is a slider **and** a number input, kept in sync.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<fieldset>
+  <legend>Monthly budget (USD)</legend>
+
+  <label for="slider">Slide to choose</label>
+  <input type="range" id="slider" min="0" max="2000" step="50" value="500" />
+
+  <label for="number">Or type an exact amount</label>
+  <input type="number" id="number" name="budget" min="0" max="2000" step="1" value="500" />
+</fieldset>
+```
+
+```js title="script.js"
+const slider = document.getElementById("slider");
+const number = document.getElementById("number");
+
+slider.addEventListener("input", () => {
+  number.value = slider.value;
+});
+
+number.addEventListener("input", () => {
+  const n = Math.min(2000, Math.max(0, Number(number.value)));
+  slider.value = n;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BudgetDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Design notes:
+
+- Only the **number** field has a `name`, so only it is sent. The slider is a helper, and sending both would duplicate the value.
+- The slider moves in steps of 50, but the number field accepts any whole number. If the slider cannot show an exact value, it moves to the nearest step.
+- Both fields have labels, and they are grouped in a `fieldset`.
+- Both obey the same `min` and `max`. The server must check them again.
+
+## Keyboard Controls
+
+A native slider works with the keyboard without any extra code. Click or `Tab` to focus the thumb, and then:
+
+| Key | What happens |
+| :-- | :-- |
+| `→` or `↑` | Increase by one `step` |
+| `←` or `↓` | Decrease by one `step` |
+| `Page Up` / `Page Down` | Move by a larger amount (about 10% of the range, in most browsers) |
+| `Home` | Jump to `min` |
+| `End` | Jump to `max` |
+
+This is one of the strongest reasons to use the native input, and not to build a slider from `div`s.
+
+## When to Use a Range, and When Not
+
+| Good use for a slider | Why |
+| :-- | :-- |
+| Volume, brightness, zoom | Approximate, with instant feedback |
+| A preference on a scale (like "how spicy?") | The position matters more than the exact number |
+| Filtering by rough price or distance | Dragging is quick, and a number box adds precision |
+| Image or colour adjustments | The visitor judges by eye or ear |
+
+| Poor use | Better choice |
+| :-- | :-- |
+| An exact number (age, quantity, an amount) | [`number`](./number) |
+| A survey rating where you must know if people answered | Radio buttons (1 to 5) |
+| A choice from a few named options | Radio buttons or a [select](../select) |
+| Anything where the visitor must be sure of the value | A number field, or show the value clearly |
+| A very large range (0 to 1,000,000) | A number field. The slider is too coarse |
+
+## Styling a Range Input
+
+A range is built from two parts: the **track** and the **thumb**. The simplest style uses `accent-color`:
+
+```css title="style.css"
+input[type="range"] {
+  accent-color: #2563eb;
+  width: 100%;
+  max-width: 20rem;
+}
+
+input[type="range"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 4px;
+}
+```
+
+For a **custom look**, you need browser-specific pseudo-elements, and `appearance: none`:
+
+```css
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 2.75rem;               /* a large touch area */
+}
+
+/* Chrome, Edge, Safari: the track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+/* Chrome, Edge, Safari: the thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: -0.5rem;           /* centre on the track */
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #2563eb;
+  box-shadow: 0 0 0 1px #1e3a8a;
+}
+
+/* Firefox: the track */
+input[type="range"]::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+/* Firefox: the thumb */
+input[type="range"]::-moz-range-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #2563eb;
+  box-shadow: 0 0 0 1px #1e3a8a;
+}
+```
+
+- Write each browser's rules **separately**. If you combine two prefixed selectors in one rule, a browser that does not understand one drops the entire rule.
+- Make the thumb at least about 24 pixels wide, with a touch area around 44 pixels high.
+- Give the track and thumb enough **contrast** against the background (at least 3:1 for these controls).
+- Always keep a visible **focus** style.
+
+### Vertical Sliders
+
+A vertical slider is less common, and needs care:
+
+```css
+input[type="range"].vertical {
+  writing-mode: vertical-lr;
+  direction: rtl;               /* so that "up" means "more" */
+  width: 2.75rem;
+  height: 10rem;
+}
+```
+
+Older browsers needed other tricks, such as `orient="vertical"` in Firefox. Test it on your target browsers, and consider whether a horizontal slider would be simpler for everyone.
+
+## Accessibility at a Glance
+
+- **Always add a visible label,** such as "Volume."
+- **Show the current value** as text with `<output>`, so no one has to guess.
+- **Add `aria-valuetext`** when the number needs a unit or words ("40 percent", "Muted", "$500").
+- **Explain the ends of the scale** in text: "1 is not at all likely, and 10 is extremely likely."
+- **Use the native input** to keep arrow keys, `Home`, `End`, and `Page Up/Down` for free.
+- **Make the thumb big enough** for touch and for people who have difficulty with fine movements.
+- **Offer a number input** for exact values, as shown above, since dragging precisely is hard for many people.
+- **Do not rely on colour alone** to show the value. The thumb position and the printed number do that.
+- **Do not update other parts of the page in a distracting way** while the thumb moves. Update only a small, polite status.
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Anyone can send `volume=9999`. Parse the number, and enforce `min`, `max`, and `step`.
+- **Remember a range is always sent,** so "no answer" cannot be told from "the middle."
+- **Do not trust a price or limit** coming from a slider. Look up real prices and rules on the server.
+- **Treat the value as text** until you have parsed and checked it.
+
+## Global Audience Notes
+
+- **Right-to-left languages:** a slider follows the page direction, so "minimum" appears on the right in an RTL page. Make sure your end labels match.
+- **Numbers in help text:** use the visitor's number format for the printed value (for example, `Intl.NumberFormat`), and keep the `value` itself as a plain number.
+- **Units differ.** Say whether a distance is in kilometres or miles, a weight in kilograms or pounds, a price in which currency.
+- **Scale labels** such as "strongly agree" should be translated, and chosen carefully, because survey scales are read differently across cultures.
+
+## Common Mistakes to Avoid
+
+1. **Not showing the current value.** A bare slider hides its number.
+2. **Using a slider for an exact value.** Pair it with a number field, or use a number field alone.
+3. **Treating `required` as meaningful.** A range is never empty.
+4. **Forgetting that the thumb starts in the middle,** so "untouched" and "chose 50" look the same.
+5. **Using a slider for ratings** when you must know whether the visitor answered.
+6. **A huge range** (such as 0 to 1,000,000), which makes the slider too coarse to use.
+7. **Using `change` for live feedback.** Use `input`.
+8. **No label,** or no explanation of what the ends mean.
+9. **A tiny thumb** that is hard to grab on a phone.
+10. **Combining `-webkit-` and `-moz-` selectors in one rule,** which breaks both.
+11. **Replacing the native input** with a `div`-based slider that lacks keyboard support.
+12. **Trusting the value without checking** `min`, `max`, and `step` on the server.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="range"` with no attributes. What are its `min`, `max`, and starting value?
+2. Set `min="1"`, `max="10"`, and `value="3"`.
+3. Add `step="0.5"`, and then `step="any"`, and drag the thumb.
+4. Add an `<output>` that shows the value as you drag, using the `input` event.
+5. Add `aria-valuetext` with a unit, and try it with a screen reader if you can.
+6. Add tick marks with a `<datalist>`, and see how your browser shows them.
+7. Use the keyboard: arrows, `Page Up`, `Page Down`, `Home`, and `End`.
+8. Build the slider and number field pair, and keep them in sync.
+9. Style the track and thumb for both Chrome and Firefox.
+10. Bonus: build a 1 to 5 rating with radio buttons, and compare it with a slider for a survey.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the default `min`, `max`, `step`, and starting value of a range?</summary>
+
+`min` is 0, `max` is 100, and `step` is 1. The thumb starts at the midpoint between `min` and `max`, which is 50 by default.
+
+</details>
+
+<details>
+<summary>2. Can a range input be empty?</summary>
+
+No. It always has a value, so `required` means nothing, and the server cannot tell "chose the middle" from "did not touch it."
+
+</details>
+
+<details>
+<summary>3. How do you show the slider's current value?</summary>
+
+Add an `<output>` element (with `for` pointing to the slider), and update its text in an `input` event. Add `aria-valuetext` so screen readers get a meaningful phrase.
+
+</details>
+
+<details>
+<summary>4. What is the difference between the `input` and `change` events on a slider?</summary>
+
+`input` fires continuously while the thumb moves, so use it for live feedback. `change` fires only when the visitor releases the thumb, so use it for saving.
+
+</details>
+
+<details>
+<summary>5. Why pair a slider with a number input?</summary>
+
+Sliders are good for rough choices and poor for exact ones. A synced number field lets visitors type a precise value, which also helps people who find dragging difficult.
+
+</details>
+
+<details>
+<summary>6. How do you style the track and thumb of a range?</summary>
+
+Use `appearance: none`, then `::-webkit-slider-runnable-track` and `::-webkit-slider-thumb` for Chrome, Edge, and Safari, and `::-moz-range-track` and `::-moz-range-thumb` for Firefox, in **separate** rules. `accent-color` is the simple option.
+
+</details>
+
+## Key Takeaways
+
+- `type="range"` is a slider. The defaults are `min=0`, `max=100`, `step=1`, with the thumb starting at the midpoint.
+- A range is **never empty** and always sent, so use it only where "the middle" is a fair default, or track whether the visitor touched it.
+- Show the value with `<output>`, add `aria-valuetext`, and explain what the ends of the scale mean.
+- Use `input` for live updates and `change` for the final value. Pair the slider with a number field for exact values.
+- The native slider gives you the keyboard for free. Style it with `accent-color`, or separate `-webkit-` and `-moz-` rules.
+- Always re-check `min`, `max`, and `step` on the server.
+
+Sliders choose a spot on a scale. Next, learn the input that sends values the visitor never sees, in [Hidden](./hidden), or return to the [Forms overview](/tutorials/html/forms).

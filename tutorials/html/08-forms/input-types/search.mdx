@@ -1,16 +1,511 @@
 ---
-id: input-type-search
-title: "Search Inputs: type='search'"
+id: html-input-search
+title: "HTML Input Type Search"
 sidebar_label: "Search"
-sidebar_position: 7
+sidebar_position: 6
 slug: /html/forms/input-types/search
-description: "Implement search fields using input type='search', styling search clears, and leveraging native browser search behavior."
+description: "Learn the HTML input type search: how it differs from text, the clear button, the search keyboard key, the search landmark (the search element and role=search), GET forms with name=q, live filtering, accessible result counts, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type search
-  - search box element
-  - search input clear button
-  - site search input
+  - search box HTML
+  - search element HTML
+  - role search landmark
+  - input search clear button
+  - enterkeyhint search
+  - search form method get
+  - live filter search accessibility
+  - webkit-search-cancel-button
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, search]
+tags: [html, web-development, beginner, forms, input, search, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function FilterDemo() {
+  const topics = [
+    "HTML basics", "HTML forms", "HTML tables", "HTML lists",
+    "CSS flexbox", "CSS grid", "JavaScript arrays", "JavaScript events",
+    "Accessibility", "Web security",
+  ];
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const matches = topics.filter((topic) => topic.toLowerCase().includes(q));
+  return (
+    <div role="search">
+      <form onSubmit={(event) => event.preventDefault()}>
+        <label htmlFor="srch-demo">Search lessons</label><br />
+        <input
+          type="search"
+          id="srch-demo"
+          name="q"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Try: html"
+          autoComplete="off"
+          aria-controls="srch-demo-list"
+        />
+      </form>
+      <p role="status" style={{margin: "0.5rem 0"}}>
+        {matches.length} {matches.length === 1 ? "result" : "results"}
+        {q ? <> for “{query.trim()}”</> : null}
+      </p>
+      <ul id="srch-demo-list" style={{margin: 0}}>
+        {matches.map((topic) => <li key={topic}>{topic}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+Almost every website has a search box, and for good reason. When a site grows beyond a few pages, searching is faster than browsing. HTML has an input type made just for this job: `type="search"`.
+
+Here is the honest truth, though: `type="search"` is nearly identical to `type="text"`. The differences are small, and they are about **meaning and polish**: it tells browsers, phones, and screen readers "this is a search field," which unlocks a clear button, a search key on the keyboard, and the right semantics. In this lesson, you will learn what those small differences are, and how to build a complete, accessible search form.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `type="search"` differs from `type="text"`
+- How to build a complete search form with `method="get"` and `name="q"`
+- The search landmark: the `<search>` element and `role="search"`
+- A live-filtering search box, with accessible result counts
+- Styling the clear button, and keyboard hints for phones
+- Security, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="q">Search</label>
+<input type="search" id="q" name="q" placeholder="Search tutorials" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="srch-basic">Search</label><br />
+  <input type="search" id="srch-basic" name="q" placeholder="Search tutorials" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Type something into the box. In many browsers (Chrome, Edge, Safari), a small **✕** appears at the right edge, which clears the field in one click. That is the most visible difference.
+
+## How Search Differs from Text
+
+| Feature | `type="search"` | `type="text"` |
+| :-- | :-- | :-- |
+| **Meaning** | "This is a search field" | A generic text field |
+| **Clear (✕) button** | Shown by many browsers once there is text | None |
+| **Escape key** | Clears the field in some browsers | Does nothing |
+| **Phone keyboard** | Can show a **Search** key (with `enterkeyhint`) | Usually a Return key |
+| **Default styling** | May look more rounded on Safari and macOS | Plain box |
+| **Validation** | None built in | None built in |
+| **Value sent** | Plain text | Plain text |
+| **Line breaks** | Removed | Removed |
+| **Autofill history** | Browsers may remember recent searches | Based on `name` |
+
+:::info Same engine, different hint
+Under the hood, the browser treats a search input like a text input. All text attributes work the same: `value`, `placeholder`, `maxlength`, `minlength`, `size`, `pattern`, `required`, `readonly`, `disabled`, `autocomplete`, `spellcheck`, and `list`. The difference is **the signal**, which helps browsers and assistive technology.
+:::
+
+Because browsers differ, you should not depend on the clear button. If you need a specific behavior (a clear button everywhere), build one yourself, and keep it accessible.
+
+## A Complete Search Form
+
+A search box on its own does nothing. It needs a form, a name, a place to go, and a way to submit.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<search>
+  <form action="/search" method="get">
+    <label for="q">Search lessons</label>
+    <input
+      type="search"
+      id="q"
+      name="q"
+      placeholder="e.g. forms"
+      enterkeyhint="search"
+      autocomplete="off"
+    />
+    <button type="submit">Search</button>
+  </form>
+</search>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<div role="search">
+  <form onSubmit={(event) => event.preventDefault()}>
+    <label htmlFor="srch-full">Search lessons</label><br />
+    <input
+      type="search"
+      id="srch-full"
+      name="q"
+      placeholder="e.g. forms"
+      enterKeyHint="search"
+      autoComplete="off"
+    />{" "}
+    <button type="submit">Search</button>
+  </form>
+</div>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Let us look at each choice:
+
+- **`method="get"`**: the search term goes into the address, such as `/search?q=forms`. That is what you want, because results pages can then be **bookmarked, shared, and reloaded**. (A password form would never do this, but a search term is not secret.)
+- **`name="q"`**: `q` (for "query") is the common name for the search parameter.
+- **`action="/search"`**: the page that shows the results.
+- **`enterkeyhint="search"`**: on phones, the Enter key is labeled "Search" (often with a magnifier icon).
+- **`autocomplete="off"`**: stops the browser from suggesting old entries over your own suggestions. Leave it out if you do not offer your own.
+- **A submit button** with the text "Search": pressing Enter also works, but a visible button helps everyone, including people who use touch or a mouse.
+
+When the visitor presses Search, the browser opens `/search?q=forms`.
+
+## The Search Landmark
+
+Screen reader users jump between **landmarks**: regions such as navigation, main content, and search. Mark your search form so they can jump straight to it.
+
+### The `<search>` Element
+
+HTML now has a dedicated element:
+
+```html
+<search>
+  <form action="/search" method="get">
+    ...
+  </form>
+</search>
+```
+
+`<search>` is a container with the meaning "this section is for searching." It works in all current major browsers.
+
+### The `role="search"` Fallback
+
+For older browsers, or to be extra safe, use the `search` role on a wrapper (or on the form itself):
+
+```html
+<form action="/search" method="get" role="search">
+  ...
+</form>
+```
+
+Use **one** of the two on a given region. Using both the `<search>` element and `role="search"` on a parent and child makes two landmarks.
+
+:::tip Name your landmarks
+If a page has more than one search (for example, the whole site, and a local filter), give each a label so screen readers can tell them apart: `<form role="search" aria-label="Site search">`.
+:::
+
+## Try It: A Live Filter
+
+A search box often filters a list on the same page as you type, with no need to press anything. Try it below.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<div role="search">
+  <label for="filter">Search lessons</label>
+  <input type="search" id="filter" name="q" autocomplete="off" aria-controls="list" />
+  <p id="count" role="status"></p>
+  <ul id="list">
+    <li>HTML basics</li>
+    <li>HTML forms</li>
+    <li>HTML tables</li>
+    <li>CSS flexbox</li>
+    <li>JavaScript arrays</li>
+  </ul>
+</div>
+```
+
+```js title="script.js"
+const input = document.getElementById("filter");
+const items = document.querySelectorAll("#list li");
+const count = document.getElementById("count");
+
+input.addEventListener("input", () => {
+  const query = input.value.trim().toLowerCase();
+  let shown = 0;
+
+  items.forEach((item) => {
+    const match = item.textContent.toLowerCase().includes(query);
+    item.hidden = !match;
+    if (match) shown++;
+  });
+
+  count.textContent = shown + (shown === 1 ? " result" : " results");
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FilterDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Why this version is accessible:
+
+- The wrapper has the **search landmark**.
+- The input has a real **label**.
+- The result count sits in a `role="status"` element, which is a **polite live region**. Screen readers announce "3 results" after the visitor pauses, without stealing focus.
+- Items are hidden with the `hidden` attribute, which removes them from screen readers as well as from view.
+- The input does **not** change what the visitor typed, and keeps focus.
+
+:::warning Use a live region sparingly
+Announcing a count on every keystroke can be noisy. For large lists, wait for a short pause (called "debouncing") before updating the number.
+:::
+
+## Attributes You Will Use
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server (usually `q`) | `name="q"` |
+| `id` | Connects the [label](../label-element) | `id="q"` |
+| `value` | The starting query, such as on a results page | `value="forms"` |
+| `placeholder` | A short example (never a label) | `placeholder="Search tutorials"` |
+| `required` | Blocks an empty search | `required` |
+| `maxlength` | Limits very long queries | `maxlength="200"` |
+| `autocomplete` | `off` to hide old suggestions | `autocomplete="off"` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="popular"` |
+| `enterkeyhint` | Labels the phone Enter key | `enterkeyhint="search"` |
+| `inputmode` | Keyboard hint | `inputmode="search"` |
+| `spellcheck` | Red underlines on or off | `spellcheck="false"` |
+| `autofocus` | Focus on load (use with care) | `autofocus` |
+
+On a results page, **put the current query back into the box**, so people can adjust it:
+
+```html
+<input type="search" name="q" value="forms" />
+```
+
+(When this value comes from the address, your server must **escape** it. More below.)
+
+## Suggestions with `<datalist>`
+
+You can offer suggestions with the `list` attribute, with no JavaScript at all:
+
+```html
+<label for="q">Search</label>
+<input type="search" id="q" name="q" list="popular" />
+
+<datalist id="popular">
+  <option value="HTML forms"></option>
+  <option value="HTML tables"></option>
+  <option value="CSS grid"></option>
+</datalist>
+```
+
+You will study this in [Datalist](../datalist).
+
+## Styling a Search Input
+
+```css title="style.css"
+input[type="search"] {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #64748b;
+  border-radius: 999px;       /* pill shape */
+  font: inherit;
+  font-size: 1rem;
+  appearance: none;           /* removes Safari's own look */
+}
+
+input[type="search"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Style (or remove) the clear button in Chrome, Edge, and Safari */
+input[type="search"]::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+```
+
+- `appearance: none` gives you one look across browsers. On Safari, it also lets `border-radius` and `padding` take effect.
+- The `::-webkit-search-cancel-button` pseudo-element is the clear button. It works in Chrome, Edge, and Safari. Firefox shows no button by default, so do not rely on it.
+- Do not remove the clear button without giving another way to clear the field.
+- Keep a **visible focus style**.
+
+### A Search Icon
+
+Many designs put a magnifier icon inside the box. Do it with a background image or an inline icon, and leave the label in place:
+
+```css
+input[type="search"] {
+  padding-left: 2.25rem;
+  background: url("search-icon.svg") no-repeat 0.75rem center / 1rem;
+}
+```
+
+An icon alone is not a label. Keep the visible label, or a visually hidden one.
+
+## Hiding the Label Safely
+
+Many designs have no visible "Search" text, because the magnifier button makes the purpose clear. You still need a label for screen readers. Hide it **visually**, not with `display: none`:
+
+```css title="style.css"
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+```
+
+```html
+<label for="q" class="visually-hidden">Search the site</label>
+<input type="search" id="q" name="q" />
+<button type="submit" aria-label="Search">🔍</button>
+```
+
+- The icon button needs **text for screen readers**, such as `aria-label="Search"`. An emoji or icon alone says nothing useful.
+- If the field is the only search on the page, a visible label is still the friendliest option.
+
+## Accessibility at a Glance
+
+- **Mark the region** with `<search>` or `role="search"`.
+- **Add a label,** visible or visually hidden. A placeholder is not a label.
+- **Include a real submit button** with an accessible name.
+- **Announce results** for live filtering with a `role="status"` count.
+- **Keep focus where it is** while results update.
+- **Handle "no results"** with a friendly message and a suggestion, such as "Try fewer words."
+- **Make the page title and heading** on a results page say what was searched, such as "Results for forms."
+- **Do not change the field's value** while the visitor types.
+- **Use sufficient contrast** for the text, placeholder, and icon.
+
+## Security Notes
+
+- **A search term is untrusted input.** If you show it back, such as "Results for **forms**", **escape it**. Otherwise, someone can craft a link like `/search?q=<script>...</script>` that runs code on your page (reflected XSS).
+- **Never put the raw term into a database query.** Use parameterized queries.
+- **Limit length and rate.** Very long or very frequent searches can slow your server.
+- **Do not use `method="get"` for private searches** (for example, searching someone's medical records), because the term appears in history, logs, and the address bar. Use `post` there.
+- **Do not log sensitive search terms** longer than you need.
+
+See [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **Support every script.** People search in Hindi, Arabic, Chinese, and many other languages, and in right-to-left text. Do not restrict characters.
+- **Mind input method editors.** Some languages need several keystrokes to compose a character. Do **not** trigger a search on every keystroke without waiting for composition to finish. Listen for `compositionend` or wait for a short pause.
+- **Handle accents and case.** A search for "cafe" should often find "café". Normalize text on the server.
+- **Write placeholder text** in the page's language, and keep it short.
+
+## Common Mistakes to Avoid
+
+1. **Using `type="text"` for a search box.** `search` conveys the purpose, and enables extras.
+2. **Forgetting the form,** so pressing Enter does nothing.
+3. **No `name`,** so the query is never sent.
+4. **Using `method="post"` for ordinary searches,** which stops results being bookmarked or shared.
+5. **No label,** or only a placeholder.
+6. **An icon-only button** with no accessible name.
+7. **Hiding the label with `display: none`.**
+8. **Not marking the region** with `<search>` or `role="search"`.
+9. **Relying on the clear button,** which not every browser shows.
+10. **Printing the search term back without escaping it.**
+11. **Updating results with no announcement** for screen reader users.
+12. **Triggering a search on every keystroke** and breaking text composition for some languages.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="search"` input and notice the clear button in Chrome or Safari.
+2. Wrap it in a form with `action="/search"`, `method="get"`, and `name="q"`. Submit it, and read the address bar.
+3. Add a submit button with the text "Search".
+4. Add `enterkeyhint="search"` and test on a phone.
+5. Wrap the form in `<search>`, and then try `role="search"` instead.
+6. Build the live filter from this lesson with a short list.
+7. Add a `role="status"` result count.
+8. Offer suggestions with a `<datalist>`.
+9. Style the box as a pill, and remove Safari's default look with `appearance: none`.
+10. Bonus: hide the label with the `visually-hidden` class, and add `aria-label` to an icon button.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How is `type="search"` different from `type="text"`?</summary>
+
+It behaves almost the same, but it signals "this is a search field." Browsers may show a clear (✕) button, phones can show a Search key, and assistive technology understands the purpose.
+
+</details>
+
+<details>
+<summary>2. Why is `method="get"` the usual choice for a search form?</summary>
+
+The query goes into the address (`/search?q=forms`), so results pages can be bookmarked, shared, and reloaded.
+
+</details>
+
+<details>
+<summary>3. What does `name="q"` do?</summary>
+
+It names the parameter the search term is sent as. `q` (for "query") is the common choice.
+
+</details>
+
+<details>
+<summary>4. How do you mark a search form as a landmark?</summary>
+
+Wrap it in the `<search>` element, or give a wrapper (or the form) `role="search"`. Screen reader users can then jump straight to it.
+
+</details>
+
+<details>
+<summary>5. How do you make live-filter results accessible?</summary>
+
+Keep the label and landmark, announce the number of results in a `role="status"` element, keep focus in the input, and use the `hidden` attribute for filtered items.
+
+</details>
+
+<details>
+<summary>6. Why must you escape a search term shown back on the page?</summary>
+
+A crafted link could put a script in the term. If you print it unescaped, the script runs on your page (reflected XSS). Escape output, and use parameterized queries in the database.
+
+</details>
+
+## Key Takeaways
+
+- `type="search"` is a text input with a search meaning: a clear button in many browsers, and a Search key on phones with `enterkeyhint="search"`.
+- A complete search needs a form, `name="q"`, an `action`, `method="get"` for shareable results, and a visible submit button.
+- Mark the region with `<search>` (or `role="search"`), and label the field, even if the label is visually hidden.
+- For live filtering, announce counts with `role="status"` and keep focus in the field.
+- Style with `appearance: none` and `::-webkit-search-cancel-button`, but never rely on the clear button.
+- Escape every search term you show back, and use parameterized queries.
+
+Searching is about finding words. Next, learn how to ask for quantities, in [Number](./number), or return to the [Forms overview](/tutorials/html/forms).

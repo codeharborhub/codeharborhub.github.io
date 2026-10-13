@@ -1,16 +1,484 @@
 ---
-id: required
-title: "Enforcing Field Completion: The required Attribute"
-sidebar_label: "Required Attribute"
-sidebar_position: 12
+id: html-required
+title: "HTML Required Attribute"
+sidebar_label: "Required"
+sidebar_position: 13
 slug: /html/forms/required
-description: "Learn how to mark critical form inputs as mandatory using the required boolean attribute to prevent empty form submissions."
+description: "Learn the HTML required attribute: which form controls support it, how it behaves for text, checkboxes, radio groups, selects, and files, the :required and :optional CSS pseudo-classes, how to mark required fields accessibly with aria-required and clear labels, whitespace-only values, and why the server must still check for missing data."
 keywords:
   - HTML required attribute
-  - mandatory form fields
-  - empty field validation
-  - boolean required HTML
+  - required input
+  - required checkbox
+  - required radio group
+  - required select placeholder
+  - :required :optional CSS
+  - aria-required
+  - valueMissing
+  - mark required fields accessibly
+  - HTML form validation required
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, validation, attributes]
+tags: [html, web-development, beginner, forms, validation, required, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function KindsDemo() {
+  const [result, setResult] = useState("");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setResult("All required fields are filled in. Nothing was sent: this is a demo.");
+      }}
+    >
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="rq-name">Full name *</label><br />
+        <input type="text" id="rq-name" name="name" required autoComplete="name" />
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="rq-country">Country *</label><br />
+        <select id="rq-country" name="country" required defaultValue="">
+          <option value="">Choose a country</option>
+          <option value="in">India</option>
+          <option value="br">Brazil</option>
+          <option value="ng">Nigeria</option>
+        </select>
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Delivery speed *</legend>
+        <label><input type="radio" name="speed" value="standard" required /> Standard</label>{" "}
+        <label><input type="radio" name="speed" value="express" /> Express</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" name="terms" value="yes" required /> I accept the terms *</label>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="rq-note">Note (optional)</label><br />
+        <input type="text" id="rq-note" name="note" />
+      </p>
+      <button type="submit">Send</button>
+      <p role="status" style={{margin: "0.5rem 0 0", color: "#15803d"}}>{result}</p>
+    </form>
+  );
+}
+
+export function SpacesDemo() {
+  const [text, setText] = useState("");
+  const [msg, setMsg] = useState("");
+  return (
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const input = event.currentTarget.elements.nick;
+        const raw = input.value;
+        const trimmed = raw.trim();
+        if (raw === "") setMsg("Empty: the browser's required check would catch this.");
+        else if (trimmed === "") setMsg("Only spaces! The browser's required check passes this, but your code should reject it.");
+        else setMsg("Good: \"" + trimmed + "\"");
+      }}
+    >
+      <label htmlFor="rq-nick">Nickname (required)</label><br />
+      <input
+        type="text"
+        id="rq-nick"
+        name="nick"
+        required
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+      />{" "}
+      <button type="submit">Check</button>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>{msg}</p>
+      <p style={{margin: 0, fontSize: "0.85em", color: "#64748b"}}>
+        Try: nothing, three spaces, then a real word.
+      </p>
+    </form>
+  );
+}
+
+A **required** field is one the visitor cannot skip. A delivery address for an order, an email for a newsletter, a tick on "I accept the terms": without these, the form is useless. In HTML you mark such a field with a single word, `required`, and the browser refuses to send the form until it is filled in.
+
+It is the simplest validation rule, and the most used. This lesson shows exactly how it behaves for each kind of control, how to mark required fields clearly for everyone, and where it stops working.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to add `required`, and what the browser does
+- Which controls support it
+- How `required` behaves for text, checkboxes, radios, selects, and files
+- Styling with `:required`, `:optional`, and `:user-invalid`
+- How to tell visitors a field is required, accessibly
+- Why a field of spaces slips through
+- Why the server must still check
+
+## The Basics
+
+`required` is a **boolean attribute**: you write it with no value.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/subscribe" method="post">
+  <label for="email">Email address *</label>
+  <input type="email" id="email" name="email" required />
+
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="rq-email">Email address *</label><br />
+  <input type="email" id="rq-email" name="email" required />{" "}
+  <button type="submit">Subscribe</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Press **Subscribe** with the field empty. The browser stops the form, focuses the field, and shows a message such as "Please fill out this field." These all mean the same thing:
+
+```html
+<input required />
+<input required="" />
+<input required="required" />
+```
+
+The short form is the usual one. (Even `required="false"` means **required**, because only the attribute's presence counts.)
+
+## Which Controls Support It
+
+| Control | Supports `required`? | The field counts as "missing" when... |
+| :-- | :-- | :-- |
+| `<input>` text-like types (`text`, `email`, `password`, `search`, `tel`, `url`, `number`) | Yes | The value is an empty string |
+| `<input>` date and time types | Yes | No date or time is chosen |
+| `<input type="checkbox">` | Yes | The box is **not ticked** |
+| `<input type="radio">` | Yes | **No radio in the group** is selected |
+| `<input type="file">` | Yes | No file is chosen |
+| `<select>` | Yes | The selected option has an **empty value** |
+| `<textarea>` | Yes | The text is empty |
+| `<input type="color">`, `type="range"`, `type="hidden"` | No effect | They always have a value, or are not validated |
+| `<button>`, `<fieldset>`, `<datalist>`, `<option>` | No | They are not value-bearing fields |
+
+## Try It: Each Kind of Required Field
+
+Press **Send** with everything empty. Fix one problem at a time, and watch which control the browser complains about each time.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/order" method="post">
+  <p>
+    <label for="name">Full name *</label>
+    <input type="text" id="name" name="name" required autocomplete="name" />
+  </p>
+
+  <p>
+    <label for="country">Country *</label>
+    <select id="country" name="country" required>
+      <option value="">Choose a country</option>
+      <option value="in">India</option>
+      <option value="br">Brazil</option>
+      <option value="ng">Nigeria</option>
+    </select>
+  </p>
+
+  <fieldset>
+    <legend>Delivery speed *</legend>
+    <label><input type="radio" name="speed" value="standard" required /> Standard</label>
+    <label><input type="radio" name="speed" value="express" /> Express</label>
+  </fieldset>
+
+  <p>
+    <label><input type="checkbox" name="terms" value="yes" required /> I accept the terms *</label>
+  </p>
+
+  <p>
+    <label for="note">Note (optional)</label>
+    <input type="text" id="note" name="note" />
+  </p>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<KindsDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### How Each Kind Behaves
+
+**Text, email, number, and so on.** Required means "not an empty string." The format is checked separately by `type`, `pattern`, and so on, and those checks are skipped when the field is empty.
+
+**A single checkbox.** Required means "must be ticked." This is perfect for "I accept the terms." For a **group** of checkboxes, `required` on one box forces **that box** to be ticked. HTML has no built-in "at least one of these" rule, so for that you need a little JavaScript (see the Practice Time).
+
+**A radio group.** Radios with the same `name` form a group, and `required` on **any one** of them makes the **whole group** required: the visitor must choose one. By habit, put `required` on the first radio, or on all of them (this is also allowed, and is harmless).
+
+**A select.** Required means the selected option must have a **non-empty `value`**. That is why the placeholder option is written as `<option value="">Choose a country</option>`. Without `value=""`, the placeholder's text counts as its value, and the field passes while still on "Choose a country." This "placeholder label option" rule applies to a single-choice select whose first option has an empty value; see [Select](./select) for the details.
+
+**A file input.** Required means at least one file must be chosen.
+
+## What the Visitor Sees
+
+- The browser **blocks the submit**, moves focus to the first missing field, and shows its own message, in the visitor's language.
+- Nothing is sent, and no request is made.
+- The message wording and look **differ between browsers** and cannot be styled with CSS.
+
+For your own messages, see [Form Validation](./form-validation): you can read `input.validity.valueMissing` and write kinder text.
+
+## Styling Required Fields
+
+| Selector | Matches |
+| :-- | :-- |
+| `:required` | Any field with `required` |
+| `:optional` | Any field without it |
+| `:invalid` | Fails a rule (an empty required field fails **from page load**) |
+| `:user-invalid` | Fails a rule **after** the visitor interacted with it |
+
+A common, gentle use is a marker after the label:
+
+```css title="style.css"
+label:has(+ input:required)::after,
+label:has(+ select:required)::after,
+label:has(+ textarea:required)::after {
+  content: " *";
+  color: #b91c1c;
+}
+
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid {
+  border-color: #b91c1c;
+}
+```
+
+:::note About the red star
+A `*` is a common sign, but screen readers may read it as "star," or skip it. And a colour alone is not enough. Always add **words** somewhere on the form: "Fields marked * are required." Even better, mark the **optional** ones with "(optional)" when most fields are required.
+:::
+
+## Telling Visitors What Is Required
+
+Visitors should know **before** they submit, not only after an error.
+
+1. **Say it at the top:** "Fields marked * are required."
+2. **Mark in the label** with `*` or with the word "required," **and** use the attribute.
+3. **Or mark optional fields instead** with "(optional)." When most fields are required, this is cleaner.
+4. **Use `required`,** so assistive technology announces "required" for you.
+
+```html
+<p>Fields marked <span aria-hidden="true">*</span> are required.</p>
+
+<label for="email">Email address <span aria-hidden="true">*</span></label>
+<input type="email" id="email" name="email" required />
+```
+
+The `required` attribute is already exposed to screen readers as "required," so the visible `*` can be hidden from them with `aria-hidden="true"`, avoiding a double announcement.
+
+### `required` and `aria-required`
+
+| | `required` | `aria-required="true"` |
+| :-- | :-- | :-- |
+| Tells assistive technology the field is required | Yes | Yes |
+| Makes the browser **block** an empty submit | **Yes** | **No** |
+| Use on native form controls | **Yes** | Not needed |
+
+Use `aria-required` only on **custom** controls that are not real form fields (a `role="combobox"` built from `<div>`s, for example). For ordinary inputs, `required` does both jobs.
+
+## A Catch: Spaces Count as a Value
+
+The browser's check is: "Is the value an empty string?" A field with **only spaces** is **not** empty, so it passes. Try it:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form id="nick-form" novalidate>
+  <label for="nick">Nickname (required)</label>
+  <input type="text" id="nick" name="nick" required />
+  <button type="submit">Check</button>
+  <p id="msg" role="status"></p>
+</form>
+```
+
+```js title="script.js"
+const form = document.getElementById("nick-form");
+const msg = document.getElementById("msg");
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const raw = form.elements.nick.value;
+  const trimmed = raw.trim();
+
+  if (raw === "") {
+    msg.textContent = "Empty: the browser's required check would catch this.";
+  } else if (trimmed === "") {
+    msg.textContent = "Only spaces! Required passes this, but your code should reject it.";
+  } else {
+    msg.textContent = "Good: " + trimmed;
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SpacesDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can catch this in the browser in two ways:
+
+- With a `pattern` that needs a non-space character: `pattern=".*\S.*"` (this means "contains at least one non-space character").
+- With a script that trims the value and calls `setCustomValidity("Enter at least one letter.")`.
+
+And on the server, **trim and re-check** every required value.
+
+## Do Not Overuse It
+
+Every required field is a small barrier. Visitors leave long forms, especially on phones.
+
+- **Ask only for what you truly need.** Can you do without a phone number? Then make it optional, or leave it out.
+- **Do not force a choice that has no good answer.** A required "Gender" or "Company" field blocks people for whom the options do not fit. Offer "Prefer not to say," or make it optional.
+- **Do not make the "agree to marketing" box required.** Consent given only to proceed is not really consent, and may break privacy laws. Make it optional and unticked by default.
+- **Required terms boxes** are normal for sign-up, but link to the terms so visitors can read them.
+
+## Accessibility at a Glance
+
+- **Use `required`** (not only a star) so assistive technology announces it.
+- **Explain the marker** at the top of the form, in words.
+- **Never rely on colour alone** to show required or invalid fields.
+- **Group radio buttons** in a `fieldset` with a `legend`, and mark the legend as required too ("Delivery speed *").
+- **Do not disable the submit button** until everything is filled in. Visitors who cannot tell why the button is dead get stuck. Let them press it, and show clear errors.
+- **After a failed submit,** move focus to the first problem and say what is missing, in text.
+- **Do not use the placeholder** to say a field is required; it disappears when typing.
+
+## Security Notes
+
+- **`required` is not a security feature.** Anyone can delete the attribute in the developer tools, or send a request without the field at all.
+- **Check on the server** that every required value is present, and **not just whitespace**.
+- **Treat a missing value as a possible attack** or a bug: reject the request with a clear message, and never assume the field exists.
+- **Required checkboxes and radios** also need server checks. An unticked checkbox sends **nothing**, so "missing" and "not accepted" look the same: treat both as "not accepted."
+- Do not trust `required` in a hidden field. Hidden inputs are not validated by the browser at all.
+
+## Global Audience Notes
+
+- **The browser's message language** follows the visitor's browser settings, so it may differ from your page language. For consistent messages, build your own (see [Form Validation](./form-validation)) and translate them.
+- **Names are not always two parts.** Do not require both a "first name" and a "last name." Many people have one name, or several. One "Full name" field is often kinder.
+- **A required "State" or "Postcode"** fails for countries without them. Make these depend on the chosen country.
+- **A required phone number** may be impossible for some visitors. Offer another way to be reached.
+- **Mark required fields** in a way that survives translation and right-to-left layouts (a word such as "(optional)" is clearer than a star in many languages).
+
+## Common Mistakes to Avoid
+
+1. **Relying on `required` alone** for security. The server must check, too.
+2. **Writing `required="false"`.** It still means required. Remove the attribute instead.
+3. **A select placeholder without `value=""`,** so the placeholder passes as a choice.
+4. **Forgetting that spaces pass.** Trim values and check them again.
+5. **Using only a red star** with no explanation, or only colour.
+6. **Making every field required,** including ones you do not need.
+7. **Putting `required` on a disabled field,** where it is ignored.
+8. **Expecting `required` on one checkbox of a group** to mean "at least one."
+9. **Styling `:invalid`,** so every required field is red when the page loads.
+10. **Disabling the submit button** until the form is complete.
+11. **Using `required` on a hidden input** and expecting validation.
+12. **Forcing consent** (marketing, tracking) with a required box.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Make an email field required, and press submit while it is empty.
+2. Add a required select with a placeholder, then remove `value=""` and see what changes.
+3. Make a radio group required. Try `required` on one radio, then on all of them.
+4. Add a required "I accept the terms" checkbox.
+5. Style `:required` with a small marker, and `:user-invalid` with a red border.
+6. Add "Fields marked * are required." at the top of your form.
+7. Type only spaces into a required text field, and see that it passes.
+8. Fix it with `pattern=".*\S.*"` and a `title`.
+9. Write a script so that **at least one** of three checkboxes must be ticked, using `setCustomValidity`.
+10. Bonus: mark the optional fields with "(optional)" instead of marking the required ones, and compare how the form feels.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How do you make a field required?</summary>
+
+Add the `required` attribute (no value needed): `<input type="email" required />`. The browser will block the form until the field has a value.
+
+</details>
+
+<details>
+<summary>2. What counts as "missing" for a checkbox, a radio group, and a select?</summary>
+
+A checkbox is missing when it is not ticked. A radio group is missing when none of its radios is selected (`required` on any one makes the whole group required). A select is missing when the chosen option has an empty `value`.
+
+</details>
+
+<details>
+<summary>3. Why does a select placeholder need `value=""`?</summary>
+
+`required` fails only when the selected option's value is empty. Without `value=""`, the placeholder text becomes its value, and the field would pass while still showing "Choose a country."
+
+</details>
+
+<details>
+<summary>4. Does a field with only spaces pass `required`?</summary>
+
+Yes, because spaces are not an empty string. Use a `pattern` such as `.*\S.*`, or a script, to reject it, and trim and re-check on the server.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `required` and `aria-required`?</summary>
+
+Both tell assistive technology the field is required, but only `required` makes the browser block an empty submit. Use `required` on native controls, and `aria-required` only on custom controls that are not real form fields.
+
+</details>
+
+<details>
+<summary>6. Is `required` enough to guarantee the data is there?</summary>
+
+No. Anyone can remove it or send a request without the field. The server must check that every required value is present and not just whitespace.
+
+</details>
+
+## Key Takeaways
+
+- `required` is a boolean attribute: its presence makes a field mandatory, and the browser blocks the submit until it is filled in.
+- It works on text-like inputs, date and time inputs, checkboxes, radio groups, selects, textareas, and file inputs.
+- For a select, the placeholder option needs `value=""`. For radios, `required` on one makes the whole group required.
+- Only the empty string counts as missing, so a field of spaces passes. Trim and re-check.
+- Tell visitors what is required in words, not only with a star or a colour, and use `:user-invalid` for styling.
+- Ask for as little as you can, and never force consent.
+- It is a convenience, not security. **The server must check, too.**
+
+Next, learn how to demand a particular shape for the text, in [Pattern](./pattern), or return to the [Forms overview](/tutorials/html/forms).

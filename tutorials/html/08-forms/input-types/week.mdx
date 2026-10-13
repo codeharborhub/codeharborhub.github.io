@@ -1,16 +1,501 @@
 ---
-id: input-type-week
-title: "Week Pickers: type='week'"
+id: html-input-week
+title: "HTML Input Type Week"
 sidebar_label: "Week"
 sidebar_position: 12
 slug: /html/forms/input-types/week
-description: "Select specific calendar week numbers and years using input type='week' for scheduling and reporting applications."
+description: "Learn the HTML input type week: picking a week of the year, the yyyy-Www value format, ISO 8601 week rules (Monday start, 52 or 53 weeks), min, max, and step, converting a week to dates, browser support and a fallback, timesheets and weekly planners, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type week
-  - week selector HTML
-  - calendar week picker
-  - ISO week date input
+  - week picker HTML
+  - input week yyyy-Www
+  - ISO 8601 week number
+  - input week min max step
+  - week input browser support fallback
+  - week number to date JavaScript
+  - timesheet week input
+  - valueAsDate input week
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input-type, date]
+tags: [html, web-development, beginner, forms, input, week, validation, frontend]
 ---
+
+import {useState} from 'react';
+
+export function weekToRange(value) {
+  const match = /^(\d{4})-W(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = jan4.getUTCDay() || 7;
+  const monday = new Date(jan4.getTime() - (dayOfWeek - 1) * 86400000 + (week - 1) * 7 * 86400000);
+  const sunday = new Date(monday.getTime() + 6 * 86400000);
+  const fmt = (date) =>
+    new Intl.DateTimeFormat("en-GB", {dateStyle: "medium", timeZone: "UTC"}).format(date);
+  return {from: fmt(monday), to: fmt(sunday)};
+}
+
+export function WeekDemo() {
+  const [value, setValue] = useState("2026-W52");
+  const range = weekToRange(value);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="wk-demo">Timesheet week</label><br />
+      <input
+        type="week"
+        id="wk-demo"
+        name="week"
+        min="2026-W01"
+        max="2027-W52"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-describedby="wk-demo-out"
+      />
+      <p id="wk-demo-out" role="status" style={{margin: "0.5rem 0 0"}}>
+        Value sent: <code>week={value || "(empty)"}</code>
+        {range ? <><br />Runs from {range.from} (Monday) to {range.to} (Sunday)</> : null}
+      </p>
+    </form>
+  );
+}
+
+"Which week was that?" Teams plan sprints by the week. Employees fill in timesheets by the week. Meal plans, training schedules, and weekly reports all think in **weeks**, and a week is awkward to pick on a normal calendar: you would click a day, and then explain that you meant the whole week around it.
+
+`type="week"` is built for this. The visitor picks a **year and a week number**, and your server receives a short, exact value. It is a small input with big traps, because "week one" does not mean the same thing everywhere. In this lesson, you will learn the rules that the input follows, how to turn a week into real dates, and what to do where the input is not supported.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="week"` shows, and the value it sends
+- The ISO 8601 week rules the input uses
+- `min`, `max`, and `step`
+- How to turn a week value into a date range
+- Browser support, and a safe fallback
+- Good uses, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="week">Timesheet week</label>
+<input type="week" id="week" name="week" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="wk-basic">Timesheet week</label><br />
+  <input type="week" id="wk-basic" name="week" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In browsers that support it (Chrome and Edge on desktop, and most mobile browsers), you see a field like `Week 52, 2026`, and a picker with a calendar where you click a week. In browsers that do not, you see a plain text box, and we will cover that below.
+
+## The Value Format
+
+:::info The value is `yyyy-Www`
+A four-digit year, a dash, a capital `W`, and a two-digit week number, such as `2026-W52`. It is the same however the field is displayed.
+:::
+
+| What the visitor sees | What is sent |
+| :-- | :-- |
+| `Week 52, 2026` | `2026-W52` |
+| `Week 01, 2027` | `2027-W01` |
+| `Week 5, 2026` | `2026-W05` |
+| (nothing, or incomplete) | an empty string |
+
+```text
+week=2026-W52
+```
+
+The starting `value` in HTML uses the same format, with the capital `W` and two digits:
+
+```html
+<input type="week" name="week" value="2026-W52" />
+```
+
+Writing `2026-52` or `2026-w52` does nothing, and the field stays empty.
+
+## The ISO Week Rules
+
+The input follows **ISO 8601**, an international standard. Four rules matter:
+
+| Rule | Meaning |
+| :-- | :-- |
+| **Weeks start on Monday** | And end on Sunday |
+| **Week 1** | The week that contains the **first Thursday** of the year (equally: the week containing 4 January) |
+| **A year has 52 or 53 weeks** | Most have 52. Some have 53 |
+| **The week-year can differ from the calendar year** | The first days of January can belong to the last week of the **previous** year, and the last days of December to week 1 of the **next** |
+
+Here is a real example, around the end of 2026 (1 January 2026 is a Thursday):
+
+| Week value | Starts (Monday) | Ends (Sunday) |
+| :-- | :-- | :-- |
+| `2026-W01` | 29 December **2025** | 4 January 2026 |
+| `2026-W52` | 21 December 2026 | 27 December 2026 |
+| `2026-W53` | 28 December 2026 | 3 January **2027** |
+| `2027-W01` | 4 January 2027 | 10 January 2027 |
+
+Notice that `2026-W01` begins in **2025**, and `2026-W53` ends in **2027**. A date such as 1 January 2027 belongs to `2026-W53`, which surprises many people.
+
+:::warning Not everyone counts weeks this way
+The United States, Canada, and some other countries number weeks differently, starting on Sunday, and calling the week with 1 January "week 1." The `week` input **always** uses the ISO rules, whatever the visitor's country. If your visitors might count differently, show the **dates** along with the week number, as in "Week 52 (21 to 27 December)."
+:::
+
+## Try It: From a Week to Real Dates
+
+Pick a week. The panel shows the value that is sent, and the Monday-to-Sunday dates it stands for.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="week">Timesheet week</label>
+<input type="week" id="week" name="week" min="2026-W01" max="2027-W52" value="2026-W52" />
+<p id="range" role="status"></p>
+```
+
+```js title="script.js"
+const input = document.getElementById("week");
+const out = document.getElementById("range");
+
+function weekToRange(value) {
+  const match = /^(\d{4})-W(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+
+  // 4 January is always in week 1
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const dayOfWeek = jan4.getUTCDay() || 7;           // Monday = 1 ... Sunday = 7
+  const monday = new Date(
+    jan4.getTime() - (dayOfWeek - 1) * 86400000 + (week - 1) * 7 * 86400000
+  );
+  const sunday = new Date(monday.getTime() + 6 * 86400000);
+  return { monday, sunday };
+}
+
+function format(date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+function update() {
+  const range = weekToRange(input.value);
+  out.textContent = range
+    ? "Runs from " + format(range.monday) + " to " + format(range.sunday)
+    : "Choose a week.";
+}
+
+input.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<WeekDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+How the calculation works: **4 January is always in week 1.** So we find the Monday of that week, and then add whole weeks. Everything is done in UTC, so the visitor's own time zone cannot shift the day.
+
+## Min, Max, and Step
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `min` | The earliest week | `min="2026-W01"` |
+| `max` | The latest week | `max="2027-W52"` |
+| `step` | The gap in **weeks** (default 1) | `step="2"` |
+
+```html
+<label for="sprint">Sprint starts (every two weeks)</label>
+<input
+  type="week"
+  id="sprint"
+  name="sprint"
+  min="2026-W02"
+  max="2026-W52"
+  step="2"
+  required
+/>
+```
+
+- `min` and `max` use the `yyyy-Www` format.
+- `step` counts in **weeks**, from `min`. With `min="2026-W02"` and `step="2"`, valid weeks are W02, W04, W06, and so on.
+- Weeks outside the range are greyed out in the picker, and rejected on submit.
+- A week number that does not exist, such as `2027-W53` (2027 has only 52 weeks), is invalid.
+
+## Reading the Value in JavaScript
+
+| Property | What it gives | Example for `2026-W52` |
+| :-- | :-- | :-- |
+| `input.value` | The string `yyyy-Www` | `"2026-W52"` |
+| `input.valueAsDate` | A `Date` at midnight UTC on the **Monday** of that week | `2026-12-21T00:00:00.000Z` |
+| `input.valueAsNumber` | Milliseconds since 1970, for that Monday | `1797811200000` |
+
+Unlike `month`, `week` uses **milliseconds** for `valueAsNumber`, and points to the Monday. But browsers that do not support the input give `NaN` or `null`, so the string is the dependable choice. Split it with a pattern, as in the demo:
+
+```js
+const match = /^(\d{4})-W(\d{2})$/.exec(input.value);
+const year = Number(match[1]);       // 2026
+const week = Number(match[2]);       // 52
+```
+
+When showing the Monday from `valueAsDate`, format it with `timeZone: "UTC"`. Otherwise, visitors west of Greenwich see the **Sunday before**.
+
+## Setting the Current Week as a Default
+
+HTML cannot know today's date, so use JavaScript. The ISO week number needs a small calculation:
+
+```js title="script.js"
+function currentIsoWeek() {
+  const now = new Date();
+  // Use today's LOCAL calendar day, but do the math in UTC
+  const day = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+  // Move to the Thursday of this week (it decides the week-year)
+  const dayNumber = day.getUTCDay() || 7;
+  day.setUTCDate(day.getUTCDate() + 4 - dayNumber);
+
+  const yearStart = new Date(Date.UTC(day.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((day - yearStart) / 86400000 + 1) / 7);
+
+  return day.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+}
+
+const input = document.getElementById("week");
+input.value = currentIsoWeek();
+```
+
+The key idea: the **Thursday** of a week decides which year the week belongs to. That is why the last days of December can be in week 1 of the next year.
+
+## Browser Support and a Safe Fallback
+
+`type="week"` has the same support gaps as `month`:
+
+| Browser | Support |
+| :-- | :-- |
+| Chrome, Edge (desktop and Android) | Yes |
+| Safari on iPhone and iPad | Yes |
+| Firefox (desktop) | **No**, shows a text box |
+| Safari on desktop | **No**, shows a text box |
+
+(Support changes over time, so test in the browsers your visitors use.)
+
+Where it is unsupported, the field acts like a plain `type="text"`. A `pattern` is ignored by browsers that support the type, and applied by those that fall back, so you can add it as a safety net:
+
+```html
+<label for="week">Timesheet week</label>
+<input
+  type="week"
+  id="week"
+  name="week"
+  placeholder="yyyy-Www"
+  pattern="[0-9]{4}-W(0[1-9]|[1-4][0-9]|5[0-3])"
+  title="Use the format yyyy-Www, such as 2026-W52"
+  aria-describedby="week-hint"
+  required
+/>
+<p id="week-hint">If you see a plain text box, type the year, a dash, a capital W, and two digits, such as 2026-W52.</p>
+```
+
+Many people have never seen a "W52" notation. So in a fallback, a **friendlier design** is often better:
+
+```html
+<fieldset>
+  <legend>Week commencing</legend>
+  <label for="monday">Pick the Monday of the week</label>
+  <input type="date" id="monday" name="week_start" required />
+</fieldset>
+```
+
+Asking for the **Monday date** (a [date](./date) input) works in every modern browser, is easy to understand, and you can calculate the week number on the server. If a visitor picks a day that is not a Monday, your script can move it back to the Monday, or the server can reject it with a clear message.
+
+## Good Uses and Poor Uses
+
+| Good use for `week` | Why |
+| :-- | :-- |
+| A weekly timesheet | The whole week is one record |
+| A weekly report or newsletter edition | Reports are labeled by week |
+| A sprint, training, or meal plan week | Fixed, repeating periods |
+| A holiday booking in whole weeks | Starts and ends line up |
+
+| Poor use | Better choice |
+| :-- | :-- |
+| An exact day | [`date`](./date) |
+| A flexible range, like three nights | Two [date](./date) fields |
+| Visitors who count weeks differently (US, for example) | Show dates, or use a `date` field for the Monday |
+| A whole month | [`month`](./month) |
+
+## Other Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name`, `id` | Sent key, and label link | `name="week"` |
+| `value` | The starting week (`yyyy-Www`) | `value="2026-W52"` |
+| `required` | Cannot be empty | `required` |
+| `readonly`, `disabled` | Behavior flags | `readonly` |
+| `list` | Suggestions from a [datalist](../datalist) | `list="sprints"` |
+
+On browsers that support it, `placeholder`, `maxlength`, `minlength`, `pattern`, and `size` have no effect.
+
+## Styling a Week Input
+
+```css title="style.css"
+input[type="week"] {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+input[type="week"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input[type="week"]:invalid {
+  border-color: #b91c1c;
+}
+```
+
+- The picker popup cannot be styled.
+- Make sure the field also looks fine as a plain text box.
+- Keep a visible focus style, and a comfortable touch size.
+
+## Accessibility at a Glance
+
+- **Always add a label,** such as "Timesheet week."
+- **Show the dates** next to the week number: "Week 52: 21 to 27 December." Update the text when the visitor changes the week, in a `role="status"` region, as the demo does.
+- **State the rule:** "Weeks start on Monday."
+- **Give a fallback hint** for browsers that show a plain text box.
+- **Use the native input** where it works. Custom week pickers are hard to make accessible.
+- **Give clear errors:** "Choose a week between week 1 of 2026 and week 52 of 2027."
+- **Avoid jargon.** "Week commencing Monday 21 December" is clearer to most people than "2026-W52".
+
+## Security and Validation Notes
+
+- **Re-check on the server.** Parse the string strictly as `yyyy-Www`, check the week exists in that year (52 or 53), and enforce the range.
+- **Use a trusted date library** for ISO week conversions. Week numbers have many edge cases.
+- **Convert a week to dates in one place,** and document that weeks start on Monday.
+- **Use the server's clock** for rules like "only the current week or earlier."
+
+## Global Audience Notes
+
+- **Week numbering differs** between countries. The ISO standard is common in Europe and many other regions, and the US uses a Sunday-start system. Show dates to avoid confusion.
+- **Weekends differ:** Saturday and Sunday in most places, Friday and Saturday in some. The input treats weeks as Monday to Sunday regardless.
+- **Many people do not think in week numbers at all.** "The week of 21 December" is often clearer.
+- **Display follows the visitor's language,** but your server always receives `yyyy-Www`.
+
+## Common Mistakes to Avoid
+
+1. **Assuming every browser supports `type="week"`.** Firefox and desktop Safari show a text box.
+2. **No fallback hint or `pattern`** for those browsers.
+3. **Setting `value` in the wrong format.** It needs `yyyy-Www`, with a capital `W` and two digits.
+4. **Assuming the week-year equals the calendar year.** 1 January can be in week 52 or 53 of the year before.
+5. **Assuming a year has 52 weeks.** Some have 53.
+6. **Assuming weeks start on Sunday,** or that US week numbers match ISO.
+7. **Not showing the actual dates** next to a week number.
+8. **Doing week math in local time,** which can shift the day. Use UTC, or a library.
+9. **Showing `valueAsDate` in local time,** which can show the Sunday before.
+10. **Using `week` for flexible ranges,** where two `date` fields are better.
+11. **No label,** or an unclear one.
+12. **Trusting the browser alone** and skipping server-side checks.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `type="week"` field and submit it with `method="get"`. Read the address.
+2. Open it in Chrome, and then in Firefox, and compare what you see.
+3. Set `value="2026-W52"`, then try `value="2026-52"`.
+4. Add `min="2026-W01"` and `max="2027-W52"`, and open the picker.
+5. Use `step="2"` for fortnightly sprints.
+6. Run the `weekToRange` function for `2026-W01`, `2026-W53`, and `2027-W01`, and check the dates.
+7. Fill in the current week with the `currentIsoWeek()` function.
+8. Add a `pattern` and `placeholder` as a fallback, and test it by changing the type to `text`.
+9. Build the alternative: a `date` input for the Monday of the week.
+10. Bonus: find out how many weeks 2020, 2026, and 2027 each have.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What format is the value of a week input?</summary>
+
+`yyyy-Www`, such as `2026-W52`: the year, a dash, a capital `W`, and a two-digit week number. An incomplete choice gives an empty string.
+
+</details>
+
+<details>
+<summary>2. Which week rules does the input follow?</summary>
+
+ISO 8601: weeks run Monday to Sunday, week 1 contains the first Thursday (and 4 January), and a year has 52 or 53 weeks.
+
+</details>
+
+<details>
+<summary>3. Can 1 January belong to the previous year's last week?</summary>
+
+Yes. For example, 1 January 2027 is in `2026-W53`. The week-year is decided by the Thursday of the week, and can differ from the calendar year.
+
+</details>
+
+<details>
+<summary>4. What does `step="2"` mean on a week input?</summary>
+
+Valid weeks are two weeks apart, counted from `min`. With `min="2026-W02"`, that allows W02, W04, W06, and so on.
+
+</details>
+
+<details>
+<summary>5. How can you make a week field work where it is unsupported?</summary>
+
+Add a `placeholder` and a `pattern`, and explain the format in text. A friendlier alternative is a `date` input for the Monday of the week, with the week number worked out on the server.
+
+</details>
+
+<details>
+<summary>6. Why show the dates next to a week number?</summary>
+
+Many people do not think in week numbers, and countries number weeks differently (ISO versus the US system). "Week 52 (21 to 27 December)" removes all doubt.
+
+</details>
+
+## Key Takeaways
+
+- `type="week"` picks an ISO week, and sends `yyyy-Www`, with a capital `W` and two digits.
+- ISO weeks start on Monday, week 1 holds the first Thursday, and a year has 52 or 53 weeks. The week-year can differ from the calendar year.
+- `min` and `max` use the same format. `step` counts **weeks**.
+- Convert a week to dates in UTC (4 January is always in week 1), or with a trusted library.
+- Browser support is incomplete. Give a fallback with `pattern` and a hint, or ask for the Monday with a `date` input.
+- Show real dates next to week numbers, label the field, and always validate on the server.
+
+Next, learn how to ask for a colour, in [Color](./color), or return to the [Forms overview](/tutorials/html/forms).

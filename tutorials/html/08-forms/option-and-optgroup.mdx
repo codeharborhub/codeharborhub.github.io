@@ -1,16 +1,552 @@
 ---
-id: option-and-optgroup
-title: "Options and Grouping: option and optgroup Tags"
-sidebar_label: "Option & Optgroup"
-sidebar_position: 7
+id: html-option-and-optgroup
+title: "HTML Option and Optgroup Elements"
+sidebar_label: "Option and Optgroup"
+sidebar_position: 8
 slug: /html/forms/option-and-optgroup
-description: "Define selectable list choices using option tags and organize large menu options logically using optgroup categories."
+description: "Learn the HTML option and optgroup elements: the value, selected, disabled, and label attributes, how text and value differ, grouping long lists with optgroup, disabled options and groups, how the default choice is picked, adding and removing options with JavaScript, accessibility, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML option tag
-  - HTML optgroup tag
-  - select menu categories
-  - grouping drop down options
+  - HTML option element
+  - HTML optgroup element
+  - option value selected disabled
+  - option label attribute
+  - optgroup label disabled
+  - group options in select
+  - select default option rules
+  - new Option JavaScript
+  - option text vs value
+  - disabled option placeholder
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, options, select]
+tags: [html, web-development, beginner, forms, select, option, optgroup, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function CourseDemo() {
+  const [sent, setSent] = useState("(press Enrol)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const text = new URLSearchParams(new FormData(event.currentTarget)).toString();
+        setSent(text || "(nothing is sent)");
+      }}
+    >
+      <label htmlFor="og-course">Choose a course</label><br />
+      <select id="og-course" name="course" required defaultValue="">
+        <option value="">Select a course</option>
+        <optgroup label="Web development">
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="js">JavaScript</option>
+        </optgroup>
+        <optgroup label="Data">
+          <option value="sql">SQL</option>
+          <option value="py">Python for data</option>
+        </optgroup>
+        <optgroup label="Mobile (coming soon)" disabled>
+          <option value="android">Android</option>
+          <option value="ios">iOS</option>
+        </optgroup>
+        <option value="other" disabled>Other (not available)</option>
+      </select>{" "}
+      <button type="submit">Enrol</button>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>Sent: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+export function InspectDemo() {
+  const [info, setInfo] = useState(null);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="og-size">T-shirt size</label><br />
+      <select
+        id="og-size"
+        name="size"
+        defaultValue=""
+        onChange={(event) => {
+          const option = event.target.selectedOptions[0];
+          setInfo({
+            value: option.value,
+            text: option.text,
+            label: option.label,
+            index: option.index,
+          });
+        }}
+      >
+        <option value="">Choose a size</option>
+        <option value="s">Small (chest 86 to 91 cm)</option>
+        <option value="m" label="Medium">Medium (chest 96 to 101 cm)</option>
+        <option value="l">Large (chest 106 to 111 cm)</option>
+      </select>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {info ? (
+          <>
+            <code>option.value</code>: {info.value || "(empty)"}<br />
+            <code>option.text</code>: {info.text}<br />
+            <code>option.label</code>: {info.label}<br />
+            <code>option.index</code>: {info.index}
+          </>
+        ) : "Choose an option to inspect it."}
+      </p>
+    </form>
+  );
+}
+
+A dropdown is only as good as the choices inside it. The `<select>` you met in [Select](./select) is the container, and these two elements fill it. **`<option>`** is a single choice. **`<optgroup>`** gathers related options under a heading, so a long list is easy to scan.
+
+They are small elements with a handful of attributes, and a few rules that surprise people: why the text and the value are different things, how the browser picks the starting choice, and what happens to a disabled option. In this lesson, you will learn them all, and how to add and remove options with JavaScript.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The `<option>` element, and its `value`, `selected`, `disabled`, and `label` attributes
+- The difference between an option's **text** and its **value**
+- How the browser decides which option starts selected
+- Grouping with `<optgroup>`, including disabled groups
+- Adding, removing, and reading options with JavaScript
+- Accessibility, styling limits, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="size">T-shirt size</label>
+<select id="size" name="size">
+  <option value="s">Small</option>
+  <option value="m" selected>Medium</option>
+  <option value="l">Large</option>
+</select>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="og-basic">T-shirt size</label><br />
+  <select id="og-basic" name="size" defaultValue="m">
+    <option value="s">Small</option>
+    <option value="m">Medium</option>
+    <option value="l">Large</option>
+  </select>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each `<option>` has two jobs:
+
+1. **The text** between its tags is what the visitor **reads**.
+2. **The `value`** is what your server **receives**.
+
+Options can only live inside a `<select>` (or an `<optgroup>`, or a `<datalist>`). The text must be **plain text**. You cannot put bold text, images, or links inside an option, because browsers draw the list themselves.
+
+:::note The end tag
+HTML allows you to leave out `</option>` in some cases. Do not. Always write the end tag, so your code is clear and every tool reads it the same way.
+:::
+
+## The Option Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `value` | What is sent when this option is chosen | `value="m"` |
+| `selected` | This option starts chosen | `selected` |
+| `disabled` | Cannot be chosen, and is never sent | `disabled` |
+| `label` | Text shown **instead of** the content, in the closed list and the list | `label="Medium"` |
+
+### `value`: What Is Sent
+
+```html
+<option value="ng">Nigeria</option>   <!-- sends ng -->
+<option>Nigeria</option>              <!-- no value: sends the text, Nigeria -->
+```
+
+If you leave out `value`, the **text** is used as the value. That is risky when the text is translated or reworded, because your server would then receive different words for the same choice. Always give options a **stable `value`**, such as a code or an id, and let the text change freely.
+
+An **empty value** (`value=""`) is special. It is how you build the "placeholder" option, and it makes `required` work (see [Select](./select)).
+
+### Text, Value, and Label
+
+Each option actually has three pieces of information. Pick an option below, and see all of them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="size">T-shirt size</label>
+<select id="size" name="size">
+  <option value="">Choose a size</option>
+  <option value="s">Small (chest 86 to 91 cm)</option>
+  <option value="m" label="Medium">Medium (chest 96 to 101 cm)</option>
+  <option value="l">Large (chest 106 to 111 cm)</option>
+</select>
+<p id="info" role="status"></p>
+```
+
+```js title="script.js"
+const select = document.getElementById("size");
+const info = document.getElementById("info");
+
+select.addEventListener("change", () => {
+  const option = select.selectedOptions[0];
+  info.textContent =
+    "value: " + (option.value || "(empty)") + " | " +
+    "text: " + option.text + " | " +
+    "label: " + option.label + " | " +
+    "index: " + option.index;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<InspectDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+| Property | Comes from | Used for |
+| :-- | :-- | :-- |
+| `option.value` | The `value` attribute (or the text, if missing) | What is **sent** |
+| `option.text` | The text between the tags | What the visitor reads in the list |
+| `option.label` | The `label` attribute (or the text, if missing) | A shorter name, shown in the closed box in some browsers |
+| `option.index` | The position in the list, counting from 0 | Finding an option in code |
+
+The `label` attribute is rarely needed. It lets you show a **short** name for the chosen option, while the opened list shows longer text. Browser support is uneven (some use it in the list too), so do not depend on it. If the long text is needed to choose, the visitor must be able to see it.
+
+### Whitespace
+
+The browser **trims** spaces at the start and end of option text, and collapses several spaces or line breaks into one. So indentation in your code does not change what people see. To show an indented option (as in a tree), use CSS padding on the option, or `optgroup`, and not spaces.
+
+## How the Starting Choice Is Picked
+
+This matters, and it has a few rules. For a normal, single-choice dropdown:
+
+1. If **one** option has `selected`, that one starts chosen.
+2. If **several** have `selected`, the **last** one wins.
+3. If **none** has `selected`, the browser picks the **first option that is not disabled**.
+
+Rule 3 has a consequence that catches many beginners. Suppose your placeholder is disabled:
+
+```html
+<select name="country" required>
+  <option value="" disabled>Choose a country</option>   <!-- disabled, but not selected -->
+  <option value="in">India</option>
+  <option value="ng">Nigeria</option>
+</select>
+```
+
+Because the first option is disabled, the browser skips it, and **starts with India chosen**. The placeholder is never shown. To fix it, add `selected` to the disabled placeholder:
+
+```html
+<option value="" disabled selected>Choose a country</option>
+```
+
+For a `<select multiple>`, any number of options can start with `selected`, and none is chosen if you give none.
+
+## A Disabled Option Is Never Sent
+
+A disabled option is **greyed out** and cannot be clicked or chosen from the keyboard. It is useful for choices that exist but are not available now ("Sold out," "Coming soon").
+
+```html
+<select name="seat">
+  <option value="a1">Seat A1</option>
+  <option value="a2" disabled>Seat A2 (taken)</option>
+  <option value="a3">Seat A3</option>
+</select>
+```
+
+- A disabled option **cannot be submitted** by a normal visitor. But anyone can send `seat=a2` by hand, so **check on the server** that the choice is allowed.
+- Say **why** an option is disabled, in its text: "(taken)," "(sold out)." A grey option with no reason is frustrating.
+- If the **chosen** option is disabled (using `selected disabled`), the select sends **nothing** for that field.
+
+## Grouping with `<optgroup>`
+
+A long list is easier to scan when it has **headings**. `<optgroup>` wraps a set of options, and its `label` attribute is the heading.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="course">Choose a course</label>
+<select id="course" name="course" required>
+  <option value="">Select a course</option>
+
+  <optgroup label="Web development">
+    <option value="html">HTML</option>
+    <option value="css">CSS</option>
+    <option value="js">JavaScript</option>
+  </optgroup>
+
+  <optgroup label="Data">
+    <option value="sql">SQL</option>
+    <option value="py">Python for data</option>
+  </optgroup>
+
+  <optgroup label="Mobile (coming soon)" disabled>
+    <option value="android">Android</option>
+    <option value="ios">iOS</option>
+  </optgroup>
+
+  <option value="other" disabled>Other (not available)</option>
+</select>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CourseDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Open the list. You will see bold headings ("Web development," "Data") with the options indented below them. The "Mobile" group and the last option are greyed out. Choose "Python for data," and press Enrol: only `course=py` is sent, and the group name is **never** sent.
+
+### The Rules of `<optgroup>`
+
+| Rule | Detail |
+| :-- | :-- |
+| `label` is **required** | It is the heading. Without it, the group is useless |
+| The heading is **not selectable** | It is a label, not a choice. Screen readers announce it as a group |
+| `disabled` on the group | Disables **every** option inside it at once |
+| **No nesting** | An `<optgroup>` cannot contain another `<optgroup>`. HTML allows one level of grouping only |
+| Options can sit **outside** groups | You may mix ungrouped options (such as the placeholder) with groups |
+| Works with `multiple` | Groups work the same in a list box |
+| Only the **option's value** is sent | The group's label never reaches the server |
+
+If the server needs to know which group the choice came from, **look it up from the option's value**, or encode it in the value (such as `web-html`).
+
+### When to Use Groups
+
+Use `<optgroup>` when:
+
+- The list is **long** (roughly 10 or more options), and the options fall naturally into categories.
+- The visitor may not know the category names but recognises the options (for example, cities by country).
+
+Do not use it when:
+
+- There are only a few options. Headings just add clutter.
+- The groups would hold one option each.
+- You need **two levels** of grouping. Use dependent dropdowns (see [Select](./select)), or a different control.
+
+## Adding and Removing Options with JavaScript
+
+You can change a list while the page is open. The `Option` constructor makes a new option:
+
+```js
+// new Option(text, value, defaultSelected, selected)
+const option = new Option("Medium", "m");
+
+select.add(option);              // add to the end
+select.add(option, 0);           // add at the start
+select.options[2].remove();      // remove the third option
+select.remove(1);                // remove the option at index 1
+select.length = 0;               // remove all of them
+```
+
+A complete example, which fills a dropdown from a list:
+
+```js title="script.js"
+const select = document.getElementById("size");
+
+const sizes = [
+  { value: "s", text: "Small" },
+  { value: "m", text: "Medium" },
+  { value: "l", text: "Large" },
+];
+
+select.length = 0;                                   // clear the old options
+select.add(new Option("Choose a size", ""));         // the placeholder first
+
+for (const size of sizes) {
+  select.add(new Option(size.text, size.value));
+}
+```
+
+You can also make an `<optgroup>` with `document.createElement("optgroup")`, set its `label`, and append options to it.
+
+Useful properties and tips:
+
+| Property | What it gives |
+| :-- | :-- |
+| `select.options` | A live list of all options (inside groups too) |
+| `select.selectedOptions` | A list of the chosen options |
+| `option.selected` | `true` if chosen now |
+| `option.defaultSelected` | `true` if the HTML has `selected` |
+| `option.disabled` | Read or change the disabled state |
+| `option.hidden` | Hides an option from the list, without removing it |
+
+Prefer `option.text` or `new Option(text, value)` over `innerHTML` when the text comes from a visitor or a database. These treat it as **plain text**, so tags in it are harmless.
+
+## Options in a Datalist
+
+`<option>` is also used inside a [`<datalist>`](./datalist), to suggest values for an `<input>`. There, the attributes work differently: `value` is the suggestion that is **typed into the input**, and `label` is optional extra text. You will study this in the Datalist lesson.
+
+## Styling Options and Groups
+
+You cannot style options very much, because the browser or operating system draws the open list.
+
+```css title="style.css"
+select {
+  font: inherit;
+  padding: 0.6rem 0.75rem;
+}
+
+/* Works in many desktop browsers, ignored in others */
+option {
+  padding: 0.4rem;
+}
+
+option:disabled {
+  color: #64748b;
+}
+
+optgroup {
+  font-style: normal;
+  font-weight: 700;
+}
+```
+
+- Colours, fonts, and padding on `<option>` work in some browsers (usually on desktop) and are ignored in others, such as on iOS, where a native wheel picker is used.
+- You **cannot** put images, icons, or rich formatting inside an option in a standard select.
+- Never rely on styling for meaning. A disabled option must also say why, in text.
+- A newer feature, `appearance: base-select`, lets supporting browsers style the whole list, and allows richer content in options. Treat it as an **enhancement** only, with a plain select as the fallback.
+- If you truly need rich items (flags, avatars, two-line descriptions), consider a different control: radio buttons shown as cards, or a well-built accessible "listbox." Do this only with great care, since the native select gives you the keyboard, screen readers, and phone pickers for free.
+
+## Accessibility at a Glance
+
+- **Use `<optgroup>` for long lists.** Screen readers announce the group name as you move into it, which helps people understand where they are.
+- **Keep option text short and clear,** with the most important word first. Keyboard type-ahead jumps to the option that starts with the typed letters.
+- **Do not repeat the group name in each option.** "HTML," not "Web development: HTML."
+- **Explain disabled options** in their text, since the reason cannot be reached otherwise.
+- **Order options logically** (alphabetical, by size, by date), and keep common choices easy to find.
+- **Keep a placeholder option** ("Choose a size") so the visitor makes a real choice, and the select is not read with an arbitrary first option.
+- **Avoid options that look like headings** (for example, `<option disabled>--- Europe ---</option>`). Use `<optgroup>`, which is announced correctly.
+- **Do not use an option only for decoration,** such as a row of dashes, a blank spacer, or an emoji with no word.
+- **Make sure text works without colour,** and that any symbols in option text (such as a tick) are also described in words.
+
+## Security and Validation Notes
+
+- **Only the `value` is sent,** and anyone can change it. **Allow-list** the values on the server, and reject anything else, even if it looks like a disabled option.
+- **Never trust a hidden meaning** in a value, such as a price or a discount. Look it up on the server.
+- **Escape option text** that comes from a database or a user when you build HTML on the server. Use `new Option()` or `textContent` in JavaScript.
+- **Check that the chosen option is still available** when the form is submitted. A seat or product may have sold out after the page loaded.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Translate the text, keep the values.** Option text is for people, so translate it. Option values are for your server, so keep them as stable codes.
+- **Sort in the visitor's language.** Alphabetical order differs between languages. In JavaScript, use `Intl.Collator`, or `localeCompare` with the language.
+- **Use standard codes** for values: ISO 3166 for countries, ISO 639 for languages, ISO 4217 for currencies.
+- **Group names should translate well.** Keep them short and plain.
+- **Be inclusive with the options you offer.** Lists for gender, title, or relationship need care, plus "Other" or "Prefer not to say" where appropriate. Ask only for what you truly need.
+- **Right-to-left pages** mirror the list automatically with `dir="rtl"`, including the group headings.
+
+## Common Mistakes to Avoid
+
+1. **Leaving out `value`,** so the (possibly translated) text is sent.
+2. **A disabled placeholder without `selected`,** so the browser picks the first enabled option.
+3. **Putting HTML (bold, links, images) inside an option.** Only text works.
+4. **Nesting `<optgroup>` inside `<optgroup>`.** It is not allowed.
+5. **Forgetting the `label` on an `<optgroup>`.**
+6. **Faking groups** with disabled options and dashes instead of `<optgroup>`.
+7. **Giving duplicate values** to different options, so the server cannot tell them apart.
+8. **Disabling options without saying why.**
+9. **Trusting that a disabled option cannot be sent.** It can, by hand, so check on the server.
+10. **Using `option.innerHTML`** with untrusted text.
+11. **Using several `selected` options** in a single-choice select (only the last counts).
+12. **Relying on `label` or styling** that some browsers ignore.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a select with three options and `value`s. Submit it with `method="get"`.
+2. Remove the `value`s, and see what is sent instead.
+3. Add `selected` to the second option, and then to two options, and see which wins.
+4. Add a disabled placeholder as the first option, with and without `selected`.
+5. Disable one option, and try to choose it with the mouse and the keyboard.
+6. Group the options with two `<optgroup>`s, and add a disabled group.
+7. Try to nest an `<optgroup>` in another, and see what the browser does.
+8. Log `option.value`, `option.text`, `option.label`, and `option.index` when the choice changes.
+9. Fill a select from an array with `new Option(text, value)`.
+10. Bonus: use `selectedOptions` on a `multiple` select, and print all the chosen values.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between an option's text and its value?</summary>
+
+The text between the tags is what the visitor reads. The `value` attribute is what is sent to the server. If `value` is missing, the text is used as the value, so give options stable values.
+
+</details>
+
+<details>
+<summary>2. Which option does a single-choice select start with?</summary>
+
+The one with `selected` (the last, if several have it). If none does, the first option that is **not disabled**. That is why a disabled placeholder also needs `selected`.
+
+</details>
+
+<details>
+<summary>3. What happens to a disabled option?</summary>
+
+It is greyed out, cannot be chosen, and is not sent by a normal visitor. The server must still check, since anyone can send that value by hand.
+
+</details>
+
+<details>
+<summary>4. What does `<optgroup>` do, and what are its rules?</summary>
+
+It groups related options under a heading given by its required `label`. It cannot be nested, the heading cannot be chosen, `disabled` on the group disables every option inside, and only the option's value (never the group label) is sent.
+
+</details>
+
+<details>
+<summary>5. How do you add an option with JavaScript?</summary>
+
+Create it with `new Option(text, value)` and add it with `select.add(option)`. Remove options with `select.remove(index)`, or empty the list with `select.length = 0`.
+
+</details>
+
+<details>
+<summary>6. Can you put an image or bold text inside an option?</summary>
+
+No. Standard options hold plain text only. For rich items, use another control, or a carefully built accessible listbox, with a plain select as a fallback.
+
+</details>
+
+## Key Takeaways
+
+- `<option>` is one choice: its **text** is what people read, and its **value** is what is sent. Always give stable values.
+- `selected` sets the starting choice. With none, the browser picks the first non-disabled option, so a disabled placeholder also needs `selected`.
+- `disabled` greys out an option or a whole `<optgroup>`, and is not sent, but the server must still check values against an allow-list.
+- `<optgroup label="...">` gives long lists headings. It allows one level only, and the group label is never sent.
+- Use `new Option(text, value)` and `select.add()` to build lists in JavaScript, and prefer text over `innerHTML`.
+- Options are plain text with limited styling. Keep text short, translate it, keep the values as codes, and explain disabled choices.
+
+Dropdowns suggest a fixed list. Next, learn how to suggest values while still letting people type their own, in [Datalist](./datalist), or return to the [Forms overview](/tutorials/html/forms).

@@ -1,18 +1,438 @@
 ---
-id: input-type-hidden
-title: "Hidden Inputs: type='hidden'"
-sidebar_label: "Hidden Input"
+id: html-input-hidden
+title: "HTML Input Type Hidden"
+sidebar_label: "Hidden"
 sidebar_position: 18
 slug: /html/forms/input-types/hidden
-description: "Pass invisible state parameters, CSRF tokens, database IDs, and session keys safely during form submissions using input type='hidden'."
+description: "Learn the HTML input type hidden: sending values the visitor does not see, such as record ids, CSRF tokens, return pages, and multi-step state. Understand why hidden is not secret, why the server must never trust it, how it differs from the hidden attribute, disabled, and readonly, and common mistakes on CodeHarborHub."
 keywords:
   - HTML input type hidden
-  - hidden form field
-  - pass hidden data form
-  - CSRF token hidden input
+  - hidden field HTML form
+  - hidden input CSRF token
+  - hidden input not secure
+  - hidden input tampering
+  - hidden input vs disabled readonly
+  - hidden attribute vs input type hidden
+  - hidden input record id
+  - open redirect return url form
+  - form multi-step hidden state
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, state]
+tags: [html, web-development, beginner, forms, input, hidden, security, frontend]
 ---
+
+import {useState} from 'react';
+
+export function TamperDemo() {
+  const [price, setPrice] = useState("49.00");
+  const [tampered, setTampered] = useState(false);
+  const [sent, setSent] = useState("(press Order)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const text = new URLSearchParams(new FormData(event.currentTarget)).toString();
+        setSent(text);
+      }}
+    >
+      <input type="hidden" name="product_id" value="sku-1042" />
+      <input type="hidden" name="price" value={price} />
+      <p style={{margin: "0 0 0.5rem"}}>
+        <strong>Online course</strong>: shown price {"$49.00"}
+      </p>
+      <label htmlFor="hd-qty">Seats</label><br />
+      <input type="number" id="hd-qty" name="quantity" min={1} max={5} defaultValue={1} />
+      <p style={{margin: "0.5rem 0"}}>
+        <button type="submit">Order</button>{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setPrice(tampered ? "49.00" : "0.01");
+            setTampered(!tampered);
+            setSent("(press Order)");
+          }}
+        >
+          {tampered ? "Undo the tampering" : "Pretend to edit the hidden price"}
+        </button>
+      </p>
+      <p role="status" style={{margin: 0}}>
+        Hidden price in the form: <code>{price}</code><br />
+        Sent: <code>{sent}</code>
+      </p>
+    </form>
+  );
+}
+
+Not everything that goes into a form needs to be **seen**. Which record is being edited? Which page should the visitor return to? Which step of a long form are they on? Some values are not for the visitor to read or change, but the server still needs them. That is the job of `type="hidden"`.
+
+A hidden input looks like a perfect place to tuck away secrets. It is **not**. The most important thing to learn in this lesson is that "hidden" only means **not shown on the page**. Anyone can see it, and change it. In this lesson, you will learn the right jobs for hidden fields, the wrong ones, and the rules that keep your forms safe.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `type="hidden"` does, and how it differs from other ways of "hiding" things
+- The good uses: ids, tokens, return pages, and multi-step state
+- Why a hidden field can never be trusted
+- The special `_charset_` field
+- Accessibility notes, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/comments" method="post">
+  <input type="hidden" name="post_id" value="42" />
+
+  <label for="comment">Your comment</label>
+  <textarea id="comment" name="comment"></textarea>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <input type="hidden" name="post_id" value="42" />
+  <label htmlFor="hd-comment">Your comment</label><br />
+  <textarea id="hd-comment" name="comment"></textarea><br />
+  <button type="submit">Send</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The page shows only the comment box and the button. The hidden `post_id` takes up **no space** and has no label. But when the form is submitted, the browser sends `post_id=42&comment=...`, so the server knows which post the comment belongs to.
+
+## What Is Sent
+
+A hidden input is sent like any other field: `name=value`, as long as it has a `name` and is not `disabled`.
+
+| Attribute | What it does |
+| :-- | :-- |
+| `name` | The key sent to the server. Required, or nothing is sent |
+| `value` | The text sent. It is the **whole point** of a hidden input |
+| `disabled` | The field is not sent |
+| `form` | Connects the field to a form it is not inside (by the form's `id`) |
+
+These do **not** apply to hidden inputs: `required` (ignored, since it can never be filled in), `readonly`, `placeholder`, `min`, `max`, `step`, `pattern`, `maxlength`, `autocomplete`, and `id` for a label. A hidden input never takes part in validation.
+
+## Good Uses
+
+### 1. Identifying a record
+
+When a form edits or replies to something that already exists, the id travels along:
+
+```html
+<form action="/products/update" method="post">
+  <input type="hidden" name="product_id" value="1042" />
+  <label for="name">Product name</label>
+  <input type="text" id="name" name="name" value="Notebook" />
+  <button type="submit">Save</button>
+</form>
+```
+
+### 2. A CSRF token
+
+A **CSRF** (cross-site request forgery) attack tricks a signed-in visitor's browser into sending a request to your site from another page. The defence is a **secret, one-time token** that your server puts into each form, and checks when the form comes back:
+
+```html
+<form action="/account/delete" method="post">
+  <input type="hidden" name="csrf_token" value="9f2b7c...random..." />
+  <button type="submit">Delete my account</button>
+</form>
+```
+
+The server generates the token, stores it (for example, in the visitor's session), and **rejects** any request whose token does not match. An attacker's page cannot read the token, so it cannot forge a request. Most web frameworks create and check this token for you. Use their feature, and do not invent your own.
+
+### 3. Where to go afterwards
+
+After a sign-in, you may want to send the visitor back to the page they came from:
+
+```html
+<input type="hidden" name="next" value="/courses/html" />
+```
+
+:::warning Validate return addresses
+If the server blindly redirects to whatever `next` says, an attacker can send people to `https://evil.example` after they sign in on your real site. This is an **open redirect**. Accept only **relative paths on your own site** (such as `/courses/html`), or addresses from an allow-list.
+:::
+
+### 4. State across several steps
+
+A multi-step form (a wizard) can pass earlier answers along in hidden fields:
+
+```html
+<!-- Step 3 of a booking form -->
+<form action="/book/step4" method="post">
+  <input type="hidden" name="date" value="2026-12-25" />
+  <input type="hidden" name="guests" value="4" />
+
+  <label for="notes">Special requests</label>
+  <textarea id="notes" name="notes"></textarea>
+  <button type="submit">Next</button>
+</form>
+```
+
+This works, but the values can be changed along the way. Many sites store progress on the **server** (in the session) instead, and keep only a safe reference in the form. Whatever you choose, check each step again on the server.
+
+### 5. Information from JavaScript
+
+A script can fill a hidden field with something the visitor does not type, such as their time zone:
+
+```html
+<input type="hidden" name="timezone" id="timezone" />
+```
+
+```js
+document.getElementById("timezone").value =
+  Intl.DateTimeFormat().resolvedOptions().timeZone;   // "Asia/Kolkata"
+```
+
+### 6. A form version, or the source
+
+Marking which form or page a submission came from can help your analytics:
+
+```html
+<input type="hidden" name="source" value="homepage-banner" />
+```
+
+## Hidden Is Not Secret
+
+This is the heart of the lesson. A hidden field is hidden **only on the page**. It is fully visible in the page source, in the browser's developer tools, and in the network request. And anyone can **edit** it in a few seconds, or skip your page and send a request by hand.
+
+Try it. The form below holds a hidden `price`. Press **Order**, then press the other button to pretend a visitor has changed the hidden value, and press **Order** again.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/order" method="post">
+  <input type="hidden" name="product_id" value="sku-1042" />
+  <input type="hidden" name="price" value="49.00" />
+
+  <p><strong>Online course</strong>: shown price $49.00</p>
+
+  <label for="qty">Seats</label>
+  <input type="number" id="qty" name="quantity" min="1" max="5" value="1" />
+
+  <button type="submit">Order</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TamperDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+After tampering, the form sends `price=0.01`. If your server believed that number, a $49 course would cost one cent.
+
+**Never trust a hidden field.** This list shows what to do instead:
+
+| Never store in a hidden field | Do this instead |
+| :-- | :-- |
+| **Prices, discounts, totals** | Send only the **product id** and quantity. Look up the price on the server |
+| **A user's id** for "who am I" | Take the user from the **session**, not from the form |
+| **Roles and permissions** (`admin=false`) | Keep them on the server, and check them for every request |
+| **Passwords, API keys, secrets** | Never put them in HTML at all |
+| **A record id**, such as `order_id` | Allowed, but check that the signed-in user **owns** that record. Otherwise, a visitor changes `42` to `43` and reads someone else's order (this flaw is called IDOR) |
+| **Anything that makes a decision** | Re-check on the server |
+
+A simple rule of thumb: a hidden field may carry an **identifier** or a **token**, but it must never carry a **decision**.
+
+## Hidden Input, `hidden` Attribute, `disabled`, and `readonly`
+
+These four are often mixed up.
+
+| What you write | Shown? | Sent with the form? | Notes |
+| :-- | :-- | :-- | :-- |
+| `<input type="hidden" ...>` | No | **Yes** | No label, never validated, not in the accessibility tree |
+| `<input type="text" hidden ...>` (the `hidden` **attribute**) | No | **Yes** | The field still exists, and is only not displayed. It can be revealed with JavaScript, and **it still validates**: a hidden `required` empty field can block the form |
+| `<input type="text" disabled ...>` | Yes, greyed out | **No** | Cannot be focused or changed |
+| `<input type="text" readonly ...>` | Yes | **Yes** | Can be focused and copied, but not edited |
+
+:::tip Pick the right tool
+- Show a value the visitor should read, but not change: use **`readonly`** (and sent), or plain text in the page.
+- Send a value the visitor does not need to see: use **`type="hidden"`**.
+- Keep a field in the page, but switch it off for now: use **`disabled`** (and not sent).
+- Hide a whole section that comes and goes (a "More options" panel): use the **`hidden` attribute** on its container, and turn the fields inside to `disabled` if they should not be sent or validated.
+:::
+
+## The Special `_charset_` Field
+
+There is one hidden input with a built-in behaviour. If you name it `_charset_` (and give it **no** `value`), the browser fills in the **character encoding** it used to send the form:
+
+```html
+<input type="hidden" name="_charset_" />
+```
+
+It sends `_charset_=UTF-8`. In modern sites that always use UTF-8, you do not need it, but you may see it in older code, or in systems that must handle several encodings.
+
+## Honeypots: Use with Care
+
+A **honeypot** is a field that real visitors never see or fill, but bots often do. If the field arrives filled, the server treats the submission as spam.
+
+A honeypot is **not** done with `type="hidden"`, because bots know to ignore those. It is usually a normal-looking text field, hidden from sighted people with CSS, and from screen readers with `aria-hidden` and `tabindex="-1"`:
+
+```html
+<div class="trap" aria-hidden="true">
+  <label for="website">Leave this empty</label>
+  <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+</div>
+```
+
+Honeypots are a light defence only. They will not stop a determined attacker, and a field that is hidden badly can confuse **real** people who use assistive technology or password managers. Combine them with other measures, such as rate limits and server-side checks.
+
+## Reading and Changing Hidden Fields in JavaScript
+
+A hidden input is a normal element. You can read and change it:
+
+```js
+const field = document.querySelector('input[name="step"]');
+console.log(field.value);       // "3"
+field.value = "4";
+```
+
+You can also add one on the fly, such as before submitting:
+
+```js
+const hidden = document.createElement("input");
+hidden.type = "hidden";
+hidden.name = "client_time";
+hidden.value = new Date().toISOString();
+form.append(hidden);
+```
+
+With `FormData`, hidden fields are included automatically, like any other field.
+
+## Accessibility at a Glance
+
+- **A hidden input is invisible to everyone,** including screen readers. It is not part of the accessibility tree, and has no label. That is correct for ids and tokens.
+- **Never put information the visitor needs into a hidden field.** If they must know it (such as a total, or the item they are editing), show it as text.
+- **Do not hide required instructions or errors** with `type="hidden"`. Use visible text.
+- **Do not use hidden fields to carry data that changes the meaning** of what the visitor agreed to.
+- **For honeypot traps,** use `aria-hidden="true"` and `tabindex="-1"`, so keyboard and screen reader users never land in them.
+
+## Security and Privacy Notes
+
+- **Treat every hidden value as user input.** Validate its type, length, and allowed values on the server.
+- **Use unguessable ids** where you can (such as a random identifier), and always **check ownership and permission** for the record, whether or not the id is guessable.
+- **Use a real CSRF defence:** a token from your framework, plus `SameSite` cookies.
+- **Validate redirect targets** (the `next` or `return_to` field) against your own site.
+- **Escape any hidden value** you print back into a page (for example, `value="..."`), because it can contain quotes and tags.
+- **Do not put personal or sensitive data** in a hidden field when you could keep it on the server. HTML is cached, copied, and logged in many places.
+- **Prefer `method="post"`** for forms that carry tokens or ids you do not want in the address bar, browser history, or server logs.
+
+See [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **Hidden fields do not need translation,** since no one reads them. Keep their **names** consistent and in English-like identifiers.
+- **Do not store language-dependent text** in them, such as button labels. Store codes (`en`, `hi`, `ar`), and translate on display.
+- **Store dates and numbers in a neutral format** (such as ISO dates and plain numbers), so every locale reads them the same way.
+- **Honour privacy laws.** Anything you collect in a hidden field (a device clue, a time zone, a referrer) may count as personal data in some countries. Say what you collect in your privacy policy.
+
+## Common Mistakes to Avoid
+
+1. **Believing hidden means secret.** It is visible in the source and the network.
+2. **Putting prices, totals, or discounts in hidden fields** and trusting them.
+3. **Using a hidden `user_id` or `role`** to decide who the visitor is, or what they may do.
+4. **Trusting a record id** without checking that the signed-in user owns the record.
+5. **Redirecting to a hidden `next` value** without validation (open redirect).
+6. **Forgetting the `name`,** so nothing is sent.
+7. **Using `required` on a hidden input.** It is ignored.
+8. **Confusing `type="hidden"` with the `hidden` attribute,** and being surprised by validation or sending.
+9. **Using `disabled` when you want the value sent.**
+10. **Hiding information the visitor needs,** such as the total or the item being edited.
+11. **Writing your own CSRF system** instead of using the framework's.
+12. **Using `type="hidden"` for a honeypot.** Bots skip those.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with a hidden `post_id` and a visible comment box. Submit it with `method="get"`, and find the hidden value in the address.
+2. Open the browser's developer tools, change the hidden value, and submit again.
+3. Remove the `name` from the hidden input, and see what is sent.
+4. Add `disabled`, and compare it with `readonly` on a text input.
+5. Add the `hidden` attribute to a `required` text input, leave it empty, and try to submit.
+6. Fill a hidden `timezone` field with JavaScript.
+7. Add a hidden input with `document.createElement` just before submitting.
+8. Build a two-step form that carries step-1 answers in hidden fields.
+9. Write down what your server should check when it receives `next=/courses/html`.
+10. Bonus: list three values from an online shop that should be looked up on the server, and never read from the form.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `type="hidden"` do?</summary>
+
+It stores a value in the form that is not shown on the page. When the form is submitted, the `name` and `value` are sent like any other field.
+
+</details>
+
+<details>
+<summary>2. Is a hidden input secure?</summary>
+
+No. It is only hidden on the page. Anyone can see it in the source or developer tools, and change it, or send their own request. The server must treat it as untrusted input.
+
+</details>
+
+<details>
+<summary>3. Name three good uses of hidden inputs.</summary>
+
+A record id (checked for ownership on the server), a CSRF token, a return page (validated against your own site), state in a multi-step form, or a value filled by JavaScript, such as the time zone.
+
+</details>
+
+<details>
+<summary>4. Which values should never come from a hidden field?</summary>
+
+Prices, totals, discounts, user ids used for identity, roles and permissions, and any secrets. Look them up on the server, and take the user from the session.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `type="hidden"` and the `hidden` attribute?</summary>
+
+`type="hidden"` is an input type that is never displayed, labelled, or validated. The `hidden` attribute hides any element from view, but the field still exists, can be revealed, and still validates, so a hidden `required` empty field can block submission.
+
+</details>
+
+<details>
+<summary>6. When is a field sent: `disabled`, `readonly`, or hidden?</summary>
+
+`readonly` fields are sent, hidden inputs are sent, and `disabled` fields are **not** sent.
+
+</details>
+
+## Key Takeaways
+
+- `type="hidden"` sends a `name=value` pair that the visitor does not see. It needs a `name`, and ignores `required` and other visible-field attributes.
+- Good uses: record ids, CSRF tokens, validated return pages, multi-step state, and values filled by JavaScript.
+- **Hidden is not secret.** Everything in a hidden field can be seen and changed, so the server must treat it as untrusted.
+- Never trust a hidden field to carry a **decision**: prices, roles, permissions, or the user's identity. Look these up on the server.
+- Check ownership of any record id, validate any redirect address, and use your framework's CSRF protection.
+- Choose carefully between `type="hidden"`, the `hidden` attribute, `disabled`, and `readonly`, because they behave differently.
+
+Hidden fields carry data quietly. Next, learn the buttons that send and clear a form, in [Submit and Reset Buttons](./submit-reset-button), or return to the [Forms overview](/tutorials/html/forms).

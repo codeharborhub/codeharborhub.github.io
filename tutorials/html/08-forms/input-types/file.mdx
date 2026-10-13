@@ -1,18 +1,531 @@
 ---
-id: input-type-file
-title: "File Uploads: type='file'"
-sidebar_label: "File Upload"
+id: html-input-file
+title: "HTML Input Type File"
+sidebar_label: "File"
 sidebar_position: 16
 slug: /html/forms/input-types/file
-description: "Allow users to upload local files using input type='file', configuring accept filters, multiple selection, and enctype constraints."
+description: "Learn the HTML input type file: uploading one or many files, the accept, multiple, capture, and required attributes, why a form needs method=post and enctype=multipart/form-data, reading file name, size, and type with JavaScript, image previews, size checks, styling the button, and safe server-side handling on CodeHarborHub."
 keywords:
   - HTML input type file
-  - file upload field
-  - file input accept attribute
-  - multiple file upload HTML
+  - file upload HTML
+  - input file accept attribute
+  - input file multiple
+  - input file capture camera
+  - enctype multipart form-data
+  - file size validation JavaScript
+  - image preview createObjectURL
+  - file-selector-button style
+  - file upload security
+  - learn HTML forms
   - CodeHarborHub HTML
-authors:
-  - name: ajay-dhangar
-    link: https://github.com/ajay-dhangar
-tags: [html, forms, input-type, file-upload]
+tags: [html, web-development, beginner, forms, input, file, upload, security, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+
+export function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+export function FilesDemo() {
+  const maxBytes = 2 * 1024 * 1024;
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+
+  useEffect(() => {
+    const urls = files.map((file) =>
+      file.type.startsWith("image/") ? URL.createObjectURL(file) : null
+    );
+    setPreviews(urls);
+    return () => urls.forEach((url) => url && URL.revokeObjectURL(url));
+  }, [files]);
+
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="file-demo">Choose images or documents (2 MB each at most)</label><br />
+      <input
+        type="file"
+        id="file-demo"
+        name="uploads"
+        multiple
+        accept="image/*,.pdf"
+        onChange={(event) => setFiles(Array.from(event.target.files))}
+        aria-describedby="file-demo-out"
+      />
+      <div id="file-demo-out" role="status" style={{marginTop: "0.5rem"}}>
+        {files.length === 0 ? (
+          <p style={{margin: 0}}>No file chosen yet.</p>
+        ) : (
+          <ul style={{margin: 0, paddingLeft: "1.25rem"}}>
+            {files.map((file, index) => (
+              <li key={file.name + index} style={{marginBottom: "0.5rem"}}>
+                {previews[index] ? (
+                  <img
+                    src={previews[index]}
+                    alt=""
+                    style={{width: "3rem", height: "3rem", objectFit: "cover", borderRadius: "4px", marginRight: "0.5rem", verticalAlign: "middle"}}
+                  />
+                ) : null}
+                <strong>{file.name}</strong> ({file.type || "unknown type"}, {formatSize(file.size)})
+                {file.size > maxBytes ? <span style={{color: "#b91c1c"}}> Too large: the limit is 2 MB.</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </form>
+  );
+}
+
+Profile photos, CVs, invoices, screenshots, homework: if your site needs to **receive a file** from the visitor, `type="file"` is how it starts. Click the field, pick a file from your device, and the browser sends it along with the rest of the form.
+
+Uploads are also where forms become **dangerous**. A file is data your server did not create, with a name, a size, and a type that someone else chose. In this lesson, you will learn how to build the field, how to tell the browser which files you want, how to read and preview the choice in JavaScript, and, most important, the rules your **server** must follow to stay safe.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to build a file input, and what the form needs for uploads to work
+- The `accept`, `multiple`, `capture`, and `required` attributes
+- Reading file names, sizes, and types in JavaScript
+- Previewing images, and checking size before upload
+- Styling the "Choose file" button
+- Accessibility, safe server handling, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/upload" method="post" enctype="multipart/form-data">
+  <label for="avatar">Profile photo</label>
+  <input type="file" id="avatar" name="avatar" />
+  <button type="submit">Upload</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="file-basic">Profile photo</label><br />
+  <input type="file" id="file-basic" name="avatar" />{" "}
+  <button type="submit">Upload</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The field shows a **"Choose file"** button and the text **"No file chosen."** Clicking it opens the device's own file picker (and on phones, often a choice between the photo library, camera, and files). After choosing, the file's name appears next to the button.
+
+The exact words and look come from the browser and the visitor's language. On many systems, you can also **drag a file** onto the field.
+
+## The Form Needs Two Settings
+
+For files to actually reach your server, the **form** (not the input) must have these:
+
+| Setting | Why |
+| :-- | :-- |
+| `method="post"` | Files are far too big for the address bar, so `get` cannot carry them |
+| `enctype="multipart/form-data"` | Tells the browser to send the data in a special "multipart" format that can carry file contents |
+
+```html
+<form action="/upload" method="post" enctype="multipart/form-data">
+```
+
+:::warning The most common upload bug
+If you forget `enctype="multipart/form-data"`, the form **looks fine**, but the server receives only the **file name** as text, and not the file itself. When uploads "do not work," check this first. You will learn the details in [Multipart Form Data](../multipart-form-data).
+:::
+
+## What Is Sent
+
+For a file input, the browser sends the file's **name**, its **type**, and its **contents**, as one part of the multipart message. If no file was chosen, it sends an empty part with an empty name.
+
+Unlike other inputs, you cannot see the value in the address bar, and the field has no readable `value` you can use. If you read `input.value`, you get a fake path like `C:\fakepath\photo.jpg`, which exists only to hide the visitor's real folders. Use `input.files` instead (see below).
+
+## Attributes for File Inputs
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key your server reads the file under | `name="avatar"` |
+| `id` | Connects the [label](../label-element) | `id="avatar"` |
+| `accept` | Tells the browser which file types to offer | `accept="image/*"` |
+| `multiple` | Allows choosing more than one file | `multiple` |
+| `required` | A file must be chosen | `required` |
+| `capture` | On phones, open the camera or microphone directly | `capture="environment"` |
+| `webkitdirectory` | Choose a whole **folder** (non-standard, but widely supported) | `webkitdirectory` |
+| `disabled` | Switches the field off, and it is not sent | `disabled` |
+| `autofocus` | Focus on load | `autofocus` |
+
+Attributes that do **not** apply: `value` (you cannot pre-fill a file), `readonly`, `placeholder`, `min`, `max`, `step`, `pattern`, `maxlength`, and `size`.
+
+## The `accept` Attribute
+
+`accept` narrows what the picker shows. It takes a comma-separated list of:
+
+- **Extensions** that start with a dot: `.pdf`, `.docx`
+- **Exact MIME types**: `application/pdf`, `image/png`
+- **Wildcard MIME types**: `image/*`, `audio/*`, `video/*`
+
+```html
+<!-- Any image -->
+<input type="file" name="photo" accept="image/*" />
+
+<!-- Only PDFs -->
+<input type="file" name="cv" accept=".pdf,application/pdf" />
+
+<!-- Specific image types -->
+<input type="file" name="logo" accept="image/png, image/jpeg, image/webp" />
+```
+
+| What `accept` does | What it does **not** do |
+| :-- | :-- |
+| Filters the file picker, so people mostly see the right kinds | Stop anyone from sending **other** files. Many pickers let you switch to "All files," and a script can send anything |
+| Helps phones offer the right apps | Check what is **inside** the file |
+
+:::danger `accept` is a convenience, not security
+It is a **hint to the browser**. A visitor can rename a script to `photo.jpg`, or bypass your page entirely. Your **server** must check every upload, as described later.
+:::
+
+## Choosing Several Files
+
+Add `multiple`, and the visitor can pick more than one file (with `Ctrl` or `Shift` on a computer, or by tapping several on a phone).
+
+```html
+<label for="gallery">Photos for the album</label>
+<input type="file" id="gallery" name="photos" accept="image/*" multiple />
+```
+
+On the server, you receive a **list** of files under the same name. The field's text then says something like "3 files."
+
+## Try It: Read, Check, and Preview
+
+The browser gives you the chosen files as `input.files`, a list of `File` objects. Each has:
+
+| Property | What it gives |
+| :-- | :-- |
+| `file.name` | The file name, such as `photo.jpg` |
+| `file.size` | The size in **bytes** |
+| `file.type` | The MIME type the browser guessed, such as `image/jpeg` (it can be empty) |
+| `file.lastModified` | When the file was last changed (milliseconds since 1970) |
+
+Choose a few files in the demo, and see the details and a thumbnail for images.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="files">Choose images or documents (2 MB each at most)</label>
+<input type="file" id="files" name="uploads" multiple accept="image/*,.pdf" />
+<ul id="list" role="status"></ul>
+```
+
+```js title="script.js"
+const input = document.getElementById("files");
+const list = document.getElementById("list");
+const MAX_BYTES = 2 * 1024 * 1024;
+let urls = [];
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+input.addEventListener("change", () => {
+  // Free memory from earlier previews
+  urls.forEach((url) => URL.revokeObjectURL(url));
+  urls = [];
+  list.innerHTML = "";
+
+  for (const file of input.files) {
+    const item = document.createElement("li");
+
+    if (file.type.startsWith("image/")) {
+      const img = document.createElement("img");
+      const url = URL.createObjectURL(file);
+      urls.push(url);
+      img.src = url;
+      img.alt = "";
+      img.width = 48;
+      img.height = 48;
+      item.append(img, " ");
+    }
+
+    const text = file.name + " (" + (file.type || "unknown type") + ", " + formatSize(file.size) + ")";
+    item.append(text);
+
+    if (file.size > MAX_BYTES) {
+      item.append(" Too large: the limit is 2 MB.");
+    }
+
+    list.append(item);
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FilesDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Things to notice:
+
+- **`URL.createObjectURL(file)`** makes a temporary address for the file in the visitor's own browser, so you can show a preview **without uploading** anything. Call `URL.revokeObjectURL(url)` afterwards to free memory.
+- The preview image has an empty `alt=""` because the file name next to it already describes it.
+- Nothing has left the visitor's device. Files are only sent when the form is submitted.
+- Reading `file.name` as **text** (as above) is safe. If you ever put a file name into HTML as **markup**, escape it first, because file names can contain `<` and quotes.
+
+### Stopping Files That Are Too Big
+
+You can check the size **before** upload, and set a custom message with `setCustomValidity`, so the browser's own error bubble appears on submit:
+
+```js
+const input = document.getElementById("files");
+const MAX_BYTES = 2 * 1024 * 1024;
+
+input.addEventListener("change", () => {
+  const tooBig = [...input.files].some((file) => file.size > MAX_BYTES);
+  input.setCustomValidity(tooBig ? "Each file must be 2 MB or smaller." : "");
+});
+```
+
+This saves visitors a long upload that would fail at the end. But it is a **courtesy only**: your server must enforce the limit again.
+
+## Cameras and Microphones with `capture`
+
+On phones and tablets, `capture` asks the browser to open the camera (or microphone) **directly**, instead of showing the file picker.
+
+```html
+<!-- Rear camera, for photographing a document -->
+<input type="file" accept="image/*" capture="environment" />
+
+<!-- Front camera, for a selfie -->
+<input type="file" accept="image/*" capture="user" />
+```
+
+| Value | Meaning |
+| :-- | :-- |
+| `environment` | The rear (outward-facing) camera |
+| `user` | The front (selfie) camera |
+
+`capture` works together with `accept` (`image/*`, `video/*`, or `audio/*`). Desktop browsers usually ignore it, and show the normal file picker. Because behaviour varies, always test on real devices, and let visitors choose an existing file if you can.
+
+## Styling the "Choose File" Button
+
+The default look is plain, and you cannot change the text it shows. But you can style the button part with the `::file-selector-button` pseudo-element:
+
+```css title="style.css"
+input[type="file"] {
+  font: inherit;
+  max-width: 100%;
+}
+
+input[type="file"]::file-selector-button {
+  padding: 0.6rem 1rem;
+  margin-right: 0.75rem;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: #1d4ed8;
+}
+
+input[type="file"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+### A Fully Custom Look
+
+Some designs hide the native input and use a button or a drop zone. To keep it accessible, **keep the real input** (do not use `display: none`), and place it visually hidden next to a styled label:
+
+```html
+<input type="file" id="doc" name="doc" class="visually-hidden" />
+<label for="doc" class="upload-button">Choose a document</label>
+<span id="doc-name">No file chosen</span>
+```
+
+```css
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.upload-button {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* Show a focus ring on the label when the hidden input has focus */
+.visually-hidden:focus-visible + .upload-button {
+  outline: 3px solid #1e3a8a;
+  outline-offset: 2px;
+}
+```
+
+Clicking the label opens the picker, and the keyboard still works with the real input. Update the file name text yourself in JavaScript, and do not forget the **focus style**, since the real input is invisible.
+
+## Accessibility at a Glance
+
+- **Always add a visible label** such as "Profile photo." Use `for` and `id`.
+- **State the rules in text** before the visitor chooses: file types, the maximum size, and how many files are allowed. Link it with `aria-describedby`: "JPG or PNG, up to 2 MB."
+- **Announce the result:** show the chosen file names in a `role="status"` region, so screen reader users know their choice worked.
+- **Give clear, specific errors:** "photo.tiff is not a supported type. Use JPG, PNG, or WebP." Not just "Invalid file."
+- **Keep the native input** (or a properly hidden one) so the keyboard (`Tab`, `Space`, `Enter`) works.
+- **Provide a text alternative** for any preview image, or use `alt=""` when the name already says what it is.
+- **Offer another way** when files are hard to use: for example, "or email it to us."
+- **Drag-and-drop zones** must not be the **only** route. The standard button must always work.
+- **Tell people about progress** during a long upload, and provide a way to cancel.
+
+## Safe Handling on the Server
+
+This is the most important part of the lesson. **Every uploaded file is untrusted.** The name, the size, the type, and the contents can all be forged. A careless upload feature is one of the classic ways sites get taken over.
+
+| Risk | What to do |
+| :-- | :-- |
+| **A huge file** fills your disk or memory | Set a **maximum size** in your server, framework, and proxy. Reject early |
+| **Wrong or fake type** (a script renamed `photo.jpg`) | Do **not** trust the file name, extension, or `Content-Type`. **Check the real content** (the "magic bytes" at the start, or by decoding the image with a library). Allow only the types you expect |
+| **A dangerous file name** such as `../../etc/passwd` or `shell.php` | **Never use the visitor's file name** to save the file. Generate your own random name (for example, a UUID), and keep the original only as display text, escaped |
+| **Files run as code** | Store uploads **outside** the web root, or on separate storage, and serve them as **downloads or static files**, never executed. Turn off script execution in the upload folder |
+| **Malware** | Scan uploads with antivirus software, especially if other people will download them |
+| **Images with hidden content** | Re-encode images (resize and save them again), which strips scripts and metadata. This also removes **location data (EXIF)**, protecting privacy |
+| **Stored XSS** through SVG or HTML files | Do not serve visitor-uploaded SVG or HTML from your own domain, or serve with safe headers (`Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`) |
+| **Abuse** (many uploads, wasted storage) | Require sign-in, limit the **count** and **rate**, and clean up unused files |
+| **Privacy** | Tell people what you do with their files, how long you keep them, and delete them on request |
+
+:::tip Let a service do the heavy lifting
+Many sites send files **directly** from the visitor's browser to cloud storage using a short-lived, signed link, and scan them there. This keeps large, risky data away from your main server.
+:::
+
+You will see more in [Secure Form Design](../secure-form-design).
+
+## Global Audience Notes
+
+- **File names can use any script** (such as `फोटो.jpg`, `照片.png`, or `صورة.jpg`). Your server and storage must handle Unicode, even if you store the file under a random name.
+- **Slow and expensive connections:** mobile data costs vary a lot. State size limits clearly, resize images in the browser before upload if you can, and show progress.
+- **Modern phone photos are large.** A single photo can be 5 to 10 MB. A 2 MB limit will surprise people, so say so before they choose, and consider automatic resizing.
+- **Different devices, different pickers.** The "Choose file" text follows the visitor's language, but your help text does not, so translate it.
+- **Respect privacy laws.** A photo of a person or a document is personal data in many countries.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting `enctype="multipart/form-data"`,** so only the file name arrives.
+2. **Using `method="get"`.** Files need `post`.
+3. **Treating `accept` as security.** It only filters the picker.
+4. **Trusting the file name, extension, or type** on the server.
+5. **Saving files under the visitor's file name.**
+6. **Storing uploads where the web server can run them** as code.
+7. **No size limit,** or a limit only in the browser.
+8. **Not saying the rules** (types and size) before the visitor chooses.
+9. **Reading `input.value`** instead of `input.files`.
+10. **Hiding the input with `display: none`,** which breaks keyboard access.
+11. **A drag-and-drop zone with no normal button.**
+12. **Forgetting `URL.revokeObjectURL`** after previews, which leaks memory.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with a file input, `method="post"`, and `enctype="multipart/form-data"`. If you have a small server, upload a file, and see what arrives.
+2. Remove the `enctype`, upload again, and compare.
+3. Add `accept="image/*"`, then try switching the picker to "All files."
+4. Add `multiple`, and choose three files.
+5. Show each file's name, type, and size in a list, using `input.files`.
+6. Add an image preview with `URL.createObjectURL`, and revoke it afterwards.
+7. Block files over 2 MB with `setCustomValidity`.
+8. Style the button with `::file-selector-button`.
+9. Open the page on a phone, and try `capture="environment"`.
+10. Bonus: build a custom upload button with a visually hidden input and a visible focus style.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What must a form have for file uploads to work?</summary>
+
+`method="post"` and `enctype="multipart/form-data"`. Without the `enctype`, only the file name is sent, and not the file itself.
+
+</details>
+
+<details>
+<summary>2. What does the `accept` attribute do, and does it make uploads safe?</summary>
+
+It filters the file picker to the types you list (extensions, MIME types, or wildcards such as `image/*`). It is only a hint. Visitors can bypass it, so the server must check every file.
+
+</details>
+
+<details>
+<summary>3. How do you read the chosen files in JavaScript?</summary>
+
+Use `input.files`, a list of `File` objects with `name`, `size`, `type`, and `lastModified`. Do not use `input.value`, which holds a fake path.
+
+</details>
+
+<details>
+<summary>4. How can you preview an image before uploading it?</summary>
+
+Make a temporary address with `URL.createObjectURL(file)`, set it as the `src` of an image, and call `URL.revokeObjectURL(url)` when you are done.
+
+</details>
+
+<details>
+<summary>5. What does `capture="environment"` do?</summary>
+
+On phones and tablets, it opens the rear camera directly (together with `accept="image/*"`). `capture="user"` opens the front camera. Desktop browsers usually ignore it.
+
+</details>
+
+<details>
+<summary>6. Name three rules for safe handling of uploaded files on the server.</summary>
+
+Enforce a size limit; check the real file content and allow only expected types; never use the visitor's file name (generate your own); and store files where they cannot be run as code. Scanning and re-encoding images help too.
+
+</details>
+
+## Key Takeaways
+
+- `type="file"` lets visitors upload files. The form needs `method="post"` and `enctype="multipart/form-data"`.
+- Use `accept` to guide the picker, `multiple` for several files, `required` for a must-have file, and `capture` for phone cameras. `accept` is not security.
+- Read files through `input.files` (`name`, `size`, `type`), and preview images with `URL.createObjectURL`, revoking the address afterwards.
+- Style the button with `::file-selector-button`. If you hide the input, keep it accessible and show a focus style.
+- State the allowed types and size in text, announce the result, and give specific errors.
+- Treat every upload as hostile: limit size, check real content, rename files, store them safely, scan them, and validate on the server.
+
+Files carry whole documents. Next, learn the input for choosing a value on a scale, in [Range](./range), or return to the [Forms overview](/tutorials/html/forms).

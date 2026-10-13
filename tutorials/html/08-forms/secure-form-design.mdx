@@ -1,16 +1,633 @@
 ---
-id: secure-form-design
-title: "Designing Secure HTML Forms: Protecting Against CSRF and XSS"
+id: html-secure-form-design
+title: "Secure HTML Form Design"
 sidebar_label: "Secure Form Design"
-sidebar_position: 21
+sidebar_position: 22
 slug: /html/forms/secure-form-design
-description: "Learn security fundamentals for form design, preventing Cross-Site Request Forgery (CSRF), Cross-Site Scripting (XSS), and data leakage."
+description: "Learn secure HTML form design: never trusting the browser, server-side validation with allow-lists, HTTPS, escaping output to stop XSS, parameterised queries against SQL injection, CSRF tokens and SameSite cookies, safe password handling, rate limiting and bot defences, avoiding information leaks, safe file uploads, mass assignment, privacy and data minimisation, and a practical security checklist."
 keywords:
   - secure HTML forms
-  - form security best practices
-  - prevent CSRF in forms
-  - form input sanitization XSS
+  - form security
+  - never trust client input
+  - server side validation
+  - XSS escape output
+  - SQL injection parameterized queries
+  - CSRF token SameSite
+  - password hashing form
+  - rate limiting login form
+  - honeypot spam form
+  - mass assignment
+  - form security checklist
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, security, web-safety]
+tags: [html, web-development, beginner, forms, security, xss, csrf, validation, privacy, frontend]
 ---
+
+import {useState} from 'react';
+
+export function serverCheck(body) {
+  const prices = {basic: 500, pro: 1500};
+  const errors = [];
+  const notes = [];
+  const quantity = Number(body.quantity);
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+    errors.push("quantity must be a whole number from 1 to 10");
+  }
+  if (!Object.prototype.hasOwnProperty.call(prices, body.plan)) {
+    errors.push("plan must be one of: basic, pro");
+  }
+  if (body.price !== undefined && body.price !== "") {
+    notes.push("Ignored the price sent by the browser (" + body.price + "). The server looks up its own price.");
+  }
+  if (errors.length > 0) return {ok: false, errors, notes};
+  return {ok: true, total: prices[body.plan] * quantity, notes, errors};
+}
+
+export function TrustDemo() {
+  const [values, setValues] = useState({quantity: "2", plan: "pro", price: "1500"});
+  const [runBrowser, setRunBrowser] = useState(true);
+  const [result, setResult] = useState(null);
+  const set = (key) => (event) => setValues({...values, [key]: event.target.value});
+  const presets = {
+    normal: {quantity: "2", plan: "pro", price: "1500"},
+    tampered: {quantity: "-5", plan: "enterprise", price: "1"},
+  };
+  const money = (cents) => "$" + (cents / 100).toFixed(2);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (runBrowser) {
+          const q = Number(values.quantity);
+          const browserOk = Number.isInteger(q) && q >= 1 && q <= 10 && ["basic", "pro"].includes(values.plan);
+          if (!browserOk) {
+            setResult({kind: "browser", text: "The browser's checks blocked this. Nothing was sent."});
+            return;
+          }
+        }
+        const answer = serverCheck(values);
+        setResult({kind: "server", answer});
+      }}
+    >
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => setValues(presets.normal)} style={{marginRight: "0.5rem"}}>Fill in a normal order</button>
+        <button type="button" onClick={() => setValues(presets.tampered)}>Fill in a tampered order</button>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sf-qty">quantity</label><br />
+        <input type="text" id="sf-qty" name="quantity" value={values.quantity} onChange={set("quantity")} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sf-plan">plan</label><br />
+        <input type="text" id="sf-plan" name="plan" value={values.plan} onChange={set("plan")} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sf-price">price (a hidden field in the page, in cents)</label><br />
+        <input type="text" id="sf-price" name="price" value={values.price} onChange={set("price")} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label>
+          <input type="checkbox" checked={runBrowser} onChange={(event) => setRunBrowser(event.target.checked)} />{" "}
+          Run the browser's checks first (turn off to act like someone sending a request by hand)
+        </label>
+      </p>
+      <button type="submit">Send order</button>
+      {result ? (
+        <div role="status" style={{marginTop: "0.75rem"}}>
+          {result.kind === "browser" ? (
+            <p style={{margin: 0, color: "#b45309"}}>{result.text}</p>
+          ) : result.answer.ok ? (
+            <p style={{margin: 0, color: "#15803d"}}>
+              Server: order accepted. Total charged: <strong>{money(result.answer.total)}</strong>.
+            </p>
+          ) : (
+            <div style={{color: "#b91c1c"}}>
+              <strong>Server: rejected.</strong>
+              <ul style={{margin: "0.25rem 0 0", paddingLeft: "1.25rem"}}>
+                {result.answer.errors.map((text) => (<li key={text}>{text}</li>))}
+              </ul>
+            </div>
+          )}
+          {result.kind === "server" && result.answer.notes.length > 0 ? (
+            <p style={{margin: "0.25rem 0 0", fontSize: "0.9em"}}>{result.answer.notes.join(" ")}</p>
+          ) : null}
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
+export function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function EscapeDemo() {
+  const [text, setText] = useState('<img src=x onerror="alert(1)"> Hi & welcome');
+  const cell = {padding: "0.3rem 0.75rem 0.3rem 0", borderBottom: "1px solid #e2e8f0", verticalAlign: "top"};
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="sf-comment">A visitor's comment (try HTML tags)</label><br />
+      <input
+        type="text"
+        id="sf-comment"
+        name="comment"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        style={{width: "100%", maxWidth: "32rem"}}
+      />
+      <table style={{marginTop: "0.5rem", borderCollapse: "collapse"}}>
+        <tbody>
+          <tr>
+            <td style={cell}><strong>Raw text pasted into the page's HTML</strong></td>
+            <td style={cell}><code style={{color: "#b91c1c"}}>{text}</code><br /><span style={{fontSize: "0.85em"}}>The browser would read this as markup, and may run it.</span></td>
+          </tr>
+          <tr>
+            <td style={cell}><strong>Escaped text, sent to the page</strong></td>
+            <td style={cell}><code style={{color: "#15803d"}}>{escapeHtml(text)}</code><br /><span style={{fontSize: "0.85em"}}>The browser shows this as harmless characters.</span></td>
+          </tr>
+          <tr>
+            <td style={cell}><strong>What the visitor then sees</strong></td>
+            <td style={cell}>{text}</td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+  );
+}
+
+You have now built forms with every kind of field. This last lesson is about the most important question of all: **can your form be abused?**
+
+A form is a door. It lets strangers send information to your server, and **you cannot choose who those strangers are**. Most are kind visitors. A few are trying to steal data, break in, send spam, or crash your site. Secure form design means building the door so it welcomes the first group, and stops the second. You do not need to be a security expert. A handful of clear habits stops the great majority of attacks.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The one rule that explains almost everything: never trust the browser
+- Validating on the server with allow-lists
+- Escaping output (XSS) and using parameterised queries (SQL injection)
+- CSRF tokens and cookie settings
+- Handling passwords, logins, and sensitive data
+- Stopping spam and abuse
+- Avoiding leaks in errors, URLs, and hidden fields
+- Privacy: collecting less
+- A checklist for every form you build
+
+## The One Rule
+
+:::danger Never trust anything that comes from the browser
+Everything a form sends can be **changed, removed, invented, or repeated** by the person sending it. The `required` attribute, `maxlength`, `pattern`, the `min` and `max` of a number field, the options of a `select`, the value of a hidden field, the file type, the length of a name: **none of it is guaranteed**. Someone can open the developer tools and edit the page, or skip your page and send a request by hand.
+
+So the browser's checks are for **helping honest visitors**. The server's checks are for **protecting you**. You need both, and the server's are the ones that count.
+:::
+
+You have seen this warning in every lesson of this section. Here it is in action.
+
+## Try It: The Browser Is Not the Gatekeeper
+
+An order form sends `quantity`, `plan`, and a hidden `price`. Press **Fill in a tampered order** (a negative quantity, a plan that does not exist, and a price of 1 cent). With the box ticked, the browser's checks block it. Now untick the box, to act like someone sending a request by hand, and press **Send order**.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/order" method="post">
+  <label for="quantity">Quantity (1 to 10)</label>
+  <input type="number" id="quantity" name="quantity" min="1" max="10" required />
+
+  <label for="plan">Plan</label>
+  <select id="plan" name="plan" required>
+    <option value="basic">Basic</option>
+    <option value="pro">Pro</option>
+  </select>
+
+  <!-- Risky: the visitor can change this in the developer tools -->
+  <input type="hidden" name="price" value="1500" />
+
+  <button type="submit">Send order</button>
+</form>
+```
+
+```js title="server.js"
+// Express-style example. The server decides everything.
+const prices = { basic: 500, pro: 1500 };   // the server's own price list (in cents)
+
+app.post("/order", (request, response) => {
+  const quantity = Number(request.body.quantity);
+  const plan = request.body.plan;
+
+  // 1. Allow-list and range checks
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+    return response.status(400).send("Invalid quantity.");
+  }
+  if (!Object.hasOwn(prices, plan)) {
+    return response.status(400).send("Invalid plan.");
+  }
+
+  // 2. The price comes from the server, never from the form
+  const total = prices[plan] * quantity;
+
+  // 3. Only now do the real work
+  createOrder({ userId: request.user.id, plan, quantity, total });
+  response.redirect(303, "/order/thanks");
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TrustDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice what the server did: it rejected the impossible quantity and plan, and it **ignored the price from the form** and used its own. A shop that trusted the hidden price would have sold a Pro plan for one cent.
+
+## 1. Validate on the Server
+
+Treat the server check as the **real** validation. For every field:
+
+| Check | Question | Example |
+| :-- | :-- | :-- |
+| **Present** | Is every required field there (and not only spaces)? | `name` is not empty after trimming |
+| **Type** | Is it the right kind of value? | `quantity` is a whole number |
+| **Length** | Is it within sensible limits? | `comment` is at most 2000 characters |
+| **Range** | Is the number or date in bounds? | `1 to 10`, not in the past |
+| **Format** | Does it look right? | Email has an `@` and a domain |
+| **Allowed value** | Is it one of the values **you** offered? | `plan` is `basic` or `pro` |
+| **Business rule** | Is it allowed right now, for this person? | Stock exists, the slot is free, the coupon is valid |
+| **Permission** | Is this user allowed to do this to this item? | The order belongs to them |
+
+Habits that make this safe:
+
+- **Use allow-lists, not block-lists.** Say what is **allowed** ("one of these three plans"), not what is forbidden ("not `<script>`"). Block-lists always miss something.
+- **Reject, do not "fix", unexpected input** where possible. Cleaning up silently hides attacks and bugs.
+- **Normalise first, then check:** trim spaces, and convert to one Unicode form, then validate.
+- **Convert types explicitly.** Read numbers as numbers, dates as dates, and check the result is real (`NaN` and `Infinity` can slip through).
+- **Limit sizes** for fields, for the whole request, and for the number of files and fields.
+- **Reply with a clear error** and the form again, with the visitor's values (never the password) refilled.
+- **Use a well-known validation library** on the server rather than inventing your own.
+
+### Accept Only the Fields You Expect
+
+If your server copies **every** submitted field into a database record, an attacker can add extra fields that you never put on the form:
+
+```html
+<!-- Hand-made request adds a field that was never in the form -->
+isAdmin=true&role=admin
+```
+
+This is called **mass assignment**. Defend by **naming exactly which fields you accept** and ignoring the rest, and never letting a request set fields like `role`, `isAdmin`, `userId`, `price`, or `status`.
+
+### Hidden Fields Are Not Secret or Safe
+
+A hidden field is visible to anyone who opens the page source, and editable in the developer tools. Never keep prices, permissions, or other people's IDs there as the source of truth. Look them up on the server, and **check that the logged-in user owns the record** (otherwise, an attacker changes `orderId=1001` to `1002` and reads someone else's order). See [Hidden](./input-types/hidden).
+
+## 2. Use HTTPS Everywhere
+
+**HTTPS** encrypts the traffic between the visitor and your server. Without it, anyone on the same network (a cafe's Wi-Fi, for example) can read or change what is sent, including passwords.
+
+- Serve **every page, not only the "login" page,** over HTTPS, because an attacker can alter an insecure page to change where a form sends its data.
+- **Redirect `http` to `https`,** and add the `Strict-Transport-Security` header, so browsers refuse plain `http` next time.
+- Never post a form from an `https` page to an `http` address.
+- Remember that **POST is not encryption** by itself. Only HTTPS encrypts. (See [Form Methods](./form-methods).)
+
+## 3. Escape Output: Stop XSS
+
+**Cross-site scripting (XSS)** happens when text from a visitor is put into a page **as code**. A comment containing a `<script>` tag, or an `<img onerror=...>`, can then run in **other people's browsers**, steal their sessions, or act as them.
+
+The fix is **escaping**: turning special characters into harmless ones when you output them (`<` becomes `&lt;`). Try it:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form id="f">
+  <label for="comment">A visitor's comment</label>
+  <input type="text" id="comment" name="comment"
+         value='<img src=x onerror="alert(1)"> Hi &amp; welcome' />
+</form>
+<div id="shown"></div>
+```
+
+```js title="script.js"
+const shown = document.getElementById("shown");
+const text = document.getElementById("comment").value;
+
+// DANGEROUS: the browser reads the text as HTML
+// shown.innerHTML = text;
+
+// SAFE: the browser treats the text as plain text
+shown.textContent = text;
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EscapeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Rules to follow:
+
+- **Escape on output,** for the place where it lands: HTML text, an attribute, a URL, JavaScript, or CSS each need different escaping. Use your template engine's built-in escaping, and **do not turn it off**.
+- **In JavaScript, use `textContent`,** not `innerHTML`, for visitor text.
+- **If you must allow some HTML** (a rich text editor), clean it with a trusted sanitiser library, with an allow-list of tags.
+- **Do not put visitor text into `href` or `src`** without checking the scheme. A `javascript:` URL is code. (See [URL](./input-types/url).)
+- **Add a Content-Security-Policy** header. It is a safety net that limits where scripts can come from, even if an escape is missed:
+
+```text
+Content-Security-Policy: default-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'
+```
+
+## 4. Keep Data Out of Your Queries: Stop SQL Injection
+
+If you build a database query by gluing in the visitor's text, an attacker can change the query itself.
+
+```js
+// DANGEROUS: text becomes part of the SQL
+db.query("SELECT * FROM users WHERE email = '" + email + "'");
+
+// SAFE: a parameterised query keeps data and SQL apart
+db.query("SELECT * FROM users WHERE email = ?", [email]);
+```
+
+- **Always use parameterised queries** (also called prepared statements), or a well-known ORM used the safe way.
+- **Never build queries, shell commands, file paths, or other interpreters' input** (LDAP, XML, templates) by joining strings with form data.
+- **Use a database account with the fewest rights it needs.** The web app should not be able to drop tables.
+- The same idea covers **command injection** and **path traversal** (`../../etc/passwd`): keep data as data.
+
+## 5. Stop CSRF
+
+**Cross-site request forgery (CSRF)** is when another website makes the visitor's browser send a request to **your** site while the visitor is signed in. The browser attaches the visitor's cookies automatically, so your server thinks the visitor did it, and a transfer, deletion, or password change can happen without them knowing.
+
+Defences (use more than one):
+
+| Defence | How it works |
+| :-- | :-- |
+| **CSRF token** | A random, per-session value is placed in a hidden field. The server checks it matches. A forged request from another site cannot know it |
+| **`SameSite` cookies** | `SameSite=Lax` (the default in modern browsers) or `Strict` stops cookies being sent with most cross-site requests |
+| **Check `Origin` or `Referer`** | Reject state-changing requests that do not come from your own site |
+| **Never change data with GET** | Links and images can trigger GET requests from anywhere |
+| **Re-ask for the password** | For the most sensitive actions (changing email, deleting an account) |
+
+```html
+<form action="/account/email" method="post">
+  <input type="hidden" name="csrf_token" value="a-long-random-value-from-the-server" />
+  <label for="email">New email address</label>
+  <input type="email" id="email" name="email" required autocomplete="email" />
+  <button type="submit">Change email</button>
+</form>
+```
+
+Most frameworks include CSRF protection. **Switch it on, and keep it on.** For sign-in cookies, also set the flags below.
+
+```text
+Set-Cookie: session=abc123; Secure; HttpOnly; SameSite=Lax; Path=/
+```
+
+| Flag | Meaning |
+| :-- | :-- |
+| `Secure` | Only sent over HTTPS |
+| `HttpOnly` | JavaScript cannot read it, so XSS cannot steal it |
+| `SameSite` | Limits sending with cross-site requests |
+
+## 6. Passwords and Logins
+
+| Do | Do not |
+| :-- | :-- |
+| **Hash** passwords on the server with a slow, purpose-built algorithm (**Argon2id**, **scrypt**, or **bcrypt**), with a unique salt | Store passwords as plain text, or with a fast hash such as plain MD5 or SHA-1 |
+| Require a **minimum length** (8 or more, and encourage longer), and allow long ones (at least 64 characters) | Force strange composition rules, or set a low maximum |
+| **Check against lists of breached passwords** | Allow `password123` |
+| **Allow paste and password managers** | Block paste, or break autofill |
+| Offer **two-factor authentication** or **passkeys** | Rely on a password alone for important accounts |
+| **Rate-limit** and lock down repeated failed attempts | Allow unlimited guessing |
+| Say "**Email or password is incorrect**" | Say which one was wrong (this reveals which emails have accounts) |
+| Use `autocomplete` correctly | Put passwords or tokens in a URL |
+| Send password reset links that are **single-use, short-lived, and random** | Email people their current password (you should not have it) |
+
+See [Password](./input-types/password) and [Autocomplete](./autocomplete).
+
+**Never log passwords,** card numbers, or tokens, not even in error logs.
+
+## 7. Stop Spam and Abuse
+
+Any public form will be found by bots. A few layers help:
+
+- **Rate limiting:** limit how many submissions one visitor or address can make per minute.
+- **A honeypot field:** an extra field that real visitors never fill in, but simple bots do. If it has a value, reject the submission. Hide it carefully so it does not trap real users:
+
+```html
+<div class="trap" aria-hidden="true">
+  <label for="website">Leave this empty</label>
+  <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+</div>
+```
+
+```css title="style.css"
+.trap {
+  position: absolute;
+  left: -9999px;
+}
+```
+
+- **A timing check:** a form submitted in half a second was probably not typed by a human.
+- **Challenges:** use a modern, privacy-friendly, **accessible** bot check only when needed, and offer an alternative to puzzles. (See [Accessible Forms](./accessible-forms).)
+- **Email verification** for sign-ups, and **double opt-in** for mailing lists.
+- **Protect email-sending forms:** never let visitors control the email headers (`To`, `Cc`, `Subject` with line breaks), or your form becomes a spam relay (**header injection**). Strip line breaks from anything that goes into a header, and fix the recipient on the server.
+- **Cap everything:** the size of the request, the number of fields, and the number of files.
+
+## 8. Do Not Leak Information
+
+- **Error messages:** show visitors a friendly message. Keep stack traces, file paths, and database errors in your private logs only.
+- **URLs:** never put passwords, tokens, or personal data in a GET form's URL. They end up in history, logs, and the `Referer` header. (See [Form Methods](./form-methods).)
+- **Account enumeration:** "No account with that email" tells an attacker which emails are registered. Prefer "If that email has an account, we have sent a link."
+- **Timing:** comparing secrets with a plain `==` can leak information through response time. Use a constant-time comparison for tokens.
+- **Autofill and caching:** for very sensitive pages, send `Cache-Control: no-store`, so the browser does not keep a copy.
+- **Open redirects:** if your form sends the visitor on to a URL taken from the request (`next=...`), allow only your own paths. Otherwise, attackers can use your site to send people to a fake one. (See [Hidden](./input-types/hidden).)
+- **Referrer policy:** `Referrer-Policy: strict-origin-when-cross-origin` (or stricter) keeps your page addresses from leaking to other sites.
+
+## 9. Files and Server-Side Requests
+
+- **Uploads** are among the riskiest features. Limit size and count, check the real type from the file's first bytes, never trust the filename, store files outside the web root, and scan them. See [Multipart Form Data](./multipart-form-data) and [File](./input-types/file).
+- **URL fields:** if your server **fetches** the address a visitor gives (a link preview, an image import, a webhook), an attacker can point it at your **internal network** or cloud metadata service (**SSRF**). Allow only `https`, resolve and check the destination, block private addresses, and apply time and size limits. (See [URL](./input-types/url).)
+- **Redirects and `action`:** never build a form's `action` from visitor input. (See [Form Action](./form-action).)
+- **Slow patterns:** a badly written regular expression can freeze your server (**ReDoS**). Keep patterns simple, and set time limits. (See [Pattern](./pattern).)
+
+## 10. Privacy: Collect Less
+
+The safest data is the data you never collected.
+
+- **Ask only for what you really need.** Do not ask for a birth date if you only need to know the visitor is an adult. Do not ask for a phone number "just in case."
+- **Explain why** you ask and what you do with it, close to the field.
+- **Do not collect sensitive data** (health, ID numbers, precise location, children's data) unless you must, and then protect it more strongly.
+- **Get real consent.** Do not tick marketing boxes by default or make them required. (See [Required](./required).)
+- **Do not put personal data in hidden fields, URLs, cookies, or analytics** without a reason.
+- **Encrypt sensitive data at rest,** limit who can read it, and **delete it** when you no longer need it.
+- **Never store full card numbers or security codes yourself.** Use a payment provider's hosted form or fields, so card data never touches your server.
+- **Third parties:** if a form sends data to another company, tell visitors. (See [Form Action](./form-action).)
+- **Know the rules** that apply to you and your visitors (such as the GDPR in Europe and many similar laws elsewhere): lawful basis, access, correction, deletion, and breach notification.
+
+## 11. Defence in Depth
+
+No single measure is enough. Layer them, so one mistake does not become a disaster:
+
+| Layer | Examples |
+| :-- | :-- |
+| Browser | HTML validation, `autocomplete`, good labels (helps honest users) |
+| Transport | HTTPS, HSTS |
+| Application | Server validation, escaping, parameterised queries, CSRF tokens, authorisation checks |
+| Session | `Secure`, `HttpOnly`, and `SameSite` cookies, short lifetimes, sign-out on idle |
+| Policy headers | CSP, `X-Content-Type-Options: nosniff`, `frame-ancestors` (against clickjacking), Referrer-Policy |
+| Operations | Rate limiting, logging without secrets, monitoring, updates, backups |
+| People | Least privilege, code review, security testing |
+
+**Clickjacking:** an attacker can load your form invisibly inside their page and trick visitors into clicking it. Stop it with `Content-Security-Policy: frame-ancestors 'none'` (or `'self'`), or the older `X-Frame-Options: DENY`.
+
+## Accessibility and Security Together
+
+Good security does not have to shut people out:
+
+- **Allow paste and password managers.** They are better for security **and** for accessibility.
+- **Give enough time,** warn before sessions expire, and keep a draft.
+- **Do not rely on inaccessible CAPTCHAs.** Use risk-based checks and alternatives.
+- **Give clear, calm error messages** that do not reveal secrets.
+- **Explain security steps** in plain words (why you are asking for a code).
+
+See [Accessible Forms](./accessible-forms).
+
+## Global Audience Notes
+
+- **Laws differ by country,** and apply based on **where your visitors are**, not only where you are. Check the rules for data protection, consent, children's data, and cross-border transfers.
+- **Names, addresses, and phone numbers** are far more varied than most validation allows. Validate for **safety** (length, dangerous characters in the right context), not for "Western" shapes. (See [Pattern](./pattern).)
+- **Use Unicode safely:** read input as UTF-8, normalise it, and be careful with look-alike characters in usernames (a Cyrillic "а" looks like a Latin "a").
+- **Time zones:** store times in UTC, and decide "today" and "expires" rules on the server.
+- **Sign-in over slow or shared networks:** HTTPS and short-lived sessions matter even more on shared devices.
+- **Write error and security messages in the visitor's language,** in plain words.
+
+## A Security Checklist for Every Form
+
+- [ ] The page and the form's destination use **HTTPS**
+- [ ] The server **validates every field again** (presence, type, length, range, format, allowed values)
+- [ ] The server accepts **only expected fields**, and ignores the rest
+- [ ] **Prices, roles, permissions, and IDs** are never taken from the form; ownership is checked
+- [ ] Output is **escaped**, and `textContent` or a safe template is used for visitor text
+- [ ] Database access uses **parameterised queries**
+- [ ] State-changing forms have **CSRF protection**, and nothing changes data with GET
+- [ ] Cookies are `Secure`, `HttpOnly`, and `SameSite`
+- [ ] Passwords are **hashed** with Argon2id, scrypt, or bcrypt; paste is allowed; logins are rate-limited
+- [ ] Errors do **not** reveal system details or which accounts exist
+- [ ] **Rate limits** and a honeypot or similar anti-spam measure are in place
+- [ ] Uploads are limited, checked by real type, renamed, and stored safely
+- [ ] **No sensitive data** in URLs, hidden fields, logs, or analytics
+- [ ] Only needed data is collected, with clear consent and a deletion plan
+- [ ] Security headers are set (CSP, `nosniff`, `frame-ancestors`, Referrer-Policy)
+- [ ] The form has been **tested** with bad, huge, and unexpected input
+
+## Common Mistakes to Avoid
+
+1. **Trusting browser validation** (`required`, `maxlength`, `pattern`, `min`, `max`) as protection.
+2. **Taking prices or permissions from hidden fields.**
+3. **Putting visitor text into a page unescaped,** or using `innerHTML`.
+4. **Building SQL by joining strings.**
+5. **No CSRF protection,** or changing data with GET links.
+6. **Storing passwords in plain text** or with a fast hash.
+7. **Putting passwords or tokens in URLs** with a GET form.
+8. **Error messages that show stack traces** or reveal which emails exist.
+9. **Copying every submitted field** into the database (mass assignment).
+10. **Saving uploads under visitors' filenames** inside the web root.
+11. **No rate limits,** so login and sign-up forms can be hammered.
+12. **Collecting far more personal data** than needed, and keeping it forever.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build the order form above, and write a server check that ignores the form's price.
+2. Open your browser's developer tools, change a `select` value to an option that does not exist, and send the form. What does your server do?
+3. Show visitor text safely using `textContent`, and compare it with `innerHTML` using harmless test text.
+4. Rewrite a string-built query as a parameterised one.
+5. Add a CSRF token as a hidden field, and write the server check.
+6. List which fields of a sign-up form you could remove to collect less data.
+7. Add a honeypot field that is hidden from sight but not from the keyboard order.
+8. Write a friendly login error that does not say whether the email or the password was wrong.
+9. Write the response headers for a secure session cookie, and a Content-Security-Policy.
+10. Bonus: take any form from a site you own, and walk through the checklist above. Write down the three biggest gaps.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the most important rule of secure form design?</summary>
+
+Never trust the browser. Everything a form sends can be changed, removed, or invented. HTML validation helps honest visitors, but the server must validate every value again.
+
+</details>
+
+<details>
+<summary>2. Why should a price never come from a hidden field?</summary>
+
+A hidden field is visible and editable in the page and developer tools. The server must look up the price itself, from its own data, and check that the user is allowed to do the action.
+
+</details>
+
+<details>
+<summary>3. How do you stop XSS and SQL injection?</summary>
+
+For XSS, escape visitor text when it is output (or use `textContent`), sanitise any HTML you must allow, and set a Content-Security-Policy. For SQL injection, use parameterised queries so data is never joined into the SQL.
+
+</details>
+
+<details>
+<summary>4. What is CSRF and how do you defend against it?</summary>
+
+It is when another site makes a signed-in visitor's browser send a request to yours. Defend with CSRF tokens, `SameSite` cookies, `Origin` checks, never changing data with GET, and re-asking for the password on sensitive actions.
+
+</details>
+
+<details>
+<summary>5. How should passwords be handled?</summary>
+
+Hash them on the server with Argon2id, scrypt, or bcrypt and a salt. Allow long passwords, paste, and password managers, check against breached lists, rate-limit attempts, offer two-factor authentication or passkeys, and give generic login errors.
+
+</details>
+
+<details>
+<summary>6. What does "collect less" mean for privacy?</summary>
+
+Ask only for data you truly need, explain why, get real consent, protect it, and delete it when it is no longer needed. Data you never collected cannot be leaked.
+
+</details>
+
+## Key Takeaways
+
+- **Never trust the browser.** HTML validation is for convenience. The server validates everything again, with allow-lists, and accepts only expected fields.
+- Use **HTTPS** everywhere, and keep secrets out of URLs, hidden fields, and logs.
+- **Escape output** to stop XSS, and use **parameterised queries** to stop SQL injection.
+- Protect state-changing forms with **CSRF tokens**, **SameSite** cookies, and by never changing data with GET.
+- **Hash passwords** properly, allow password managers, rate-limit logins, and give generic errors.
+- Fight spam with **rate limits**, honeypots, and verification, without shutting out real people.
+- Treat **uploads** and **URL-fetching** features as high risk.
+- **Collect less data,** get real consent, and delete it when done.
+- Layer your defences, and **test** with bad input.
+
+Congratulations. You have completed the HTML Forms section: from the `<form>` element and every input type, through validation, submission, accessibility, and security. Return to the [Forms overview](/tutorials/html/forms) to review any lesson, and practise by building a complete sign-up, checkout, and contact form using everything you have learned.

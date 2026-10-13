@@ -1,16 +1,622 @@
 ---
-id: input-element
-title: "The Core HTML Input Element: Syntax and Generic Attributes"
-sidebar_label: "Input Element (<input>)"
+id: html-input-element
+title: "HTML Input Element"
+sidebar_label: "Input Element"
 sidebar_position: 4
 slug: /html/forms/input-element
-description: "Understand the void input element, its default type behavior, common attributes like name, value, placeholder, and disabled status."
+description: "Learn the HTML input element: the void element behind most form fields. Understand type, name, id, value, placeholder, required, disabled versus readonly, autofocus, size, inputmode, and other key attributes, how values are sent, and common mistakes with live examples on CodeHarborHub."
 keywords:
+  - HTML input element
   - HTML input tag
-  - input element overview
-  - input attributes name value
-  - void input element
+  - input attributes
+  - input type name value
+  - disabled vs readonly
+  - input placeholder
+  - autofocus attribute
+  - inputmode attribute
+  - input value attribute
+  - HTML form field
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, input, beginner]
+tags: [html, web-development, beginner, forms, input, attributes, frontend]
 ---
+
+import {useState} from 'react';
+
+export function SentDemo() {
+  const [sent, setSent] = useState(null);
+  return (
+    <div>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          setSent(new URLSearchParams(new FormData(event.currentTarget)).toString());
+        }}
+      >
+        <p>
+          <label htmlFor="in-normal">Normal field</label><br />
+          <input type="text" id="in-normal" name="normal" defaultValue="can be edited" />
+        </p>
+        <p>
+          <label htmlFor="in-readonly">Readonly field</label><br />
+          <input type="text" id="in-readonly" name="readonly" defaultValue="cannot be edited" readOnly />
+        </p>
+        <p>
+          <label htmlFor="in-disabled">Disabled field</label><br />
+          <input type="text" id="in-disabled" name="disabled" defaultValue="cannot be edited" disabled />
+        </p>
+        <button type="submit">Submit</button>
+      </form>
+      <p>
+        <strong>What the browser would send:</strong>{" "}
+        <code>{sent === null ? "(press Submit)" : sent}</code>
+      </p>
+    </div>
+  );
+}
+
+If `<form>` is the envelope and `<label>` is the name tag, then **`<input>` is the field itself**: the box you type in, the checkbox you tick, the slider you drag, the button you press. It is the most important and most versatile element in all of HTML forms. A single tag can become a text box, an email field, a date picker, a color chooser, a file uploader, and more, all depending on one attribute.
+
+In this lesson, you will meet the `<input>` element and the attributes that control it. Think of it as your toolkit overview. The next section of the course then walks through each input **type** one by one.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the `<input>` element is, and how it is written
+- How `type` changes what an input does
+- The attributes you will use most often
+- How `value`, `name`, and `id` work together
+- The difference between **disabled** and **readonly**
+- Helpful attributes: `placeholder`, `autofocus`, `inputmode`, `size`, and more
+- How to style and test inputs, and common mistakes
+
+## The Basics
+
+`<input>` is a **void element**: it has no content and no closing tag, just like `<img />` and `<br />`. Everything about it is set through its attributes.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="username">Username</label>
+<input type="text" id="username" name="username" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="in-username">Username</label><br />
+  <input type="text" id="in-username" name="username" />
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Those three attributes (`type`, `id`, and `name`) appear on almost every input you will ever write.
+
+| Attribute | Job |
+| :-- | :-- |
+| `type` | What **kind** of input this is |
+| `id` | Lets a [label](./label-element) and CSS find this field |
+| `name` | The key under which the value is **sent** to the server |
+
+## The `type` Attribute
+
+`type` decides what the input **looks like and does**. If you leave it out, or give a value the browser does not know, the input becomes `type="text"`.
+
+```html
+<input type="text" />        <!-- a one-line text box -->
+<input type="email" />       <!-- text box that expects an email -->
+<input type="number" />      <!-- number box with stepper arrows -->
+<input type="checkbox" />    <!-- a tick box -->
+<input type="date" />        <!-- a date picker -->
+<input type="file" />        <!-- a file chooser -->
+```
+
+There are about twenty types. You will learn each in the **Input Types** lessons, starting with [Text](./input-types/text). Here is a quick map by purpose.
+
+| You want... | Types |
+| :-- | :-- |
+| Text | `text`, `password`, `email`, `tel`, `url`, `search` |
+| Numbers | `number`, `range` |
+| Dates and times | `date`, `time`, `datetime-local`, `month`, `week` |
+| Choices | `checkbox`, `radio` |
+| Files and colors | `file`, `color` |
+| Hidden data | `hidden` |
+| Buttons | `submit`, `reset`, `button`, `image` |
+
+:::tip Pick the most specific type
+`type="email"` is better than `type="text"` for an email address. It gives a keyboard with `@` on phones, a free format check, and better autofill. Use the most specific type that fits.
+:::
+
+## The Attributes You Will Use Most
+
+Most attributes work on **many** input types, but not all of them. Here are the common ones, grouped by purpose.
+
+### Identity: Name the Field
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server | `name="email"` |
+| `id` | A unique name on the page, for labels, CSS, and scripts | `id="email"` |
+| `form` | Connects the input to a form it is not inside | `form="signup"` |
+
+### Content: What the Field Holds
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `value` | The starting (or current) value | `value="Ada"` |
+| `placeholder` | A short format example, shown when empty | `placeholder="name@example.com"` |
+| `checked` | Starts a checkbox or radio selected | `checked` |
+| `list` | Links to a `<datalist>` of suggestions | `list="cities"` |
+
+### Behavior: How the Field Acts
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `disabled` | Switches the field off, and it is not sent | `disabled` |
+| `readonly` | Shows a value that cannot be edited, but is sent | `readonly` |
+| `autofocus` | Puts the cursor here when the page loads | `autofocus` |
+| `autocomplete` | Lets the browser fill the field | `autocomplete="email"` |
+| `multiple` | Allows more than one value (emails, files) | `multiple` |
+
+### Validation: Checking the Value
+
+| Attribute | What it does | Lesson |
+| :-- | :-- | :-- |
+| `required` | The field must be filled | [Required](./required) |
+| `pattern` | The value must match a regular expression | [Pattern](./pattern) |
+| `minlength`, `maxlength` | Limits on text length | [Minlength and Maxlength](./minlength-and-maxlength) |
+| `min`, `max`, `step` | Limits and steps for numbers and dates | [Min and Max](./min-and-max) |
+
+### Appearance and Keyboard
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `size` | Visible width of a text field, in characters | `size="30"` |
+| `inputmode` | Which on-screen keyboard to show | `inputmode="numeric"` |
+| `enterkeyhint` | The label on the keyboard's Enter key | `enterkeyhint="search"` |
+| `spellcheck` | Turn spell checking on or off | `spellcheck="false"` |
+| `autocapitalize` | How the first letters are capitalized | `autocapitalize="words"` |
+
+## `name`, `id`, and `value` Together
+
+These three are the heart of every input, and beginners often mix them up.
+
+```html
+<label for="city-field">City</label>
+<input type="text" id="city-field" name="city" value="Lagos" />
+```
+
+| | `id="city-field"` | `name="city"` | `value="Lagos"` |
+| :-- | :-- | :-- | :-- |
+| Who uses it | Label, CSS, JavaScript | The server | The server |
+| Must be unique? | **Yes**, on the page | No (radios share a name on purpose) | No |
+| Sent with the form? | No | **Yes**, as the key | **Yes**, as the content |
+
+When submitted, this field sends `city=Lagos`.
+
+### How `value` Behaves
+
+- For **text-like inputs**, `value` is the **starting text**. The visitor can type over it, and what they leave there is sent.
+- For **checkboxes and radio buttons**, `value` is **what gets sent if the box is ticked**. The visitor never sees it.
+- For **buttons**, `value` is the **button's label** (for `<input type="submit">`).
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Text: value is the starting text -->
+<input type="text" name="nickname" value="Ada" />
+
+<!-- Checkbox: value is what is sent when ticked -->
+<input type="checkbox" name="plan" value="pro" checked /> Pro plan
+
+<!-- Submit: value is the label of the button -->
+<input type="submit" value="Create account" />
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <p><input type="text" name="nickname" defaultValue="Ada" /></p>
+  <p><input type="checkbox" name="plan" value="pro" defaultChecked /> Pro plan</p>
+  <p><input type="submit" value="Create account" /></p>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A checkbox with **no** `value` sends `on` when ticked. That is rarely what your server wants, so give checkboxes and radios an explicit value.
+
+## Disabled vs Readonly
+
+Both attributes stop the visitor from changing a field, but they differ in one important way.
+
+| | `disabled` | `readonly` |
+| :-- | :-- | :-- |
+| Can the user edit it? | No | No |
+| Can the user focus it (Tab, click)? | **No** | **Yes**, and select and copy the text |
+| Is it **sent** with the form? | **No** | **Yes** |
+| Looks | Usually grayed out | Usually looks normal |
+| Skipped by browser validation? | **Yes** | **Yes** |
+| Works on | Almost all controls | Text-like inputs and `<textarea>` only (not checkboxes, radios, selects, buttons) |
+
+Try it. Press **Submit**, and see which values would be sent.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SentDemo />
+</>
+</BrowserWindow>
+
+The disabled field is **missing** from the result. The readonly field is **present**.
+
+### Which Should I Use?
+
+| Situation | Use |
+| :-- | :-- |
+| Show a value that the server still needs (an order number, a username that cannot be changed) | `readonly` |
+| A field that does not apply right now, and must not be sent (a "state" field for a country without states) | `disabled` |
+| A button that should not be pressed yet | `disabled` |
+| A value that people may want to copy | `readonly` |
+
+:::warning Neither is security
+Anyone can remove `disabled` or `readonly` in their browser's developer tools and send whatever they like. Never rely on them to protect data. The server must decide what is allowed.
+:::
+
+:::note Accessibility tip
+Disabled controls are usually skipped by the keyboard and may be announced as "unavailable." Do not use `disabled` for information people need to read. If the text matters, use `readonly`, or plain text. And do not use color alone to show a field is disabled. Many browsers also reduce its contrast, which makes it hard to read.
+:::
+
+## Helpful Attributes in Practice
+
+### `placeholder`
+
+A short example of the **format**, not a label.
+
+```html
+<label for="phone">Phone</label>
+<input type="tel" id="phone" name="phone" placeholder="+234 801 234 5678" />
+```
+
+Use it for hints like `name@example.com`. Never use it as the field's name. See [Label Element](./label-element) for why.
+
+### `autofocus`
+
+Puts the cursor in this field as soon as the page loads.
+
+```html
+<input type="search" name="q" autofocus />
+```
+
+Use with care. On a page that people read first, it can jump the screen past content and confuse screen reader users, because their reading position is moved away from the top. It is fine on a page whose main job is one field (a search page, a login page).
+
+### `size`
+
+Sets the visible width of a text field in characters.
+
+```html
+<input type="text" name="zip" size="8" />
+```
+
+It is only a visual hint. Use CSS `width` for real control, and `maxlength` to limit input.
+
+### `inputmode`
+
+Tells touch devices which **keyboard** to show, without changing validation.
+
+| Value | Keyboard |
+| :-- | :-- |
+| `numeric` | Digits only |
+| `decimal` | Digits and a decimal point |
+| `tel` | Phone keypad |
+| `email` | Letters with `@` and `.` |
+| `url` | Letters with `/` and `.com` |
+| `search` | With a search key |
+| `none` | No on-screen keyboard (you supply your own) |
+
+```html
+<!-- A PIN or postcode: digits only, but not a "number" (keeps leading zeros) -->
+<input type="text" name="pin" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" />
+```
+
+:::tip Why not `type="number"` for everything?
+`type="number"` is for quantities you can add and compare, like "how many tickets." Phone numbers, postal codes, and PINs are **identifiers**, not quantities. They may start with zero, and arrows to increase them make no sense. Use `type="text"` (or `tel`) with `inputmode="numeric"`.
+:::
+
+### `spellcheck` and `autocapitalize`
+
+```html
+<input type="text" name="username" spellcheck="false" autocapitalize="none" />
+<input type="text" name="fullname" autocapitalize="words" />
+```
+
+Turn off spell check and capitalization for usernames and codes, where the red squiggles and capital letters only get in the way.
+
+### `list`
+
+Connects the input to a `<datalist>` of suggestions. See [Datalist](./datalist).
+
+## Inputs Without Typing: Checkboxes, Radios, and Buttons
+
+The same `<input>` element also creates controls where nobody types.
+
+```html
+<input type="checkbox" name="news" value="yes" />
+<input type="radio" name="level" value="beginner" />
+<input type="submit" value="Send" />
+<input type="reset" value="Clear" />
+<input type="button" value="Click me" />
+```
+
+For these, `value` means something different from text fields (see above), and `checked` applies to checkboxes and radios. Each has its own lesson in the Input Types section.
+
+:::note Buttons: `<input>` or `<button>`?
+`<input type="submit" value="Send">` can show only plain text. The `<button>` element can hold HTML (an icon, bold text) and is easier to style. You will compare them in [Button](./button). Both are fine, and both are accessible when labeled.
+:::
+
+## How an Input Looks and Feels
+
+Browsers draw inputs themselves, in their own style. These **native** controls come with free benefits: a mobile keyboard that fits, a date picker, keyboard support, and accessibility. They also look a little different in every browser and operating system.
+
+### Basic Styling
+
+```css title="style.css"
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  font: inherit;           /* inputs do not inherit the page font by default */
+}
+
+input:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+input:disabled {
+  background: #f1f5f9;
+  color: #475569;
+}
+```
+
+- **`font: inherit`** makes inputs use your page's font. By default they use a system font.
+- **Always keep a visible focus style.** Never write `outline: none` without replacing it.
+- Use a **font size of at least 16 pixels** on phones. On some devices, a smaller size makes the browser zoom in when the field is tapped.
+- Leave room for **touch**: a height of about 44 pixels is comfortable.
+
+### Helpful State Selectors
+
+| Selector | Matches |
+| :-- | :-- |
+| `input:focus-visible` | Focused, when keyboard navigation is used |
+| `input:disabled` | Disabled fields |
+| `input:read-only` | Readonly fields |
+| `input:required` | Required fields |
+| `input:invalid` | Fields whose value fails validation |
+| `input:placeholder-shown` | Empty fields with a visible placeholder |
+| `input::placeholder` | The placeholder text itself |
+
+:::warning Use `:invalid` with care
+`input:invalid` matches an **empty required field** the moment the page loads, so a form can look full of errors before anyone has typed anything. Combine it with `:user-invalid` (supported in modern browsers) or a script that waits until the user has interacted.
+:::
+
+## A Realistic Example
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/register" method="post">
+  <p>
+    <label for="reg-name">Full name</label><br />
+    <input type="text" id="reg-name" name="name" autocomplete="name" required />
+  </p>
+
+  <p>
+    <label for="reg-email">Email address</label><br />
+    <input type="email" id="reg-email" name="email" autocomplete="email" required />
+  </p>
+
+  <p>
+    <label for="reg-age">Age</label><br />
+    <input type="number" id="reg-age" name="age" min="13" max="120" />
+  </p>
+
+  <p>
+    <label for="reg-code">Referral code (optional)</label><br />
+    <input
+      type="text"
+      id="reg-code"
+      name="code"
+      spellcheck="false"
+      autocapitalize="characters"
+    />
+  </p>
+
+  <p>
+    <label>
+      <input type="checkbox" name="terms" value="accepted" required />
+      I accept the terms
+    </label>
+  </p>
+
+  <button type="submit">Create account</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form action="/register" method="post" onSubmit={(event) => event.preventDefault()}>
+  <p>
+    <label htmlFor="in-reg-name">Full name</label><br />
+    <input type="text" id="in-reg-name" name="name" autoComplete="name" required />
+  </p>
+
+  <p>
+    <label htmlFor="in-reg-email">Email address</label><br />
+    <input type="email" id="in-reg-email" name="email" autoComplete="email" required />
+  </p>
+
+  <p>
+    <label htmlFor="in-reg-age">Age</label><br />
+    <input type="number" id="in-reg-age" name="age" min="13" max="120" />
+  </p>
+
+  <p>
+    <label htmlFor="in-reg-code">Referral code (optional)</label><br />
+    <input
+      type="text"
+      id="in-reg-code"
+      name="code"
+      spellCheck="false"
+      autoCapitalize="characters"
+    />
+  </p>
+
+  <p>
+    <label>
+      <input type="checkbox" name="terms" value="accepted" required />
+      {" "}I accept the terms
+    </label>
+  </p>
+
+  <button type="submit">Create account</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Every input here has a `type`, a `name`, a label, and only the attributes it needs.
+
+## Accessibility at a Glance
+
+- **Every input needs a label.** No exceptions (except `hidden` and buttons, which get their names from `value` or text).
+- **Use the right `type`,** so assistive technology and mobile keyboards know what is expected.
+- **Do not rely on placeholders** for names or instructions.
+- **Keep focus visible.** Keyboard users track their position by the focus ring.
+- **Use `autocomplete` tokens** for personal data, so people with motor or memory difficulties can fill forms faster.
+- **Be careful with `disabled`** for important information, and with `autofocus` on content pages.
+- **Group related inputs** with `<fieldset>` and `<legend>` (see [Fieldset and Legend](./fieldset-and-legend)).
+- **Make touch targets big enough,** about 44 by 44 pixels.
+
+## Global Audience Notes
+
+- **Do not restrict names or addresses too tightly.** Avoid `pattern`, `maxlength`, or `required` on fields that vary around the world (family names, addresses, phone numbers).
+- **Allow all characters.** Accents, non-Latin scripts, and long names are normal.
+- **Use `type="tel"` and no strict pattern for phone numbers.** Formats differ in every country.
+- **Use native date and number inputs** where possible, so the browser shows the user's own format.
+- **Keep `lang` set** so browsers choose the right keyboard layouts, spell checkers, and speech.
+- **Let people paste.** Never block pasting into fields, especially passwords and codes. It breaks password managers and hurts accessibility.
+
+## Common Mistakes to Avoid
+
+1. **No `name` attribute,** so the value is never sent.
+2. **No label,** or a placeholder in its place.
+3. **Duplicate `id` values** on the same page.
+4. **Using `type="text"` for everything** and losing free validation and keyboards.
+5. **Using `type="number"` for phone numbers, postcodes, or PINs.**
+6. **Mixing up `disabled` and `readonly`,** then wondering why a value was not sent.
+7. **Relying on `disabled` or `readonly` for security.**
+8. **Writing `</input>`.** It is a void element, so there is no closing tag.
+9. **Forgetting `value` on checkboxes and radios,** so the server receives `on`.
+10. **Removing the focus outline** with no replacement.
+11. **Using tiny font sizes** that cause zooming on phones.
+12. **Blocking paste** into a field.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Create a text input with a label, `id`, and `name`, and submit the form with `method="get"` to see the pair in the address.
+2. Change the `type` to `email`, `number`, and `date`, and notice how it changes.
+3. Add a `value` to a text input, and edit it before submitting.
+4. Create a checkbox with `value="yes"`, and compare submitting it ticked and unticked.
+5. Add `readonly` to one input and `disabled` to another, and see which is sent.
+6. Add a `placeholder` that shows a format example.
+7. Add `inputmode="numeric"` to a PIN field, and test it on a phone if you can.
+8. Add `autofocus` to a search field, and think about whether the page needs it.
+9. Style inputs with padding, a border, `font: inherit`, and a clear `:focus-visible` outline.
+10. Bonus: use `input:invalid` to style an empty required field, and see why it looks wrong on page load.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What kind of element is `<input>`, and does it need a closing tag?</summary>
+
+It is a void element. It has no content and no closing tag. All of its behavior comes from its attributes.
+
+</details>
+
+<details>
+<summary>2. What does the `type` attribute decide?</summary>
+
+What kind of control the input is, such as text, email, number, checkbox, date, or file. If missing or unknown, it falls back to `text`.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `id` and `name`?</summary>
+
+`id` identifies the input on the page, for labels, CSS, and scripts, and must be unique. `name` is the key under which the value is sent to the server.
+
+</details>
+
+<details>
+<summary>4. How do `disabled` and `readonly` differ?</summary>
+
+Both prevent editing. A `disabled` field cannot be focused and is **not sent**. A `readonly` field can be focused and copied, and **is sent**.
+
+</details>
+
+<details>
+<summary>5. Why use `inputmode="numeric"` instead of `type="number"` for a PIN?</summary>
+
+A PIN is an identifier, not a quantity. `type="number"` strips leading zeros and adds stepper arrows. `inputmode="numeric"` just shows a digit keyboard.
+
+</details>
+
+<details>
+<summary>6. Can `disabled` or `readonly` protect your data?</summary>
+
+No. Anyone can change them in developer tools, so the server must always decide what is allowed.
+
+</details>
+
+## Key Takeaways
+
+- `<input>` is a void element whose behavior is set by its attributes, above all `type`.
+- Almost every input needs `type`, `name`, and a connected label. `id` links the label.
+- `value` is starting text for text fields, the sent value for checkboxes and radios, and the label of submit buttons.
+- `disabled` fields are not sent and cannot be focused. `readonly` fields are sent and can be focused.
+- Helpers such as `placeholder`, `inputmode`, `autocomplete`, `spellcheck`, and `autocapitalize` improve the experience, especially on phones.
+- Keep focus visible, avoid blocking paste, allow flexible names and phone numbers, and never trust the browser alone to protect data.
+
+You now know the toolkit. Next, explore each kind of input one by one, starting with [Text](./input-types/text), or return to the [Forms overview](/tutorials/html/forms).

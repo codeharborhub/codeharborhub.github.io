@@ -1,16 +1,624 @@
 ---
-id: textarea
-title: "Multi-line Text Inputs: The textarea Element"
-sidebar_label: "Textarea (<textarea>)"
-sidebar_position: 5
+id: html-textarea
+title: "HTML Textarea Element"
+sidebar_label: "Textarea"
+sidebar_position: 6
 slug: /html/forms/textarea
-description: "Master the textarea element for multi-line text blocks, configuring rows, cols, auto-wrap rules, and client-side resize behavior."
+description: "Learn the HTML textarea element for multi-line text: rows and cols, the starting text between the tags, maxlength and minlength, a live character counter, auto-growing height, wrap, resize, how line breaks are sent, showing user text safely, accessibility, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML textarea tag
-  - multi line text input
-  - textarea rows and cols
-  - resize textarea CSS
+  - HTML textarea
+  - textarea rows cols
+  - textarea maxlength counter
+  - textarea resize CSS
+  - textarea auto grow height
+  - textarea wrap hard soft
+  - textarea line breaks CRLF
+  - textarea default value
+  - textarea accessibility
+  - textarea vs input text
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, textarea, text]
+tags: [html, web-development, beginner, forms, textarea, multi-line, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function CounterDemo() {
+  const max = 200;
+  const [text, setText] = useState("");
+  const left = max - text.length;
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="ta-msg">Your message</label><br />
+      <textarea
+        id="ta-msg"
+        name="message"
+        rows={4}
+        cols={40}
+        maxLength={max}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        aria-describedby="ta-msg-count"
+        style={{maxWidth: "100%"}}
+      />
+      <p
+        id="ta-msg-count"
+        style={{margin: "0.25rem 0 0", color: left <= 20 ? "#b91c1c" : "inherit"}}
+      >
+        {left} of {max} characters left
+      </p>
+    </form>
+  );
+}
+
+export function GrowDemo() {
+  const [text, setText] = useState("Type here, and press Enter a few times.\nThe box grows with your text.");
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="ta-grow">Notes</label><br />
+      <textarea
+        id="ta-grow"
+        name="notes"
+        rows={2}
+        value={text}
+        onChange={(event) => {
+          setText(event.target.value);
+          event.target.style.height = "auto";
+          event.target.style.height = event.target.scrollHeight + "px";
+        }}
+        style={{width: "100%", maxWidth: "24rem", resize: "none", overflow: "hidden"}}
+      />
+    </form>
+  );
+}
+
+export function LineBreakDemo() {
+  const [sent, setSent] = useState("(press Send)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const value = new FormData(event.currentTarget).get("poem");
+        setSent(JSON.stringify(value));
+      }}
+    >
+      <label htmlFor="ta-lines">Write two lines</label><br />
+      <textarea id="ta-lines" name="poem" rows={3} cols={30} defaultValue={"Roses are red\nViolets are blue"} />
+      <p style={{margin: "0.5rem 0"}}><button type="submit">Send</button></p>
+      <p role="status" style={{margin: 0}}>Value as the page reads it: <code>{sent}</code></p>
+    </form>
+  );
+}
+
+The [text input](./input-types/text) is a single line. It is perfect for a name or a city, but a **message**, a **review**, a **bio**, or a **comment** needs room to breathe, and room for line breaks. For these, HTML has the `<textarea>` element: a resizable box for as much text as the visitor wants to write.
+
+It looks easy, but a textarea is **not** an `<input>`. It has its own tag, its own way of setting a starting value, and a few small surprises about line breaks and length limits. In this lesson, you will learn them all, and how to show what visitors write safely.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `<textarea>` differs from `<input type="text">`
+- Setting size with `rows`, `cols`, and CSS
+- Setting a starting value (it goes between the tags)
+- Length limits, a live counter, and an auto-growing box
+- How line breaks are sent and how to show them
+- Styling, accessibility, security, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="message">Your message</label>
+<textarea id="message" name="message" rows="4" cols="40"></textarea>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="ta-basic">Your message</label><br />
+  <textarea id="ta-basic" name="message" rows={4} cols={40} style={{maxWidth: "100%"}}></textarea>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+What you get:
+
+- A **multi-line** box. `Enter` adds a new line, and does **not** submit the form.
+- A **scrollbar** appears when the text is longer than the box.
+- In most browsers, a **resize handle** in the bottom-right corner lets the visitor drag the box bigger.
+- `Tab` moves focus **out** of the box to the next control, as with other fields.
+
+## Textarea Is Not an Input
+
+Beginners often try to write `<textarea type="text" />`. That does not work. Here are the differences to remember:
+
+| | `<input type="text">` | `<textarea>` |
+| :-- | :-- | :-- |
+| **Tag** | Self-closing (no end tag) | Needs an **end tag**: `</textarea>` |
+| **Lines** | One | Many |
+| **Starting value** | The `value` attribute | The **text between the tags** |
+| **`type` attribute** | Yes | **No** |
+| **Size** | `size` (characters wide) | `rows` and `cols` |
+| **`pattern`** | Yes | **No** |
+| **Pasted line breaks** | Removed | **Kept** |
+
+:::warning Always write the end tag
+`<textarea />` does **not** work like other self-closing tags in HTML. The browser treats everything after `<textarea>` as the box's text until it finds `</textarea>`, so your page can "disappear" into the box. Always write `<textarea ...></textarea>`.
+:::
+
+## Setting the Size
+
+### `rows` and `cols`
+
+- **`rows`** is the number of visible lines (the default is 2).
+- **`cols`** is the visible width, in average characters (the default is 20).
+
+```html
+<textarea name="bio" rows="6" cols="50"></textarea>
+```
+
+These are simple and work without any CSS. They are a good starting point, since `rows` also sets a **sensible minimum height**.
+
+### CSS: the Better Way to Size
+
+For responsive designs, use CSS for the width, and keep `rows` for the height:
+
+```css title="style.css"
+textarea {
+  width: 100%;
+  max-width: 40rem;
+  min-height: 8rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+```
+
+### Controlling Resize
+
+```css
+textarea {
+  resize: vertical;     /* only taller or shorter: usually the best choice */
+}
+```
+
+| Value | Effect |
+| :-- | :-- |
+| `both` | Drag in any direction (the usual default) |
+| `vertical` | Only the height can change. Keeps your layout from breaking |
+| `horizontal` | Only the width can change |
+| `none` | No handle at all |
+
+`resize: vertical` is usually the friendliest choice. Turn resizing off (`none`) only when you have a good reason, such as an auto-growing box, because many visitors like to enlarge a box that is too small.
+
+## Setting a Starting Value
+
+A textarea's starting text goes **between the tags**, and not in a `value` attribute.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="poem">Write two lines</label>
+<textarea id="poem" name="poem" rows="3" cols="30">Roses are red
+Violets are blue</textarea>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="ta-poem">Write two lines</label><br />
+  <textarea id="ta-poem" name="poem" rows={3} cols={30} defaultValue={"Roses are red\nViolets are blue"}></textarea>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A few small rules:
+
+- **Whitespace matters.** Spaces and line breaks between the tags become part of the text. If you indent the content, the visitor sees those spaces, so start the text right after `>`, as above.
+- **A first line break is ignored.** One new line straight after `<textarea>` is dropped, which lets you start the text on its own line in your code.
+- **Tags are not read as HTML inside it.** `<b>` is shown as the characters `<b>`. But you must still escape `&` and `<` when your server writes the starting text into the page (for example, `&lt;`), and **never** let the text contain `</textarea>`, which would close the box early.
+- **Reset restores it.** A [reset button](./input-types/submit-reset-button) brings back this starting text.
+
+In React or other frameworks, you use `defaultValue` or `value` rather than children, as in the demos here.
+
+## Placeholder and Label
+
+```html
+<label for="review">Your review</label>
+<textarea
+  id="review"
+  name="review"
+  rows="5"
+  placeholder="What did you like? What could be better?"
+></textarea>
+```
+
+The `placeholder` can even contain line breaks in most browsers. But as with all inputs, **a placeholder is not a label**. It vanishes when the visitor starts typing, and is often too pale to read. Always add a real `<label>`, as you learned in [Label Element](./label-element).
+
+## Try It: A Character Counter
+
+Long text often needs a limit: a tweet-sized bio, a review, an SMS. Set `maxlength`, and tell the visitor how much room is left. Type in the box.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="message">Your message</label>
+<textarea
+  id="message"
+  name="message"
+  rows="4"
+  cols="40"
+  maxlength="200"
+  aria-describedby="count"
+></textarea>
+<p id="count">200 of 200 characters left</p>
+```
+
+```js title="script.js"
+const box = document.getElementById("message");
+const count = document.getElementById("count");
+
+function update() {
+  const left = box.maxLength - box.value.length;
+  count.textContent = left + " of " + box.maxLength + " characters left";
+}
+
+box.addEventListener("input", update);
+update();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CounterDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Length Attributes
+
+| Attribute | What it does |
+| :-- | :-- |
+| `maxlength` | Stops typing at this many characters |
+| `minlength` | The fewest characters allowed. Checked when the form is submitted |
+| `required` | Cannot be left empty |
+
+```html
+<textarea name="review" minlength="20" maxlength="500" required></textarea>
+```
+
+You will study these in [Minlength and Maxlength](./minlength-and-maxlength) and [Required](./required).
+
+:::note Counting characters is trickier than it looks
+- **Line breaks:** The browser counts a new line as **one** character, but the form is sent with a **two-character** line break (`\r\n`). So text that fits `maxlength` in the browser can be a little **longer** on the server. Allow some slack in server limits.
+- **Emoji and some scripts:** The count is by "UTF-16 units," so one emoji (and some letters) may count as **two**. A counter and a limit may differ slightly from what people expect, so avoid being too strict.
+- **Counter announcements:** Do not announce the counter on **every key press** to screen readers. Link it with `aria-describedby`, and consider a polite live message only when the visitor is near the limit.
+:::
+
+## Try It: A Box That Grows
+
+A fixed-height box can hide most of a long message. An **auto-growing** textarea expands as the visitor types. Type several lines in the box.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="notes">Notes</label>
+<textarea id="notes" name="notes" rows="2"></textarea>
+```
+
+```css title="style.css"
+textarea {
+  width: 100%;
+  max-width: 24rem;
+  resize: none;
+  overflow: hidden;
+}
+```
+
+```js title="script.js"
+const box = document.getElementById("notes");
+
+box.addEventListener("input", () => {
+  box.style.height = "auto";                       // shrink first, so it can get smaller
+  box.style.height = box.scrollHeight + "px";      // then fit the content
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<GrowDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Newer browsers can do this with **no JavaScript**:
+
+```css
+textarea {
+  field-sizing: content;   /* grows and shrinks with the text */
+  min-height: 3rem;
+  max-height: 20rem;
+}
+```
+
+Not every browser supports `field-sizing` yet, so keep the JavaScript version as a fallback if you need it everywhere. Set a `max-height` so a very long text does not push the rest of the page away.
+
+## Line Breaks and Wrapping
+
+### How Line Breaks Are Sent
+
+When a form is submitted, each new line in the box becomes a **carriage return and line feed** (`\r\n`). On the server, you receive the text with those breaks inside it. You can normalize them to a single `\n`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <label for="poem">Write two lines</label>
+  <textarea id="poem" name="poem" rows="3" cols="30">Roses are red
+Violets are blue</textarea>
+  <button type="submit">Send</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LineBreakDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the demo, `FormData` reads the value with `\n` line breaks (the browser's own form, before it is encoded for sending). In an actual submission, the data on the wire has `\r\n`.
+
+### The `wrap` Attribute
+
+| Value | What is sent |
+| :-- | :-- |
+| `soft` (the default) | The text exactly as typed. The box wraps long lines **for display only** |
+| `hard` | Line breaks are **added** wherever the box wrapped the text. Needs `cols` |
+
+Almost always, leave `wrap` at its default. `wrap="hard"` changes your visitor's text by adding breaks they never typed, and the result depends on the box's width.
+
+## Showing the Text Back Safely
+
+When you show a visitor's message on a page (a comment, a review, a profile), two things must be handled.
+
+### Keep the line breaks visible
+
+HTML collapses line breaks into spaces. The easiest way to display them is CSS:
+
+```css
+.comment {
+  white-space: pre-wrap;    /* keeps line breaks, and still wraps long lines */
+}
+```
+
+### Escape the text
+
+The text is **untrusted**. It can contain `<script>`, or a tag that breaks your layout. Insert it as **text**, not as HTML:
+
+```js
+// Safe: treated as plain text
+element.textContent = message;
+
+// Dangerous: treated as HTML
+element.innerHTML = message;   // never with visitor text
+```
+
+On the server, use your template engine's automatic escaping. If you let visitors use formatting (bold, links), use a trusted **sanitizing library** or a safe format like Markdown with a sanitizer. You will study this in [Secure Form Design](./secure-form-design).
+
+## All the Attributes
+
+| Attribute | What it does | Example |
+| :-- | :-- | :-- |
+| `name` | The key sent to the server | `name="message"` |
+| `id` | Connects the [label](./label-element) | `id="message"` |
+| `rows`, `cols` | Visible size | `rows="5" cols="40"` |
+| `placeholder` | A short hint (never a label) | `placeholder="Tell us more"` |
+| `maxlength`, `minlength` | Length limits | `maxlength="500"` |
+| `required` | Cannot be empty | `required` |
+| `readonly` | Shown and sent, but cannot be edited | `readonly` |
+| `disabled` | Greyed out, and **not** sent | `disabled` |
+| `wrap` | `soft` (default) or `hard` | `wrap="soft"` |
+| `autocomplete` | Autofill hint | `autocomplete="street-address"` |
+| `autocapitalize` | Capitalization on phones | `autocapitalize="sentences"` |
+| `spellcheck` | Red underlines on or off | `spellcheck="true"` |
+| `inputmode` | Phone keyboard hint | `inputmode="text"` |
+| `dirname` | Also sends the text direction | `dirname="message.dir"` |
+| `autofocus` | Focus on load | `autofocus` |
+
+Many of these work just like on [text inputs](./input-types/text). For addresses, `autocomplete="street-address"` is a good fit for a textarea, since street addresses often have several lines. Attributes that do **not** apply: `type`, `value`, `pattern`, `min`, `max`, `step`, `size`, and `list`.
+
+## Styling a Textarea
+
+```css title="style.css"
+textarea {
+  display: block;               /* removes the small gap under inline boxes */
+  width: 100%;
+  max-width: 40rem;
+  min-height: 8rem;
+  padding: 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;                /* by default, textareas use a monospace font */
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+textarea:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+textarea::placeholder {
+  color: #64748b;               /* readable contrast */
+}
+
+textarea:invalid:not(:placeholder-shown) {
+  border-color: #b91c1c;
+}
+```
+
+- Many browsers use a **monospace** font in textareas. `font: inherit` makes it match your page.
+- `font-size` of at least 16px stops iPhones from zooming into the box when it is focused.
+- Keep the **focus** outline visible, and make sure the placeholder has enough contrast.
+
+## Accessibility at a Glance
+
+- **Always add a label.** Wrap the textarea, or use `for` and `id`.
+- **State the limits and help in text:** "Up to 500 characters," linked with `aria-describedby`. A placeholder is not enough.
+- **Allow a comfortable size.** Boxes that are too small make it hard to see and edit what you wrote. Use `resize: vertical`, and a sensible `rows` or `min-height`.
+- **Keep the keyboard behaviour.** `Enter` makes a new line, and `Tab` leaves the box. Do not trap focus.
+- **Do not block pasting,** and do not change what people type as they type.
+- **Make errors clear and specific:** "Write at least 20 characters. You have written 8."
+- **Use a visible focus style,** and enough contrast for the text, placeholder, and border.
+- **For counters,** avoid announcing every key press to screen readers.
+- **Do not use `readonly` or `disabled`** to display important text. Show it as ordinary text, so everyone can read and select it.
+
+## Security and Validation Notes
+
+- **Every message is untrusted.** Validate length, strip unwanted control characters, and **escape on output**.
+- **Limit size on the server,** too, with some slack for `\r\n`. Without a limit, someone can post megabytes of text.
+- **Store and display safely:** use parameterized database queries, and automatic HTML escaping.
+- **Guard against spam.** Public comment forms attract bots. Use rate limits and moderation, and use `rel="nofollow ugc"` on any links in user text.
+- **Handle private information.** Free-text boxes often collect names, numbers, and health or financial details by accident. Tell visitors what you do with the text.
+
+## Global Audience Notes
+
+- **Every script and language** must be accepted. Do not limit characters.
+- **Right-to-left text** (Arabic, Hebrew, Persian) works automatically in a textarea. Add `dir="auto"` to let the browser choose the direction from the first characters, which helps in mixed-language sites:
+
+```html
+<textarea name="comment" dir="auto"></textarea>
+```
+
+- **Character limits are not equal across languages.** 200 characters is far more content in Chinese than in English, so avoid limits that are too tight, and measure what you need.
+- **IME input** (typing characters through a helper, as in Japanese, Chinese, and Korean) has a "composition" stage. Do not run validation or counters in a way that interrupts it.
+- **Keep the labels and help text short** so they translate easily.
+
+## Common Mistakes to Avoid
+
+1. **Writing `<textarea />`** without an end tag.
+2. **Using `value="..."`** for the starting text. It goes between the tags.
+3. **Indenting the starting text,** so visitors see extra spaces.
+4. **Using `<input type="text">`** for a multi-line message.
+5. **No label,** or only a placeholder.
+6. **Using `pattern`,** which does not work on a textarea.
+7. **Printing the text with `innerHTML`** or without escaping.
+8. **Showing the text back without `white-space: pre-wrap`,** so line breaks vanish.
+9. **Using `wrap="hard"`** without understanding that it changes the text.
+10. **Ignoring that browsers count a line break as one character,** while the server sees two.
+11. **Turning off resizing** and making the box too small to be useful.
+12. **No server-side length limit** or validation.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a labeled `<textarea>` with `rows="5"` and `cols="40"`. Type several lines.
+2. Remove the end tag, and see what happens to the rest of your page.
+3. Put starting text between the tags, then try an indented version, and compare.
+4. Add `maxlength` and `minlength`, and test them.
+5. Build the character counter.
+6. Make the box grow as you type (or try `field-sizing: content`).
+7. Set `resize: vertical`, then `none`, and compare the experience.
+8. Submit the form with `method="get"`, and look for `%0D%0A` in the address.
+9. Show the text on a page with and without `white-space: pre-wrap`.
+10. Bonus: try typing `<b>hello</b>` in the box, and display it with `textContent`, then with `innerHTML`. What is the difference?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How is a textarea different from `<input type="text">`?</summary>
+
+A textarea holds multiple lines, needs an end tag, takes its starting text between the tags (not a `value` attribute), has no `type` or `pattern`, and is sized with `rows` and `cols`.
+
+</details>
+
+<details>
+<summary>2. Where do you put a textarea's starting text?</summary>
+
+Between `<textarea>` and `</textarea>`. Spaces and line breaks there are part of the text, so do not indent it.
+
+</details>
+
+<details>
+<summary>3. What do `rows` and `cols` do?</summary>
+
+They set the visible height (in lines) and width (in average characters). CSS `width`, `min-height`, and `resize` give finer, more responsive control.
+
+</details>
+
+<details>
+<summary>4. How are line breaks sent to the server?</summary>
+
+As `\r\n` (a carriage return and line feed). The browser counts a break as one character for `maxlength`, but the server receives two, so leave some slack.
+
+</details>
+
+<details>
+<summary>5. How do you show a visitor's multi-line text safely on a page?</summary>
+
+Insert it as text (with `textContent`, or automatic escaping on the server), never as HTML. Use CSS `white-space: pre-wrap` to keep the line breaks.
+
+</details>
+
+<details>
+<summary>6. What does `wrap="hard"` do, and should you use it?</summary>
+
+It adds real line breaks to the submitted text wherever the box wrapped it (and needs `cols`). It changes what the visitor wrote, so almost always keep the default `soft`.
+
+</details>
+
+## Key Takeaways
+
+- `<textarea>` is the multi-line text control. It needs an end tag, and has no `type` or `value` attribute.
+- The starting text goes between the tags. Watch out for extra spaces and line breaks.
+- Size with `rows` and `cols`, or better with CSS. `resize: vertical` is a friendly default, and auto-growing boxes use JavaScript or `field-sizing: content`.
+- Use `maxlength`, `minlength`, and `required`, and add a counter. Remember that line breaks and emoji count differently on the server.
+- Line breaks are sent as `\r\n`. Show them with `white-space: pre-wrap`, and always escape visitor text on output.
+- Label it, describe its limits in text, use `font: inherit`, and validate length and content on the server.
+
+A textarea is for free writing. Next, learn how to offer a list of choices in a dropdown, in [Select](./select), or return to the [Forms overview](/tutorials/html/forms).

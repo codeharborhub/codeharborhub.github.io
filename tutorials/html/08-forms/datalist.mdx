@@ -1,16 +1,490 @@
 ---
-id: datalist
-title: "Autocomplete Autocompletion Lists: The datalist Element"
-sidebar_label: "Datalist (<datalist>)"
-sidebar_position: 8
+id: html-datalist
+title: "HTML Datalist Element"
+sidebar_label: "Datalist"
+sidebar_position: 9
 slug: /html/forms/datalist
-description: "Provide dynamic auto-complete suggestions for text inputs using the datalist tag combined with input list attributes."
+description: "Learn the HTML datalist element for suggestions: connecting an input with the list attribute, suggestions versus restrictions, option value and label, using datalist with search, email, number, range, and color inputs, limiting input to the list with JavaScript, loading suggestions dynamically, accessibility limits, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML datalist tag
-  - input list attribute
-  - autocomplete suggestion list
-  - dynamic search suggestions
+  - HTML datalist
+  - datalist list attribute
+  - HTML autocomplete suggestions
+  - datalist vs select
+  - datalist option value label
+  - datalist restrict to list setCustomValidity
+  - datalist accessibility
+  - combobox HTML
+  - datalist range tick marks
+  - dynamic datalist fetch
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, datalist, autocomplete]
+tags: [html, web-development, beginner, forms, datalist, autocomplete, suggestions, frontend]
 ---
+
+import {useState, useRef, useEffect} from 'react';
+
+export function SuggestDemo() {
+  const [sent, setSent] = useState("(press Submit)");
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const text = new URLSearchParams(new FormData(event.currentTarget)).toString();
+        setSent(text);
+      }}
+    >
+      <label htmlFor="dl-city">City</label><br />
+      <input type="text" id="dl-city" name="city" list="dl-cities" autoComplete="off" placeholder="Start typing..." />
+      <datalist id="dl-cities">
+        <option value="Mumbai"></option>
+        <option value="Delhi"></option>
+        <option value="Lagos"></option>
+        <option value="Nairobi"></option>
+        <option value="London"></option>
+        <option value="Lisbon"></option>
+      </datalist>{" "}
+      <button type="submit">Submit</button>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        Sent: <code>{sent}</code><br />
+        Try a city that is not in the list. It is accepted too.
+      </p>
+    </form>
+  );
+}
+
+export function StrictDemo() {
+  const allowed = ["Mumbai", "Delhi", "Lagos", "Nairobi", "London", "Lisbon"];
+  const [value, setValue] = useState("");
+  const ref = useRef(null);
+  const ok = value === "" || allowed.includes(value);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.setCustomValidity(ok ? "" : "Please choose a city from the list.");
+    }
+  }, [ok]);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="dl-strict">Office city (choose from the list)</label><br />
+      <input
+        ref={ref}
+        type="text"
+        id="dl-strict"
+        name="office"
+        list="dl-strict-cities"
+        autoComplete="off"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-describedby="dl-strict-msg"
+        aria-invalid={!ok}
+      />
+      <datalist id="dl-strict-cities">
+        {allowed.map((city) => <option key={city} value={city}></option>)}
+      </datalist>
+      <p id="dl-strict-msg" role="status" style={{margin: "0.5rem 0 0", color: ok ? "inherit" : "#b91c1c"}}>
+        {ok ? (value ? "Valid choice." : "Type or pick a city.") : "Not in the list: " + value}
+      </p>
+    </form>
+  );
+}
+
+A [select](./select) forces a choice from a fixed list. A [text input](./input-types/text) lets people type anything. Sometimes you want something **in between**: a field where the visitor can type freely, but gets **suggestions** as they type. Think of a search box that offers popular searches, a "city" field that suggests big cities, or an "email" field that offers common domains.
+
+HTML has a built-in way to do this, with no JavaScript: the `<datalist>` element. It is small and simple, but it has one big surprise: **suggestions are not restrictions.** In this lesson, you will learn how it works, where it shines, where it falls short, and how to restrict the input when you must.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How `<datalist>` and the `list` attribute work together
+- That suggestions do not limit what can be typed
+- The `value` and `label` of the suggestion options
+- Which input types can use a datalist
+- How to restrict the input to the list, and load suggestions dynamically
+- Datalist versus select, accessibility limits, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="city">City</label>
+<input type="text" id="city" name="city" list="cities" />
+
+<datalist id="cities">
+  <option value="Mumbai"></option>
+  <option value="Delhi"></option>
+  <option value="Lagos"></option>
+  <option value="Nairobi"></option>
+  <option value="London"></option>
+  <option value="Lisbon"></option>
+</datalist>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SuggestDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Click in the box and start typing "L." A small list of matching suggestions drops down (Lagos, London, Lisbon). Pick one with the mouse or the arrow keys, and it fills the box. Or ignore the list, and type "Kampala." That is accepted, too.
+
+The pieces:
+
+1. **The `<datalist>`** holds the suggestions. It has an `id`. It is **never shown on the page** by itself, since browsers hide it.
+2. **The `<option>` elements** inside it are the suggestions. Each needs a `value`, which is the text that is put into the input.
+3. **The input's `list` attribute** contains the `id` of the datalist. That is the link between them.
+
+Both the input and the datalist can sit anywhere on the same page, and **several inputs can share one datalist**.
+
+:::info Only the input is sent
+The datalist is just a helper. When the form is submitted, only the **input's** `name=value` is sent (such as `city=Lagos`). The datalist and its options are never sent.
+:::
+
+## Suggestions Are Not Restrictions
+
+This is the key idea, so it is worth repeating: **a datalist does not limit the visitor's input.**
+
+| Control | Can the visitor enter a value that is not in the list? |
+| :-- | :-- |
+| [`<select>`](./select) | **No.** Only listed options |
+| Input with `<datalist>` | **Yes.** Anything can be typed |
+
+A visitor can type "Atlantis," and the form will happily accept it. The browser does **not** check the text against the list when the form is submitted. So, always:
+
+- Treat the value as **ordinary free text** on the server.
+- Validate it on the server, as you would for any text input.
+- If it **must** be one of the listed values, either use a `<select>`, or restrict it with JavaScript, as shown below (and still check on the server).
+
+## Option Value and Label
+
+Each suggestion can have a **value** and an optional **label**:
+
+```html
+<datalist id="countries">
+  <option value="IN" label="India"></option>
+  <option value="NG" label="Nigeria"></option>
+  <option value="BR" label="Brazil"></option>
+</datalist>
+```
+
+| Part | What it does |
+| :-- | :-- |
+| `value` | The text that is **put into the input** when chosen. It is also what the browser matches against as you type |
+| `label` | Extra text shown **beside** the value in the suggestion list |
+| Text between the tags | In some browsers, used as the label if there is no `label` attribute |
+
+Behaviour differs between browsers, so be careful:
+
+- Some browsers show **both** the value and the label ("IN" with "India" beside it). Some show only the value. Some show only the label, but still fill in the value.
+- Matching may use the value only, or the label too, and may match from the start of the text, or anywhere in it.
+- On phones, the suggestions often appear in a bar above the keyboard.
+
+Because of this, the safest design is to make the **value itself readable**. For most uses, put the human-friendly text in `value` ("India"), and skip the label. If you need codes, validate or convert them on the server.
+
+You can also write the option text with no attributes:
+
+```html
+<option value="Mumbai"></option>      <!-- the usual, clear way -->
+<option>Mumbai</option>               <!-- text is used as the value in some browsers: avoid this -->
+```
+
+## Which Inputs Can Use a Datalist
+
+The `list` attribute works on inputs where suggesting a value makes sense:
+
+| Input type | What the suggestions are for |
+| :-- | :-- |
+| [`text`](./input-types/text), [`search`](./input-types/search) | Words, names, popular searches |
+| [`email`](./input-types/email) | Common addresses or domains |
+| [`url`](./input-types/url) | Known websites |
+| [`tel`](./input-types/tel) | Saved numbers |
+| [`number`](./input-types/number) | Suggested quantities, such as 10, 25, 50 |
+| [`range`](./input-types/range) | **Tick marks** along the slider |
+| [`color`](./input-types/color) | A palette of **preset swatches** |
+| [`date`](./input-types/date), [`time`](./input-types/time), [`datetime-local`](./input-types/datetime-local), [`month`](./input-types/month), [`week`](./input-types/week) | Suggested dates, times, and so on |
+
+It does **not** work on `password`, `checkbox`, `radio`, `file`, `hidden`, `submit`, `reset`, or `button`. For `range` and `color`, the datalist changes how the control looks (ticks and swatches), and the visitor can still choose any value.
+
+```html
+<!-- Suggested quantities -->
+<input type="number" name="amount" list="amounts" min="1" />
+<datalist id="amounts">
+  <option value="10"></option>
+  <option value="25"></option>
+  <option value="50"></option>
+</datalist>
+
+<!-- Suggested email domains, filled in as you type "ada@" -->
+<input type="email" name="email" list="domains" />
+<datalist id="domains">
+  <option value="ada@gmail.com"></option>
+  <option value="ada@outlook.com"></option>
+</datalist>
+```
+
+## Restricting the Input to the List
+
+If the value **must** come from the list, you can check it in JavaScript, and use `setCustomValidity()` to tell the browser the field is invalid. The browser then blocks the form, and shows your message, just as for a built-in rule.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="office">Office city (choose from the list)</label>
+<input type="text" id="office" name="office" list="office-cities" autocomplete="off" />
+
+<datalist id="office-cities">
+  <option value="Mumbai"></option>
+  <option value="Delhi"></option>
+  <option value="Lagos"></option>
+  <option value="Nairobi"></option>
+  <option value="London"></option>
+  <option value="Lisbon"></option>
+</datalist>
+
+<p id="msg" role="status"></p>
+```
+
+```js title="script.js"
+const input = document.getElementById("office");
+const list = document.getElementById("office-cities");
+const msg = document.getElementById("msg");
+
+function check() {
+  const allowed = [...list.options].map((option) => option.value);
+  const ok = input.value === "" || allowed.includes(input.value);
+
+  input.setCustomValidity(ok ? "" : "Please choose a city from the list.");
+  msg.textContent = ok
+    ? (input.value ? "Valid choice." : "Type or pick a city.")
+    : "Not in the list: " + input.value;
+}
+
+input.addEventListener("input", check);
+check();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StrictDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+How it works:
+
+- `list.options` is the list of the datalist's options, so the allowed values always match what you show.
+- `setCustomValidity("...")` marks the field invalid with your message. An **empty string** marks it valid again. Forgetting to clear it is a classic bug: the field stays invalid forever.
+- Add `required` to the input if an empty value is not allowed. (An empty field passes this check, as in the demo.)
+- Your **server must do the same check**, since this runs in the browser and can be skipped.
+
+If the choice **must** be exact, and the list is not huge, a [select](./select) is usually the simpler, more accessible tool.
+
+## Loading Suggestions as the Visitor Types
+
+For long or changing lists (all cities, products, usernames), you do not want to put thousands of options into the page. Instead, fetch matching suggestions from your server as the visitor types, and fill the datalist.
+
+```js title="script.js"
+const input = document.getElementById("city");
+const list = document.getElementById("cities");
+let timer;
+
+input.addEventListener("input", () => {
+  clearTimeout(timer);                       // wait for a short pause in typing
+  const query = input.value.trim();
+  if (query.length < 2) return;              // do not search for 1 letter
+
+  timer = setTimeout(async () => {
+    const response = await fetch("/api/cities?q=" + encodeURIComponent(query));
+    const names = await response.json();     // ["Lagos", "Lisbon", ...]
+
+    list.replaceChildren(                    // replace the old suggestions
+      ...names.map((name) => new Option("", name))
+    );
+  }, 250);
+});
+```
+
+Good habits:
+
+- **Wait for a pause** in typing (called "debouncing") before sending a request, so you do not send one for every key.
+- **Ignore very short queries.**
+- Build options with `new Option("", name)` or `option.value = name`, which treat the text as **plain text**. Do not build them with `innerHTML` from server data.
+- Handle failures quietly. If the request fails, the visitor can still type their own text.
+- Limit the number of suggestions (about 10), or the list will be unwieldy.
+
+## Datalist, Select, or Something Else?
+
+| Need | Best choice |
+| :-- | :-- |
+| The visitor **must** pick from a fixed list | [`select`](./select), or radio buttons |
+| Suggestions, but **any text** is fine | **Input with datalist** |
+| Browser-remembered values (name, address, email) | The [`autocomplete`](./autocomplete) attribute |
+| A **long** list with typing to filter, and exact choice needed | An accessible "combobox" widget, or a select with type-ahead |
+| Rich suggestions (images, two lines of text) | A custom component, with great care for accessibility |
+
+Compared with the `autocomplete` attribute: `autocomplete` offers values the **browser** remembers for the **visitor**. A datalist offers values **you** provide. They can work together. Add `autocomplete="off"` to the input if the browser's own history gets in the way of your list.
+
+## Styling Limits
+
+The suggestion list is drawn by the browser or the operating system, so you can style only the input:
+
+```css title="style.css"
+input[list] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 1rem;
+}
+
+input[list]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+```
+
+- You **cannot** change the dropdown's colours, fonts, spacing, or size in a reliable way.
+- The `input[list]` selector picks every input that has a datalist.
+- Some browsers add a small arrow inside the field. Others show suggestions only after the visitor starts typing, or double-clicks. Do not rely on the arrow being there.
+- If your design needs a **fully custom** dropdown, you are building a combobox, which is a lot of work to make accessible. Think twice.
+
+## Accessibility at a Glance
+
+:::warning Datalist support in assistive technology is uneven
+Some screen readers and browser pairs do **not** announce the suggestions well, or at all. Behaviour also differs between desktop and mobile. So treat a datalist as a **bonus for people who can use it**, never as the only way to learn the options.
+:::
+
+- **Always add a label** to the input. The datalist does not replace it.
+- **The field must work without the list.** A visitor who never sees a suggestion must still be able to type a valid answer.
+- **Do not hide essential information** in the suggestions. If people need to see the choices to answer ("Pick one of these 5 sizes"), use radios or a select.
+- **Explain what is expected** in text: "Start typing to see suggestions, or enter your own."
+- **Test with a keyboard.** The arrow keys, `Enter`, and `Esc` should work in the list.
+- **Make errors clear.** If you restrict the field, say which values are allowed, and show the message near the field, not only as a red border.
+- **Avoid making the suggestion list the only way to enter a code.** Show the meaning of codes in visible text.
+- **Keep suggestions short,** and in a sensible order.
+- **Do not fire actions** (navigate, submit) when a suggestion is chosen without warning.
+
+## Security and Validation Notes
+
+- **The value is untrusted.** Anyone can type or send anything, in or out of the list.
+- **Re-check restricted values on the server** against an allow-list.
+- **Escape suggestions** that come from a database or users when you generate the HTML.
+- **Rate-limit your suggestion API,** and do not return private data (such as other users' names or emails) as suggestions.
+- **Do not suggest sensitive guesses.** A username field that suggests existing usernames leaks who has an account.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Matching and typing differ between languages.** Accents ("São Paulo" and "Sao Paulo"), scripts, and different keyboards all affect what visitors type. Normalize on the server, and accept reasonable variants.
+- **Suggest in the visitor's language** where you can, or include both local and English names for places.
+- **Do not restrict names and places** to a fixed list of Western examples. A datalist suggests, and does not exclude, which suits a world audience well.
+- **Input method editors** (used to type Chinese, Japanese, Korean) behave differently with suggestion lists. Wait for composition to finish before you filter or fetch.
+- **Keep labels and hints short** so they translate well.
+
+## Common Mistakes to Avoid
+
+1. **Believing a datalist restricts the input.** Visitors can type anything.
+2. **A `list` value that does not match the datalist's `id`,** so no suggestions show.
+3. **Leaving off the input's label,** relying on the placeholder.
+4. **Relying on `label` text** that some browsers do not show.
+5. **Options without a `value`,** so browsers fill in unexpected text.
+6. **Using a datalist when a `select` is right,** for an exact choice from a small list.
+7. **Forgetting to clear `setCustomValidity("")`,** so the field stays invalid.
+8. **Skipping server-side validation** when the value must be in the list.
+9. **Putting thousands of options** in the page, instead of loading suggestions as needed.
+10. **Sending a request on every key press,** with no pause.
+11. **Building options with `innerHTML`** from server data.
+12. **Making the suggestions the only way** to see the possible choices.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build an input with `list` and a `<datalist>` of five options. Type, and watch the suggestions.
+2. Change the `list` value so it does not match the `id`, and see that the suggestions disappear.
+3. Type a value that is **not** in the list, and submit the form with `method="get"`.
+4. Give the options `label` attributes, and compare how your browser shows them.
+5. Share one datalist between two inputs.
+6. Add a datalist to an `<input type="number">`, and to a `<input type="range">`.
+7. Add a datalist to `<input type="color">`, and see the swatches.
+8. Restrict an input to the list with `setCustomValidity`.
+9. Fill a datalist with `fetch` and `new Option()`, using a fake JSON file.
+10. Bonus: build the same field with a `<select>`, and compare when each is better.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How do you connect an input to a datalist?</summary>
+
+Give the `<datalist>` an `id`, and put that same `id` in the input's `list` attribute. Each `<option value="...">` inside the datalist is a suggestion.
+
+</details>
+
+<details>
+<summary>2. Does a datalist limit what the visitor can enter?</summary>
+
+No. It only suggests values. The visitor can type anything, so the server must validate the value. For a strict choice, use a `<select>`, or check in JavaScript (and on the server).
+
+</details>
+
+<details>
+<summary>3. What is sent when the form is submitted?</summary>
+
+Only the input's `name=value`. The datalist and its options are never sent.
+
+</details>
+
+<details>
+<summary>4. Which input types can use `list`?</summary>
+
+Text-like and picker inputs: `text`, `search`, `email`, `url`, `tel`, `number`, `range` (tick marks), `color` (swatches), and the date and time types. Not `password`, `checkbox`, `radio`, `file`, or `hidden`.
+
+</details>
+
+<details>
+<summary>5. How do you make a datalist field accept only listed values?</summary>
+
+On `input`, compare the value with the datalist's option values, and call `input.setCustomValidity("message")` when it does not match, or `setCustomValidity("")` when it does. Repeat the check on the server.
+
+</details>
+
+<details>
+<summary>6. Why is a datalist not a replacement for a label or a select?</summary>
+
+Support in assistive technology is uneven, and the browser draws the list in its own way, so the field must work without it. It never replaces a label, and it should not be the only way to see choices.
+
+</details>
+
+## Key Takeaways
+
+- `<datalist>` provides **suggestions** for an input, linked by the input's `list` attribute and the datalist's `id`.
+- Suggestions are **not restrictions**: any text can still be typed, so the server must validate.
+- Put readable text in each option's `value`. Do not rely on `label`, because browsers show it differently.
+- It works with text-like and picker inputs, adding tick marks to `range` and swatches to `color`.
+- To restrict values, use `setCustomValidity` (clearing it with an empty string), or choose a `<select>`. Always re-check on the server.
+- For long or changing lists, load a few suggestions with `fetch`, after a pause in typing, and build options as plain text.
+- Datalist support in assistive technology is uneven, so the field must work well without the suggestions.
+
+Next, learn the `<button>` element, a more flexible way to build the buttons in your forms, in [Button](./button), or return to the [Forms overview](/tutorials/html/forms).

@@ -1,16 +1,763 @@
 ---
-id: form-validation
-title: "Native HTML Form Validation Overview"
-sidebar_label: "Validation Overview"
-sidebar_position: 11
+id: html-form-validation
+title: "HTML Form Validation"
+sidebar_label: "Form Validation"
+sidebar_position: 12
 slug: /html/forms/form-validation
-description: "Explore client-side native HTML validation rules, automatic constraint checks, validation UI popups, and pseudo-class styling hooks."
+description: "Learn HTML form validation: the built-in constraint validation attributes, the ValidityState flags, checkValidity, reportValidity, and setCustomValidity, the :valid, :invalid, and :user-invalid CSS pseudo-classes, novalidate, writing friendly accessible error messages with aria-invalid and an error summary, and why the server must always validate again."
 keywords:
   - HTML form validation
-  - client side form validation
-  - native constraint validation
-  - form validation errors
+  - HTML5 constraint validation
+  - ValidityState valueMissing typeMismatch
+  - checkValidity reportValidity
+  - setCustomValidity
+  - novalidate attribute
+  - :user-invalid CSS
+  - aria-invalid aria-describedby error message
+  - form error summary accessibility
+  - client side vs server side validation
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, validation, beginner]
+tags: [html, web-development, beginner, forms, validation, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function FlagsDemo() {
+  const names = [
+    "valueMissing",
+    "typeMismatch",
+    "patternMismatch",
+    "tooShort",
+    "tooLong",
+    "rangeUnderflow",
+    "rangeOverflow",
+    "stepMismatch",
+    "badInput",
+    "customError",
+    "valid",
+  ];
+  const [flags, setFlags] = useState(null);
+  const [message, setMessage] = useState("");
+  const read = (input) => {
+    const next = {};
+    names.forEach((name) => (next[name] = input.validity[name]));
+    setFlags(next);
+    setMessage(input.validationMessage);
+  };
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <label htmlFor="fv-user">Username (3 to 10 lowercase letters)</label><br />
+      <input
+        type="text"
+        id="fv-user"
+        name="username"
+        required
+        minLength={3}
+        maxLength={10}
+        pattern="[a-z]+"
+        onInput={(event) => read(event.target)}
+        onFocus={(event) => read(event.target)}
+      />
+      <table style={{marginTop: "0.5rem", borderCollapse: "collapse"}}>
+        <tbody>
+          {names.map((name) => (
+            <tr key={name}>
+              <td style={{padding: "0.1rem 0.75rem 0.1rem 0"}}><code>{name}</code></td>
+              <td style={{padding: "0.1rem 0", color: flags && flags[name] ? (name === "valid" ? "#15803d" : "#b91c1c") : "#64748b"}}>
+                {flags ? String(flags[name]) : "?"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        Browser message: <em>{message || "(none)"}</em>
+      </p>
+    </form>
+  );
+}
+
+export function SignupDemo() {
+  const formRef = useRef(null);
+  const [errors, setErrors] = useState({});
+  const [done, setDone] = useState(false);
+
+  const messageFor = (input) => {
+    const v = input.validity;
+    if (input.name === "email") {
+      if (v.valueMissing) return "Enter your email address.";
+      if (v.typeMismatch) return "Enter an email address like name@example.com.";
+    }
+    if (input.name === "password") {
+      if (v.valueMissing) return "Choose a password.";
+      if (v.tooShort) return "Use at least 8 characters. You have used " + input.value.length + ".";
+    }
+    if (input.name === "confirm") {
+      if (v.valueMissing) return "Type the password again.";
+      if (v.customError) return input.validationMessage;
+    }
+    return "";
+  };
+
+  const validate = (form) => {
+    const confirm = form.elements.confirm;
+    const password = form.elements.password;
+    confirm.setCustomValidity(
+      confirm.value && confirm.value !== password.value ? "The two passwords do not match." : ""
+    );
+    const found = {};
+    ["email", "password", "confirm"].forEach((name) => {
+      const message = messageFor(form.elements[name]);
+      if (message) found[name] = message;
+    });
+    return found;
+  };
+
+  const labels = {email: "Email address", password: "Password", confirm: "Confirm password"};
+  const ids = Object.keys(errors);
+
+  return (
+    <form
+      ref={formRef}
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const found = validate(form);
+        setErrors(found);
+        setDone(false);
+        const first = Object.keys(found)[0];
+        if (first) form.elements[first].focus();
+        else setDone(true);
+      }}
+    >
+      {ids.length > 0 ? (
+        <div role="alert" style={{border: "2px solid #b91c1c", borderRadius: "6px", padding: "0.5rem 0.75rem", marginBottom: "0.75rem"}}>
+          <strong>Please fix {ids.length} {ids.length === 1 ? "problem" : "problems"}:</strong>
+          <ul style={{margin: "0.25rem 0 0", paddingLeft: "1.25rem"}}>
+            {ids.map((name) => (
+              <li key={name}>
+                <a
+                  href={"#sv-" + name}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    formRef.current.elements[name].focus();
+                  }}
+                >
+                  {labels[name]}: {errors[name]}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {done ? <p role="status" style={{color: "#15803d"}}>All fields are valid. (In a real form, this is where it would send.)</p> : null}
+
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="sv-email">Email address</label><br />
+        <input
+          type="email"
+          id="sv-email"
+          name="email"
+          required
+          autoComplete="email"
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? "sv-email-err" : undefined}
+        />
+        {errors.email ? <span id="sv-email-err" style={{display: "block", color: "#b91c1c"}}>{errors.email}</span> : null}
+      </p>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="sv-password">Password (at least 8 characters)</label><br />
+        <input
+          type="password"
+          id="sv-password"
+          name="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? "sv-password-err" : undefined}
+        />
+        {errors.password ? <span id="sv-password-err" style={{display: "block", color: "#b91c1c"}}>{errors.password}</span> : null}
+      </p>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="sv-confirm">Confirm password</label><br />
+        <input
+          type="password"
+          id="sv-confirm"
+          name="confirm"
+          required
+          autoComplete="new-password"
+          aria-invalid={Boolean(errors.confirm)}
+          aria-describedby={errors.confirm ? "sv-confirm-err" : undefined}
+        />
+        {errors.confirm ? <span id="sv-confirm-err" style={{display: "block", color: "#b91c1c"}}>{errors.confirm}</span> : null}
+      </p>
+      <button type="submit">Create account</button>
+    </form>
+  );
+}
+
+You have built forms that collect all kinds of data. Now comes the question every real form must answer: **is what the visitor typed actually usable?** Is the email address shaped like an email address? Is the password long enough? Did they fill in the required fields? Checking this is called **validation**.
+
+HTML does a surprising amount of it for you, with no JavaScript at all. Add a few attributes, and the browser checks the form, blocks it when something is wrong, and shows an error message. In this lesson, you will see the whole picture: what the browser checks, how to read the results, how to write custom rules and friendly error messages, how to style valid and invalid fields, and the one rule that never changes: **the server must always validate again.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What built-in (constraint) validation is, and when it runs
+- Which attributes create rules
+- The validity flags the browser reports
+- The JavaScript tools: `checkValidity()`, `reportValidity()`, and `setCustomValidity()`
+- Turning the built-in messages off with `novalidate`, and building your own
+- Styling with `:valid`, `:invalid`, and `:user-invalid`
+- Error messages that are accessible and kind
+- Why client-side validation is never enough
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/signup" method="post">
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="age">Age (18 to 99)</label>
+  <input type="number" id="age" name="age" min="18" max="99" required />
+
+  <button type="submit">Join</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="fv-email">Email address</label><br />
+  <input type="email" id="fv-email" name="email" required /><br />
+  <label htmlFor="fv-age">Age (18 to 99)</label><br />
+  <input type="number" id="fv-age" name="age" min={18} max={99} required /><br />
+  <button type="submit">Join</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Press **Join** with the fields empty, or with an age of 12. The browser **stops the form**, moves focus to the first problem, and shows a message such as "Please fill out this field" or "Value must be greater than or equal to 18." You wrote no script and no message. This is **constraint validation**: the rules (the constraints) are written as attributes, and the browser enforces them.
+
+### When Does It Run?
+
+| Moment | Does the browser validate? |
+| :-- | :-- |
+| While the visitor types | **No.** It only tracks the state |
+| When the visitor **submits** the form | **Yes.** If any field is invalid, the form is **not sent**, and the first invalid field gets focus and a message |
+| When your script calls `checkValidity()` or `reportValidity()` | Yes |
+| When the visitor clicks a button with `formnovalidate`, or the form has `novalidate` | **No.** Validation is skipped |
+
+Only controls that **take part in validation** are checked. Disabled controls, `readonly` fields, hidden inputs, buttons, and fields inside a `disabled` fieldset are skipped.
+
+## The Rules You Can Write in HTML
+
+Each of these attributes has its own lesson, so here is the map:
+
+| Attribute | The rule it creates | Applies to | Lesson |
+| :-- | :-- | :-- | :-- |
+| `required` | The field cannot be empty (or unchecked, or unselected) | Most controls | [Required](./required) |
+| `type` | The value must fit the type (`email`, `url`, `number`, `date`...) | Inputs | [Input types](./input-types/text) |
+| `pattern` | The text must match a regular expression | Text-like inputs | [Pattern](./pattern) |
+| `minlength` | At least this many characters | Text-like inputs, `textarea` | [Minlength and Maxlength](./minlength-and-maxlength) |
+| `maxlength` | At most this many characters | Text-like inputs, `textarea` | [Minlength and Maxlength](./minlength-and-maxlength) |
+| `min` | The smallest number or date allowed | Number, range, date, and time types | [Min and Max](./min-and-max) |
+| `max` | The largest number or date allowed | Number, range, date, and time types | [Min and Max](./min-and-max) |
+| `step` | The value must fall on a step | Number, range, date, and time types | [Min and Max](./min-and-max) |
+| `multiple` | Several values allowed (changes how email and file are checked) | `email`, `file`, `select` | |
+
+You can combine them, and the field must pass **all** of them:
+
+```html
+<input
+  type="text"
+  name="username"
+  required
+  minlength="3"
+  maxlength="10"
+  pattern="[a-z]+"
+  title="3 to 10 lowercase letters, with no spaces or numbers"
+/>
+```
+
+The `title` text is added to the browser's message when a `pattern` fails, so write it as a plain instruction.
+
+:::note An empty field passes most checks
+Format rules (`type`, `pattern`, `minlength`, `min`, `max`) are **skipped when the field is empty**. Only `required` catches an empty field. So an optional email field can be left blank, but if the visitor types something, it must look like an email.
+:::
+
+## The Validity Flags
+
+Each control has a `validity` object with a flag for each kind of problem. The flags tell you **why** a field is invalid.
+
+| Flag | It is `true` when... | Typical cause |
+| :-- | :-- | :-- |
+| `valueMissing` | A required field is empty | `required` |
+| `typeMismatch` | The value does not fit the type | An `email` without `@`, or a `url` without a scheme |
+| `patternMismatch` | The text does not match `pattern` | `pattern="[a-z]+"` and the visitor typed `Ada9` |
+| `tooShort` | Fewer characters than `minlength` | `minlength="8"` |
+| `tooLong` | More characters than `maxlength` | A value set by a script (typing is blocked at the limit) |
+| `rangeUnderflow` | Below `min` | `min="18"` and the visitor typed `12` |
+| `rangeOverflow` | Above `max` | `max="99"` and the visitor typed `120` |
+| `stepMismatch` | Not on a valid `step` | `step="5"` and the visitor typed `12` |
+| `badInput` | The browser cannot read the input | Letters in a `number` field |
+| `customError` | You set an error with `setCustomValidity()` | Your own rule |
+| `valid` | **None** of the above | The field is fine |
+
+`tooShort` has a special quirk: browsers only check it after the visitor has **edited** the value, so a pre-filled value that is too short does not trigger it until the visitor changes it.
+
+### Try It: Watch the Flags
+
+Type in the field below, and watch which flags switch on. Try nothing at all, `ab`, `Ada`, `ada`, and `abcdefghijk`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="user">Username (3 to 10 lowercase letters)</label>
+<input
+  type="text"
+  id="user"
+  name="username"
+  required
+  minlength="3"
+  maxlength="10"
+  pattern="[a-z]+"
+/>
+<pre id="out"></pre>
+```
+
+```js title="script.js"
+const input = document.getElementById("user");
+const out = document.getElementById("out");
+
+const names = [
+  "valueMissing", "typeMismatch", "patternMismatch", "tooShort",
+  "tooLong", "rangeUnderflow", "rangeOverflow", "stepMismatch",
+  "badInput", "customError", "valid",
+];
+
+function show() {
+  const lines = names.map((name) => name + ": " + input.validity[name]);
+  lines.push("message: " + (input.validationMessage || "(none)"));
+  out.textContent = lines.join("\n");
+}
+
+input.addEventListener("input", show);
+show();
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FlagsDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can also read `input.validationMessage`, which is the browser's own error text, in the visitor's language.
+
+## The JavaScript Tools
+
+| Tool | What it does |
+| :-- | :-- |
+| `input.validity` | The flags above |
+| `input.validationMessage` | The error text the browser would show (empty if valid) |
+| `input.willValidate` | `true` if the control takes part in validation |
+| `input.checkValidity()` | Returns `true` or `false`. Fires an `invalid` event on failures, but shows **no** message |
+| `input.reportValidity()` | Like `checkValidity()`, but **also shows** the browser's message bubble |
+| `input.setCustomValidity("text")` | Marks the field invalid with your message. An **empty string** clears it |
+| `form.checkValidity()` and `form.reportValidity()` | The same, for the whole form |
+
+```js
+const form = document.querySelector("form");
+
+form.addEventListener("submit", (event) => {
+  if (!form.checkValidity()) {
+    event.preventDefault();
+    form.reportValidity();     // shows the first message
+  }
+});
+```
+
+(When you do nothing special, the browser already does this for you on submit.)
+
+### Your Own Rules with `setCustomValidity`
+
+HTML cannot compare two fields ("passwords must match"), or call a server ("that username is taken"). For custom rules, set a message yourself:
+
+```js
+const password = document.getElementById("password");
+const confirm = document.getElementById("confirm");
+
+function checkMatch() {
+  confirm.setCustomValidity(
+    confirm.value !== password.value ? "The two passwords do not match." : ""
+  );
+}
+
+password.addEventListener("input", checkMatch);
+confirm.addEventListener("input", checkMatch);
+```
+
+:::warning Always clear the message
+`setCustomValidity("")` with an **empty string** makes the field valid again. If you set a message and forget to clear it when the problem is fixed, the field stays invalid **forever**, and the form can never be submitted.
+:::
+
+## Turning Off the Built-in Messages: `novalidate`
+
+The browser's message bubbles are plain, differ between browsers, and cannot be styled. Many sites switch them off, and show their own messages instead.
+
+```html
+<form action="/signup" method="post" novalidate>
+  ...
+</form>
+```
+
+- **`novalidate`** on the form: the browser does **not** block submission. The attributes (`required`, `pattern`...) and the validity flags **still work**, so your script can read them. Only the automatic blocking and bubbles are turned off.
+- **`formnovalidate`** on a submit button: skips validation for **that button only** (useful for "Save draft" and "Back").
+
+With `novalidate`, **you take over** the whole experience. You must stop the submission, show the errors, and move focus. That is more work, and it is easy to do badly. The next demo shows a good pattern.
+
+## Try It: Friendly, Accessible Errors
+
+This form uses `novalidate`, but still reads the browser's flags. It builds clear messages, shows them next to the fields, lists them in a summary, and moves focus to the first problem. Press **Create account** with the fields empty, then try a short password, and different passwords.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form id="signup" novalidate>
+  <div id="summary" role="alert" hidden></div>
+
+  <p>
+    <label for="email">Email address</label>
+    <input type="email" id="email" name="email" required autocomplete="email" />
+    <span id="email-err" class="error"></span>
+  </p>
+
+  <p>
+    <label for="password">Password (at least 8 characters)</label>
+    <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password" />
+    <span id="password-err" class="error"></span>
+  </p>
+
+  <p>
+    <label for="confirm">Confirm password</label>
+    <input type="password" id="confirm" name="confirm" required autocomplete="new-password" />
+    <span id="confirm-err" class="error"></span>
+  </p>
+
+  <button type="submit">Create account</button>
+</form>
+```
+
+```js title="script.js"
+const form = document.getElementById("signup");
+const summary = document.getElementById("summary");
+
+function messageFor(input) {
+  const v = input.validity;
+  if (input.name === "email") {
+    if (v.valueMissing) return "Enter your email address.";
+    if (v.typeMismatch) return "Enter an email address like name@example.com.";
+  }
+  if (input.name === "password") {
+    if (v.valueMissing) return "Choose a password.";
+    if (v.tooShort) return "Use at least 8 characters. You have used " + input.value.length + ".";
+  }
+  if (input.name === "confirm") {
+    if (v.valueMissing) return "Type the password again.";
+    if (v.customError) return input.validationMessage;
+  }
+  return "";
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const { password, confirm } = form.elements;
+  confirm.setCustomValidity(
+    confirm.value && confirm.value !== password.value ? "The two passwords do not match." : ""
+  );
+
+  const problems = [];
+
+  for (const input of [form.elements.email, password, confirm]) {
+    const message = messageFor(input);
+    const slot = document.getElementById(input.id + "-err");
+
+    slot.textContent = message;
+    input.setAttribute("aria-invalid", String(Boolean(message)));
+    if (message) {
+      input.setAttribute("aria-describedby", slot.id);
+      problems.push({ input, message });
+    } else {
+      input.removeAttribute("aria-describedby");
+    }
+  }
+
+  summary.hidden = problems.length === 0;
+  summary.textContent = problems.length
+    ? "Please fix " + problems.length + " problem(s) below."
+    : "";
+
+  if (problems.length) problems[0].input.focus();
+  else form.submit();
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SignupDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+What makes it good:
+
+- **Plain, specific messages** that say what to do ("Use at least 8 characters. You have used 5."), not "Invalid input."
+- **Errors beside the fields,** linked with `aria-describedby`, so a screen reader reads the message with the field.
+- **`aria-invalid="true"`** on each field with a problem, so the state is announced.
+- **An error summary** in a `role="alert"` region at the top, announced at once, with links that move focus to each field.
+- **Focus moves to the first problem,** so keyboard and screen reader users are taken straight to it.
+- **Still uses the browser's flags** (`validity.valueMissing`, and so on), so the rules stay in the HTML attributes.
+- **One custom rule** (matching passwords) added with `setCustomValidity`.
+
+## Styling Valid and Invalid Fields
+
+CSS can react to a field's state. These are the main pseudo-classes:
+
+| Pseudo-class | Matches |
+| :-- | :-- |
+| `:valid` | A field that passes all its rules (an empty optional field is valid too) |
+| `:invalid` | A field that fails a rule. **An empty required field is invalid from the moment the page loads** |
+| `:user-invalid` | Invalid **and** the visitor has interacted with it (typed, then left it, or tried to submit). Newer, and well supported in current browsers |
+| `:user-valid` | The matching "valid after interaction" state |
+| `:required` / `:optional` | Fields with or without `required` |
+| `:in-range` / `:out-of-range` | Number and date fields inside or outside `min` and `max` |
+| `:placeholder-shown` | The placeholder is visible (the field is empty) |
+
+The big trap is `:invalid`. If you style it with a red border, every required field is **red the moment the page loads**, before the visitor has done anything. That is unfriendly. Prefer `:user-invalid`:
+
+```css title="style.css"
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid {
+  border-color: #b91c1c;
+  background: #fef2f2;
+}
+
+input:user-valid {
+  border-color: #15803d;
+}
+```
+
+For browsers that do not support `:user-invalid` yet, a common fallback uses the placeholder trick:
+
+```css
+/* The field has a placeholder (even a single space), is not empty, and is invalid */
+input:not(:placeholder-shown):invalid {
+  border-color: #b91c1c;
+}
+```
+
+(This needs `placeholder=" "` on fields that have no real placeholder.)
+
+:::warning Colour alone is not enough
+A red border tells nothing to a person who cannot see the colour. Always add **text** that says what is wrong, and perhaps an icon. Make sure the border colour has enough contrast against the background, too.
+:::
+
+## When to Show Errors
+
+A big part of good validation is **timing**.
+
+| Approach | Good | Bad |
+| :-- | :-- | :-- |
+| **On submit only** (the browser default) | Simple, and predictable | Visitors learn about all problems at the end |
+| **On every key press** | Instant | Shouts "Invalid email!" while the visitor is still typing, which is rude and noisy for screen readers |
+| **When the visitor leaves the field** (`blur`/`change`) | A good balance | Needs a little code (or `:user-invalid`) |
+| **Fix as you type, once an error is shown** | Clears the error as soon as it is fixed | Needs a little code |
+
+A friendly pattern: validate **on submit** (or when leaving a field), and once a field has an error, **re-check it as the visitor types**, so the message disappears as soon as it is fixed.
+
+Some rules need **immediate** help, though: a character counter, a password-strength hint, or "usernames cannot contain spaces." Offer these as **hints**, not errors.
+
+## Writing Good Error Messages
+
+| Poor message | Better message |
+| :-- | :-- |
+| "Invalid input" | "Enter your email address, like name@example.com." |
+| "Error" | "Choose a delivery speed to continue." |
+| "Field required" | "Enter your last name." |
+| "Password does not meet requirements" | "Use at least 8 characters. You have used 5." |
+| "Wrong format" | "Write the date as day, month, year, like 25 12 2026." |
+| "You made a mistake" | (Never blame the visitor) |
+
+Guidelines:
+
+1. **Say what is wrong and how to fix it,** in plain words.
+2. **Name the field,** especially in a summary ("Email address: Enter...").
+3. **Be polite and calm.** No capital letters, exclamation marks, or blame.
+4. **Be specific** about limits: "at least 8 characters," not "too short."
+5. **Put the message next to the field,** where the visitor is looking.
+6. **Keep it visible** until the problem is fixed. Do not use messages that vanish after a few seconds.
+7. **Write for translation:** short sentences, and no jokes or idioms.
+8. **Keep hints permanent** and errors temporary. Show rules (such as password length) **before** the visitor makes a mistake.
+
+## Accessibility at a Glance
+
+- **Say what is required** before the visitor submits, in the label or in a note at the top ("Fields marked * are required"). Use the `required` attribute, too.
+- **Associate errors with fields** using `aria-describedby`, and mark the field with `aria-invalid="true"`.
+- **Announce errors:** use an error summary in `role="alert"`, or move focus to the first error.
+- **Move focus** to the first invalid field (or the summary) after a failed submit.
+- **Do not rely on colour alone,** or on placeholder text, to show a problem.
+- **Do not clear what the visitor typed** when there is an error.
+- **Keep error text in the page** (not in a tooltip that vanishes on blur), so screen magnifier and keyboard users can read it.
+- **Do not run noisy live validation** that interrupts screen readers on every key press.
+- **Allow time and ways to correct:** let visitors review, fix, and re-submit, especially for important data (money, legal, or health).
+- **Do not block pasting,** and do not strip spaces and characters without telling the visitor.
+
+## The Golden Rule: Validate on the Server Too
+
+:::danger Client-side validation is for the visitor, not for security
+Everything in this lesson runs in the **visitor's browser**. A visitor (or an attacker) can switch off JavaScript, delete the `required` attribute in the developer tools, or skip your page and send a request by hand. So the browser's checks are only a **convenience**: they give fast, friendly feedback.
+
+**Your server must validate every value again**, and treat every request as untrusted.
+:::
+
+The server should check:
+
+- **Presence** of required fields.
+- **Type, format, length, and range** of every value.
+- **Allowed values** (an allow-list for selects, radios, and checkboxes).
+- **Business rules** that the browser cannot know: "that username is taken," "that date is booked," "that coupon has expired."
+- **Permissions:** is this person allowed to do this?
+
+When the server finds a problem, **send the visitor back** to the form with the values still filled in, and clear error messages. A good form gives the same messages whether the problem was found in the browser or on the server.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Built-in messages follow the visitor's browser language,** but **your own** messages do not. Translate them, and keep them short and plain.
+- **Do not be strict about names, addresses, and phone numbers.** Patterns that work for one country reject real people elsewhere. Validate generously, and verify by other means (such as a confirmation email).
+- **Accept all scripts and accents.** Do not restrict names to A to Z.
+- **Number and date formats differ.** Use the proper input types (`number`, `date`) so the browser handles local formats, and send neutral values to the server.
+- **Do not put the burden on the visitor** by demanding formats they would have to guess. Show an example, or accept several formats.
+- **Right-to-left pages** show messages and borders mirrored. Check that your error layout still works.
+
+## Common Mistakes to Avoid
+
+1. **Relying on client-side validation alone.** The server must check everything again.
+2. **Styling `:invalid` directly,** so every required field is red on page load. Use `:user-invalid`.
+3. **Using colour only** to show an error.
+4. **Showing errors on every key press.**
+5. **Messages like "Invalid input"** that do not say how to fix it.
+6. **Using `novalidate` without** building your own messages, focus handling, and `aria-invalid`.
+7. **Forgetting to clear `setCustomValidity("")`,** so the field stays invalid forever.
+8. **Expecting an empty field to fail a `pattern` or `type` check.** Only `required` catches empty values.
+9. **A `pattern` with no `title`,** so the message is a mystery.
+10. **Clearing the visitor's input** when there is an error.
+11. **Blocking submission silently,** with no message or focus move.
+12. **Over-strict rules** for names, phone numbers, and addresses.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with a `required` email and a `number` field with `min` and `max`. Submit it empty, then with bad values, and read the browser's messages.
+2. Add `novalidate`, and see that nothing blocks the form any more.
+3. Log `input.validity` for a field, and watch the flags change as you type.
+4. Add a `pattern` with a `title`, and compare the message with and without the `title`.
+5. Write a "passwords must match" rule with `setCustomValidity`, and make sure it clears.
+6. Style `:invalid`, and notice the problem on page load. Switch to `:user-invalid`.
+7. Show your own error text beside a field, with `aria-describedby` and `aria-invalid`.
+8. Build an error summary with links that move focus to each field.
+9. Use `formnovalidate` on a "Save draft" button.
+10. Bonus: write down what your server must check for a sign-up form, assuming the browser checks do not exist.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is constraint validation, and when does it run?</summary>
+
+The browser checks the rules you write as attributes (`required`, `type`, `pattern`, `min`, `max`, `minlength`, and so on). It runs when the form is submitted (and when your script asks). If a field is invalid, the form is not sent, and the first problem gets focus and a message.
+
+</details>
+
+<details>
+<summary>2. What is the difference between `checkValidity()` and `reportValidity()`?</summary>
+
+Both return `true` or `false`. `reportValidity()` also shows the browser's error message bubble, and `checkValidity()` does not.
+
+</details>
+
+<details>
+<summary>3. How do you add a custom rule, such as matching passwords?</summary>
+
+Call `input.setCustomValidity("Your message")` when the rule fails, and `input.setCustomValidity("")` when it passes. The empty string clears the error.
+
+</details>
+
+<details>
+<summary>4. What does `novalidate` do?</summary>
+
+On a form, it stops the browser from blocking submission and showing its own message bubbles. The rules and the validity flags still work, so you can build your own messages. `formnovalidate` does the same for one submit button.
+
+</details>
+
+<details>
+<summary>5. Why is `:user-invalid` better than `:invalid` for styling?</summary>
+
+`:invalid` matches an empty required field from the moment the page loads, so fields are red before the visitor does anything. `:user-invalid` waits until the visitor has interacted with the field.
+
+</details>
+
+<details>
+<summary>6. Why must the server validate when the browser already does?</summary>
+
+Browser checks can be removed, skipped, or bypassed by anyone sending a request directly. They are only a convenience for fast feedback. The server must check every value again, as well as rules the browser cannot know.
+
+</details>
+
+## Key Takeaways
+
+- HTML gives you **constraint validation**: attributes like `required`, `type`, `pattern`, `minlength`, `maxlength`, `min`, `max`, and `step` make the browser check the form on submit.
+- Format rules skip empty fields. Only `required` catches an empty one.
+- Read the `validity` flags (`valueMissing`, `typeMismatch`, `patternMismatch`, and others), and use `checkValidity()`, `reportValidity()`, and `setCustomValidity()` (clearing it with an empty string).
+- `novalidate` turns off the browser's blocking and bubbles, so you can build your own, with specific messages, `aria-describedby`, `aria-invalid`, an error summary, and focus on the first problem.
+- Style with `:user-invalid` and `:user-valid`, not `:invalid` alone, and never rely on colour only.
+- Write kind, specific error messages, and show errors at a sensible time (on submit or on leaving a field), not on every key press.
+- **Client-side validation is for convenience. The server must always validate again.**
+
+Next, learn the simplest and most common rule, in [Required](./required), or return to the [Forms overview](/tutorials/html/forms).

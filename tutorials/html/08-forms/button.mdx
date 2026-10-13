@@ -1,16 +1,638 @@
 ---
-id: button
-title: "Flexible Interactive Buttons: The button Element"
-sidebar_label: "Button Element (<button>)"
-sidebar_position: 9
+id: html-button
+title: "HTML Button Element"
+sidebar_label: "Button"
+sidebar_position: 10
 slug: /html/forms/button
-description: "Learn why the button element is superior to input buttons for wrapping icons, nested markup, submit actions, and JavaScript events."
+description: "Learn the HTML button element: the type attribute (submit, reset, button) and why submit is the default, stable name and value for multiple actions, icons and rich content inside a button, toggle buttons with aria-pressed, disabled versus aria-disabled, loading states, button versus link, styling, accessibility, and common mistakes on CodeHarborHub."
 keywords:
-  - HTML button tag
-  - button type submit reset
-  - rich content button HTML
-  - clickable button element
+  - HTML button element
+  - button type submit reset button
+  - button default type submit
+  - button name value form
+  - button vs input type submit
+  - button vs link
+  - icon button aria-label
+  - toggle button aria-pressed
+  - disabled vs aria-disabled
+  - button loading state
+  - learn HTML forms
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, forms, button, interactive]
+tags: [html, web-development, beginner, forms, button, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function TypesDemo() {
+  const [log, setLog] = useState([]);
+  const [clicks, setClicks] = useState(0);
+  const add = (text) => setLog((old) => [text, ...old].slice(0, 4));
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        add("The form was SUBMITTED");
+      }}
+      onReset={() => add("The form was RESET")}
+    >
+      <label htmlFor="bt-name">Your name</label><br />
+      <input type="text" id="bt-name" name="name" defaultValue="Ada" />
+      <p style={{margin: "0.5rem 0"}}>
+        <button>No type given</button>{" "}
+        <button type="submit">type="submit"</button>{" "}
+        <button type="reset">type="reset"</button>{" "}
+        <button
+          type="button"
+          onClick={() => {
+            setClicks(clicks + 1);
+            add("type=\"button\" clicked " + (clicks + 1) + " time(s). Nothing was submitted.");
+          }}
+        >
+          type="button"
+        </button>
+      </p>
+      <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+        {log.length === 0 ? <li>Press a button.</li> : log.map((line, index) => <li key={index}>{line}</li>)}
+      </ul>
+    </form>
+  );
+}
+
+export function StableValueDemo() {
+  const [lang, setLang] = useState("en");
+  const [sent, setSent] = useState("(press a button)");
+  const labels = {
+    en: {save: "Save draft", publish: "Publish"},
+    hi: {save: "ड्राफ्ट सहेजें", publish: "प्रकाशित करें"},
+  };
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const submitter = event.nativeEvent.submitter;
+        if (submitter && submitter.name) data.append(submitter.name, submitter.value);
+        setSent(new URLSearchParams(data).toString());
+      }}
+    >
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label>
+          Page language:{" "}
+          <select value={lang} onChange={(event) => setLang(event.target.value)}>
+            <option value="en">English</option>
+            <option value="hi">हिन्दी</option>
+          </select>
+        </label>
+      </p>
+      <input type="hidden" name="title" value="My first post" />
+      <button type="submit" name="action" value="save">{labels[lang].save}</button>{" "}
+      <button type="submit" name="action" value="publish">{labels[lang].publish}</button>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        Sent: <code>{sent}</code><br />
+        The label changes with the language. The sent value does not.
+      </p>
+    </form>
+  );
+}
+
+export function ToggleDemo() {
+  const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <button type="button" aria-pressed={on} onClick={() => setOn(!on)}>
+          {on ? "★" : "☆"} Favourite
+        </button>{" "}
+        <span role="status">{on ? "Added to favourites." : "Not a favourite."}</span>
+      </p>
+      <p style={{margin: 0}}>
+        <button
+          type="button"
+          aria-busy={busy}
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            setTimeout(() => setBusy(false), 1500);
+          }}
+        >
+          {busy ? "Saving..." : "Save changes"}
+        </button>
+      </p>
+    </form>
+  );
+}
+
+Buttons are how pages **do** things: send a form, open a menu, add to a basket, play a video. In [Submit and Reset Buttons](./input-types/submit-reset-button), you met three button-like `<input>` types. HTML also has a dedicated **`<button>` element** that does the same jobs, and more. Most modern code prefers it, because a button can hold **anything**: text, an icon, an image, even styled spans.
+
+It is a simple element with one famous trap: **a `<button>` inside a form submits the form by default**, even if you did not mean it to. In this lesson, you will learn the three types, how to send a stable `name` and `value`, how to build icon and toggle buttons, and how to make them accessible.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The `<button>` element, and how it differs from `<input type="submit">`
+- The `type` attribute, and why `submit` is the default
+- Sending a stable `name` and `value`
+- Icons and rich content inside a button
+- Toggle buttons, loading states, and disabled buttons
+- Button versus link
+- Styling, accessibility, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/subscribe" method="post">
+  <label for="email">Email address</label>
+  <input type="email" id="email" name="email" required />
+
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<form onSubmit={(event) => event.preventDefault()}>
+  <label htmlFor="bt-email">Email address</label><br />
+  <input type="email" id="bt-email" name="email" required />{" "}
+  <button type="submit">Subscribe</button>
+</form>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The label is the **content between the tags**, not a `value` attribute. And, unlike `<input>`, `<button>` needs an **end tag**.
+
+## Button or Input?
+
+| | `<button>` | `<input type="submit">` |
+| :-- | :-- | :-- |
+| **Label** | Content between the tags | The `value` attribute |
+| **Content** | Text, icons, images, `<span>`, `<strong>`, `<em>`... | Plain text only |
+| **Stable `value`** | Yes: label and value are separate | No: the label **is** the value |
+| **Pseudo-elements** (`::before`, `::after`) | Yes | No |
+| **Types** | `submit`, `reset`, `button` | `submit`, `reset`, `button`, `image` |
+| **Best for** | Almost everything | Very simple forms, or older code |
+
+Use `<button>` unless you have a reason not to.
+
+## The `type` Attribute
+
+A button has three types, and one of them is the **default**.
+
+| Type | What it does when clicked |
+| :-- | :-- |
+| `submit` | Checks and **sends the form**. This is the default |
+| `reset` | Puts every field back to its **starting** value |
+| `button` | **Nothing** by itself. Use it with JavaScript |
+
+:::danger The default type is `submit`
+A `<button>` with **no `type`** inside a form is a **submit** button. So a button meant for "Show password," "Add row," or "Preview" will **send the form** when clicked, unless you write `type="button"`. This is one of the most common bugs in forms.
+
+```html
+<button>Show password</button>              <!-- BUG: submits the form -->
+<button type="button">Show password</button> <!-- correct -->
+```
+
+**Always write `type` on every button**, even `type="submit"`. It costs nothing, and it states your intention.
+:::
+
+Outside any form, a button does nothing until JavaScript gives it a job, so the type matters only inside forms. But the habit is still good.
+
+## Try It: The Three Types
+
+Press each button, and read the log. Only some of them touch the form.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form>
+  <label for="name">Your name</label>
+  <input type="text" id="name" name="name" value="Ada" />
+
+  <button>No type given</button>
+  <button type="submit">type="submit"</button>
+  <button type="reset">type="reset"</button>
+  <button type="button">type="button"</button>
+</form>
+```
+
+```js title="script.js"
+const form = document.querySelector("form");
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();               // stay on the page for this demo
+  console.log("The form was SUBMITTED");
+});
+
+form.addEventListener("reset", () => console.log("The form was RESET"));
+
+document.querySelector('button[type="button"]')
+  .addEventListener("click", () => console.log("Nothing was submitted"));
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TypesDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The first button, with **no type**, submits. The `type="button"` one is the only one that does nothing to the form.
+
+## Name and Value: Several Actions in One Form
+
+Like a submit input, a `<button>` with a `name` adds its `name=value` to the data, but **only when it is the one clicked**. With `<button>`, though, the **label and the value are separate**, which solves a real problem.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form action="/posts" method="post">
+  <input type="hidden" name="title" value="My first post" />
+
+  <button type="submit" name="action" value="save">Save draft</button>
+  <button type="submit" name="action" value="publish">Publish</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StableValueDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch the page language, and press a button. The **label** changes ("Save draft" or "ड्राफ्ट सहेजें"), but the server always receives `action=save` or `action=publish`. With `<input type="submit">`, the translated label would have been sent, and your server code would break.
+
+So: **show any text you like, and send a stable code.**
+
+### The `form*` Attributes
+
+A `<button type="submit">` accepts the same overrides as a submit input:
+
+| Attribute | Overrides |
+| :-- | :-- |
+| `formaction` | The form's `action` |
+| `formmethod` | The form's `method` |
+| `formenctype` | The form's `enctype` |
+| `formtarget` | The form's `target` |
+| `formnovalidate` | Skips validation for this click |
+
+```html
+<button type="submit">Publish</button>
+<button type="submit" formaction="/drafts" formnovalidate>Save draft</button>
+```
+
+Remember: when a visitor presses `Enter` in a text field, the browser clicks the form's **first** submit button. Put the main action first.
+
+## What Can Go Inside a Button
+
+A button holds **phrasing content**: text and inline elements.
+
+```html
+<!-- Text with emphasis -->
+<button type="submit">Pay <strong>$49</strong> now</button>
+
+<!-- Icon and text -->
+<button type="button">
+  <svg aria-hidden="true" width="16" height="16"><!-- icon --></svg>
+  <span>Download</span>
+</button>
+
+<!-- An image -->
+<button type="button">
+  <img src="cart.svg" alt="" width="20" height="20" /> Add to basket
+</button>
+```
+
+Rules:
+
+- **No interactive content inside a button.** Do not nest a link (`<a>`), another button, an input, or a select. It is invalid, and it behaves unpredictably.
+- **No block layout** (`<div>`, `<p>`, headings). Use `<span>` and inline elements, and use CSS to lay them out.
+- Decorative icons get `aria-hidden="true"` (SVG) or `alt=""` (image), so screen readers read only the text.
+
+### Icon-Only Buttons
+
+A button with only an icon needs a **text name**, or it is a silent button to a screen reader:
+
+```html
+<!-- Option 1: a visually hidden text -->
+<button type="button">
+  <svg aria-hidden="true" width="20" height="20"><!-- trash icon --></svg>
+  <span class="visually-hidden">Delete comment</span>
+</button>
+
+<!-- Option 2: aria-label -->
+<button type="button" aria-label="Delete comment">
+  <svg aria-hidden="true" width="20" height="20"><!-- trash icon --></svg>
+</button>
+```
+
+Either works. Hidden text translates more easily, and also helps people who use browser translation. Also add a **tooltip** or a visible label when the icon is not universally understood, because many icons mean different things to different people.
+
+## Toggle Buttons: `aria-pressed`
+
+Some buttons switch something on and off: "Favourite," "Mute," "Bold." These are **toggle buttons**. Screen readers need to know the **state**, and `aria-pressed` provides it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<button type="button" id="fav" aria-pressed="false">☆ Favourite</button>
+<span id="status" role="status">Not a favourite.</span>
+
+<button type="button" id="save">Save changes</button>
+```
+
+```js title="script.js"
+const fav = document.getElementById("fav");
+const status = document.getElementById("status");
+
+fav.addEventListener("click", () => {
+  const on = fav.getAttribute("aria-pressed") !== "true";
+  fav.setAttribute("aria-pressed", String(on));
+  fav.textContent = (on ? "★" : "☆") + " Favourite";
+  status.textContent = on ? "Added to favourites." : "Not a favourite.";
+});
+
+const save = document.getElementById("save");
+save.addEventListener("click", () => {
+  save.disabled = true;
+  save.setAttribute("aria-busy", "true");
+  save.textContent = "Saving...";
+
+  setTimeout(() => {
+    save.disabled = false;
+    save.removeAttribute("aria-busy");
+    save.textContent = "Save changes";
+  }, 1500);
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ToggleDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Key points:
+
+- **`aria-pressed="true" or "false"`** means "this is a toggle, and it is on (or off)." Screen readers say "Favourite, toggle button, pressed."
+- **Keep the label the same** when the state changes. Here, "Favourite" stays, and only the star changes. If the text changes from "Mute" to "Unmute" **and** you use `aria-pressed`, the state is confusing. Use one approach: a fixed label with `aria-pressed`, **or** a changing label with no `aria-pressed`.
+- For a button that **opens or closes** something (a menu, an accordion), use **`aria-expanded`** (and `aria-controls`) instead.
+- Announce the result in a `role="status"` region when the change is not otherwise visible.
+
+## Loading and Disabled States
+
+### During a Request
+
+While a request is running, tell the visitor, and stop repeat clicks:
+
+- Set the label to "Saving..." (or show a spinner next to text).
+- Set **`aria-busy="true"`**.
+- Block extra clicks: use `disabled`, or ignore clicks while a flag is on.
+- Return the button to normal when the request ends, even if it fails.
+
+### `disabled` and `aria-disabled`
+
+| | `disabled` | `aria-disabled="true"` |
+| :-- | :-- | :-- |
+| Clickable? | **No** (clicks are blocked by the browser) | **Yes**, unless your code ignores the click |
+| Focusable with `Tab`? | **No** | **Yes** |
+| Sent as a submitter? | No | Yes, if clicked, so guard it in JavaScript |
+| Screen reader | Announced as "dimmed" or "unavailable" | Announced as "dimmed," and still found |
+| Good for | Short busy states, or things that truly cannot be used | Buttons whose **reason** must be discoverable |
+
+Think carefully before disabling a submit button until a form is valid. The visitor cannot find out why it does not work, and keyboard users cannot even reach it. It is usually better to leave it enabled, and show clear messages on click. See [Submit and Reset Buttons](./input-types/submit-reset-button).
+
+If you use `aria-disabled`, your own code must **stop the action** (check the attribute in the click handler), because the browser will still run it.
+
+## Button or Link?
+
+A very common question, with a clear answer:
+
+| The element... | Use |
+| :-- | :-- |
+| **Goes somewhere** (another page, a section, a file, an email) | A **link**: `<a href="...">` |
+| **Does something** on the page (submits, opens a dialog, toggles, adds, deletes) | A **button**: `<button type="button">` |
+
+```html
+<a href="/pricing">See pricing</a>                 <!-- navigation: a link -->
+<button type="button">Open the menu</button>        <!-- action: a button -->
+```
+
+Do not use `<a href="#" onclick="...">` for actions, and do not use a `<button>` that sets `location.href` for navigation. Links and buttons are announced differently, behave differently (a link can be opened in a new tab, bookmarked, and copied), and respond to different keys.
+
+And never build a button from a `<div>` or `<span>` with a click handler. You would have to rebuild the focus, the keyboard (`Enter` **and** `Space`), the role, and form behaviour yourself. The real `<button>` gives you all of it for free.
+
+## Popover and Other Newer Features
+
+Modern HTML adds **declarative** buttons that control other elements, with no JavaScript. For example, the `popovertarget` attribute opens a **popover**:
+
+```html
+<button type="button" popovertarget="tips">Show tips</button>
+<div id="tips" popover>Use a strong, long password.</div>
+```
+
+Support is good in current browsers, but still new. Check that it works for your audience, and test the keyboard and screen reader behaviour. The `<dialog>` element works with a `<button>` and a small script, too.
+
+## Styling a Button
+
+```css title="style.css"
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;                   /* space between an icon and text */
+  min-height: 2.75rem;           /* a comfortable tap target */
+  padding: 0.6rem 1.25rem;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:focus-visible {
+  outline: 3px solid #1e3a8a;
+  outline-offset: 2px;
+}
+
+button:disabled,
+button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* A quieter secondary button */
+button.secondary {
+  background: transparent;
+  color: #2563eb;
+}
+```
+
+- **`font: inherit`** stops the button from using a small system font.
+- Give buttons at least **44 pixels** of height, and enough space between them.
+- Keep **contrast** high: at least 4.5:1 for the text, and 3:1 for the button's border or background against the page.
+- Always keep a visible **focus** style.
+- Make the **main** action look strongest, and secondary actions quieter. Do not make a dangerous button (Delete) look like the safe one.
+- For a pending state, do not rely on **colour** alone. Change the text too.
+
+## Accessibility at a Glance
+
+- **Use a real `<button>`.** You get keyboard support (`Enter` and `Space`), the right role, and focus handling for free.
+- **Write a clear name:** "Add to basket," "Delete comment." Avoid "Click here" and "Submit." The name should make sense on its own, even in a list of buttons.
+- **Give every icon-only button** a text name (hidden text or `aria-label`).
+- **Show state** with `aria-pressed` (toggle), `aria-expanded` (opens something), and `aria-busy` (working).
+- **Do not rely on colour alone** to tell buttons apart or to show a state.
+- **Keep the focus** visible, and make the target at least about 44 by 44 pixels, with space around it.
+- **Announce results** of an action (saved, added, deleted) in a `role="status"` region, and move focus only when needed (for example, to a dialog).
+- **Do not disable the submit button** just to show the form is incomplete.
+- **Keep the same name** for the same action everywhere, so the page is predictable.
+- **Never put a link inside a button,** or a button inside a link.
+
+## Security and Validation Notes
+
+- **Browser checks can be skipped.** Whatever a button sends (`action=delete`), anyone can send by hand. The server must check **who** is asking, and whether they may do it.
+- **Allow-list the button values** (`save`, `publish`) on the server, and reject the rest.
+- **Protect actions that change things** (delete, pay, change email) with a CSRF token and `method="post"`, and never with a link or a `GET` request.
+- **Confirm destructive actions** ("Delete this account?"), and make them reversible where you can.
+- **Guard against double clicks** in the browser, and also on the server.
+
+See [Secure Form Design](./secure-form-design).
+
+## Global Audience Notes
+
+- **Keep labels short and action-based.** They translate best, and fit in narrow buttons. Remember that translated text can be **40 percent longer**, so do not use a fixed width.
+- **Do not send the label as the value.** Use a stable `value`, as in the language demo.
+- **Do not rely on icons** alone. A tick, a heart, a trash can, or a hand may mean different things in different cultures.
+- **Right-to-left languages** flip the order of icon and text automatically when you use `flex` and `dir="rtl"`. Check that arrows ("Next") still point the right way (use logical CSS or mirror them).
+- **Mind the order of buttons** in dialogs. "OK" and "Cancel" appear in different orders on different systems. Keep it consistent within your site.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting `type="button"`** on a non-submit button inside a form, so it submits.
+2. **Leaving off `type`** entirely. Always write it.
+3. **Sending the label as the value** with `<input type="submit">`, and breaking when it is translated.
+4. **Using a `<div>` or `<span>`** as a button.
+5. **Using a link for an action,** or a button for navigation.
+6. **An icon-only button** with no accessible name.
+7. **Putting a link, input, or another button inside a button.**
+8. **Changing both the label and `aria-pressed`** on a toggle.
+9. **Disabling the submit button** until the form is valid.
+10. **Using `aria-disabled` without stopping the click** in JavaScript.
+11. **No loading state or double-submit protection.**
+12. **Trusting the button's value** on the server without checking permission.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a form with a text field and a `<button>` with no type. Press it, and see that it submits.
+2. Add `type="button"` and `type="reset"` buttons, and compare.
+3. Give two submit buttons `name="action"` and different `value`s, and read the address.
+4. Put an icon and text inside a button, and style them with `inline-flex` and `gap`.
+5. Build an icon-only button, and give it a hidden text name.
+6. Build a "Favourite" toggle with `aria-pressed`, and a status message.
+7. Build a "Save" button that shows "Saving..." and ignores extra clicks for 2 seconds.
+8. Compare `disabled` and `aria-disabled`: try to `Tab` to each.
+9. Replace a `<button>` with a `<div role="button">`, and list everything you now have to add yourself.
+10. Bonus: open a popover with `popovertarget`, and test it with the keyboard.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the default `type` of a `<button>`?</summary>
+
+`submit`. A button with no `type` inside a form submits the form. Write `type="button"` for buttons that should not submit, and write `type` on every button.
+
+</details>
+
+<details>
+<summary>2. Why is `<button>` better than `<input type="submit">` for several actions?</summary>
+
+Its label and value are separate. You can translate or restyle the label while still sending a stable value such as `action=publish`. It can also hold icons and formatted text.
+
+</details>
+
+<details>
+<summary>3. What can and cannot go inside a button?</summary>
+
+Text, inline elements (`<span>`, `<strong>`, `<img>`, SVG) are fine. Interactive content (links, inputs, other buttons) and block layout elements are not allowed.
+
+</details>
+
+<details>
+<summary>4. How do you name an icon-only button?</summary>
+
+Add visually hidden text inside it, or `aria-label="Delete comment"`, and hide the decorative icon with `aria-hidden="true"`.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `disabled` and `aria-disabled="true"`?</summary>
+
+`disabled` blocks clicks and removes the button from the tab order. `aria-disabled` only announces the state: the button can still be focused and clicked, so your code must stop the action.
+
+</details>
+
+<details>
+<summary>6. When should you use a link, and when a button?</summary>
+
+A link (`<a href>`) goes somewhere: another page, a section, or a file. A button does something on the page: submits, toggles, opens, adds, or deletes.
+
+</details>
+
+## Key Takeaways
+
+- `<button>` is the flexible, preferred button element. Its label is its content, and it can hold text, icons, and images.
+- The default type is **`submit`**, so always write `type="button"` for non-submitting buttons, and write `type` on all of them.
+- A button's `name` and `value` are sent only when it is clicked, and the value stays stable while the label changes, which makes it ideal for multi-action forms and translations.
+- Name icon-only buttons, show state with `aria-pressed`, `aria-expanded`, and `aria-busy`, and avoid disabling buttons without a reason.
+- Use links to go somewhere, and buttons to do something. Never fake a button with a `div`.
+- Style with `font: inherit`, large targets, high contrast, and a visible focus, and validate and authorise every action on the server.
+
+Buttons act on a form. Next, learn how to group related controls into labelled sets, in [Fieldset and Legend](./fieldset-and-legend), or return to the [Forms overview](/tutorials/html/forms).
