@@ -1,15 +1,494 @@
 ---
-id: source-element
-title: "Multiple Media Sources: The source Element"
-sidebar_label: "Source (<source>)"
+id: html-source
+title: "HTML Source Element"
+sidebar_label: "Source"
 sidebar_position: 4
 slug: /html/audio-video/source
-description: "Provide cross-browser fallback formats for media playback using the source tag to serve WebM, MP4, MP3, and OGG assets."
+description: "Learn the HTML source element: offering several formats for audio and video with src and type, how the browser picks the first source it can play, codecs in the type attribute, the media attribute, fallback content, and common mistakes, with a live demo that shows the browser choosing."
 keywords:
-  - HTML source tag
-  - media fallback source
-  - source element video audio
-  - MIME type media HTML
+  - HTML source element
+  - HTML5 source tag
+  - multiple video formats HTML
+  - audio source fallback
+  - source type codecs
+  - source media attribute
+  - MP4 WebM source order
+  - currentSrc
+  - HTML picture source difference
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, media, audio, video, compatibility]
+tags: [html, web-development, beginner, source, audio, video, media, frontend]
 ---
+
+import {useEffect, useState} from 'react';
+
+export function makeWavUrl(frequency) {
+  // Builds a short WAV tone in memory, so the demo needs no audio file.
+  const rate = 11025;
+  const total = Math.floor(rate * 0.8);
+  const buffer = new ArrayBuffer(44 + total * 2);
+  const view = new DataView(buffer);
+  const write = (offset, text) => {
+    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + total * 2, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, total * 2, true);
+  for (let i = 0; i < total; i++) {
+    const fade = Math.min(1, i / 300, (total - i) / 300);
+    view.setInt16(44 + i * 2, Math.sin((2 * Math.PI * frequency * i) / rate) * 0.35 * fade * 32767, true);
+  }
+  return URL.createObjectURL(new Blob([buffer], {type: "audio/wav"}));
+}
+
+export function SourceLab() {
+  const [urls, setUrls] = useState(null);
+  const [mode, setMode] = useState("unsupported");
+  const [chosen, setChosen] = useState("(waiting for the browser to choose…)");
+  useEffect(() => {
+    const good = makeWavUrl(523);
+    const broken = URL.createObjectURL(new Blob(["this is not audio"], {type: "text/plain"}));
+    setUrls({good, broken});
+    return () => {
+      URL.revokeObjectURL(good);
+      URL.revokeObjectURL(broken);
+    };
+  }, []);
+  const choose = (event) => {
+    const current = event.currentTarget.currentSrc;
+    if (!urls) return;
+    if (current === urls.good) setChosen("the good WAV file (the last source)");
+    else if (current === urls.broken) setChosen("the broken file");
+    else setChosen(current ? "another source" : "nothing");
+  };
+  const modes = [
+    {key: "unsupported", label: "First source has a type this browser cannot play"},
+    {key: "liar", label: "First source claims audio/wav, but is not audio"},
+    {key: "good", label: "Good source first"},
+  ];
+  const code = {
+    unsupported: '<audio controls>\n  <source src="a.xyz" type="audio/x-unsupported">\n  <source src="b.wav" type="audio/wav">\n</audio>',
+    liar: '<audio controls>\n  <source src="broken.wav" type="audio/wav">\n  <source src="good.wav" type="audio/wav">\n</audio>',
+    good: '<audio controls>\n  <source src="good.wav" type="audio/wav">\n  <source src="a.xyz" type="audio/x-unsupported">\n</audio>',
+  }[mode];
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Arrange the sources</legend>
+        {modes.map((item) => (
+          <p key={item.key} style={{margin: "0.2rem 0"}}>
+            <label>
+              <input
+                type="radio"
+                name="sl-mode"
+                checked={mode === item.key}
+                onChange={() => { setMode(item.key); setChosen("(waiting for the browser to choose…)"); }}
+              /> {item.label}
+            </label>
+          </p>
+        ))}
+      </fieldset>
+      {urls === null ? (
+        <p role="status">Preparing the sounds…</p>
+      ) : (
+        <audio key={mode} controls preload="metadata" onLoadedMetadata={choose}>
+          {mode === "unsupported" && <source src={urls.broken} type="audio/x-unsupported" />}
+          {mode === "unsupported" && <source src={urls.good} type="audio/wav" />}
+          {mode === "liar" && <source src={urls.broken} type="audio/wav" />}
+          {mode === "liar" && <source src={urls.good} type="audio/wav" />}
+          {mode === "good" && <source src={urls.good} type="audio/wav" />}
+          {mode === "good" && <source src={urls.broken} type="audio/x-unsupported" />}
+          Your browser cannot play this audio.
+        </audio>
+      )}
+      <p role="status" style={{margin: "0.6rem 0 0.3rem"}}><strong>The browser chose:</strong> {chosen}</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a real <code>audio</code> element with real <code>source</code> children. A wrong <code>type</code> is skipped at once, and a file that fails to load makes the browser move on to the next source (most browsers do this, but the exact behaviour can differ).
+      </p>
+    </div>
+  );
+}
+
+export function PickerSim() {
+  const all = [
+    {key: "av1", label: "AV1 in MP4", type: 'video/mp4; codecs="av01.0.05M.08"', file: "clip-av1.mp4"},
+    {key: "webm", label: "VP9 in WebM", type: 'video/webm; codecs="vp9, opus"', file: "clip.webm"},
+    {key: "mp4", label: "H.264 in MP4", type: 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"', file: "clip.mp4"},
+  ];
+  const [order, setOrder] = useState(["av1", "webm", "mp4"]);
+  const [support, setSupport] = useState({av1: false, webm: true, mp4: true});
+  const move = (key, delta) => setOrder((old) => {
+    const next = [...old];
+    const from = next.indexOf(key);
+    const to = from + delta;
+    if (to < 0 || to >= next.length) return old;
+    [next[from], next[to]] = [next[to], next[from]];
+    return next;
+  });
+  const items = order.map((key) => all.find((entry) => entry.key === key));
+  const winner = items.find((entry) => support[entry.key]);
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Pretend this browser can play…</legend>
+        {all.map((entry) => (
+          <label key={entry.key} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input type="checkbox" checked={support[entry.key]} onChange={() => setSupport((old) => ({...old, [entry.key]: !old[entry.key]}))} /> {entry.label}
+          </label>
+        ))}
+      </fieldset>
+      <ol style={{margin: "0 0 0.5rem", paddingLeft: "1.25rem"}}>
+        {items.map((entry, index) => (
+          <li key={entry.key} style={{marginBottom: "0.3rem"}}>
+            <code>{entry.file}</code>
+            {" "}
+            {support[entry.key] ? (winner && winner.key === entry.key ? "✓ chosen" : "(playable, but an earlier one was chosen)") : "✗ skipped"}
+            {" "}
+            <button type="button" onClick={() => move(entry.key, -1)} disabled={index === 0} aria-label={"Move " + entry.file + " up"}>↑</button>
+            <button type="button" onClick={() => move(entry.key, 1)} disabled={index === items.length - 1} aria-label={"Move " + entry.file + " down"}>↓</button>
+          </li>
+        ))}
+      </ol>
+      <p role="status" style={{margin: 0}}>
+        {winner ? "The browser plays " + winner.file + "." : "Nothing is playable, so the fallback text inside the video is shown."}
+      </p>
+    </div>
+  );
+}
+
+So far, you have pointed `<audio>` and `<video>` at **one file**. That works until a visitor's browser cannot play that format. The **`<source>`** element solves this: it lets you list **several files of the same media**, and the browser picks the first one it can play.
+
+Think of it like giving a traveller several train tickets for the same trip. They use the first one that matches a train that is actually running.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Putting `<source>` elements inside `<audio>` and `<video>`
+- The `src`, `type`, and `media` attributes
+- How the browser chooses, and why order matters
+- Writing `type` with codecs
+- Fallback content when nothing plays
+- Mistakes that waste data or break playback
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video controls width="640" height="360" poster="cover.jpg">
+  <source src="lesson.webm" type="video/webm">
+  <source src="lesson.mp4" type="video/mp4">
+  <p>
+    Your browser cannot play this video.
+    <a href="lesson.mp4">Download the MP4</a>.
+  </p>
+</video>
+```
+
+```html title="audio version"
+<audio controls>
+  <source src="episode.opus" type="audio/ogg; codecs=opus">
+  <source src="episode.mp3" type="audio/mpeg">
+  Your browser cannot play this audio.
+  <a href="episode.mp3">Download the MP3</a>.
+</audio>
+```
+
+</TabItem>
+<TabItem value="output" label="How the Browser Chooses">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PickerSim />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The browser walks **down the list, in order**. For each `<source>`, it asks: "Can I play this type?" The first "yes" wins. The rest are never downloaded. If every answer is "no", it shows the text inside the element instead.
+
+Try the simulator above: tick the formats your imaginary browser supports, and move the files up and down.
+
+## The Rules
+
+| Rule | Detail |
+| :-- | :-- |
+| `source` is a **void element** | No closing tag, and no content |
+| It must be a **child** of `audio`, `video`, or `picture` | Anywhere else, it does nothing |
+| Put it **before** any fallback text | Fallback comes last |
+| **Do not also set `src`** on the parent | If the parent has a `src`, the `source` children are ignored |
+| Order **matters** | The first playable source wins |
+| Each needs `src` | A `source` with no `src` is skipped |
+| Each should have `type` | So the browser can skip it without downloading |
+
+## Attributes
+
+### `src`
+
+The address of the file, just as on the parent element. Relative paths and full URLs both work.
+
+### `type`
+
+The **MIME type** of the file, and optionally its **codecs**. It lets the browser reject a file **before** downloading it.
+
+```html
+<source src="clip.mp4" type="video/mp4">
+<source src="clip.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+<source src="clip.webm" type='video/webm; codecs="vp9, opus"'>
+<source src="clip.ogg" type="audio/ogg; codecs=opus">
+```
+
+Why codecs? A file such as `.mp4` is just a **container**. Inside, the video and audio can be compressed in different ways (codecs). A browser might open an MP4 container but not understand the codec inside. Adding `codecs` lets it decide correctly, but a wrong codec string causes a good file to be **skipped**, so copy it carefully.
+
+Common MIME types:
+
+| File | `type` |
+| :-- | :-- |
+| `.mp4` (video) | `video/mp4` |
+| `.webm` (video) | `video/webm` |
+| `.ogv` | `video/ogg` |
+| `.mp3` | `audio/mpeg` |
+| `.m4a` (AAC) | `audio/mp4` |
+| `.ogg`, `.opus` | `audio/ogg` |
+| `.wav` | `audio/wav` |
+| `.flac` | `audio/flac` |
+
+Also make sure your **server sends the correct `Content-Type`** header for each file. A correct `type` in HTML does not help if the server says something else, and some browsers refuse to play.
+
+### `media`
+
+A **media query** that must match for the source to be used (on `video` and `audio`, support is limited and uneven, so treat it as an optional extra and always test).
+
+```html
+<video controls>
+  <source src="clip-small.mp4" type="video/mp4" media="(max-width: 600px)">
+  <source src="clip-large.mp4" type="video/mp4">
+</video>
+```
+
+Do not rely on `media` to save data on phones. It is not widely supported for media, and the browser may ignore it. A more dependable approach is to serve one **reasonably sized** file, or choose the file with JavaScript.
+
+:::note `source` inside `picture` is different
+On a `<picture>` element, `source` uses `srcset`, `sizes`, `type`, and `media`, and has no `src`. Do not mix the two. This lesson covers `source` inside `audio` and `video`.
+:::
+
+## Try It: Watch a Real Browser Choose
+
+This demo is a real `<audio>` with real `<source>` children. Rearrange them and see which one is used. The page reads the element's **`currentSrc`** property to find out.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<audio id="player" controls>
+  <source src="a.xyz" type="audio/x-unsupported">
+  <source src="b.wav" type="audio/wav">
+</audio>
+<p id="result"></p>
+```
+
+```js title="script.js"
+const player = document.getElementById("player");
+
+player.addEventListener("loadedmetadata", () => {
+  // currentSrc is the source the browser actually picked
+  document.getElementById("result").textContent = "Playing: " + player.currentSrc;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SourceLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Choosing the Order
+
+Put your sources in order of **preference**, from best to most widely supported:
+
+1. The **smallest or best-quality** format first (for example WebM or AV1).
+2. The **safest, most compatible** format last (MP4 with H.264 and AAC, or MP3 for audio).
+
+The browser takes the first it can play, so a modern browser gets the efficient file, and an older one falls through to the safe one. For many sites, **a single MP4 or MP3 is enough**, and a single file is simpler to maintain. Add more formats only when they save real data for your visitors.
+
+:::tip Do the maths
+Encoding every video three times means three files to store, test, and update. Offer a second format only if it makes a clear difference, for example a WebM that is a third smaller.
+:::
+
+## Fallback Content
+
+The text and elements after the last `<source>` are shown only if **nothing** can be played, or if the browser does not know `<video>` at all.
+
+```html
+<video controls>
+  <source src="clip.webm" type="video/webm">
+  <source src="clip.mp4" type="video/mp4">
+  <p>Your browser cannot play this video. <a href="clip.mp4">Download it (MP4, 18 MB)</a>.</p>
+</video>
+```
+
+A **download link** with the file type and size is the most useful fallback. It also helps people on connections too slow to stream.
+
+## Changing Sources with JavaScript
+
+If you change the `src` of a `<source>` after the page loads, the browser **does not notice.** Call `load()` to make it look again:
+
+```js
+const video = document.querySelector("video");
+
+video.querySelector("source").src = "other-lesson.mp4";
+video.load();      // re-run the selection
+video.play();
+```
+
+Handy properties:
+
+- **`video.currentSrc`**: the address of the source actually chosen.
+- **`video.canPlayType(type)`**: ask whether a type is playable (`"probably"`, `"maybe"`, or `""`). See the [overview](../audio-video).
+- The **`error` event** fires on each `source` element that fails, and on the last one when all fail. It does **not** fire on the parent `video`.
+
+```js
+const sources = document.querySelectorAll("video source");
+const last = sources[sources.length - 1];
+
+last.addEventListener("error", () => {
+  console.log("No source could be played. Show a download link.");
+});
+```
+
+## Accessibility at a Glance
+
+- **Every source should hold the same content.** A WebM with captions and an MP4 without them leaves some visitors behind.
+- **Captions belong to the parent,** through [`<track>`](./track), and work with whichever source is chosen.
+- **Always give fallback content** with a text alternative or a download link.
+- **Keep the same quality of audio** in every format, so some visitors do not get a worse experience.
+- **Do not hide information in one format.** Chapters, narration, and description should match in all of them.
+
+## Security and Privacy Notes
+
+- **Every listed file is public.** Anyone can read your HTML and fetch each URL. Do not leave private test files or unreleased versions listed as sources.
+- **Serve all files over HTTPS,** or the browser may block them as mixed content.
+- **Send correct `Content-Type` headers,** and add `X-Content-Type-Options: nosniff` on the server, so a file cannot be mistaken for something else.
+- **Do not build `src` values from untrusted input,** such as a URL typed by a visitor. It can point to a harmful or private address. Allow only addresses you control.
+- **Third-party hosts** (CDNs, video platforms) can see which files your visitors fetch. Check their privacy terms.
+
+## Global Audience Notes
+
+- **Fewer, smaller files help visitors** on slow or expensive connections. Do not make people download three formats. The browser downloads only one, but your server stores all of them.
+- **Offer the format that saves data first,** and a universal one last.
+- **Name files plainly,** using lowercase letters, digits, and hyphens. Non-English file names can break in links and servers that handle encoding differently.
+- **Show the file type and size** in download links (in the page's language), so visitors can decide before they download.
+- **Test on the browsers your audience really uses,** including older phones. Format support varies by device and over time.
+
+## Common Mistakes to Avoid
+
+1. **Setting `src` on `video` and also adding `source` children.** The children are ignored.
+2. **Leaving out `type`,** so the browser downloads files it cannot play.
+3. **A wrong codec string,** so a good file is skipped.
+4. **Putting the safest format first,** so modern browsers never get the smaller one.
+5. **Putting fallback text before the sources.**
+6. **No fallback content or download link.**
+7. **Changing a `source` with JavaScript and forgetting `load()`.**
+8. **Listening for `error` on the `video`** instead of the last `source`.
+9. **Wrong server `Content-Type`.**
+10. **Different captions or content** in different formats.
+11. **Offering too many formats,** with more to maintain and no real benefit.
+12. **Using `media` on audio or video** and expecting it to save mobile data.
+
+## Practice Time
+
+Try these in your editor, with a short clip in two formats:
+
+1. Add two `source` elements to a `video`, MP4 last.
+2. Open the network panel, and check that only one file downloads.
+3. Remove the `type` attributes, and compare what is requested.
+4. Put an invalid `type` first, and see which file is used.
+5. Add fallback text with a download link, and view it by using an unsupported type for every source.
+6. Print `video.currentSrc` after `loadedmetadata`.
+7. Switch the source with JavaScript, with and without `load()`.
+8. Listen for the `error` event on the last `source`.
+9. Run `canPlayType()` for your two formats in the console.
+10. Bonus: encode a WebM, compare its size with the MP4, and decide whether it is worth offering.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `source` element do?</summary>
+
+It lists one version of a media file inside `audio` or `video`. With several, the browser plays the first one it can handle.
+
+</details>
+
+<details>
+<summary>2. Why add a `type` attribute?</summary>
+
+It lets the browser skip files it cannot play without downloading them. Adding codecs makes the answer more exact, but a wrong codec string can wrongly skip a good file.
+
+</details>
+
+<details>
+<summary>3. In what order should sources be listed?</summary>
+
+From the best or smallest format to the most widely supported one, so modern browsers get the efficient file and older ones fall through to the safe one.
+
+</details>
+
+<details>
+<summary>4. What happens if the parent also has a `src` attribute?</summary>
+
+The `source` children are ignored. Use one approach or the other.
+
+</details>
+
+<details>
+<summary>5. Where does the `error` event fire when no source works?</summary>
+
+On the `source` elements, and the last one is the best place to listen. It does not fire on the parent `video` or `audio`.
+
+</details>
+
+<details>
+<summary>6. How do you change the source with JavaScript?</summary>
+
+Set the new `src` on the `source` element, then call `load()` on the parent so the browser runs its selection again.
+
+</details>
+
+## Key Takeaways
+
+- `<source>` lets one `<audio>` or `<video>` offer **several files**, and the browser plays the **first it can handle**.
+- Give each source a **`type`**, with codecs when you are sure of them.
+- **Order matters**: efficient formats first, the safest last.
+- Do not set `src` on the parent when you use `source` children.
+- End with **fallback text and a download link**.
+- After changing a source with script, call **`load()`**, and read `currentSrc` to see what was chosen.
+- Make sure **every format has the same content**, captions, and quality.
+- Public files are public: do not list private files, and send correct headers.
+
+Next, learn about the controls that come with media and how to build your own, in [Media Controls](./media-controls), or return to the [Audio and Video overview](../audio-video).

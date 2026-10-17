@@ -1,15 +1,525 @@
 ---
-id: aside-element
-title: "The Aside Element: Tangential and Sidebar Content"
-sidebar_label: "Aside (<aside>)"
+id: html-aside
+title: "HTML Aside Element"
+sidebar_label: "Aside"
 sidebar_position: 8
 slug: /html/semantic-html/aside
-description: "Use the aside element to structure complementary sidebars, callout boxes, related article links, and peripheral page details."
+description: "Learn the HTML aside element: marking content that is related to the main content but separate from it, such as sidebars, related links, pull quotes, author bios, and advertisements, the remove-it test, the complementary landmark, naming asides, responsive sidebar layouts, safe ads and third-party widgets, and common mistakes, with live examples."
 keywords:
-  - HTML aside tag
-  - sidebar semantic tag
-  - tangential content HTML
-  - callout box semantic markup
+  - HTML aside element
+  - complementary landmark
+  - HTML sidebar markup
+  - aside vs section
+  - pull quote aside
+  - HTML5 aside tag
+  - role note callout
+  - responsive sidebar layout
+  - rel sponsored advertisement HTML
+  - semantic HTML sidebar
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, sidebar, layout]
+tags: [html, web-development, beginner, semantic-html, aside, sidebar, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function PlacementDemo() {
+  const rootRef = useRef(null);
+  const [place, setPlace] = useState("page");
+  const [report, setReport] = useState(null);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  const asideBox = {...box, background: "#fef9c3"};
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Where is the aside?</legend>
+        <label style={{display: "block"}}>
+          <input type="radio" name="pd-place" checked={place === "page"} onChange={() => { setPlace("page"); setReport(null); }} /> Beside the main content (a page sidebar)
+        </label>
+        <label style={{display: "block"}}>
+          <input type="radio" name="pd-place" checked={place === "article"} onChange={() => { setPlace("article"); setReport(null); }} /> Inside the article
+        </label>
+        <label style={{display: "block"}}>
+          <input type="checkbox" id="pd-named" onChange={() => setReport(null)} /> Give it a name with aria-label
+        </label>
+      </fieldset>
+      <div ref={rootRef}>
+        <main style={box}>
+          <article style={{...box, marginBottom: 0}}>
+            <h4 style={{margin: "0 0 0.2rem"}}>How to bake bread</h4>
+            <p style={{margin: 0}}>Mix flour, water, salt, and yeast. Knead until smooth.</p>
+            {place === "article" ? (
+              <aside id="pd-aside" style={{...asideBox, marginTop: "0.4rem"}}>
+                <strong>Did you know?</strong> Flour absorbs more water on humid days.
+              </aside>
+            ) : null}
+          </article>
+        </main>
+        {place === "page" ? (
+          <aside id="pd-aside" style={asideBox}>
+            <strong>Related:</strong> sourdough, cookies, pizza dough
+          </aside>
+        ) : null}
+      </div>
+      <p style={{margin: "0.5rem 0"}}>
+        <button
+          type="button"
+          onClick={() => {
+            const el = rootRef.current.querySelector("aside");
+            const named = document.getElementById("pd-named").checked;
+            const nested = el.closest("article, section");
+            let text;
+            if (!nested) {
+              text = "complementary landmark: it appears in the screen reader's landmark list" + (named ? ", with your name." : ".");
+            } else if (named) {
+              text = "a named complementary region inside its " + nested.tagName.toLowerCase() + ": listed, with your name.";
+            } else {
+              text = "just related content inside its " + nested.tagName.toLowerCase() + ". Many tools treat an unnamed nested aside as a generic block, so it may not be listed.";
+            }
+            setReport(text);
+          }}
+        >
+          What does a screen reader make of it?
+        </button>
+      </p>
+      {report ? <p role="status" style={{margin: 0}}>{report}</p> : null}
+    </div>
+  );
+}
+
+export function SidebarLayoutDemo() {
+  const [width, setWidth] = useState(720);
+  const wide = width >= 560;
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sl-width">Screen width: <strong>{width}px</strong></label><br />
+        <input
+          type="range"
+          id="sl-width"
+          min={320}
+          max={900}
+          step={10}
+          value={width}
+          onChange={(event) => setWidth(Number(event.target.value))}
+        />
+      </p>
+      <div style={{width: Math.min(width, 900) + "px", maxWidth: "100%", overflow: "hidden"}}>
+        <div style={{display: "grid", gridTemplateColumns: wide ? "3fr 1fr" : "1fr", gap: "0.5rem"}}>
+          <main style={box}>
+            <strong>main</strong>
+            <p style={{margin: "0.25rem 0 0"}}>The article text comes first in the HTML.</p>
+          </main>
+          <aside style={{...box, background: "#fef9c3"}}>
+            <strong>aside</strong>
+            <p style={{margin: "0.25rem 0 0"}}>Related links come second.</p>
+          </aside>
+        </div>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0", fontSize: "0.9em"}}>
+        {wide ? "Wide screen: two columns, side by side." : "Narrow screen: one column, the aside drops below the main content."}
+        {" "}The order in the HTML never changes.
+      </p>
+    </div>
+  );
+}
+
+Think of the side column of a newspaper article: a small box with "More on this topic", a quote pulled out in large type, or a note about the author. You can read the story without it, and nothing in the story is missing if you do. But it is **related**, and a curious reader might enjoy it.
+
+On the web, the **`<aside>`** element marks exactly that kind of content: **related, but separate** from the main flow. Used correctly, it helps screen reader users skip the extras, or find them, and keeps your page structure honest.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<aside>` means, and the **remove-it test**
+- What belongs in an aside, and what does not
+- Page-wide sidebars versus asides inside an article
+- How an aside is announced (the complementary landmark), and how to name it
+- Pull quotes, notes, and callouts
+- Building a responsive sidebar layout with the right HTML order
+- Handling ads and third-party widgets safely
+- Accessibility, global notes, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<main>
+  <article>
+    <h1>How to bake bread</h1>
+    <p>Mix flour, water, salt, and yeast. Knead until smooth…</p>
+  </article>
+</main>
+
+<aside aria-labelledby="related-title">
+  <h2 id="related-title">Related reading</h2>
+  <ul>
+    <li><a href="/posts/sourdough">A simple sourdough loaf</a></li>
+    <li><a href="/posts/cookies">Chewy chocolate cookies</a></li>
+    <li><a href="/posts/pizza">Pizza dough in an hour</a></li>
+  </ul>
+</aside>
+```
+
+```css title="style.css"
+aside {
+  padding: 1rem;
+  background: #fef9c3;
+  border-radius: 8px;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<main>
+  <article>
+    <h3 style={{margin: "0 0 0.25rem"}}>How to bake bread</h3>
+    <p>Mix flour, water, salt, and yeast. Knead until smooth…</p>
+  </article>
+</main>
+<aside aria-labelledby="as-related-title" style={{padding: "1rem", background: "#fef9c3", borderRadius: "8px", color: "#1f2937"}}>
+  <h4 id="as-related-title" style={{margin: "0 0 0.25rem"}}>Related reading</h4>
+  <ul style={{margin: 0}}>
+    <li><a href="#as" onClick={(event) => event.preventDefault()}>A simple sourdough loaf</a></li>
+    <li><a href="#as" onClick={(event) => event.preventDefault()}>Chewy chocolate cookies</a></li>
+    <li><a href="#as" onClick={(event) => event.preventDefault()}>Pizza dough in an hour</a></li>
+  </ul>
+</aside>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Like the other structural elements, `<aside>` has **no default look**. It is a plain block. Putting it in a column, adding a background, or floating it to the side is all CSS.
+
+## The Remove-It Test
+
+How do you know content is an aside? Ask:
+
+> **If I removed this, would the main content still be complete and make full sense?**
+
+If yes, it is a good candidate for `<aside>`. If the main content would then be **missing something important**, the content is **part of the main content**, and `<aside>` is the wrong choice.
+
+| Content | Aside? | Why |
+| :-- | :-- | :-- |
+| A "Related reading" list | Yes | Nice to have, not part of the story |
+| A page sidebar with archives, tags, or a newsletter box | Yes | Extra, repeated around the site |
+| A **pull quote** repeating a line from the article | Yes | A decorative repeat |
+| A short **author bio** beside a post | Yes | Related, not essential |
+| A **glossary** definition for a term | Yes | A tangent |
+| An **advertisement** | Yes (the specification names it) | Separate from the content |
+| A **warning** the reader must see to follow the steps safely | **No** | It is part of the content |
+| The **instructions** for a form | **No** | Needed to understand the form |
+| The page's main menu | **No** | Use `<nav>` |
+| The site footer | **No** | Use `<footer>` |
+
+## Two Places an Aside Can Live
+
+### 1. A page sidebar
+
+An aside placed **next to** the main content, related to the whole page or the whole site. Put it **after** `<main>` in the HTML, not inside it:
+
+```html
+<body>
+  <header>…</header>
+  <main>…</main>
+  <aside aria-label="Sidebar">…</aside>
+  <footer>…</footer>
+</body>
+```
+
+### 2. An aside inside an article or section
+
+An aside that is related to **one** article or one part of the page. Put it inside that article:
+
+```html
+<article>
+  <h2>How to bake bread</h2>
+  <p>Mix flour, water, salt, and yeast…</p>
+
+  <aside>
+    <h3>Did you know?</h3>
+    <p>Flour absorbs more water on humid days.</p>
+  </aside>
+
+  <p>Knead until smooth…</p>
+</article>
+```
+
+## How an Aside Is Announced
+
+A page-level aside is exposed to assistive technology as the **complementary** landmark, one of the regions a screen reader user can jump between, along with `banner`, `navigation`, `main`, and `contentinfo`.
+
+For an aside **nested** inside an article or section, behaviour has changed over time. Recent specifications treat it as a plain related block **unless it has a name**, and tools differ. So the safe habit is:
+
+- **Give every important aside a name** (`aria-labelledby` pointing at its heading, or a short `aria-label`).
+- **Do not count on a nested, unnamed aside** appearing in a landmark list.
+
+### Try It: Where Does It Go?
+
+Move the aside, name it or not, and ask what a screen reader would make of it. The script uses the same rule you would apply by hand.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Page sidebar: a complementary landmark -->
+<main>
+  <article>…</article>
+</main>
+<aside>
+  <strong>Related:</strong> sourdough, cookies, pizza dough
+</aside>
+
+<!-- Aside inside an article: related content, best to name it -->
+<article>
+  <h2>How to bake bread</h2>
+  <p>…</p>
+  <aside aria-label="Baking tip">
+    <strong>Did you know?</strong> Flour absorbs more water on humid days.
+  </aside>
+</article>
+```
+
+```js title="script.js"
+document.querySelectorAll("aside").forEach((aside) => {
+  const nested = aside.closest("article, section");
+  const named = aside.getAttribute("aria-label") || aside.getAttribute("aria-labelledby");
+
+  console.log(
+    nested
+      ? "Nested aside (" + (named ? "named" : "unnamed") + ")"
+      : "Page-level aside: complementary landmark"
+  );
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PlacementDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Common Uses
+
+### Related links
+
+Use a heading and a list, as in the first example of this lesson.
+
+### A pull quote
+
+A **pull quote** repeats a striking line from the article in large type, as a design feature. It duplicates text, so a screen reader would read it twice. Hide the duplicate from assistive technology:
+
+```html
+<aside class="pull-quote" aria-hidden="true">
+  <blockquote>Great bread is mostly patience.</blockquote>
+</aside>
+```
+
+Be careful: only use `aria-hidden="true"` on content that is a **pure repeat**, and never on anything that can receive focus.
+
+### A note or callout
+
+Short tips and warnings inside a lesson look like asides, but ask the remove-it test first:
+
+- If it is a **tangent** ("Fun fact"), use `<aside>`.
+- If it is **essential** ("Do not unplug the device during the update"), keep it in the main flow, perhaps with `role="note"` or in a normal paragraph with a clear label.
+
+```html
+<div role="note">
+  <strong>Tip:</strong> Use a kitchen scale for the most reliable loaf.
+</div>
+```
+
+### An author bio
+
+```html
+<aside aria-label="About the author">
+  <img src="/img/ada.jpg" alt="Ada Lovelace" width="64" height="64" />
+  <p><strong>Ada</strong> bakes bread every weekend and writes about it.</p>
+</aside>
+```
+
+### Advertisements and sponsored content
+
+The specification lists advertising as a fair use of `<aside>`. Be honest and careful:
+
+```html
+<aside aria-label="Advertisement">
+  <p>Sponsored</p>
+  <a href="https://example.com/offer" rel="sponsored noopener">Try fresh flour delivery</a>
+</aside>
+```
+
+- **Label it clearly** ("Advertisement" or "Sponsored"), in text.
+- **Use `rel="sponsored"`** on paid links.
+- **Do not interrupt reading order** with ads that steal focus, autoplay sound, or jump around the page.
+- **Reserve space** (`width` and `height`), so loading ads does not shift the content.
+
+## A Responsive Sidebar Layout
+
+A sidebar is usually shown beside the main content on wide screens, and below it on phones. The right way to build this is:
+
+1. Put `<main>` **first** and `<aside>` **second** in the HTML.
+2. Use CSS grid to place them **side by side** on wide screens.
+3. On narrow screens, let them **stack** in the HTML order.
+
+```css title="style.css"
+.layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 40rem) {
+  .layout {
+    grid-template-columns: 3fr 1fr;   /* main on one side, aside on the other */
+  }
+}
+```
+
+Drag the slider to see the layout change while the HTML order stays the same:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SidebarLayoutDemo />
+</>
+</BrowserWindow>
+
+If you want the sidebar on the **left** visually, use `grid-template-areas` or the `order` property, but keep in mind that screen readers and the Tab key follow the **HTML order**, not the visual one. Keeping the main content first means keyboard users reach it before the sidebar's links.
+
+## Accessibility at a Glance
+
+- **Use `<aside>` only for related, non-essential content** (the remove-it test).
+- **Name important asides** with `aria-labelledby` or `aria-label`, so they are easy to find and tell apart.
+- **Give each aside a heading** when it has more than a line or two of content.
+- **Keep HTML order logical:** main content first, sidebar after.
+- **Hide pure repeats** (pull quotes) from assistive technology with `aria-hidden="true"`, but never anything focusable.
+- **Do not hide essential information** in an aside that disappears on small screens.
+- **Label ads and sponsored content** in text, and keep them from stealing focus.
+- **Make sure links in sidebars** have descriptive text and visible focus.
+- **Check contrast** of the aside's background and text (at least 4.5 to 1).
+
+## Security and Privacy Notes
+
+- **Third-party widgets in a sidebar** (ads, social buttons, chat, comment systems) run code from other companies, and often track your visitors. Load only trusted ones, tell visitors about them, and respect consent rules.
+- **Use `sandbox` on iframes** for embedded widgets (`<iframe sandbox>`), and give them only the permissions they need.
+- **Use `rel="sponsored noopener"`** on paid links, and `rel="noopener"` for outside links that open in a new tab.
+- **Do not put private information** in a sidebar that is "hidden" for some users. Hiding with CSS leaves it in the page source.
+- **Escape user data** such as a displayed name ("Welcome back, ...") before placing it in an aside.
+- **Do not auto-load unknown content** (such as a "related posts" feed from another domain) without checking it.
+
+## Global Audience Notes
+
+- **Set `lang`** on the aside if its content is in another language (a quote in French, an ad in Hindi).
+- **Right-to-left pages:** a grid that places the aside "at the end" mirrors automatically with `dir="rtl"`, so the sidebar moves to the left. Avoid hard-coded `left` and `right`, and use logical properties.
+- **Ads and related content may not suit every culture.** Think about what is shown, to whom, and in which country.
+- **Sidebars slow pages down,** especially on slow mobile networks. Keep them light, and load widgets only when needed.
+- **Do not hide essential content** (like a legal notice or a safety warning) in a sidebar that is removed on small screens, where many people browse.
+- **Keep text short,** since translations of labels such as "Related reading" can be much longer.
+
+## Common Mistakes to Avoid
+
+1. **Putting essential content in an aside,** such as safety warnings or instructions.
+2. **Using `<aside>` just to get a box on the side** (use CSS on a `<div>`).
+3. **Using `<aside>` for the main menu** (that is `<nav>`) or the site footer (that is `<footer>`).
+4. **Putting `<aside>` inside `<main>` when it is a page-wide sidebar.**
+5. **Several unnamed asides,** so a screen reader user cannot tell them apart.
+6. **Putting the sidebar first in the HTML,** forcing keyboard users through it before the content.
+7. **Reading a pull quote twice** because it was not hidden from assistive technology.
+8. **Hiding the aside with `display: none` on mobile,** removing useful content for phone users.
+9. **Ads that look like content,** with no "Advertisement" label.
+10. **Loading third-party widgets without sandboxing or consent.**
+11. **Using `aria-hidden="true"` on focusable content.**
+12. **Making everything an aside** because "it is on the side."
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a page with `<main>` and an `<aside>` containing a "Related reading" list.
+2. Style the page as two columns with CSS grid, and check the HTML order still reads main first.
+3. Use `@media` so the aside moves below the content on narrow screens.
+4. Give your aside a heading and link it with `aria-labelledby`.
+5. Put a small "Did you know?" aside inside an article, and name it with `aria-label`.
+6. Add a pull quote as an `<aside>` with `aria-hidden="true"`.
+7. Use the remove-it test on five pieces of content on a site you know. Decide which are asides.
+8. Build an author bio aside with a picture and a short description.
+9. Add an "Advertisement" aside with `rel="sponsored noopener"`, and reserve space for it with `width` and `height`.
+10. Bonus: open a screen reader's landmark list on your page. Is each aside named and easy to understand?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<aside>` element for?</summary>
+
+For content that is related to the main content but separate from it, such as sidebars, related links, pull quotes, author bios, glossary notes, and advertisements.
+
+</details>
+
+<details>
+<summary>2. What is the remove-it test?</summary>
+
+Ask whether the main content would still be complete and make full sense without this block. If yes, `<aside>` fits. If something important would be missing, it is part of the main content.
+
+</details>
+
+<details>
+<summary>3. How is an aside exposed to assistive technology?</summary>
+
+A page-level aside is the `complementary` landmark. A nested, unnamed aside may be treated as a generic block by some tools, so name important asides with `aria-labelledby` or `aria-label`.
+
+</details>
+
+<details>
+<summary>4. Where should a sidebar go in the HTML?</summary>
+
+After `<main>`, outside it. Use CSS grid to place it beside the content on wide screens, and let it stack below on narrow ones, so keyboard and screen reader users reach the main content first.
+
+</details>
+
+<details>
+<summary>5. How do you handle a pull quote?</summary>
+
+Mark it as an `<aside>` and hide it from assistive technology with `aria-hidden="true"`, because it only repeats text that is already in the article. Never use `aria-hidden` on focusable content.
+
+</details>
+
+<details>
+<summary>6. What should you remember about ads and third-party widgets in an aside?</summary>
+
+Label ads clearly, use `rel="sponsored noopener"`, reserve space to avoid layout shifts, sandbox iframes, load only trusted code, and respect visitors' consent and privacy.
+
+</details>
+
+## Key Takeaways
+
+- `<aside>` holds content that is **related to, but separate from**, the main content.
+- Use the **remove-it test**: if the main content stays complete without it, it is an aside. Essential content is not.
+- A page-level aside is a **complementary** landmark. Name your important asides, and give them headings.
+- Put a sidebar **after** `<main>` in the HTML, and use CSS grid to place it beside the content on wide screens.
+- Hide pure repeats such as pull quotes with `aria-hidden="true"`, and never hide focusable content that way.
+- Label ads, use `rel="sponsored noopener"`, sandbox third-party widgets, and reserve space.
+- Do not hide essential information in an aside, or use `<aside>` only for a box on the side.
+- Use `<nav>` for menus and `<footer>` for closing information, not `<aside>`.
+
+Next, learn how to finish a page or a section, in [Footer](./footer), or return to the [Semantic HTML overview](../semantic-html).

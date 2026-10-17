@@ -1,15 +1,665 @@
 ---
-id: track-element
-title: "Timed Text Tracks: The track Element"
-sidebar_label: "Track (<track>)"
-sidebar_position: 5
+id: html-track
+title: "HTML Track Element"
+sidebar_label: "Track"
+sidebar_position: 6
 slug: /html/audio-video/track
-description: "Integrate WebVTT formatted text files into media elements to display captions, subtitles, chapter markers, and descriptions."
+description: "Learn the HTML track element: adding captions, subtitles, descriptions, chapters and metadata to audio and video with kind, src, srclang, label and default, how WebVTT files work, the TextTrack JavaScript API and cuechange event, cross-origin rules, and common mistakes, with live demos."
 keywords:
-  - HTML track tag
-  - WebVTT text track
-  - timed text track HTML
-  - media track element
+  - HTML track element
+  - HTML5 track tag
+  - track kind captions subtitles descriptions chapters metadata
+  - WebVTT file format
+  - srclang label default track
+  - TextTrack cuechange
+  - VTTCue addTextTrack
+  - video captions HTML
+  - cue styling
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, track, media, accessibility]
+tags: [html, web-development, beginner, track, webvtt, captions, media, accessibility, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function makeMelodyUrl() {
+  // Builds an 8-second WAV melody in memory, so the demo needs no audio file.
+  const rate = 11025;
+  const notes = [262, 330, 392, 330, 294, 349, 440, 349, 262, 330, 392, 523, 392, 330, 294, 262];
+  const per = Math.floor(rate * 0.5);
+  const total = per * notes.length;
+  const buffer = new ArrayBuffer(44 + total * 2);
+  const view = new DataView(buffer);
+  const write = (offset, text) => {
+    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + total * 2, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, total * 2, true);
+  let index = 0;
+  notes.forEach((frequency) => {
+    for (let i = 0; i < per; i++) {
+      const fade = Math.min(1, i / 400, (per - i) / 400);
+      view.setInt16(44 + index * 2, Math.sin((2 * Math.PI * frequency * i) / rate) * 0.3 * fade * 32767, true);
+      index++;
+    }
+  });
+  return URL.createObjectURL(new Blob([buffer], {type: "audio/wav"}));
+}
+
+export const sampleVtt = [
+  "WEBVTT",
+  "",
+  "1",
+  "00:00.000 --> 00:02.000",
+  "Rising notes: C, E, G, E",
+  "",
+  "2",
+  "00:02.000 --> 00:04.000",
+  "A wobble: D, F, A, F",
+  "",
+  "3",
+  "00:04.000 --> 00:06.000",
+  "Climbing: C, E, G, high C",
+  "",
+  "4",
+  "00:06.000 --> 00:08.000",
+  "Coming home: G, E, D, C",
+  "",
+].join("\n");
+
+export function TrackLab() {
+  const audioRef = useRef(null);
+  const trackRef = useRef(null);
+  const [urls, setUrls] = useState(null);
+  const [cues, setCues] = useState([]);
+  const [active, setActive] = useState(-1);
+  const [mode, setMode] = useState("not loaded");
+  useEffect(() => {
+    const sound = makeMelodyUrl();
+    const vtt = URL.createObjectURL(new Blob([sampleVtt], {type: "text/vtt"}));
+    setUrls({sound, vtt});
+    return () => {
+      URL.revokeObjectURL(sound);
+      URL.revokeObjectURL(vtt);
+    };
+  }, []);
+  useEffect(() => {
+    const element = trackRef.current;
+    if (!urls || !element) return undefined;
+    const textTrack = element.track;
+    textTrack.mode = "hidden";            // load the cues, but do not draw them
+    setMode(textTrack.mode);
+    const readCues = () => {
+      if (textTrack.cues && textTrack.cues.length) {
+        setCues(Array.from(textTrack.cues).map((cue) => ({start: cue.startTime, end: cue.endTime, text: cue.text})));
+      }
+    };
+    const onChange = () => {
+      const current = textTrack.activeCues && textTrack.activeCues[0];
+      setActive(current ? Array.from(textTrack.cues).indexOf(current) : -1);
+    };
+    element.addEventListener("load", readCues);
+    textTrack.addEventListener("cuechange", onChange);
+    readCues();
+    return () => {
+      element.removeEventListener("load", readCues);
+      textTrack.removeEventListener("cuechange", onChange);
+    };
+  }, [urls]);
+  const jump = (seconds) => {
+    audioRef.current.currentTime = seconds + 0.05;
+    audioRef.current.play().catch(() => {});
+  };
+  return (
+    <div>
+      {urls === null ? (
+        <p role="status">Preparing the sound and its track…</p>
+      ) : (
+        <audio ref={audioRef} src={urls.sound} controls preload="metadata">
+          <track ref={trackRef} kind="metadata" src={urls.vtt} srcLang="en" label="Melody notes" />
+        </audio>
+      )}
+      <p style={{margin: "0.6rem 0 0.3rem"}}><strong>Track mode:</strong> <code>{mode}</code></p>
+      {cues.length === 0 ? (
+        <p role="status" style={{margin: 0}}>Waiting for the cues to load…</p>
+      ) : (
+        <ol style={{margin: 0, paddingLeft: "1.25rem"}}>
+          {cues.map((cue, index) => (
+            <li
+              key={index}
+              aria-current={active === index ? "true" : undefined}
+              style={{padding: "0.15rem 0.4rem", borderRadius: "4px", background: active === index ? "#fef08a" : "transparent", color: active === index ? "#0f172a" : "inherit"}}
+            >
+              <button type="button" onClick={() => jump(cue.start)} style={{marginInlineEnd: "0.5rem"}}>
+                {cue.start.toFixed(0)}–{cue.end.toFixed(0)} s
+              </button>
+              {cue.text}
+            </li>
+          ))}
+        </ol>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a real <code>track</code> element with a WebVTT file made in memory. The page reads the cues from <code>track.cues</code>, and highlights the active one on the <code>cuechange</code> event. Press play, or click a time.
+      </p>
+    </div>
+  );
+}
+
+export function parseVtt(text) {
+  const issues = [];
+  const cues = [];
+  const lines = text.replace(/\r/g, "").split("\n");
+  if (!/^﻿?WEBVTT(\s|$)/.test(lines[0] || "")) {
+    issues.push("The first line must be WEBVTT.");
+  }
+  const toSeconds = (stamp) => {
+    const parts = stamp.split(":").map(Number);
+    const seconds = parts.pop();
+    const minutes = parts.pop() || 0;
+    const hours = parts.pop() || 0;
+    return hours * 3600 + minutes * 60 + seconds;
+  };
+  const pattern = /^((?:\d+:)?\d{2}:\d{2}\.\d{3})\s+-->\s+((?:\d+:)?\d{2}:\d{2}\.\d{3})/;
+  const blocks = lines.slice(1).join("\n").split(/\n{2,}/);
+  blocks.forEach((block) => {
+    const rows = block.split("\n").filter((row, index, all) => !(row === "" && index === all.length - 1));
+    if (rows.length === 0 || rows[0].trim() === "" || rows[0].startsWith("NOTE")) return;
+    const at = rows.findIndex((row) => row.includes("-->"));
+    if (at === -1) {
+      issues.push("A block has no timing line: “" + rows[0].slice(0, 30) + "”.");
+      return;
+    }
+    const match = rows[at].match(pattern);
+    if (!match) {
+      issues.push("Bad timing line: “" + rows[at].trim() + "”. Use 00:01.000 --> 00:03.000, with a dot before the milliseconds.");
+      return;
+    }
+    const start = toSeconds(match[1]);
+    const end = toSeconds(match[2]);
+    if (end <= start) {
+      issues.push("The cue starting at " + match[1] + " ends before it begins.");
+      return;
+    }
+    const body = rows.slice(at + 1).join("\n").trim();
+    if (!body) issues.push("The cue at " + match[1] + " has no text.");
+    const previous = cues[cues.length - 1];
+    if (previous && start < previous.end) issues.push("The cue at " + match[1] + " overlaps the one before it. That is allowed, but the two will show together.");
+    cues.push({start, end, text: body});
+  });
+  if (cues.length === 0 && issues.length === 0) issues.push("No cues found.");
+  return {cues, issues};
+}
+
+export function VttChecker() {
+  const good = sampleVtt;
+  const bad = [
+    "WEBVTT",
+    "",
+    "00:00,000 --> 00:02.000",
+    "A comma instead of a dot",
+    "",
+    "00:04.000 --> 00:03.000",
+    "Ends before it starts",
+    "",
+    "00:06.000 --> 00:08.000",
+    "This one is fine",
+  ].join("\n");
+  const [text, setText] = useState(good);
+  const result = parseVtt(text);
+  return (
+    <div>
+      <p style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => setText(good)}>Load a good file</button>
+        <button type="button" onClick={() => setText(bad)}>Load a file with mistakes</button>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="vtt-text" style={{display: "block"}}>WebVTT file</label>
+        <textarea
+          id="vtt-text"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          rows={10}
+          spellCheck={false}
+          style={{width: "100%", fontFamily: "monospace"}}
+        />
+      </p>
+      <div role="status">
+        {result.issues.length === 0 ? (
+          <p style={{margin: "0 0 0.5rem", color: "#15803d"}}>No problems found. {result.cues.length} cues read.</p>
+        ) : (
+          <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.25rem", color: "#b91c1c"}}>
+            {result.issues.map((issue, index) => (<li key={index}>{issue}</li>))}
+          </ul>
+        )}
+      </div>
+      {result.cues.length > 0 && (
+        <table>
+          <caption>Cues the browser would read</caption>
+          <thead>
+            <tr><th scope="col">Start</th><th scope="col">End</th><th scope="col">Text</th></tr>
+          </thead>
+          <tbody>
+            {result.cues.map((cue, index) => (
+              <tr key={index}><td>{cue.start.toFixed(1)} s</td><td>{cue.end.toFixed(1)} s</td><td>{cue.text}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simplified checker for learning. Real browsers are more forgiving about some details, and stricter about others.
+      </p>
+    </div>
+  );
+}
+
+Audio and video are about **sound and pictures**. But people also need **words**: the words being spoken, a translation, a description of what is on screen, or a list of chapters to jump to. All of these are *text that is timed to the media*.
+
+The **`<track>`** element attaches such text to a `<video>` or `<audio>`. The text lives in a separate file, in a simple format called **WebVTT**, and the browser shows it, or makes it available to your script, at exactly the right moment.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<track>` is, and where it goes
+- The five kinds: `subtitles`, `captions`, `descriptions`, `chapters`, and `metadata`
+- The attributes `src`, `kind`, `srclang`, `label`, and `default`
+- The basics of a WebVTT file
+- Reading and reacting to cues with JavaScript
+- Cross-origin rules, security, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video controls width="640" height="360" src="lesson.mp4">
+  <track
+    kind="captions"
+    src="lesson.en.vtt"
+    srclang="en"
+    label="English"
+    default
+  >
+  <track
+    kind="subtitles"
+    src="lesson.hi.vtt"
+    srclang="hi"
+    label="हिन्दी"
+  >
+</video>
+```
+
+```text title="lesson.en.vtt"
+WEBVTT
+
+00:00.000 --> 00:03.000
+Welcome to the lesson.
+
+00:03.500 --> 00:06.000
+[keyboard clicking] Let's open the editor.
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table>
+  <caption>What a browser does with these two tracks</caption>
+  <thead>
+    <tr><th scope="col">Track</th><th scope="col">Shown?</th><th scope="col">Why</th></tr>
+  </thead>
+  <tbody>
+    <tr><th scope="row" style={{textAlign: "start"}}>English captions</th><td>Yes, from the start</td><td>It has <code>default</code></td></tr>
+    <tr><th scope="row" style={{textAlign: "start"}}>Hindi subtitles</th><td>Only if chosen</td><td>Listed in the player's captions menu</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+`<track>` is a **void element** (no closing tag), and it goes **inside** `<audio>` or `<video>`, after any `<source>` elements.
+
+## The Five Kinds
+
+| `kind` | What it holds | Shown by the browser? |
+| :-- | :-- | :-- |
+| `subtitles` | A **translation** of the speech, for people who can hear but do not know the language | Yes, as text over the video |
+| `captions` | The speech **plus important sounds** ("[door slams]", "[music]"), for people who cannot hear | Yes, as text over the video |
+| `descriptions` | Text describing **what is on screen**, for people who cannot see it | Not drawn: meant to be read out by a screen reader or a script |
+| `chapters` | **Titles** for sections, for navigation | Depends on the browser. Often used by your own script |
+| `metadata` | **Data for your script** (for example, "show this button now") | Never shown |
+
+If you leave out `kind`, it defaults to `subtitles`. The next two lessons, [Captions](./captions) and [Subtitles](./subtitles), cover the two most common kinds in detail.
+
+## Attributes
+
+| Attribute | What it does | Notes |
+| :-- | :-- | :-- |
+| `src` | The address of the WebVTT file | **Required** |
+| `kind` | The kind of text | See the table above |
+| `srclang` | The language of the text, as a language code (`en`, `hi`, `es`, `ar`) | **Required** for `subtitles` |
+| `label` | The name shown in the player's menu | Write it **in its own language** ("Español", "हिन्दी") |
+| `default` | Turns this track on unless the visitor chose another | **Only one** per kind group |
+
+Tips:
+
+- **Always add `label`.** Without it, the menu may show an empty or technical name.
+- **Write each label in the language it names,** so a visitor can find their own language, even if the page is in another one.
+- **Use only one `default`.** If several tracks have it, browsers use the first one.
+- **The file name is yours to choose,** but a clear pattern such as `lesson.en.vtt` and `lesson.hi.vtt` keeps things tidy.
+
+## A WebVTT File in 60 Seconds
+
+WebVTT (`.vtt`) is a plain text format. A tiny file looks like this:
+
+```text title="lesson.en.vtt"
+WEBVTT
+
+NOTE This is a comment. Viewers do not see it.
+
+intro
+00:00.000 --> 00:03.000
+Welcome to the lesson.
+
+00:03.500 --> 00:06.000 align:start position:10%
+[keyboard clicking]
+Let's open the editor.
+
+00:01:02.000 --> 00:01:05.500
+Lines of an hour or more use <b>hh:mm:ss.ttt</b>.
+```
+
+The rules:
+
+1. The first line is **`WEBVTT`**.
+2. Each **cue** is a block, separated from the next by a **blank line**.
+3. An optional **identifier** line may come first (like `intro`).
+4. The **timing line** is `start --> end`. Use `mm:ss.ttt` or `hh:mm:ss.ttt`, with a **dot** before the milliseconds (not a comma, which is SRT format).
+5. One or more lines of **text** follow. A cue can have several lines.
+6. Text may use a few tags such as `<b>`, `<i>`, `<u>`, and `<c.name>`, and the voice tag `<v Asha>`.
+7. **Save the file as UTF-8,** so any language shows correctly.
+
+### Try It: Check a WebVTT File
+
+Edit the file, and see what the browser would read. Then load the file with mistakes, and fix them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```js title="script.js"
+// Read the cues of a track after it has loaded
+const track = document.querySelector("track");
+track.track.mode = "hidden";    // load the cues without drawing them
+
+track.addEventListener("load", () => {
+  for (const cue of track.track.cues) {
+    console.log(cue.startTime + " to " + cue.endTime + ": " + cue.text);
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<VttChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Try It: Cues in Action
+
+Here is a real `<audio>` element with a real `<track kind="metadata">`. The page reads the cues from the track, builds the list, and highlights the **active cue** while the sound plays. Metadata tracks are never drawn by the browser, so everything you see comes from the script.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<audio id="sound" src="melody.wav" controls>
+  <track id="notes" kind="metadata" src="melody.vtt" srclang="en" label="Melody notes">
+</audio>
+<ol id="list"></ol>
+```
+
+```js title="script.js"
+const trackElement = document.getElementById("notes");
+const textTrack = trackElement.track;
+const list = document.getElementById("list");
+
+textTrack.mode = "hidden";   // "disabled" would never load the cues
+
+trackElement.addEventListener("load", () => {
+  for (const cue of textTrack.cues) {
+    const item = document.createElement("li");
+    item.textContent = cue.text;          // textContent: safe
+    list.append(item);
+  }
+});
+
+textTrack.addEventListener("cuechange", () => {
+  const items = list.children;
+  for (let i = 0; i < items.length; i++) items[i].removeAttribute("aria-current");
+
+  const current = textTrack.activeCues[0];
+  if (current) {
+    const index = Array.from(textTrack.cues).indexOf(current);
+    items[index].setAttribute("aria-current", "true");
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TrackLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Track Modes
+
+Every track has a **`mode`**, which you can read and set from script:
+
+| Mode | Cues loaded? | Shown on screen? | Typical use |
+| :-- | :-- | :-- | :-- |
+| `disabled` | No | No | Off. The file may not even be downloaded |
+| `hidden` | Yes | No | Your script reads the cues, and `cuechange` fires |
+| `showing` | Yes | Yes | The browser draws captions or subtitles |
+
+```js
+const video = document.querySelector("video");
+
+for (const track of video.textTracks) {
+  console.log(track.kind, track.language, track.label, track.mode);
+}
+
+// Turn on the English captions
+for (const track of video.textTracks) {
+  track.mode = (track.language === "en" && track.kind === "captions") ? "showing" : "disabled";
+}
+```
+
+You can also create a track from script, with no file:
+
+```js
+const extra = video.addTextTrack("captions", "English", "en");
+extra.mode = "showing";
+extra.addCue(new VTTCue(0, 2, "Hello from script"));
+```
+
+## Styling Captions
+
+Browsers draw captions in a box at the bottom. You can adjust the look with the **`::cue`** pseudo-element:
+
+```css
+video::cue {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+video::cue(b) {
+  color: #fde047;
+}
+```
+
+Remember:
+
+- Only a **few CSS properties** work on `::cue` (colour, background, font, outline, text shadow, and similar). Layout and spacing do not.
+- **Visitors' own settings come first.** Many people set their caption size and colours in their device or browser. Do not fight those settings.
+- Always keep **strong contrast** (4.5 to 1 or better).
+- Use `line` and `position` settings in the VTT file to move captions away from important parts of the picture.
+
+## Cross-Origin Tracks
+
+A `<track>` file must come from the **same site** as your page, **or** the file's server must allow it and you must add **`crossorigin`** to the media element.
+
+```html
+<video controls crossorigin="anonymous" src="https://cdn.example.com/lesson.mp4">
+  <track kind="captions" src="https://cdn.example.com/lesson.en.vtt" srclang="en" label="English">
+</video>
+```
+
+If captions work on your computer but not on your live site, this is the first thing to check. The server holding the `.vtt` file needs a response header such as `Access-Control-Allow-Origin`, and it should send the type `text/vtt`.
+
+## Accessibility at a Glance
+
+- **Use `captions` for anything with speech or important sound,** not `subtitles`. Captions include sound effects and speaker names, and subtitles do not.
+- **Always add `label` and `srclang`,** and write the label in its own language.
+- **Make the captions match the audio:** complete, accurate, and in sync (appearing within about a fifth of a second of the speech).
+- **Name speakers** when it is not clear who is talking (`<v Asha>`), and describe sounds that matter ("[phone rings]").
+- **Do not hard-code captions into the picture** as the only option. Separate tracks can be turned off, resized, translated, and searched.
+- **Use `descriptions` for visual-only information,** and make sure your script exposes the text to assistive technology (for example, in an `aria-live` region), because browsers do not read it aloud for you.
+- **Check the captions menu** with the keyboard.
+
+## Security and Privacy Notes
+
+- **A `.vtt` file is public.** Anyone can fetch it. Do not put private notes in `NOTE` comments or in hidden cues.
+- **Treat cue text as text, not HTML.** When your script copies `cue.text` into the page, use **`textContent`**, never `innerHTML`. Cue text can contain tags, and an untrusted file could carry harmful markup.
+- **Only load tracks from sources you trust.** A track from a stranger's site is content you did not write, and it appears in front of your visitors.
+- **Serve over HTTPS,** and with the correct type (`text/vtt`).
+- **Caption data can contain personal details** (names, health or legal information). Handle it as carefully as the audio itself.
+
+## Global Audience Notes
+
+- **Offer more than one language** with separate `track` elements, each with `srclang` and a `label` in its own language. See [Subtitles](./subtitles).
+- **Save every `.vtt` file as UTF-8.** Other encodings turn non-English letters into garbage.
+- **Right-to-left languages** (Arabic, Hebrew, Urdu) display correctly in WebVTT. Test them in more than one browser, and mix directions carefully.
+- **Allow for longer text.** A translation can be 30% longer, so keep lines short (about 40 characters) and cues readable (visitors need time to read).
+- **Keep the pace reasonable:** about 15 to 20 characters per second is comfortable for many readers, and fast speech may need shortened wording.
+- **Do not rely on machine translation** without a human check. Mistakes in captions are very visible.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting the `WEBVTT` header line.**
+2. **A comma in timestamps** (SRT style), instead of a dot.
+3. **No blank line between cues.**
+4. **A `.vtt` file that is not UTF-8.**
+5. **`subtitles` where `captions` are needed,** so sound information is missing.
+6. **No `srclang`** on subtitles, or no `label`.
+7. **More than one `default`.**
+8. **Cross-origin tracks without `crossorigin` and the right headers.**
+9. **Waiting for `cues` on a `disabled` track,** which never loads. Use `hidden` or `showing`.
+10. **Putting `<track>` before `<source>`,** or outside the media element.
+11. **Using `innerHTML` for cue text.**
+12. **Captions that lag, overlap each other, or flash too fast to read.**
+
+## Practice Time
+
+Try these in your editor, with a short audio or video file:
+
+1. Write a `.vtt` file with three cues, and attach it with `<track kind="captions" default>`.
+2. Add a second track in another language, with a label in that language.
+3. Break the file on purpose (a comma, no `WEBVTT`), and see what happens.
+4. Print `video.textTracks.length` and each track's `mode`.
+5. Set a track to `hidden`, and print its cues.
+6. Highlight the active cue in a list, using `cuechange`.
+7. Add `::cue` styles, and check the contrast.
+8. Make the transcript list clickable, so each line jumps to that time.
+9. Add a `chapters` track and build a list of chapter links.
+10. Bonus: host the `.vtt` file on a different origin, and fix the `crossorigin` problem.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `track` element do?</summary>
+
+It attaches timed text (captions, subtitles, descriptions, chapters, or metadata) to an `audio` or `video` element, using a WebVTT file.
+
+</details>
+
+<details>
+<summary>2. What is the difference between captions and subtitles?</summary>
+
+Subtitles translate speech for people who can hear. Captions give the speech and also important sounds and speakers, for people who cannot hear the audio.
+
+</details>
+
+<details>
+<summary>3. What must the first line of a WebVTT file be?</summary>
+
+`WEBVTT`. Timestamps then use `mm:ss.ttt` or `hh:mm:ss.ttt`, with a dot, and cues are separated by blank lines.
+
+</details>
+
+<details>
+<summary>4. Which track mode lets a script read cues without showing them?</summary>
+
+`hidden`. In `disabled` mode, cues may not be loaded at all, and `showing` also draws them on screen.
+
+</details>
+
+<details>
+<summary>5. Why might captions fail on your live site?</summary>
+
+The `.vtt` file is probably on another origin without the right CORS headers, or the media element lacks `crossorigin`. Check the `Content-Type` too.
+
+</details>
+
+<details>
+<summary>6. How should you put cue text into a page with JavaScript?</summary>
+
+With `textContent`, never `innerHTML`, so untrusted text cannot add markup.
+
+</details>
+
+## Key Takeaways
+
+- `<track>` adds **timed text** to `<audio>` and `<video>`, from a **WebVTT** file.
+- The kinds are **`subtitles`, `captions`, `descriptions`, `chapters`, and `metadata`.** Use `captions` for accessibility.
+- Always add **`srclang`** and **`label`** (in its own language), and use only one **`default`**.
+- A WebVTT file starts with `WEBVTT`, uses dots in timestamps, and separates cues with blank lines.
+- Use **`mode = "hidden"`** and the **`cuechange`** event to build transcripts, chapters, and other features.
+- Cross-origin tracks need `crossorigin` and the right server headers.
+- Use `textContent` for cue text, save files as UTF-8, and keep captions accurate and readable.
+- A `.vtt` file is public, so keep private information out of it.
+
+Next, learn how to write good captions in [Captions](./captions), or return to the [Audio and Video overview](../audio-video).

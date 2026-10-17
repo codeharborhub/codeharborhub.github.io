@@ -1,16 +1,499 @@
 ---
 id: semantic-html-overview
-title: "Understanding Semantic HTML"
+title: "Semantic HTML"
 sidebar_label: "Semantic HTML"
 sidebar_position: 1
 slug: /html/semantic-html
-description: "Master Semantic HTML5 elements to structure web pages logically, boost SEO rankings, improve screen reader accessibility, and maintain clean codebases with CodeHarborHub."
+description: "Learn semantic HTML: choosing elements for their meaning, not their looks. Understand header, nav, main, section, article, aside, footer, address, details, summary, and dialog, why semantic markup helps accessibility, search engines, and maintenance, and how to build a clear page layout, with live examples on CodeHarborHub."
 keywords:
-  - Semantic HTML overview
-  - HTML5 semantic tags
-  - why use semantic HTML
-  - semantic web structure
+  - semantic HTML
+  - HTML5 semantic elements
+  - header nav main footer
+  - HTML section vs article
+  - HTML aside element
+  - HTML landmarks
+  - div soup
+  - HTML details summary
+  - HTML dialog element
+  - semantic page layout
+  - accessible HTML structure
+  - learn HTML
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, semantic-html, web-development, beginner]
+tags: [html, web-development, beginner, semantic-html, accessibility, seo, page-structure, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function landmarkRole(el) {
+  const tag = el.tagName.toLowerCase();
+  if (tag === "main") return "main";
+  if (tag === "nav") return "navigation";
+  if (tag === "aside") return "complementary";
+  if (tag === "header" || tag === "footer") {
+    const inside = el.parentElement && el.parentElement.closest("article, aside, main, nav, section");
+    if (inside) return null;
+    return tag === "header" ? "banner" : "contentinfo";
+  }
+  if ((tag === "section" || tag === "form") && (el.getAttribute("aria-label") || el.getAttribute("aria-labelledby"))) {
+    return tag === "form" ? "form" : "region";
+  }
+  return null;
+}
+
+export function scanLandmarks(root) {
+  const found = [];
+  root.querySelectorAll("*").forEach((el) => {
+    const role = landmarkRole(el);
+    if (role) found.push({tag: el.tagName.toLowerCase(), role});
+  });
+  return found;
+}
+
+export function LandmarkDemo() {
+  const divRef = useRef(null);
+  const semRef = useRef(null);
+  const [report, setReport] = useState(null);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  return (
+    <div>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1rem"}}>
+        <div style={{flex: "1 1 15rem"}}>
+          <p style={{margin: "0 0 0.4rem"}}><strong>Page A: all <code>div</code>s</strong></p>
+          <div ref={divRef}>
+            <div style={box}>My Site</div>
+            <div style={box}><a href="#a" onClick={(e) => e.preventDefault()}>Home</a> · <a href="#a" onClick={(e) => e.preventDefault()}>About</a></div>
+            <div style={box}>
+              <div>How to bake bread</div>
+              <div>Mix flour, water, salt, and yeast…</div>
+            </div>
+            <div style={box}>Related: sourdough</div>
+            <div style={box}>© 2026 My Site</div>
+          </div>
+        </div>
+        <div style={{flex: "1 1 15rem"}}>
+          <p style={{margin: "0 0 0.4rem"}}><strong>Page B: semantic elements</strong></p>
+          <div ref={semRef}>
+            <header style={box}>My Site</header>
+            <nav style={box} aria-label="Main"><a href="#b" onClick={(e) => e.preventDefault()}>Home</a> · <a href="#b" onClick={(e) => e.preventDefault()}>About</a></nav>
+            <main style={box}>
+              <article>
+                <h4 style={{margin: "0 0 0.25rem"}}>How to bake bread</h4>
+                <p style={{margin: 0}}>Mix flour, water, salt, and yeast…</p>
+              </article>
+            </main>
+            <aside style={box}>Related: sourdough</aside>
+            <footer style={box}>© 2026 My Site</footer>
+          </div>
+        </div>
+      </div>
+      <p style={{margin: "0.5rem 0"}}>
+        <button type="button" onClick={() => setReport({a: scanLandmarks(divRef.current), b: scanLandmarks(semRef.current)})}>
+          List the landmarks a screen reader would find
+        </button>
+      </p>
+      {report ? (
+        <div role="status">
+          <p style={{margin: "0 0 0.25rem", color: "#b91c1c"}}>
+            <strong>Page A:</strong> {report.a.length === 0 ? "no landmarks. A screen reader user cannot jump anywhere." : report.a.length + " landmarks"}
+          </p>
+          <p style={{margin: "0 0 0.25rem", color: "#15803d"}}>
+            <strong>Page B:</strong> {report.b.length} landmarks
+          </p>
+          <ul style={{margin: 0, paddingLeft: "1.25rem"}}>
+            {report.b.map((item, i) => (
+              <li key={item.tag + i}><code>{"<" + item.tag + ">"}</code> is announced as <strong>{item.role}</strong></li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function SemanticMap() {
+  const regions = {
+    header: {tag: "<header>", role: "banner", text: "The introduction at the top of the page: the site name, logo, and often the main navigation. A header can also open an article or a section."},
+    nav: {tag: "<nav>", role: "navigation", text: "A block of links that help visitors move around. Use it for major navigation, not for every group of links."},
+    main: {tag: "<main>", role: "main", text: "The central content of the page, the thing visitors came for. There is exactly one visible main per page."},
+    article: {tag: "<article>", role: "article", text: "A complete, self-contained piece that makes sense on its own, such as a blog post, a news story, or a product card."},
+    aside: {tag: "<aside>", role: "complementary", text: "Content related to the main content but separate from it: a sidebar, a pull quote, a related-links box."},
+    footer: {tag: "<footer>", role: "contentinfo", text: "Closing information for the page or section: copyright, contact links, legal notes."},
+  };
+  const [active, setActive] = useState("main");
+  const cell = (key, extra) => ({
+    border: "2px solid " + (active === key ? "#1d4ed8" : "#94a3b8"),
+    background: active === key ? "#dbeafe" : "transparent",
+    color: "inherit",
+    borderRadius: "6px",
+    padding: "0.5rem",
+    cursor: "pointer",
+    font: "inherit",
+    ...extra,
+  });
+  const info = regions[active];
+  return (
+    <div>
+      <div style={{display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: "0.4rem"}}>
+        <button type="button" aria-pressed={active === "header"} onClick={() => setActive("header")} style={cell("header", {gridColumn: "1 / 4"})}>header</button>
+        <button type="button" aria-pressed={active === "nav"} onClick={() => setActive("nav")} style={cell("nav", {})}>nav</button>
+        <div style={{display: "grid", gap: "0.4rem"}}>
+          <button type="button" aria-pressed={active === "main"} onClick={() => setActive("main")} style={cell("main", {})}>main</button>
+          <button type="button" aria-pressed={active === "article"} onClick={() => setActive("article")} style={cell("article", {})}>article (inside main)</button>
+        </div>
+        <button type="button" aria-pressed={active === "aside"} onClick={() => setActive("aside")} style={cell("aside", {})}>aside</button>
+        <button type="button" aria-pressed={active === "footer"} onClick={() => setActive("footer")} style={cell("footer", {gridColumn: "1 / 4"})}>footer</button>
+      </div>
+      <div role="status" style={{marginTop: "0.6rem"}}>
+        <p style={{margin: 0}}><code>{info.tag}</code> is announced as <strong>{info.role}</strong></p>
+        <p style={{margin: "0.25rem 0 0"}}>{info.text}</p>
+      </div>
+    </div>
+  );
+}
+
+Open any website and look at it as a human. You instantly see a **header** at the top, a **menu**, the **main story**, a **sidebar**, and a **footer** at the bottom. Your eyes tell you what each part is for.
+
+But a browser, a search engine, or a screen reader has no eyes. It only sees your **markup**. If every part is just a `<div>`, they all look the same, and nothing tells the machine what is a menu and what is a story. **Semantic HTML** fixes that: you choose elements by their **meaning**, so people **and** software can understand the page.
+
+This section teaches the elements that give a page its structure, plus three interactive ones (`details`, `summary`, and `dialog`) that give you accordions and pop-ups with no JavaScript.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+In this section, you will be able to:
+
+- Explain what **semantic HTML** is, and why it matters
+- Build page structure with **`<header>`, `<nav>`, `<main>`, and `<footer>`**
+- Group content with **`<section>`, `<article>`, and `<aside>`**, and know which to pick
+- Mark up contact details with **`<address>`**
+- Create expandable content with **`<details>` and `<summary>`**
+- Open modal and non-modal pop-ups with **`<dialog>`**
+- Combine everything into a **semantic page layout**
+- Test your structure like a screen reader user would
+
+:::info Prerequisites
+You should know basic HTML elements, headings, and attributes. If you need a refresher on how pages connect, read [Links and Navigation](/tutorials/html/links-and-navigation). Forms are covered separately in [HTML Forms](/tutorials/html/forms).
+:::
+
+## What "Semantic" Means
+
+**Semantic** means "carrying meaning". A semantic element tells you **what its content is**, not just how it looks.
+
+| Non-semantic | Semantic |
+| :-- | :-- |
+| `<div>`: "a box", no meaning | `<nav>`: "navigation links" |
+| `<span>`: "some text", no meaning | `<address>`: "contact details" |
+| `<div class="top">` | `<header>` |
+| `<div class="menu">` | `<nav>` |
+| `<div class="story">` | `<article>` |
+| `<div class="sidebar">` | `<aside>` |
+| `<div class="bottom">` | `<footer>` |
+| `<div onclick="...">` | `<button>` |
+
+Both versions can **look identical** with CSS. The difference is invisible to the eye, and very visible to everything else.
+
+## Div Soup vs Semantic HTML
+
+Compare the same page written two ways:
+
+<Tabs>
+<TabItem value="div" label="Div soup" default>
+
+```html title="index.html"
+<div class="top">
+  <div class="logo">My Site</div>
+  <div class="menu">
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="story">
+    <div class="title">How to bake bread</div>
+    <div>Mix flour, water, salt, and yeast…</div>
+  </div>
+  <div class="sidebar">Related: sourdough</div>
+</div>
+
+<div class="bottom">© 2026 My Site</div>
+```
+
+</TabItem>
+<TabItem value="semantic" label="Semantic HTML">
+
+```html title="index.html"
+<header>
+  <p class="logo">My Site</p>
+  <nav aria-label="Main">
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+  </nav>
+</header>
+
+<main>
+  <article>
+    <h1>How to bake bread</h1>
+    <p>Mix flour, water, salt, and yeast…</p>
+  </article>
+  <aside>Related: sourdough</aside>
+</main>
+
+<footer>© 2026 My Site</footer>
+```
+
+</TabItem>
+</Tabs>
+
+The second version is also **shorter, clearer to read, and easier to style** (you can select `nav` instead of inventing `.menu`).
+
+### Try It: What a Screen Reader Finds
+
+Press the button. A small script scans each page for **landmarks**, the named regions that screen reader users use to jump around a page, much as you use your eyes to jump to the menu or the main story.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Page A: all divs -->
+<div>My Site</div>
+<div><a href="/">Home</a> · <a href="/about">About</a></div>
+<div>
+  <div>How to bake bread</div>
+  <div>Mix flour, water, salt, and yeast…</div>
+</div>
+<div>Related: sourdough</div>
+<div>© 2026 My Site</div>
+
+<!-- Page B: semantic elements -->
+<header>My Site</header>
+<nav aria-label="Main"><a href="/">Home</a> · <a href="/about">About</a></nav>
+<main>
+  <article>
+    <h1>How to bake bread</h1>
+    <p>Mix flour, water, salt, and yeast…</p>
+  </article>
+</main>
+<aside>Related: sourdough</aside>
+<footer>© 2026 My Site</footer>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LandmarkDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Page A has **no landmarks at all**. A screen reader user must listen to the page from top to bottom to find the menu. Page B gives them a list of regions to jump between. That one change is the heart of this section.
+
+## Why It Matters
+
+| Benefit | What it means in practice |
+| :-- | :-- |
+| **Accessibility** | Screen reader users jump between landmarks, skip repeated menus, and understand what each region is. Keyboard users get built-in behaviour from `details`, `dialog`, and `button` |
+| **Search engines** | Crawlers use structure to understand which part of the page is the main content and which is navigation or a footer. (Structure helps them understand your page. It is not a magic ranking switch.) |
+| **Readable code** | `<nav>` says more than `<div class="n1">`. Other developers, and your future self, will thank you |
+| **Easier styling** | Select by element name, with fewer invented class names |
+| **Built-in features** | Browser reading modes, translation tools, and assistive technologies rely on structure. `details` and `dialog` work with no JavaScript |
+| **Resilience** | A semantic page still makes sense when CSS fails to load, or on a device you did not test |
+| **Global reach** | Clear structure survives translation, voice assistants, and low-bandwidth readers |
+
+## The Semantic Elements at a Glance
+
+| Element | Role (what it is announced as) | Use it for | Lesson |
+| :-- | :-- | :-- | :-- |
+| `<header>` | `banner` (page level) | Introduction: site name, logo, intro content | [Header](./semantic-html/header) |
+| `<nav>` | `navigation` | A block of major navigation links | [Nav](./semantic-html/nav) |
+| `<main>` | `main` | The central content, once per page | [Main](./semantic-html/main) |
+| `<section>` | `region` (if named) | A themed group of content, with a heading | [Section](./semantic-html/section) |
+| `<article>` | `article` | A self-contained piece: post, story, product card | [Article](./semantic-html/article) |
+| `<aside>` | `complementary` | Related but separate content: a sidebar | [Aside](./semantic-html/aside) |
+| `<footer>` | `contentinfo` (page level) | Closing information: copyright, contacts | [Footer](./semantic-html/footer) |
+| `<address>` | (none) | Contact details for the page or article | [Address](./semantic-html/address) |
+| `<details>` and `<summary>` | `group` | Content the visitor can expand and collapse | [Details](./semantic-html/details), [Summary](./semantic-html/summary) |
+| `<dialog>` | `dialog` | Modal and non-modal pop-ups | [Dialog](./semantic-html/dialog) |
+
+### Try It: The Page Map
+
+Click each region of the wireframe to see which element it should be, and how a screen reader announces it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<body>
+  <header>…</header>
+
+  <nav aria-label="Main">…</nav>
+
+  <main>
+    <article>…</article>
+  </main>
+
+  <aside>…</aside>
+
+  <footer>…</footer>
+</body>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SemanticMap />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Which Element Should I Use?
+
+When you are not sure, ask what the content **is**:
+
+| The content is... | Use |
+| :-- | :-- |
+| The top of the page or of a section | `<header>` |
+| A set of major links | `<nav>` |
+| The one main thing on the page | `<main>` |
+| A complete piece that could be shared or syndicated on its own | `<article>` |
+| A themed part of a page, with its own heading | `<section>` |
+| Side content, or a tangent | `<aside>` |
+| The closing information | `<footer>` |
+| Contact information | `<address>` |
+| Extra detail the visitor may reveal | `<details>` with `<summary>` |
+| A pop-up that needs attention | `<dialog>` |
+| Just a hook for styling or scripting, with no meaning | `<div>` (or `<span>` inside text) |
+
+:::tip `div` is not evil
+`<div>` and `<span>` are still useful. Use them when **no semantic element fits**, for example a wrapper for layout. The mistake is using them when a better element exists.
+:::
+
+## Semantic Elements Do Not Replace Headings
+
+Landmarks (`header`, `main`, `nav`...) mark the **regions** of a page. **Headings** (`h1` to `h6`) mark the **outline** of the content inside them. You need both:
+
+- Landmarks let people jump between **regions**.
+- Headings let people scan **topics**.
+
+A good page has one `<h1>`, followed by headings in a logical order, inside the right landmarks. You can see how they work together in [Semantic Page Layout](./semantic-html/semantic-page-layout).
+
+## Your Learning Path
+
+Follow the lessons in order. They go from the big idea, to the page frame, to grouping content, to interactive elements, and finish by putting it all together.
+
+<DocCardList />
+
+## How to Check Your Own Pages
+
+You do not need special software to test structure. Try these:
+
+1. **Turn off CSS.** (In your browser's developer tools, or use a reader mode.) Is the page still in a sensible order?
+2. **Tab through the page** with only a keyboard. Does focus follow the visual order?
+3. **Look at the outline.** Do the headings read like a table of contents?
+4. **Use a screen reader's landmark list.** (VoiceOver on Mac and iPhone, NVDA on Windows, TalkBack on Android.) Is there one `main`, one `banner`, and sensibly named navigation?
+5. **Use your browser's accessibility panel** in the developer tools to see the roles the browser assigned.
+6. **Run an HTML validator**, and an accessibility checker such as Lighthouse or axe. They find only some problems, so always add the manual checks above.
+
+## Common Beginner Mistakes
+
+| Mistake | What goes wrong | Where you will fix it |
+| :-- | :-- | :-- |
+| Using `<div>` for everything | No landmarks, no meaning | [Why Semantic HTML](./semantic-html/why-semantic-html) |
+| Using headings for size, not structure | Broken outline for screen readers | [Semantic Page Layout](./semantic-html/semantic-page-layout) |
+| More than one `<main>` | Confusing landmarks | [Main](./semantic-html/main) |
+| Putting everything in `<section>` | A section with no heading adds nothing | [Section](./semantic-html/section) |
+| Confusing `<section>` and `<article>` | Wrong structure | [Article](./semantic-html/article) |
+| Using `<nav>` for every link group | Too many landmarks to jump between | [Nav](./semantic-html/nav) |
+| Using `<aside>` just to get a box on the side | Wrong meaning | [Aside](./semantic-html/aside) |
+| Making a `<div>` act like a button | No keyboard support | [Details](./semantic-html/details), [Dialog](./semantic-html/dialog) |
+| Using `<address>` for any postal address | It is for contact details of the page or article | [Address](./semantic-html/address) |
+| Using semantic elements only for their default look | Meaning matters, not appearance | [Why Semantic HTML](./semantic-html/why-semantic-html) |
+
+## Semantic HTML for a Global Audience
+
+- **Set `lang`** on the `<html>` element, so screen readers use the right voice, and translation tools know the source language.
+- **Set `dir="rtl"`** for right-to-left languages such as Arabic and Hebrew. Semantic structure mirrors cleanly, because the order in the HTML is the order people read.
+- **Name your landmarks in the page's language.** If you have more than one `nav`, give each an `aria-label` such as "Main" or "Footer", and translate it.
+- **Keep reading order logical in the HTML itself,** not only in CSS. People using translation tools, voice assistants, and reader modes get the source order.
+- **Write short, plain headings and labels** that translate well.
+- **Remember low-bandwidth readers.** A semantic page works with little or no CSS and JavaScript, which matters on slow or old devices.
+
+## A Note on Security and Privacy
+
+Semantic elements describe structure, and they do not protect anything.
+
+- **`<details>` and `<dialog>` hide content visually, but not from the page.** Anything inside is still in the HTML that anyone can read. Never put secrets in a collapsed section or a closed dialog.
+- **`<address>` is public.** Put only contact details you want public. Publishing a personal email or phone number invites spam and worse.
+- **Escape user content** you place inside any of these elements, as you would anywhere else.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Test yourself. Click a question to reveal the answer.
+
+<details>
+<summary>1. What does "semantic" mean in HTML?</summary>
+
+It means the element's name carries meaning about its content (a `<nav>` is navigation, an `<article>` is a self-contained piece), rather than just how it looks.
+
+</details>
+
+<details>
+<summary>2. Why can a page full of `<div>`s be a problem?</summary>
+
+A `<div>` has no meaning, so browsers, search engines, and screen readers cannot tell a menu from a story from a footer. Screen reader users cannot jump between regions.
+
+</details>
+
+<details>
+<summary>3. Which elements form the basic frame of a page?</summary>
+
+`<header>`, `<nav>`, `<main>`, and `<footer>`, with `<aside>` for related side content.
+
+</details>
+
+<details>
+<summary>4. When is `<div>` still the right choice?</summary>
+
+When no semantic element fits, for example a wrapper for layout or a styling hook. The mistake is using it when a better element exists.
+
+</details>
+
+<details>
+<summary>5. Do semantic elements replace headings?</summary>
+
+No. Landmarks mark the regions of a page, and headings mark the topic outline inside them. A good page uses both.
+
+</details>
+
+<details>
+<summary>6. Do `<details>` and `<dialog>` keep their content secret?</summary>
+
+No. They only hide it visually. The content is still in the page source, so never put secrets in them.
+
+</details>
+
+## Key Takeaways
+
+- Semantic HTML means choosing elements for their **meaning**, so people and software understand your page.
+- `<header>`, `<nav>`, `<main>`, `<footer>`, and `<aside>` create **landmarks** that screen reader users jump between.
+- `<section>` groups content by theme (with a heading), and `<article>` marks a self-contained piece.
+- `<address>`, `<details>`, `<summary>`, and `<dialog>` give you contact markup, accordions, and pop-ups with built-in behaviour.
+- Use `<div>` and `<span>` only when nothing semantic fits.
+- Landmarks and headings work together: regions plus outline.
+- Test with CSS off, a keyboard, and a screen reader's landmark list.
+- Semantic structure helps accessibility, search engines, maintenance, and a global audience, but it is not security.
+
+Ready to begin? Start with [Why Semantic HTML](./semantic-html/why-semantic-html).

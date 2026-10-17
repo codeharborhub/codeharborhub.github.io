@@ -1,15 +1,560 @@
 ---
-id: article-element
-title: "The Article Element: Self-Contained Reusable Content"
-sidebar_label: "Article (<article>)"
+id: html-article
+title: "HTML Article Element"
+sidebar_label: "Article"
 sidebar_position: 7
 slug: /html/semantic-html/article
-description: "Master the article tag to encapsulate self-contained compositions like blog posts, news stories, product cards, and forum comments."
+description: "Learn the HTML article element: marking self-contained content such as blog posts, news stories, comments, and product cards, the stand-alone test for choosing article over section, nesting comments, header and footer inside an article, the time element, clickable cards, user-generated content safety, and common mistakes, with live examples."
 keywords:
-  - HTML article tag
-  - self contained content tag
-  - article vs section HTML
-  - blog post markup semantic
+  - HTML article element
+  - article vs section
+  - HTML5 article tag
+  - blog post markup
+  - nested article comments
+  - time datetime element
+  - clickable card accessibility
+  - rel ugc nofollow
+  - syndication RSS article
+  - semantic HTML content
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, layout, content]
+tags: [html, web-development, beginner, semantic-html, article, content, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function StandAloneDemo() {
+  const items = [
+    {label: "A blog post", answer: "article", why: "It can be published, shared, and read on its own."},
+    {label: "A news story", answer: "article", why: "A complete piece that could appear in a feed or on another site."},
+    {label: "A reader's comment", answer: "article", why: "A self-contained contribution, even though it sits inside a bigger page."},
+    {label: "A product card in a shop list", answer: "article", why: "Each card is a complete, independent item that could be listed elsewhere."},
+    {label: "The 'Pricing' part of a landing page", answer: "section", why: "It is a themed part of a bigger page, and means little on its own."},
+    {label: "Chapter 3 of a long guide", answer: "section", why: "A chapter belongs to the whole guide."},
+    {label: "A list of related links beside a story", answer: "aside", why: "Related but separate from the main point."},
+    {label: "A wrapper that lays cards out in a grid", answer: "div", why: "It has no meaning of its own, only layout."},
+  ];
+  const [index, setIndex] = useState(0);
+  const [guess, setGuess] = useState(null);
+  const item = items[index];
+  const options = ["article", "section", "aside", "div"];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sa-pick">Choose a piece of content</label><br />
+        <select
+          id="sa-pick"
+          value={index}
+          onChange={(event) => {
+            setIndex(Number(event.target.value));
+            setGuess(null);
+          }}
+        >
+          {items.map((entry, i) => (<option key={entry.label} value={i}>{entry.label}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}>Which element fits best?</p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {options.map((option) => (
+          <button
+            type="button"
+            key={option}
+            onClick={() => setGuess(option)}
+            style={{marginRight: "0.4rem", fontFamily: "monospace"}}
+          >
+            {option}
+          </button>
+        ))}
+      </p>
+      {guess ? (
+        <p role="status" style={{margin: 0, color: guess === item.answer ? "#15803d" : "#b91c1c"}}>
+          {guess === item.answer ? "Correct. " : "Not quite: the best fit is " + item.answer + ". "}
+          {item.why}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function TreeDemo() {
+  const rootRef = useRef(null);
+  const [lines, setLines] = useState(null);
+  const watched = ["ARTICLE", "SECTION", "HEADER", "FOOTER", "ASIDE", "MAIN"];
+  const walk = (node, depth, out) => {
+    Array.from(node.children).forEach((child) => {
+      if (watched.includes(child.tagName)) {
+        out.push({depth, tag: child.tagName.toLowerCase(), label: child.getAttribute("data-label") || ""});
+        walk(child, depth + 1, out);
+      } else {
+        walk(child, depth, out);
+      }
+    });
+    return out;
+  };
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.4rem 0.6rem", marginTop: "0.3rem"};
+  return (
+    <div>
+      <div ref={rootRef}>
+        <main data-label="the page's content">
+          <article data-label="the blog post" style={box}>
+            <header data-label="title and author" style={box}>
+              <strong>How to shape a loaf</strong> · By Ada · <time dateTime="2026-04-12">12 April 2026</time>
+            </header>
+            <section data-label="the body" style={box}>
+              <p style={{margin: 0}}>Start with a round of dough…</p>
+            </section>
+            <section data-label="the comments" style={box}>
+              <strong>2 comments</strong>
+              <article data-label="comment 1" style={box}>
+                <p style={{margin: 0}}>Great tips! – Sam</p>
+              </article>
+              <article data-label="comment 2" style={box}>
+                <p style={{margin: 0}}>Mine came out flat. – Priya</p>
+              </article>
+            </section>
+            <footer data-label="post footer" style={box}>Filed under: Bread</footer>
+          </article>
+        </main>
+      </div>
+      <p style={{margin: "0.6rem 0"}}>
+        <button type="button" onClick={() => setLines(walk(rootRef.current, 0, []))}>
+          Show the structure
+        </button>
+      </p>
+      {lines ? (
+        <ul role="status" style={{margin: 0, paddingLeft: 0, listStyle: "none", fontFamily: "monospace", fontSize: "0.9em"}}>
+          {lines.map((line, i) => (
+            <li key={line.tag + i} style={{paddingLeft: line.depth * 18 + "px"}}>
+              {line.tag}{line.label ? " (" + line.label + ")" : ""}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+Imagine cutting a single story out of a newspaper. It has its own headline, its own author, and it makes complete sense even if you pin it on a wall by itself. Now imagine cutting out a random paragraph from the middle of page 7. It would not make much sense alone.
+
+That difference is exactly what the **`<article>`** element is about: a **self-contained piece of content** that stands on its own. It is one of the most useful elements for content-heavy sites, and its meaning is clearer than you might expect once you know the one test to apply.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<article>` means, and the **stand-alone test**
+- What counts as an article: posts, stories, comments, product cards
+- Putting a `<header>` and `<footer>` inside an article
+- Nesting articles, such as comments inside a post
+- Marking dates with `<time>`
+- Building a clickable card without breaking accessibility
+- Safety for user-generated content
+- Accessibility, global notes, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<article>
+  <header>
+    <h2>How to shape a loaf</h2>
+    <p>
+      By <a href="/authors/ada">Ada</a> ·
+      <time datetime="2026-04-12">12 April 2026</time>
+    </p>
+  </header>
+
+  <p>Start with a round of dough and fold the edges toward the centre…</p>
+  <p>Turn it over, and tighten the surface by dragging it across the bench…</p>
+
+  <footer>
+    <p>Filed under: <a href="/topics/bread">Bread</a></p>
+  </footer>
+</article>
+```
+
+```css title="style.css"
+article {
+  max-width: 70ch;
+  margin-inline: auto;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<article style={{maxWidth: "70ch", marginInline: "auto", padding: "1rem", border: "1px solid #cbd5e1", borderRadius: "8px"}}>
+  <header>
+    <h3 style={{margin: "0 0 0.25rem"}}>How to shape a loaf</h3>
+    <p style={{margin: 0}}>
+      By <a href="#ar" onClick={(event) => event.preventDefault()}>Ada</a> · <time dateTime="2026-04-12">12 April 2026</time>
+    </p>
+  </header>
+  <p>Start with a round of dough and fold the edges toward the centre…</p>
+  <p>Turn it over, and tighten the surface by dragging it across the bench…</p>
+  <footer>
+    <p style={{margin: 0}}>Filed under: <a href="#ar" onClick={(event) => event.preventDefault()}>Bread</a></p>
+  </footer>
+</article>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Like the other structural elements, `<article>` has **no default style**, so the border and width above come from CSS. What it adds is **meaning**: screen readers announce an "article", some offer a shortcut to move between articles, and reader modes and feed tools use it to find the content worth keeping.
+
+## The Stand-Alone Test
+
+To decide whether something is an article, ask:
+
+> **Could this be lifted out of the page and still make complete sense? Would it work in an RSS feed, in an email, or on another website?**
+
+If yes, it is an `<article>`. The specification describes it as a "self-contained composition that is, in principle, independently distributable or reusable."
+
+### Try It: Pick the Right Element
+
+Choose a piece of content, then choose the element you think fits. The demo explains each answer.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Stands alone: article -->
+<article>
+  <h2>How to shape a loaf</h2>
+  <p>…</p>
+</article>
+
+<!-- A themed part of something bigger: section -->
+<section>
+  <h2>Pricing</h2>
+  <p>…</p>
+</section>
+
+<!-- Related but separate: aside -->
+<aside>
+  <h2>Related reading</h2>
+  <ul>…</ul>
+</aside>
+
+<!-- Only a layout wrapper: div -->
+<div class="card-grid">…</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StandAloneDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Counts as an Article
+
+| Content | Why it is an article |
+| :-- | :-- |
+| A blog post or magazine article | The classic case |
+| A news story | A complete report |
+| A forum post | A contribution that stands by itself |
+| A reader's **comment** | Self-contained, even inside a bigger page |
+| A **product card** in a list | A complete, independent item |
+| A social media post or tweet | Independently shareable |
+| A widget or gadget that is a complete unit | For example, an interactive weather card |
+| A review | A complete opinion piece |
+
+The word "article" is a little misleading. It is **not only for newspaper-style writing**. Anything self-contained, small or large, qualifies.
+
+## Articles and Sections: Nesting Both Ways
+
+Articles and sections often contain each other:
+
+- A **blog article** contains several **sections** (introduction, steps, conclusion).
+- A **"Latest posts" section** contains several **articles** (one for each post).
+- A post's **comments section** contains **articles** (one for each comment).
+
+Press the button below to see the shape of a realistic blog post. The script walks the real DOM and prints how the elements nest.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<main>
+  <article>
+    <header>
+      <h1>How to shape a loaf</h1>
+      <p>By Ada · <time datetime="2026-04-12">12 April 2026</time></p>
+    </header>
+
+    <section>
+      <h2>Step by step</h2>
+      <p>Start with a round of dough…</p>
+    </section>
+
+    <section aria-labelledby="comments-title">
+      <h2 id="comments-title">2 comments</h2>
+
+      <article>
+        <h3>Sam</h3>
+        <p>Great tips!</p>
+      </article>
+
+      <article>
+        <h3>Priya</h3>
+        <p>Mine came out flat.</p>
+      </article>
+    </section>
+
+    <footer>Filed under: Bread</footer>
+  </article>
+</main>
+```
+
+```js title="script.js"
+const watched = ["ARTICLE", "SECTION", "HEADER", "FOOTER", "ASIDE", "MAIN"];
+
+function walk(node, depth) {
+  for (const child of node.children) {
+    if (watched.includes(child.tagName)) {
+      console.log("  ".repeat(depth) + child.tagName.toLowerCase());
+      walk(child, depth + 1);
+    } else {
+      walk(child, depth);
+    }
+  }
+}
+
+walk(document.body, 0);
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TreeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice that the comments are **articles inside an article**. The specification says that when articles are nested, the inner ones are **related to** the outer one. That is exactly right for comments on a post.
+
+## Headings Inside Articles
+
+Every article should have a **heading** that names it. Where it goes depends on the page:
+
+| Page | Article heading |
+| :-- | :-- |
+| A page about **one** article (a blog post page) | `<h1>` is the usual choice, because the article **is** the page |
+| A **list** of articles (a blog index) | The page has an `<h1>` ("Blog"), and each article has an `<h2>` |
+| Comments inside an article | One level lower than the article's own sections |
+
+Always keep levels in order without skipping, and choose levels for **structure**, not size. See [Section](./section) for why.
+
+## Dates and Authors
+
+### The `<time>` element
+
+`<time>` gives a machine-readable version of a date or time, even if the visible text is written in a friendly way:
+
+```html
+<time datetime="2026-04-12">12 April 2026</time>
+<time datetime="2026-04-12T09:30:00+05:30">Saturday morning</time>
+<time datetime="PT5M">5 min read</time>
+```
+
+| `datetime` format | Meaning | Example |
+| :-- | :-- | :-- |
+| `yyyy-mm-dd` | A date | `2026-04-12` |
+| `yyyy-mm-ddThh:mm` plus an offset | A date and time with a time zone | `2026-04-12T09:30:00+05:30` |
+| `yyyy-mm` | A month | `2026-04` |
+| `PT5M` | A duration (5 minutes) | `PT5M` |
+
+The visible text can be in **any language and style**. The `datetime` value is what machines read, so search engines, calendars, and translation tools can understand it.
+
+### The author
+
+Link the author to a page about them, and use `rel="author"` when that is who wrote the article:
+
+```html
+<p>By <a href="/authors/ada" rel="author">Ada Lovelace</a></p>
+```
+
+For contact details of the article's author, you can use the `<address>` element. See [Address](./address).
+
+## A Clickable Card, Done Well
+
+Product and blog **cards** are typically articles, and designers want the whole card to be clickable. The common mistake is to wrap the entire card in one big `<a>`, which makes a screen reader read **everything** as one long link name. A better pattern: one real link on the **heading**, stretched across the card with CSS.
+
+```html
+<article class="card">
+  <img src="/img/sourdough.jpg" alt="" width="320" height="200" />
+  <h3><a href="/posts/sourdough">A simple sourdough loaf</a></h3>
+  <p>Four ingredients, one patient weekend.</p>
+</article>
+```
+
+```css title="style.css"
+.card {
+  position: relative;          /* the anchor point for the stretched link */
+}
+
+.card a::after {
+  content: "";
+  position: absolute;
+  inset: 0;                    /* the invisible link now covers the whole card */
+}
+
+.card a:focus-visible::after {
+  outline: 3px solid #1d4ed8;  /* keep a visible focus ring around the card */
+}
+```
+
+The link text is short and clear ("A simple sourdough loaf"), screen reader users hear one link per card, and mouse users can click anywhere on it. The picture uses `alt=""` because it only decorates the link next to it.
+
+## User-Generated Content: Handle With Care
+
+Comments, reviews, and forum posts are articles written by **strangers**. Treat them as untrusted:
+
+- **Escape everything.** Show comment text as plain text (`textContent`), or sanitise any HTML you allow with a trusted library.
+- **Mark user links** with `rel="ugc nofollow noopener"`, so search engines do not treat them as endorsements, and the new page cannot control yours.
+- **Limit length and rate,** and moderate or filter abuse.
+- **Never trust the author name, date, or ids** in a submitted comment. Set them on the server.
+- **Protect personal data.** Show only the name and details the person agreed to show.
+
+```html
+<article>
+  <h3>Sam</h3>
+  <p>Great tips! See <a href="https://example.com" rel="ugc nofollow noopener">my blog</a>.</p>
+</article>
+```
+
+See [Secure Form Design](/tutorials/html/forms/secure-form-design).
+
+## Accessibility at a Glance
+
+- **Give every article a heading,** at the right level.
+- **Use real `<time>`, headings, lists, and links** inside, not styled `<div>`s.
+- **Name important articles** with `aria-labelledby` pointing at their heading, if they appear in a list that users move between.
+- **Do not wrap a whole card in one big link.** Link the heading, and stretch it with CSS.
+- **Keep reading order logical:** header, content, then footer, in the HTML itself.
+- **Give images useful `alt` text** (or `alt=""` when decorative).
+- **Write short, descriptive link text** such as "Read more about sourdough", and not just "Read more".
+- **Check contrast and focus styles** on cards and links.
+- **Keep nested comments readable:** do not indent so deeply that text becomes narrow on small screens.
+
+## Global Audience Notes
+
+- **Set `lang`** on `<html>`, and on an `<article>` that is in another language: `<article lang="hi">`.
+- **Use `<time datetime>`** so dates stay machine-readable, whatever language or format you show. Format the visible text for the visitor's locale (for example with `Intl.DateTimeFormat`).
+- **Right-to-left articles:** use `dir="rtl"` on an article written in Arabic or Hebrew, even on a left-to-right page.
+- **Reading time** ("5 min read") is a rough guide. Languages differ in reading speed, so label it as an estimate.
+- **Translated copies** of an article should link to each other with `hreflang`, so visitors and search engines find the right version.
+- **Keep headlines plain and short,** so they translate and fit small screens.
+- **Test with long names and long words,** which are common in some languages, and allow them to wrap.
+
+## Common Mistakes to Avoid
+
+1. **Using `<article>` for any chunk of content.** It must stand on its own.
+2. **Using `<section>` for a blog post or comment.** Those are articles.
+3. **An article with no heading.**
+4. **Wrapping a whole card in one giant link,** so its name is a paragraph long.
+5. **Using `<div>` for items** that clearly are articles.
+6. **Writing dates only as text,** with no `<time datetime>`.
+7. **Showing user comments unescaped.**
+8. **Leaving `rel="ugc nofollow"` off links in comments.**
+9. **Putting `<main>` inside an `<article>`.**
+10. **Using `<article>` only to style something.**
+11. **Skipping heading levels** inside nested articles.
+12. **Treating an article's footer as the page footer.** It belongs to the article.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Mark up a blog post as an `<article>` with a `<header>`, a few paragraphs, and a `<footer>`.
+2. Add a `<time datetime>` with a friendly visible date.
+3. Put a list of three posts on one page, each as an `<article>` with its own heading.
+4. Add a "comments" `<section>` to a post, with two `<article>` comments.
+5. Print the nesting of your page with the console script from this lesson.
+6. Build a product card as an `<article>`, with the heading as the only link, stretched with CSS.
+7. Use the stand-alone test to decide whether five pieces of content on a site you know are articles, sections, or neither.
+8. Add `rel="ugc nofollow noopener"` to a link inside a comment.
+9. Give an article in another language the right `lang` (and `dir` if needed).
+10. Bonus: open your browser's reader mode on a page of yours. Does it find the right content?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<article>` element for?</summary>
+
+It marks a self-contained piece of content that could be distributed or reused on its own, such as a blog post, news story, comment, or product card.
+
+</details>
+
+<details>
+<summary>2. What is the simple test for choosing `<article>` over `<section>`?</summary>
+
+Ask whether the content would still make complete sense lifted out of the page, for example in a feed or an email. If yes, it is an article. If it is a themed part of something bigger, it is a section.
+
+</details>
+
+<details>
+<summary>3. Can articles be nested?</summary>
+
+Yes. Inner articles are related to the outer one, which is ideal for comments inside a post. Articles can also contain sections, and sections can contain articles.
+
+</details>
+
+<details>
+<summary>4. What does the `<time>` element add?</summary>
+
+A machine-readable `datetime` value alongside friendly visible text, so search engines, calendars, and translation tools understand the date, in any language.
+
+</details>
+
+<details>
+<summary>5. How do you make a whole card clickable without breaking accessibility?</summary>
+
+Put one real link on the card's heading, and stretch it over the card with a CSS `::after` pseudo-element. This gives screen reader users one short link per card, and mouse users a large click area.
+
+</details>
+
+<details>
+<summary>6. How should you treat user comments?</summary>
+
+As untrusted. Escape the text, sanitise any allowed HTML, add `rel="ugc nofollow noopener"` to links, set author and date on the server, and moderate and rate-limit.
+
+</details>
+
+## Key Takeaways
+
+- `<article>` marks **self-contained** content that makes sense on its own and could be reused elsewhere.
+- Blog posts, news stories, comments, reviews, and product cards are all articles.
+- The test: would it work in a feed, an email, or another site? If it is only a themed part of a bigger whole, use `<section>`.
+- Articles can have a `<header>` and `<footer>`, can contain sections, and can nest (comments inside a post).
+- Every article needs a **heading**, at the right level.
+- Use `<time datetime>` for dates, and `rel="author"` for the writer.
+- Make cards clickable with **one link on the heading** stretched by CSS, not a giant link around everything.
+- Treat comments and other user content as untrusted: escape, sanitise, and mark links with `rel="ugc nofollow noopener"`.
+
+Next, learn how to mark up side content, in [Aside](./aside), or return to the [Semantic HTML overview](/tutorials/html/semantic-html).

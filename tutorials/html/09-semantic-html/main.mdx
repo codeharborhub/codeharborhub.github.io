@@ -1,15 +1,467 @@
 ---
-id: main-element
-title: "The Main Element: Encapsulating Primary Page Content"
-sidebar_label: "Main (<main>)"
+id: html-main
+title: "HTML Main Element"
+sidebar_label: "Main"
 sidebar_position: 5
 slug: /html/semantic-html/main
-description: "Understand the main tag rules, ensuring only one visible instance per document exists to represent the central content of the webpage."
+description: "Learn the HTML main element: marking the dominant content of a page, why a page should have only one visible main, what belongs inside and outside it, skip link targets with tabindex, single-page app focus handling, reader modes, layout CSS, and common mistakes, with live examples."
 keywords:
-  - HTML main tag
-  - main element usage
-  - primary content area HTML
-  - main landmark screen readers
+  - HTML main element
+  - main landmark
+  - only one main per page
+  - skip to main content
+  - HTML5 main tag
+  - main vs article vs section
+  - single page app focus main
+  - reader mode main content
+  - semantic page content
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, layout, structure]
+tags: [html, web-development, beginner, semantic-html, main, landmarks, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function CountDemo() {
+  const rootRef = useRef(null);
+  const [mode, setMode] = useState("none");
+  const [verdict, setVerdict] = useState(null);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Add a second main element?</legend>
+        <label style={{display: "block"}}><input type="radio" name="cd-mode" checked={mode === "none"} onChange={() => { setMode("none"); setVerdict(null); }} /> No, just one</label>
+        <label style={{display: "block"}}><input type="radio" name="cd-mode" checked={mode === "visible"} onChange={() => { setMode("visible"); setVerdict(null); }} /> Yes, a second visible main</label>
+        <label style={{display: "block"}}><input type="radio" name="cd-mode" checked={mode === "hidden"} onChange={() => { setMode("hidden"); setVerdict(null); }} /> Yes, but the extra one has the hidden attribute</label>
+      </fieldset>
+      <div ref={rootRef}>
+        <header style={box}>Site header</header>
+        <main style={box}>
+          <strong>Main content:</strong> the festival programme.
+        </main>
+        {mode !== "none" ? (
+          <main style={box} hidden={mode === "hidden"}>
+            <strong>Second main:</strong> a "Special offers" area.
+          </main>
+        ) : null}
+        <footer style={box}>Site footer</footer>
+      </div>
+      <p style={{margin: "0.5rem 0"}}>
+        <button
+          type="button"
+          onClick={() => {
+            const all = rootRef.current.querySelectorAll("main").length;
+            const visible = rootRef.current.querySelectorAll("main:not([hidden])").length;
+            setVerdict({all, visible});
+          }}
+        >
+          Count the main landmarks
+        </button>
+      </p>
+      {verdict ? (
+        <p role="status" style={{margin: 0, color: verdict.visible === 1 ? "#15803d" : "#b91c1c"}}>
+          {verdict.all} main element{verdict.all === 1 ? "" : "s"} in the HTML, {verdict.visible} visible.{" "}
+          {verdict.visible === 1
+            ? "Correct: a screen reader finds exactly one main landmark."
+            : "Wrong: a page must have exactly one visible main."}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function ReaderModeDemo() {
+  const [reader, setReader] = useState(false);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label>
+          <input type="checkbox" checked={reader} onChange={(event) => setReader(event.target.checked)} />{" "}
+          Reader mode: keep only the main content
+        </label>
+      </p>
+      {!reader ? <header style={box}>Site header and logo</header> : null}
+      {!reader ? <nav style={box} aria-label="Reader demo">Home · Programme · Tickets · Contact</nav> : null}
+      <div style={{display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        <main style={{...box, flex: "3 1 14rem", borderColor: reader ? "#15803d" : "#94a3b8"}}>
+          <h4 style={{margin: "0 0 0.25rem"}}>How to bake bread</h4>
+          <p style={{margin: 0}}>Mix flour, water, salt, and yeast. Knead until smooth, rest until doubled, then shape and bake.</p>
+        </main>
+        {!reader ? <aside style={{...box, flex: "1 1 8rem"}}>Related: sourdough, cookies</aside> : null}
+      </div>
+      {!reader ? <footer style={box}>© 2026 My Site · Privacy · Terms</footer> : null}
+    </div>
+  );
+}
+
+When you open a newspaper, your eyes skip the masthead, the adverts, and the page numbers, and land on the story. You know which part is "the thing I came for." On the web, the **`<main>`** element tells browsers and assistive tools exactly the same thing: **this is the real content of the page.**
+
+It is one of the simplest elements to use, and one of the most useful. A single `<main>` helps screen reader users jump past your logo and menu in one keystroke, helps reader modes find the article, and gives skip links a place to land.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<main>` means, and what belongs inside it
+- Why a page has only **one visible** `<main>`
+- What stays **outside** it: headers, menus, sidebars, and footers
+- How `<main>` works with skip links
+- How to handle `<main>` in single-page apps
+- Layout CSS for the content area
+- Accessibility, security, and global notes
+- Common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<body>
+  <header>…site name and menu…</header>
+
+  <main id="main" tabindex="-1">
+    <h1>How to bake bread</h1>
+    <p>Mix flour, water, salt, and yeast…</p>
+
+    <h2>Shaping the loaf</h2>
+    <p>Start with a round of dough…</p>
+  </main>
+
+  <footer>…copyright and links…</footer>
+</body>
+```
+
+```css title="style.css"
+main {
+  max-width: 70ch;
+  margin-inline: auto;
+  padding: 1.5rem 1rem;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<header style={{padding: "0.5rem 0.75rem", border: "1px dashed #94a3b8", borderRadius: "6px"}}>Site name · Menu</header>
+<main id="mn-basic" tabIndex={-1} style={{maxWidth: "70ch", margin: "0.5rem auto", padding: "0.5rem 0.75rem"}}>
+  <h3 style={{margin: "0 0 0.25rem"}}>How to bake bread</h3>
+  <p>Mix flour, water, salt, and yeast…</p>
+  <h4 style={{margin: "0.5rem 0 0.25rem"}}>Shaping the loaf</h4>
+  <p style={{margin: 0}}>Start with a round of dough…</p>
+</main>
+<footer style={{padding: "0.5rem 0.75rem", border: "1px dashed #94a3b8", borderRadius: "6px"}}>© 2026 My Site</footer>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+`<main>` has **no visual style** of its own. It is a plain block. Its job is **meaning**: a screen reader announces it as the **main** landmark, and offers a shortcut to jump straight to it.
+
+## The Golden Rule: One Visible `<main>`
+
+A page has **one** dominant content area, so it has **one** visible `<main>`. If there were several, a screen reader user could not tell which is the "real" one, and the shortcut would stop meaning anything.
+
+Try adding extra `<main>` elements below, and count what a screen reader would find:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Correct: exactly one visible main -->
+<main>…</main>
+
+<!-- Wrong: two visible mains -->
+<main>…programme…</main>
+<main>…special offers…</main>
+
+<!-- Allowed: an extra main that is hidden -->
+<main>…programme…</main>
+<main hidden>…another view that is not showing yet…</main>
+```
+
+```js title="script.js"
+const all = document.querySelectorAll("main").length;
+const visible = document.querySelectorAll("main:not([hidden])").length;
+
+console.log(all + " in the HTML, " + visible + " visible");
+// A correct page always has exactly one visible
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CountDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The specification allows several `<main>` elements **only** if all but one have the `hidden` attribute. That is useful for sites that swap "views" in the same document. For an ordinary page, just use one.
+
+:::note Not the same as `role="main"`
+Older pages wrote `<div role="main">`. A real `<main>` has the same meaning built in, so you do **not** need to add `role="main"` to it.
+:::
+
+## What Belongs Inside `<main>`
+
+The content that is **unique to this page**: the thing the visitor came for.
+
+| Inside `<main>` | Outside `<main>` |
+| :-- | :-- |
+| The page's `<h1>` and the article or product | The site logo and name (in the page `<header>`) |
+| Sections, articles, forms, tables, and images for this page | The site-wide menu (in `<nav>`) |
+| A search form **for this page's** results | A site-wide search box (in the header) |
+| A "related products" box that belongs with this content | A page-wide sidebar (in `<aside>` outside main) |
+| Pagination for this list | Copyright and legal links (in `<footer>`) |
+| An embedded video, chart, or tool | Cookie banners and chat widgets (usually outside) |
+
+A handy test: **would this block be repeated, unchanged, on many other pages?** If yes, it probably does not belong in `<main>`.
+
+### Where `<main>` Can and Cannot Sit
+
+- **Allowed:** directly in `<body>`, or inside plain wrappers such as a `<div>`.
+- **Not allowed:** inside `<article>`, `<aside>`, `<header>`, `<footer>`, or `<nav>`.
+
+A typical modern page is built like this:
+
+```html
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header>…</header>
+
+  <div class="layout">
+    <nav aria-label="Section">…</nav>
+
+    <main id="main" tabindex="-1">
+      <h1>Page title</h1>
+      …
+    </main>
+
+    <aside aria-label="Related">…</aside>
+  </div>
+
+  <footer>…</footer>
+</body>
+```
+
+Here the section menu and the sidebar sit **beside** `<main>`, not inside it, because they are not the page's own content.
+
+## Try It: What Reader Mode Keeps
+
+Reader modes (in browsers and apps), and some "read aloud" tools, try to strip a page down to the content that matters. A correct `<main>` helps them. Tick the box to see which parts of this page a reader mode would keep.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<header>Site header and logo</header>
+<nav aria-label="Main">Home · Programme · Tickets · Contact</nav>
+
+<main>
+  <h1>How to bake bread</h1>
+  <p>Mix flour, water, salt, and yeast. Knead until smooth…</p>
+</main>
+
+<aside>Related: sourdough, cookies</aside>
+<footer>© 2026 My Site · Privacy · Terms</footer>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ReaderModeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Reader tools use many clues (they are not required to follow `<main>`), but a clear `<main>`, a good `<h1>`, and an `<article>` make their job much easier.
+
+## Skip Links and the `tabindex="-1"` Trick
+
+A skip link jumps keyboard users past the menu, straight to the content. `<main>` is the natural target:
+
+```html
+<a class="skip-link" href="#main">Skip to main content</a>
+…
+<main id="main" tabindex="-1">…</main>
+```
+
+- **`id="main"`** gives the link something to point at.
+- **`tabindex="-1"`** lets the element receive focus from a script or a link, **without** adding it to the normal Tab order. Without it, some browsers scroll to `<main>` but leave the keyboard focus behind in the header.
+- Because `<main>` is not interactive, you may want to hide its focus outline: `main:focus { outline: none; }`. This is acceptable here because the user did not "tab into" it, but never remove outlines from buttons, links, or fields.
+
+See [Header](./header) for the full skip link pattern.
+
+## Single-Page Apps and Changing Views
+
+In a single-page app (React, Vue, and others), "navigating" does not load a new page. The content swaps, and a screen reader hears **nothing**. After each view change, help people notice:
+
+```js
+function showView(title) {
+  document.title = title + " · My Site";      // 1. update the tab title
+
+  const main = document.getElementById("main");
+  main.focus();                               // 2. move focus to the new content
+}
+```
+
+Good habits:
+
+1. Keep **one** persistent `<main>` and replace what is inside it, or hide the old one with `hidden`.
+2. **Update `document.title`** for every view.
+3. **Move focus** to `<main>` or to the new `<h1>` (with `tabindex="-1"`), or announce the change in a polite live region.
+4. **Restore the scroll position** sensibly, and keep the Back button working.
+
+## Layout CSS
+
+`<main>` is a good hook for the layout of your content area:
+
+```css title="style.css"
+body {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;   /* header, main, footer */
+}
+
+main {
+  max-width: 70ch;                     /* a comfortable line length */
+  width: 100%;
+  margin-inline: auto;
+  padding: 1.5rem 1rem;
+}
+```
+
+The `1fr` row makes `<main>` stretch, so the footer stays at the bottom even on a short page.
+
+## Accessibility at a Glance
+
+- **Exactly one visible `<main>` per page,** with no `role="main"` needed.
+- **Put the page's unique content inside it,** and repeated blocks (logo, site menu, footer) outside.
+- **Provide a skip link** that targets it, with `id` and `tabindex="-1"`.
+- **Start the content with an `<h1>`** (inside `<main>` or just before it), and keep heading levels in order.
+- **Do not put `<main>` inside `<article>`, `<aside>`, `<header>`, `<footer>`, or `<nav>`.**
+- **In a single-page app,** update the title and move focus after a view change.
+- **Do not hide the real content** with `hidden` or `display: none` while visitors expect to read it.
+- **Keep a readable line length** (about 60 to 80 characters), and allow zooming to 200% or more.
+
+## Security and Privacy Notes
+
+- **`<main>` protects nothing.** It is structure. Never rely on hiding content in a second `<main>` with `hidden`, because it is still in the HTML source for anyone to read.
+- **Escape user-supplied content** you place inside `<main>`, such as comments and profile text.
+- **Do not put private data** (personal details, tokens, account numbers) into the page source "for later use." It can be read by any script or extension.
+- **Be careful with user-generated HTML.** If you allow rich text, clean it with a trusted sanitiser, so it cannot add a second `<main>`, scripts, or misleading structure.
+
+## Global Audience Notes
+
+- **Set `lang`** on `<html>`, and on passages in another language inside `<main>`.
+- **Right-to-left pages** (`dir="rtl"`) work with `<main>` unchanged. Prefer logical properties like `margin-inline` and `padding-inline` in your layout.
+- **Line length differs by script.** The `ch` unit suits Latin text. For Chinese, Japanese, and Korean, a width in `em` units (about 30 to 40 characters per line) often reads better.
+- **Keep the order of the HTML the same as the reading order,** so translation tools, voice assistants, and screen readers hear it properly.
+- **Give the page one clear `<h1>`** in the page's language, which also becomes the title people hear in search results and readers.
+- **Light pages** (few scripts, small images) work better on slow or older devices, which many visitors worldwide rely on.
+
+## Common Mistakes to Avoid
+
+1. **More than one visible `<main>`.**
+2. **Putting the site header, menu, or footer inside `<main>`.**
+3. **Putting `<main>` inside `<article>`, `<aside>`, `<header>`, `<footer>`, or `<nav>`.**
+4. **Wrapping the whole `<body>` in `<main>`.**
+5. **Adding `role="main"` to a `<main>`** (redundant), or to several divs.
+6. **No skip link,** or a skip link whose target does not exist.
+7. **Forgetting `tabindex="-1"`** so focus does not really move.
+8. **Using `<main>` as a layout wrapper** for several unrelated areas.
+9. **Hiding the real content with `hidden`** or `display: none` by mistake.
+10. **Changing views in a single-page app without updating the title or focus.**
+11. **Skipping the `<h1>`,** or using several `<h1>` elements without a reason.
+12. **Using `<main>` for every page "section."** Use `<section>` and `<article>` for that.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a page with a `<header>`, a `<main>`, and a `<footer>`.
+2. Add an `<h1>` inside `<main>`, and a few `<h2>` sections.
+3. Use `querySelectorAll("main")` in the console to count your `<main>` elements.
+4. Add a skip link that targets `<main id="main" tabindex="-1">`, and test it with Tab and Enter.
+5. Move a site-wide sidebar **out** of `<main>`, and explain why.
+6. Style `<main>` with a maximum width and centered margins.
+7. Use CSS grid on `<body>` so the footer sits at the bottom of a short page.
+8. Make a page with two views, and hide the inactive one's `<main>` with `hidden`.
+9. Write a small `showView()` function that updates `document.title` and moves focus.
+10. Bonus: use your browser's accessibility panel (or a screen reader's landmark list) to confirm there is exactly one `main`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<main>` element for?</summary>
+
+It marks the dominant, unique content of the page, the thing the visitor came for. It is announced as the main landmark, and gives screen reader users a shortcut past the repeated header and menu.
+
+</details>
+
+<details>
+<summary>2. How many `<main>` elements may a page have?</summary>
+
+Only one visible at a time. Extra `<main>` elements are allowed only if they have the `hidden` attribute.
+
+</details>
+
+<details>
+<summary>3. What should stay outside `<main>`?</summary>
+
+Blocks repeated across pages: the site header and logo, the site-wide menu, page-wide sidebars, and the footer. `<main>` also cannot sit inside `<article>`, `<aside>`, `<header>`, `<footer>`, or `<nav>`.
+
+</details>
+
+<details>
+<summary>4. Do you need `role="main"` on `<main>`?</summary>
+
+No. The element already has the main role built in.
+
+</details>
+
+<details>
+<summary>5. Why add `tabindex="-1"` to `<main>`?</summary>
+
+So that a skip link or a script can move keyboard focus to it, without adding it to the normal Tab order. Otherwise some browsers scroll there but leave focus behind.
+
+</details>
+
+<details>
+<summary>6. What should a single-page app do when the view changes?</summary>
+
+Update `document.title`, and move focus to `<main>` (or the new `<h1>`), or announce the change, because screen readers get no page-load signal.
+
+</details>
+
+## Key Takeaways
+
+- `<main>` marks the page's **unique, dominant content** and is announced as the main landmark.
+- Use **one visible** `<main>` per page. Extra ones must be `hidden`.
+- Keep repeated blocks (header, site menu, footer, page-wide sidebars) **outside** it, and never put `<main>` inside `<article>`, `<aside>`, `<header>`, `<footer>`, or `<nav>`.
+- You do not need `role="main"`.
+- Make it the target of a **skip link**, with an `id` and `tabindex="-1"`.
+- In single-page apps, update the title and move focus after view changes.
+- Good structure helps reader modes, screen readers, and translation tools, but it is not security.
+- Use `<section>` and `<article>` for subdivisions inside it, not more `<main>` elements.
+
+Next, learn how to group content into themed parts, in [Section](./section), or return to the [Semantic HTML overview](/tutorials/html/semantic-html).

@@ -1,15 +1,515 @@
 ---
-id: footer-element
-title: "The Footer Element: Closing Document and Section Content"
-sidebar_label: "Footer (<footer>)"
+id: html-footer
+title: "HTML Footer Element"
+sidebar_label: "Footer"
 sidebar_position: 9
 slug: /html/semantic-html/footer
-description: "Structure page footers and section metadata using the footer tag for copyright notices, author links, terms, and sitemaps."
+description: "Learn the HTML footer element: closing information for a page, article, or section, how a page-level footer becomes a contentinfo landmark, what belongs in a footer (copyright, legal links, contact, sitemap, social links), the small element, sticky footer layouts, accessibility, privacy and consent links, global legal notes, and common mistakes, with live examples."
 keywords:
-  - HTML footer tag
-  - footer element usage
-  - site footer semantic structure
-  - copyright area HTML
+  - HTML footer element
+  - contentinfo landmark
+  - footer vs aside
+  - HTML5 footer tag
+  - website footer links
+  - small element copyright
+  - sticky footer CSS grid
+  - cookie settings link footer
+  - accessibility statement footer
+  - article footer HTML
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, layout, structure]
+tags: [html, web-development, beginner, semantic-html, footer, contentinfo, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function BuilderDemo() {
+  const parts = [
+    {key: "copyright", label: "Copyright line", always: true},
+    {key: "legal", label: "Privacy, terms, and cookie settings links"},
+    {key: "a11y", label: "Accessibility statement link"},
+    {key: "contact", label: "Contact details"},
+    {key: "sitemap", label: "Site links"},
+    {key: "social", label: "Social media links"},
+    {key: "language", label: "Language links"},
+  ];
+  const [on, setOn] = useState({copyright: true, legal: true, a11y: true, contact: false, sitemap: false, social: false, language: false});
+  const toggle = (key) => setOn({...on, [key]: !on[key]});
+  const lines = ["<footer>"];
+  if (on.sitemap) {
+    lines.push('  <nav aria-label="Footer">', "    <ul>", '      <li><a href="/programme">Programme</a></li>', '      <li><a href="/tickets">Tickets</a></li>', "    </ul>", "  </nav>");
+  }
+  if (on.contact) {
+    lines.push("  <address>", '    <a href="mailto:hello@example.com">hello@example.com</a>', "  </address>");
+  }
+  if (on.social) {
+    lines.push('  <ul aria-label="Social media">', '    <li><a href="https://example.com/festival" rel="noopener">Festival on Example</a></li>', "  </ul>");
+  }
+  if (on.language) {
+    lines.push('  <ul aria-label="Language">', '    <li><a href="/en/" hreflang="en" lang="en">English</a></li>', '    <li><a href="/hi/" hreflang="hi" lang="hi">हिन्दी</a></li>', "  </ul>");
+  }
+  const legal = [];
+  if (on.legal) {
+    legal.push('<a href="/privacy">Privacy</a>', '<a href="/terms">Terms</a>', '<button type="button" id="cookie-settings">Cookie settings</button>');
+  }
+  if (on.a11y) {
+    legal.push('<a href="/accessibility">Accessibility statement</a>');
+  }
+  if (legal.length > 0) {
+    lines.push('  <ul aria-label="Legal">');
+    legal.forEach((item) => lines.push("    <li>" + item + "</li>"));
+    lines.push("  </ul>");
+  }
+  lines.push("  <p><small>&copy; 2026 Spring Bread Festival. All rights reserved.</small></p>", "</footer>");
+  const code = lines.join("\n");
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>What does your footer need?</legend>
+        {parts.map((part) => (
+          <label key={part.key} style={{display: "block"}}>
+            <input type="checkbox" checked={on[part.key]} disabled={part.always} onChange={() => toggle(part.key)} /> {part.label}
+          </label>
+        ))}
+      </fieldset>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+    </div>
+  );
+}
+
+export function StickyDemo() {
+  const [sticky, setSticky] = useState(false);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.4rem 0.6rem"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label>
+          <input type="checkbox" checked={sticky} onChange={(event) => setSticky(event.target.checked)} />{" "}
+          Use the sticky-footer CSS
+        </label>
+      </p>
+      <div
+        style={{
+          height: "13rem",
+          border: "2px solid #64748b",
+          borderRadius: "8px",
+          padding: "0.4rem",
+          display: sticky ? "grid" : "block",
+          gridTemplateRows: sticky ? "auto 1fr auto" : undefined,
+          gap: "0.4rem",
+          overflow: "hidden",
+        }}
+      >
+        <header style={box}>Header</header>
+        <main style={{...box, marginTop: sticky ? 0 : "0.4rem"}}>A very short page. Not much content here.</main>
+        <footer style={{...box, background: "#e2e8f0", color: "#1f2937", marginTop: sticky ? 0 : "0.4rem"}}>Footer</footer>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0", fontSize: "0.9em"}}>
+        {sticky
+          ? "The footer sits at the bottom of the window, even though the content is short."
+          : "The footer floats up under the short content, leaving an empty gap below it."}
+      </p>
+    </div>
+  );
+}
+
+At the end of a letter, you sign off. At the end of a book, you find the publisher, the year, and the notes. At the end of a web page, you expect to find **who made it, how to reach them, and the small print**. The **`<footer>`** element marks that closing content.
+
+It looks almost identical to `<header>`, and follows the same idea: it can be used for the whole page **or** for one article or section, and its meaning depends on where you put it. This lesson shows what belongs inside, what visitors expect to find there, and how to build one that works for everyone.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<footer>` is for, and where it can be used
+- When a footer becomes the **contentinfo** landmark
+- What belongs in a page footer, and what does not
+- Footers inside articles and sections
+- The `<small>` element for fine print
+- Legal and privacy links visitors expect
+- A footer that stays at the bottom of short pages
+- Accessibility, security, and global notes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<footer>
+  <nav aria-label="Footer">
+    <ul>
+      <li><a href="/programme">Programme</a></li>
+      <li><a href="/tickets">Tickets</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <p><small>&copy; 2026 Spring Bread Festival. All rights reserved.</small></p>
+</footer>
+```
+
+```css title="style.css"
+footer {
+  padding: 1.5rem 1rem;
+  border-top: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+}
+
+footer ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<footer style={{padding: "1rem", borderTop: "1px solid #cbd5e1", fontSize: "0.9rem"}}>
+  <nav aria-label="Footer">
+    <ul style={{display: "flex", flexWrap: "wrap", gap: "1rem", listStyle: "none", margin: "0 0 0.75rem", padding: 0}}>
+      <li><a href="#ft" onClick={(event) => event.preventDefault()}>Programme</a></li>
+      <li><a href="#ft" onClick={(event) => event.preventDefault()}>Tickets</a></li>
+      <li><a href="#ft" onClick={(event) => event.preventDefault()}>Contact</a></li>
+    </ul>
+  </nav>
+  <p style={{margin: 0}}><small>&copy; 2026 Spring Bread Festival. All rights reserved.</small></p>
+</footer>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+As with `<header>`, a `<footer>` has **no default look**. It is a plain block, and the line and spacing above are CSS. Its job is meaning.
+
+## Two Kinds of Footer
+
+The same element means different things, depending on **where it sits**:
+
+| Where it sits | What it is | Announced as |
+| :-- | :-- | :-- |
+| **Directly in `<body>`** (not inside another sectioning element) | The footer for the **whole page** | **contentinfo** landmark |
+| Inside `<article>` | The footer for **that article**: tags, author note, share links | Nothing special |
+| Inside `<section>` | The footer for **that section**: "See all" link, notes | Nothing special |
+| Inside `<main>`, `<aside>`, or `<nav>` | The footer for that region | Nothing special |
+
+A page can have **many** footers, but only the page-level one is the `contentinfo` landmark. A page should have **one**.
+
+```html
+<body>
+  <main>
+    <article>
+      <h1>How to shape a loaf</h1>
+      <p>…</p>
+
+      <footer>                        <!-- the article's footer: no landmark -->
+        <p>Filed under: <a href="/topics/bread">Bread</a></p>
+      </footer>
+    </article>
+  </main>
+
+  <footer>                            <!-- the page footer: contentinfo landmark -->
+    <p><small>&copy; 2026 My Site</small></p>
+  </footer>
+</body>
+```
+
+A footer does **not** have to be at the very bottom of the screen. It is about meaning: **closing information** for its parent. And, like `<header>`, it cannot contain another `<header>` or `<footer>`.
+
+## What Belongs in a Page Footer
+
+Visitors have learned where to look for certain things. Putting them in a footer is a convention worth following.
+
+| Typical content | Notes |
+| :-- | :-- |
+| **Copyright** line | Use `<small>`, and a `&copy;` symbol |
+| **Legal links** | Privacy policy, terms, cookie settings |
+| **Accessibility statement** | Required or expected in many places |
+| **Contact information** | An email, phone number, or address, with `<address>` |
+| **Site links** | A secondary menu or sitemap, in a `<nav aria-label="Footer">` |
+| **Social media links** | With text names, not only icons |
+| **Language or region selector** | Links with `lang` and `hreflang` |
+| **"Back to top"** link | Helpful on long pages |
+| **Newsletter sign-up** | With a proper label (see [Accessible Forms](/tutorials/html/forms/accessible-forms)) |
+| **Credits and licences** | Photo credits, a content licence |
+
+What does **not** belong:
+
+- The **main page content** (that is `<main>`).
+- The **primary navigation** (that is the header's `<nav>`).
+- **Related content** or ads (that is `<aside>`).
+- **Essential instructions** that visitors must read before they can use the page.
+
+### Try It: Build a Footer
+
+Choose what your site needs, and watch the markup grow. Notice the labels on each list. They let a screen reader user tell several lists apart.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<footer>
+  <nav aria-label="Footer">
+    <ul>
+      <li><a href="/programme">Programme</a></li>
+      <li><a href="/tickets">Tickets</a></li>
+    </ul>
+  </nav>
+
+  <address>
+    <a href="mailto:hello@example.com">hello@example.com</a>
+  </address>
+
+  <ul aria-label="Legal">
+    <li><a href="/privacy">Privacy</a></li>
+    <li><a href="/terms">Terms</a></li>
+    <li><button type="button" id="cookie-settings">Cookie settings</button></li>
+    <li><a href="/accessibility">Accessibility statement</a></li>
+  </ul>
+
+  <p><small>&copy; 2026 Spring Bread Festival. All rights reserved.</small></p>
+</footer>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BuilderDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## The `<small>` Element
+
+`<small>` marks **side comments and fine print**: copyright, legal notices, and licensing. It is **not** a way to make text tiny.
+
+```html
+<p><small>&copy; 2026 Spring Bread Festival. All rights reserved.</small></p>
+<p><small>Photos by Ada, licensed under CC BY 4.0.</small></p>
+```
+
+Browsers show it in a slightly smaller size by default, but its **meaning** is "fine print." Do not use it for long paragraphs of important text, because tiny text is hard to read.
+
+### A Year That Stays Correct
+
+A hard-coded "2026" goes out of date. Options:
+
+- **Static site or build step:** put the year in your template, and rebuild each year.
+- **In the browser:** a small script, with the year written in HTML as a fallback:
+
+```html
+<p><small>&copy; <span id="year">2026</span> Spring Bread Festival</small></p>
+```
+
+```js title="script.js"
+document.getElementById("year").textContent = new Date().getFullYear();
+```
+
+The copyright notice only needs the year of first publication (and, if you like, a range such as 2024 to 2026). It is not legal advice, so check what applies to you.
+
+## Legal and Privacy Links Visitors Expect
+
+Footers are where people look for the "boring but important" links. Depending on your site and your visitors' countries, you may need or want:
+
+| Link | Why |
+| :-- | :-- |
+| **Privacy policy** | Explains what data you collect and why. Required in many places when you collect personal data |
+| **Terms of use** | The rules for using your site or service |
+| **Cookie settings** ("Manage cookies") | Lets visitors change their consent at any time. Use a real `<button>`, since it triggers an action rather than navigating |
+| **Accessibility statement** | Tells visitors how accessible the site is and how to report problems |
+| **Imprint** (for example, "Impressum") | Legally required in some countries to identify the site's operator |
+| **Contact and complaints** | A real way to reach a person |
+| **Refund and shipping policies** | For shops |
+
+## Keeping the Footer at the Bottom
+
+On a page with little content, the footer can float up under the text and leave an empty gap. The fix is a small CSS grid on `<body>`. Tick the box to see it at work.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<body>
+  <header>Header</header>
+  <main>A very short page. Not much content here.</main>
+  <footer>Footer</footer>
+</body>
+```
+
+```css title="style.css"
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;   /* header, main (stretches), footer */
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StickyDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use `100dvh` instead of `100vh` if you want the layout to follow the visible area of mobile browsers whose address bars appear and disappear.
+
+## A Footer Inside an Article or Section
+
+An article's footer holds details **about that article**:
+
+```html
+<article>
+  <h2>How to shape a loaf</h2>
+  <p>Start with a round of dough…</p>
+
+  <footer>
+    <p>Filed under: <a href="/topics/bread">Bread</a>, <a href="/topics/beginners">Beginners</a></p>
+    <p>Share: <a href="/share/email">Email</a> · <a href="/share/copy">Copy link</a></p>
+  </footer>
+</article>
+```
+
+It is a good home for tags, categories, author notes, licence details, and "next" and "previous" links belonging to that item. A section can do the same, with something like a "See all news" link. These footers are **not** landmarks.
+
+## Accessibility at a Glance
+
+- **Use one page-level `<footer>`,** so there is a single `contentinfo` landmark.
+- **Name footer navigation** with `aria-label="Footer"` when the page has other `<nav>` regions.
+- **Use lists** for groups of links, so the number of links is announced, and label them if there are several.
+- **Give social icons text names:** `aria-label="Festival on Example"`, or visible text. An icon alone is not enough.
+- **Use a `<button>` for actions** such as "Cookie settings", and a link for navigation.
+- **Keep text readable:** `<small>` must not be tiny. Aim for at least 14 to 16 px with good contrast (4.5 to 1 or better).
+- **Make touch targets big enough** (at least 24 by 24 CSS pixels, ideally 44), with space between links.
+- **Do not use a footer as the only place** for something visitors urgently need.
+- **Add a "Back to top" link** on long pages, and make sure it moves focus.
+
+## Security and Privacy Notes
+
+- **Do not put sensitive information in the footer,** such as internal email addresses, staff phone numbers, server details, or version numbers that help attackers.
+- **Public email addresses attract spam.** Use a contact form, or accept the risk knowingly.
+- **Open outside links safely:** `rel="noopener"` (and `rel="noreferrer"` if you do not want to share the page address) for social and partner links.
+- **Third-party badges and widgets** in footers (payment logos, review widgets, chat, analytics) can load tracking scripts. Load only trusted ones, and respect the visitor's cookie consent.
+- **Link to your real privacy policy,** and make sure it matches what the site does.
+- **Escape anything dynamic,** such as a visitor's name or a country shown in the footer.
+- **Do not show admin or login links** that expose how your system is built. Hiding a link protects nothing, so always enforce access on the server.
+
+## Global Audience Notes
+
+- **Laws differ by country.** Cookie consent, privacy rights, imprint, tax details, and accessibility statements are required in different places. Check the rules for the countries your visitors live in.
+- **Provide a language and region selector** where you serve several. Write each language name in its own language, and mark it with `lang`.
+- **Use `<address>` and time-zone-aware contact details:** say "Mon to Fri, 9:00 to 17:00 (UTC+05:30)" for support hours.
+- **Show currency and units clearly** if your footer lists prices or shipping.
+- **Right-to-left pages:** flex rows reverse by themselves with `dir="rtl"`. Use logical properties such as `margin-inline-end`.
+- **Footers get long in translation,** since legal words are lengthy. Let links wrap onto several lines.
+- **Do not depend on icons that mean different things in different cultures.** Add text.
+- **Keep the footer light.** Large logo walls and widgets slow every page, a real cost on low-bandwidth connections.
+
+## Common Mistakes to Avoid
+
+1. **Using `<footer>` for the main content,** just because it is at the bottom.
+2. **Nesting a `<footer>` or `<header>` inside a footer.**
+3. **Several page-level footers,** or `role="contentinfo"` on more than one.
+4. **Using `<footer>` for side content** that belongs in an `<aside>`.
+5. **Social icons with no accessible name.**
+6. **Tiny, pale `<small>` text** that is hard to read.
+7. **A "Cookie settings" link that does nothing** or is a `<div>` instead of a `<button>`.
+8. **A copyright year that is years out of date.**
+9. **Unlabelled footer menus,** when the page has other `<nav>` regions.
+10. **A footer floating mid-screen** on short pages.
+11. **Putting essential information only in the footer.**
+12. **Loading trackers in the footer** without consent.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a page footer with a copyright line inside `<small>`.
+2. Add a footer `<nav>` with `aria-label="Footer"` and four links.
+3. Add `<address>` with an email link.
+4. Add legal links, including a "Cookie settings" `<button>`.
+5. Add an article with its own `<footer>` that lists tags.
+6. Use your browser's accessibility panel to find which footer is the `contentinfo` landmark.
+7. Use CSS grid on `<body>` to keep the footer at the bottom of a short page.
+8. Add social links with accessible names, and `rel="noopener"`.
+9. Replace the hard-coded year with a small script, keeping a static fallback.
+10. Bonus: check a site you use. Does it have an accessibility statement and a way to change cookie choices?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<footer>` element for?</summary>
+
+It holds closing information for its parent: for a page, things like copyright, legal links, contact details, and site links. For an article or section, it holds details about that item, such as tags or related links.
+
+</details>
+
+<details>
+<summary>2. When is a footer the `contentinfo` landmark?</summary>
+
+When it is the page-level footer, directly in `<body>` and not inside `<article>`, `<aside>`, `<main>`, `<nav>`, or `<section>`. Footers inside those elements are just footers for that part.
+
+</details>
+
+<details>
+<summary>3. Does a footer have to be at the bottom of the screen?</summary>
+
+No. The element is about meaning, not position. It is usually at the bottom, but CSS decides where it is displayed.
+
+</details>
+
+<details>
+<summary>4. What is `<small>` for?</summary>
+
+Side comments and fine print, such as copyright and legal notices. It is not a way to make text tiny, and it should stay readable.
+
+</details>
+
+<details>
+<summary>5. How do you keep a footer at the bottom of a short page?</summary>
+
+Give `<body>` a minimum height of the viewport and a grid with rows `auto 1fr auto`, so the main area stretches and pushes the footer down.
+
+</details>
+
+<details>
+<summary>6. Why should a "Cookie settings" control be a `<button>`?</summary>
+
+It performs an action (opening a dialog) rather than navigating to another page, so a real button gives correct keyboard behaviour and meaning.
+
+</details>
+
+## Key Takeaways
+
+- `<footer>` holds **closing information** for a page, article, or section.
+- Only the **page-level** footer is the `contentinfo` landmark. Use one per page.
+- Typical contents: copyright in `<small>`, legal and privacy links, an accessibility statement, contact details, site links, and social links with text names.
+- A footer cannot contain another `<header>` or `<footer>`, and is not for main content, primary navigation, or sidebars.
+- Label footer navigation, use lists for link groups, and use buttons for actions such as cookie settings.
+- Keep it at the bottom of short pages with CSS grid, and keep text readable and targets large.
+- Check legal requirements for the countries you serve, and load third-party footer widgets only with consent.
+- Do not hide anything essential, or anything sensitive, in a footer.
+
+Next, learn how to mark up contact details, in [Address](./address), or return to the [Semantic HTML overview](../semantic-html).

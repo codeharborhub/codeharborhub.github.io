@@ -1,15 +1,542 @@
 ---
-id: semantic-page-layout
-title: "Building a Complete Webpage Layout with Semantic HTML"
-sidebar_label: "Complete Page Layout"
+id: html-semantic-page-layout
+title: "Semantic Page Layout"
+sidebar_label: "Semantic Page Layout"
 sidebar_position: 14
 slug: /html/semantic-html/semantic-page-layout
-description: "Bring all semantic HTML5 elements together to construct a fully structured, accessible, clean, and SEO-optimized web application template."
+description: "Put it all together: build a complete, accessible HTML page layout with header, nav, main, article, section, aside, and footer, add a skip link, style it with CSS grid, keep the reading order sensible, and check it with a practical checklist, with live examples."
 keywords:
-  - semantic HTML page template
-  - full semantic layout example
-  - HTML5 structural architecture
-  - accessible semantic webpage
+  - semantic page layout
+  - HTML5 page structure
+  - header nav main footer layout
+  - HTML landmarks page template
+  - CSS grid page layout semantic
+  - skip link main content
+  - accessible web page structure
+  - holy grail layout HTML
+  - semantic HTML example page
+  - HTML5 boilerplate semantic
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, layout, architecture]
+tags: [html, web-development, beginner, semantic-html, layout, landmarks, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function LayoutBuilderDemo() {
+  const [parts, setParts] = useState({header: true, nav: true, aside: true, footer: true});
+  const toggle = (key) => setParts((old) => ({...old, [key]: !old[key]}));
+  const roles = {header: "banner", nav: "navigation", aside: "complementary", footer: "contentinfo"};
+  const box = (bg, extra) => ({background: bg, border: "1px solid #94a3b8", borderRadius: "6px", padding: "0.5rem 0.75rem", fontSize: "0.9em", ...extra});
+  const landmarks = [];
+  if (parts.header) landmarks.push("banner (header)");
+  if (parts.nav) landmarks.push("navigation (nav)");
+  landmarks.push("main (main)");
+  if (parts.aside) landmarks.push("complementary (aside)");
+  if (parts.footer) landmarks.push("contentinfo (footer)");
+  const warnings = [];
+  if (!parts.header) warnings.push("No banner: visitors cannot jump to the site header or logo.");
+  if (!parts.nav) warnings.push("No navigation: screen reader users cannot list your menus.");
+  if (!parts.footer) warnings.push("No contentinfo: the copyright and legal links have no landmark.");
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Include these parts</legend>
+        {Object.keys(parts).map((key) => (
+          <label key={key} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input type="checkbox" checked={parts[key]} onChange={() => toggle(key)} /> {key}
+          </label>
+        ))}
+        <label style={{display: "inline-block", opacity: 0.7}}>
+          <input type="checkbox" checked disabled /> main (always)
+        </label>
+      </fieldset>
+      <div style={{display: "grid", gap: "0.4rem", gridTemplateColumns: parts.aside ? "1fr 9rem" : "1fr"}}>
+        {parts.header && <div style={box("#dbeafe", {gridColumn: "1 / -1"})}><strong>header</strong> · role: {roles.header}</div>}
+        {parts.nav && <div style={box("#dcfce7", {gridColumn: "1 / -1"})}><strong>nav</strong> · role: {roles.nav}</div>}
+        <div style={box("#fef9c3", {minHeight: "5rem"})}><strong>main</strong> · role: main<br />article, sections…</div>
+        {parts.aside && <div style={box("#fae8ff")}><strong>aside</strong> · role: {roles.aside}</div>}
+        {parts.footer && <div style={box("#e2e8f0", {gridColumn: "1 / -1"})}><strong>footer</strong> · role: {roles.footer}</div>}
+      </div>
+      <p style={{margin: "0.6rem 0 0.2rem"}}><strong>A screen reader's landmark list:</strong> {landmarks.join(", ")}</p>
+      <ul role="status" style={{margin: 0, paddingLeft: "1.25rem", color: "#b91c1c"}}>
+        {warnings.map((text) => (<li key={text}>{text}</li>))}
+      </ul>
+    </div>
+  );
+}
+
+export function ChecklistDemo() {
+  const items = [
+    "The page has a lang attribute and a unique title",
+    "There is exactly one visible main element",
+    "A header and footer at page level",
+    "Every nav has a clear name (aria-label) if there are several",
+    "There is one h1, and headings do not skip levels",
+    "Each section has a heading",
+    "A skip link is the first focusable element",
+    "The DOM order matches the visual order",
+    "Landmarks are not wrapped in extra landmark roles",
+    "The page still makes sense with CSS turned off",
+  ];
+  const [checked, setChecked] = useState({});
+  const done = items.filter((_, index) => checked[index]).length;
+  const percent = Math.round((done / items.length) * 100);
+  let verdict = "Keep going: tick each item you have checked.";
+  if (done === items.length) verdict = "Excellent. Now test with a keyboard and a screen reader.";
+  else if (done >= 7) verdict = "Nearly there.";
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset>
+        <legend>Page layout checklist</legend>
+        {items.map((text, index) => (
+          <p key={text} style={{margin: "0.2rem 0"}}>
+            <label>
+              <input type="checkbox" checked={!!checked[index]} onChange={() => setChecked((old) => ({...old, [index]: !old[index]}))} /> {text}
+            </label>
+          </p>
+        ))}
+      </fieldset>
+      <p style={{margin: "0.6rem 0 0.2rem"}}>
+        <progress max="100" value={percent} aria-label="Checklist progress" style={{width: "12rem", verticalAlign: "middle"}} /> {done} of {items.length}
+      </p>
+      <p role="status" style={{margin: 0}}>{verdict}</p>
+    </form>
+  );
+}
+
+Over the last lessons you met each semantic element on its own: `header`, `nav`, `main`, `section`, `article`, `aside`, `footer`, `address`, `details`, and `dialog`. Now it is time to **put them together** into a real page.
+
+A good page layout is like a well-planned building: a clear entrance, signs on every floor, one main hall, and a place for the small rooms on the side. Visitors, search engines, and assistive technology can all find their way around, because the structure is **in the markup**, not only in the paint.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The standard semantic page skeleton
+- Where each element goes, and which one is a landmark
+- A skip link, and a sensible heading outline
+- Laying the page out with CSS grid, without breaking the order
+- Reading order, tab order, and responsive behaviour
+- A practical checklist to test any page
+
+## The Skeleton
+
+Almost every content page can start from this shape:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sourdough for Beginners | The Bread Bin</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header>
+    <a href="/" class="logo">The Bread Bin</a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/" aria-current="page">Home</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <article>
+      <header>
+        <h1>Sourdough for Beginners</h1>
+        <p>By Asha Rao · <time datetime="2026-10-17">17 October 2026</time></p>
+      </header>
+
+      <section aria-labelledby="starter">
+        <h2 id="starter">Make a starter</h2>
+        <p>Mix flour and water, then wait.</p>
+      </section>
+
+      <section aria-labelledby="bake">
+        <h2 id="bake">Bake the loaf</h2>
+        <p>Heat the oven, and score the dough.</p>
+      </section>
+    </article>
+
+    <aside aria-labelledby="tools-title">
+      <h2 id="tools-title">Tools you need</h2>
+      <ul>
+        <li>A kitchen scale</li>
+        <li>A Dutch oven</li>
+      </ul>
+    </aside>
+  </main>
+
+  <footer>
+    <p><small>© 2026 The Bread Bin</small></p>
+    <nav aria-label="Footer">
+      <a href="/privacy">Privacy</a>
+      <a href="/contact">Contact</a>
+    </nav>
+  </footer>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<div style={{display: "grid", gap: "0.5rem"}}>
+  <header style={{display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", background: "#dbeafe", padding: "0.5rem 0.75rem", borderRadius: "6px"}}>
+    <a href="#" onClick={(event) => event.preventDefault()} style={{fontWeight: 700}}>The Bread Bin</a>
+    <nav aria-label="Main (demo)">
+      <a href="#" aria-current="page" onClick={(event) => event.preventDefault()} style={{marginRight: "0.75rem", fontWeight: 700}}>Home</a>
+      <a href="#" onClick={(event) => event.preventDefault()} style={{marginRight: "0.75rem"}}>Recipes</a>
+      <a href="#" onClick={(event) => event.preventDefault()}>About</a>
+    </nav>
+  </header>
+  <div style={{display: "grid", gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(14rem, 1fr))"}}>
+    <article style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.5rem 0.75rem"}}>
+      <h2 style={{marginTop: 0}}>Sourdough for Beginners</h2>
+      <p style={{margin: "0 0 0.5rem", fontSize: "0.9em"}}>By Asha Rao · <time dateTime="2026-10-17">17 October 2026</time></p>
+      <h3 style={{margin: "0.5rem 0 0.2rem"}}>Make a starter</h3>
+      <p style={{margin: 0}}>Mix flour and water, then wait.</p>
+      <h3 style={{margin: "0.5rem 0 0.2rem"}}>Bake the loaf</h3>
+      <p style={{margin: 0}}>Heat the oven, and score the dough.</p>
+    </article>
+    <aside aria-label="Tools you need (demo)" style={{background: "#fae8ff", borderRadius: "6px", padding: "0.5rem 0.75rem"}}>
+      <h3 style={{marginTop: 0}}>Tools you need</h3>
+      <ul style={{margin: 0, paddingLeft: "1.25rem"}}>
+        <li>A kitchen scale</li>
+        <li>A Dutch oven</li>
+      </ul>
+    </aside>
+  </div>
+  <footer style={{background: "#e2e8f0", padding: "0.5rem 0.75rem", borderRadius: "6px", fontSize: "0.9em"}}>
+    <small>© 2026 The Bread Bin</small> · <a href="#" onClick={(event) => event.preventDefault()}>Privacy</a> · <a href="#" onClick={(event) => event.preventDefault()}>Contact</a>
+  </footer>
+</div>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::note
+The demo shows the layout inside this lesson's page, so it uses `h2` and `h3` here. In a real page, the article title is the single `h1`, as in the code.
+:::
+
+Read the skeleton from top to bottom:
+
+| Part | Role | Notes |
+| :-- | :-- | :-- |
+| Skip link | None | The first focusable item, jumping to `main` |
+| Page `header` | **banner** | Logo, site name, and often the main `nav` |
+| `nav` | **navigation** | Named with `aria-label`, because there are two on the page |
+| `main` | **main** | One per page, with the page's unique content |
+| `article` | Generic (article) | A self-contained piece, with its own header |
+| `section` | **region** only when named | Each has a heading |
+| `aside` | **complementary** | Related, not essential |
+| Page `footer` | **contentinfo** | Copyright, legal and contact links |
+
+Two `header` elements appear above. The first is the **page header** (a banner). The second sits inside an `article`, so it is only the article's own heading group. See [Header](./header) for the full rules.
+
+## Try It: Build the Page Frame
+
+Switch the parts on and off, and see which landmarks a screen reader user would get.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<header>…</header>        <!-- banner -->
+<nav aria-label="Main">…</nav>   <!-- navigation -->
+<main>…</main>            <!-- main -->
+<aside>…</aside>          <!-- complementary -->
+<footer>…</footer>        <!-- contentinfo -->
+```
+
+```js title="script.js"
+// List the page's landmarks, like a screen reader would
+const selectors = "header, nav, main, aside, footer, [role]";
+
+document.querySelectorAll(selectors).forEach((element) => {
+  console.log(element.tagName.toLowerCase(), element.getAttribute("role") || "(implicit)");
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LayoutBuilderDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## The Skip Link
+
+Keyboard users have to tab through your whole menu on **every page** before they reach the content. A **skip link** is the shortcut. It is the **first focusable element**, and it jumps to `main`.
+
+```html
+<a class="skip-link" href="#main">Skip to main content</a>
+…
+<main id="main" tabindex="-1">
+```
+
+```css
+.skip-link {
+  position: absolute;
+  inset-inline-start: 0.5rem;
+  top: -4rem;              /* off screen until focused */
+  background: #1d4ed8;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 0.5rem;             /* slides into view */
+}
+```
+
+Do **not** use `display: none` on a skip link, because then nobody can focus it. The `tabindex="-1"` on `main` lets the browser move the focus into the content after the jump. See [Main](./main) for details.
+
+## Heading Outline
+
+Headings form the **table of contents** that screen reader users navigate by. Plan them as a simple outline:
+
+```text
+h1  Sourdough for Beginners          ← one per page
+  h2  Make a starter
+  h2  Bake the loaf
+    h3  Scoring the dough
+  h2  Tools you need                  ← the aside
+```
+
+- **One `h1`** that names the page (usually matching the `title`).
+- **Do not skip levels** (an `h2` followed by an `h4`).
+- **Choose levels by importance,** not by the size you want. Use CSS to change the size.
+- **Every `section` has a heading**, and the `aside` has one too.
+- The "document outline algorithm" is **not implemented** by browsers, so nesting `section` elements does not change heading levels. See [Section](./section).
+
+## Laying It Out with CSS Grid
+
+The elements are just boxes. CSS decides where they sit. A common layout is a header on top, content and a sidebar in the middle, and a footer at the bottom:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```css title="style.css"
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;   /* header, content, footer */
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16rem;   /* article, aside */
+  gap: 2rem;
+  padding: 1rem;
+  max-width: 70rem;
+  margin-inline: auto;
+}
+
+/* One column on small screens */
+@media (max-width: 48rem) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<div style={{display: "grid", gap: "0.4rem", gridTemplateColumns: "repeat(auto-fit, minmax(10rem, 1fr))"}}>
+  <div style={{gridColumn: "1 / -1", background: "#dbeafe", padding: "0.4rem 0.75rem", borderRadius: "6px"}}>header (rows: auto)</div>
+  <div style={{background: "#fef9c3", padding: "0.4rem 0.75rem", borderRadius: "6px", minHeight: "4rem"}}>article (1fr)</div>
+  <div style={{background: "#fae8ff", padding: "0.4rem 0.75rem", borderRadius: "6px"}}>aside (16rem on wide screens)</div>
+  <div style={{gridColumn: "1 / -1", background: "#e2e8f0", padding: "0.4rem 0.75rem", borderRadius: "6px"}}>footer (rows: auto)</div>
+</div>
+<p style={{margin: "0.5rem 0 0", fontSize: "0.9em"}}>Resize the window: on narrow screens, the aside drops below the article.</p>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Keep the Source Order Meaningful
+
+CSS can move boxes around, but **screen readers and the Tab key follow the HTML order**, not the visual order. Watch out for:
+
+- `order`, `grid-area` placement, or `flex-direction: row-reverse` that makes the **visual order differ** from the DOM order. Keyboard focus then seems to jump around.
+- A sidebar placed **before** `main` in the HTML, so every visitor reads it first. Put `aside` **after** the article it relates to, and let the layout position it.
+- Content that only makes sense in a certain visual position ("see the box on the right"). Describe it by name instead: "see the tools list".
+
+The rule: **write the HTML in the order you want it read, and use CSS only to arrange it.**
+
+## Common Layout Patterns
+
+| Layout | Structure |
+| :-- | :-- |
+| **Blog post** | Header, nav, main with one `article`, an optional `aside`, footer |
+| **Landing page** | Header, nav, main with several named `section` elements (hero, features, pricing), footer |
+| **Dashboard** | Header, nav (sidebar menu), main with sections and a `dialog` for settings, no footer needed |
+| **Docs site** | Header, nav (docs menu), main with `article`, `aside` with the page's table of contents, footer |
+| **Web app** | A stable shell (header, nav, main, footer), with only `main`'s content changing, and focus moved on route change |
+
+In all of them, the **same shell** repeats on every page, so people learn it once.
+
+## Page Quality Beyond Landmarks
+
+A semantic page is more than tags:
+
+- `lang` on the `html` element, and `lang` on foreign phrases.
+- A **unique, descriptive `title`** per page. It is the first thing a screen reader announces.
+- A **viewport meta tag**, so mobile browsers do not zoom out.
+- A **visible focus style** on every link and button.
+- **Sufficient colour contrast**, and a layout that works at 200% zoom.
+- **Real links and buttons**, as explained in [Why Semantic HTML](./why-semantic-html).
+- **Landmark labels** only where you need to tell similar ones apart.
+
+## Accessibility at a Glance
+
+- **Use native landmarks** (`header`, `nav`, `main`, `aside`, `footer`). Do not repeat their roles in ARIA.
+- **Exactly one visible `main`.**
+- **Name repeated landmarks** (two `nav` elements, two `aside` elements).
+- **Add a skip link,** and make it visible on focus.
+- **Keep the DOM order logical,** and match the visual order.
+- **Do not hide** the page's structure from assistive technology with `aria-hidden` on a landmark.
+- **Test by keyboard,** by landmark list in a screen reader, and with CSS turned off.
+
+## Security and Privacy Notes
+
+- **Layout is not protection.** Hiding an admin `section` or a `footer` link with CSS does not hide it from the page source. Enforce permissions on the server.
+- **Do not put personal data in landmark labels or headings** (for example "Account 4821 overview") where it can appear in tab titles, history, and screen shares.
+- **Escape any user-supplied text** you place in headings, `title`, or `aria-label`.
+- **Third-party widgets** (ads, comments, embeds) inside `aside` or `iframe` should be clearly titled and restricted with `sandbox` and `rel` values such as `noopener`, so they cannot change your page or capture its focus.
+
+## Global Audience Notes
+
+- **Set `lang` and `dir`** on `html`, and use **logical CSS properties** (`margin-inline`, `padding-inline-start`, `inset-inline-start`), so the whole layout mirrors in right-to-left languages.
+- **Allow text to grow,** since translations can be 30% longer or more. Avoid fixed-height headers and buttons.
+- **Keep the page light.** Many visitors use slow or metered connections, and old phones. Semantic HTML is small and fast by nature.
+- **Use plain words in landmark labels** ("Main", "Footer"), and translate them with the page.
+- **Do not rely on hover or wide screens.** Test at narrow widths and on touch.
+
+## Common Mistakes to Avoid
+
+1. **A page built only from `div` elements** (div soup).
+2. **More than one visible `main`,** or none.
+3. **Page-level `header` and `footer` placed inside `main`.**
+4. **Two unnamed `nav` elements.**
+5. **Skipping the skip link,** or hiding it with `display: none`.
+6. **Several `h1` elements, or skipped heading levels.**
+7. **A `section` with no heading,** used as a styling wrapper.
+8. **Putting the sidebar before the content** in the HTML.
+9. **Reordering with CSS** so keyboard focus jumps around.
+10. **Adding `role="main"` to `main`,** or other redundant ARIA.
+11. **Forgetting `lang` and a useful `title`.**
+12. **Never testing** with the keyboard, a screen reader, or CSS turned off.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build the skeleton from this lesson, and open it with CSS turned off.
+2. Add a skip link, and test it with the Tab key.
+3. Name two `nav` elements, and check the names in the accessibility panel.
+4. Lay the page out with CSS grid: header, content and aside, footer.
+5. Make the aside fall below the article on narrow screens.
+6. Put the `aside` first in the HTML, then move it after the article. Tab through each version.
+7. Add a heading to every `section`, and write the outline on paper.
+8. Replace a `div`-only page of your own with semantic elements.
+9. List the page's landmarks with a screen reader, or a browser extension.
+10. Bonus: run the checklist below against one of your own pages, and fix every item you miss.
+
+## Try It: The Page Layout Checklist
+
+Use this checklist on any page you build.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ChecklistDemo />
+</>
+</BrowserWindow>
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the main parts of a semantic page layout?</summary>
+
+A page `header` (banner), `nav` (navigation), one `main`, optional `aside` (complementary), and a page `footer` (contentinfo), plus `article` and `section` elements inside `main` to organise the content.
+
+</details>
+
+<details>
+<summary>2. Why add a skip link?</summary>
+
+It lets keyboard and screen reader users jump past the repeated menu straight to the main content, saving many key presses on every page. It must be the first focusable element and visible when focused.
+
+</details>
+
+<details>
+<summary>3. Does CSS change the order screen readers and the Tab key follow?</summary>
+
+No. They follow the HTML source order. Write the HTML in the reading order you want, and use CSS only to arrange the boxes. Avoid reordering that makes the visual and DOM orders differ.
+
+</details>
+
+<details>
+<summary>4. When must a `nav` or `aside` be given a name?</summary>
+
+When there is more than one of the same landmark on the page, so users can tell them apart in a landmark list. Use `aria-label` or `aria-labelledby`.
+
+</details>
+
+<details>
+<summary>5. How should headings be arranged on a page?</summary>
+
+One `h1` for the page, then `h2` for main sections and `h3` below them, with no skipped levels. Choose levels by meaning and use CSS for size.
+
+</details>
+
+<details>
+<summary>6. How do you test a layout?</summary>
+
+Use the keyboard alone, list the landmarks and headings with a screen reader or browser tool, turn CSS off to check the source order, and zoom to 200% and a narrow width.
+
+</details>
+
+## Key Takeaways
+
+- A semantic page is a **skeleton of landmarks**: header, nav, main, aside, footer, with `article` and `section` inside `main`.
+- Use **one visible `main`**, a **skip link**, and **named** repeated landmarks.
+- Plan the **heading outline** first: one `h1`, no skipped levels, and a heading for every `section`.
+- Use **CSS grid** for the layout, but keep the **HTML order** meaningful, because assistive technology and the keyboard follow it.
+- Do not add ARIA roles that native elements already provide.
+- Layout hides nothing from the page source, so enforce permissions on the server.
+- Use logical CSS properties, set `lang` and `dir`, and test on narrow, slow, and right-to-left setups.
+- Always test with the keyboard, a screen reader, and CSS turned off.
+
+Congratulations, you have finished the Semantic HTML section. Return to the [Semantic HTML overview](../semantic-html) to review the elements, or revisit [Why Semantic HTML](./why-semantic-html) to see how far you have come.
