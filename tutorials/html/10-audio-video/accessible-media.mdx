@@ -1,15 +1,669 @@
 ---
-id: accessible-media
-title: "Best Practices for Accessible Audio and Video"
+id: html-accessible-media
+title: "Accessible Audio and Video"
 sidebar_label: "Accessible Media"
-sidebar_position: 10
+sidebar_position: 9
 slug: /html/audio-video/accessible-media
-description: "Ensure media compliance with WCAG principles by providing audio descriptions, transcripts, accessible controls, and flashing content warnings."
+description: "Make HTML audio and video work for everyone: captions, transcripts and audio description, keyboard-friendly controls, autoplay and audio control, reduced motion, flashing and seizure safety, labelling embedded players, and a practical checklist for every kind of media, with live demos."
 keywords:
-  - accessible web media
-  - WCAG audio video compliance
-  - media transcripts HTML
-  - screen reader media controls
+  - accessible audio video HTML
+  - media accessibility checklist
+  - transcript audio description
+  - WCAG captions audio description
+  - autoplay audio control
+  - prefers-reduced-motion video
+  - three flashes seizure
+  - keyboard accessible video player
+  - iframe title embedded video
+  - accessible media player
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, media, accessibility, a11y]
+tags: [html, web-development, beginner, accessibility, audio, video, captions, transcript, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function makeMelodyUrl() {
+  // Builds an 8-second WAV melody in memory, so the demo needs no audio file.
+  const rate = 11025;
+  const notes = [262, 330, 392, 330, 294, 349, 440, 349, 262, 330, 392, 523, 392, 330, 294, 262];
+  const per = Math.floor(rate * 0.5);
+  const total = per * notes.length;
+  const buffer = new ArrayBuffer(44 + total * 2);
+  const view = new DataView(buffer);
+  const write = (offset, text) => {
+    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + total * 2, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, total * 2, true);
+  let index = 0;
+  notes.forEach((frequency) => {
+    for (let i = 0; i < per; i++) {
+      const fade = Math.min(1, i / 400, (per - i) / 400);
+      view.setInt16(44 + index * 2, Math.sin((2 * Math.PI * frequency * i) / rate) * 0.3 * fade * 32767, true);
+      index++;
+    }
+  });
+  return URL.createObjectURL(new Blob([buffer], {type: "audio/wav"}));
+}
+
+export const mediaKinds = {
+  audio: {
+    label: "Audio only (a podcast or interview)",
+    items: [
+      "A transcript is on the page, or linked right next to the player",
+      "Speakers are named in the transcript",
+      "Important sounds are described in the transcript",
+      "The player has controls that work with the keyboard",
+      "Nothing plays automatically",
+      "The player has a clear name (heading or aria-label)",
+    ],
+  },
+  video: {
+    label: "Video with speech (a lesson or talk)",
+    items: [
+      "Captions are provided with a track element, and are accurate",
+      "Captions name speakers and describe important sounds",
+      "Information shown only in the picture is also spoken, or described",
+      "Audio description or a text alternative is available if the picture carries meaning",
+      "A transcript is available",
+      "The controls work with the keyboard, with a visible focus ring",
+      "Nothing plays automatically with sound",
+      "No more than three flashes in any second",
+    ],
+  },
+  silent: {
+    label: "Video with no sound (a screen recording or animation)",
+    items: [
+      "A text alternative explains what the video shows (a transcript or description)",
+      "The controls work with the keyboard",
+      "The video can be paused, and does not start by itself if it lasts over 5 seconds",
+      "Text in the picture is large and has strong contrast",
+      "No more than three flashes in any second",
+    ],
+  },
+  background: {
+    label: "A decorative background loop",
+    items: [
+      "It has no sound",
+      "It carries no essential information, and is marked aria-hidden",
+      "A visible Pause button is provided",
+      "It stays paused for people who prefer reduced motion",
+      "Text on top of it keeps strong contrast, even on the brightest frame",
+      "The file is small, so it does not slow the page",
+    ],
+  },
+};
+
+export function AuditDemo() {
+  const [kind, setKind] = useState("video");
+  const [checked, setChecked] = useState({});
+  const current = mediaKinds[kind];
+  const done = current.items.filter((_, index) => checked[kind + "-" + index]).length;
+  const percent = Math.round((done / current.items.length) * 100);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="ad-kind">What kind of media is it? </label>
+        <select id="ad-kind" value={kind} onChange={(event) => setKind(event.target.value)}>
+          {Object.keys(mediaKinds).map((key) => (<option key={key} value={key}>{mediaKinds[key].label}</option>))}
+        </select>
+      </p>
+      <fieldset>
+        <legend>Checklist: {current.label}</legend>
+        {current.items.map((text, index) => (
+          <p key={kind + index} style={{margin: "0.2rem 0"}}>
+            <label>
+              <input
+                type="checkbox"
+                checked={!!checked[kind + "-" + index]}
+                onChange={() => setChecked((old) => ({...old, [kind + "-" + index]: !old[kind + "-" + index]}))}
+              /> {text}
+            </label>
+          </p>
+        ))}
+      </fieldset>
+      <p style={{margin: "0.6rem 0 0.2rem"}}>
+        <progress max="100" value={percent} aria-label="Checklist progress" style={{width: "12rem", verticalAlign: "middle"}} /> {done} of {current.items.length}
+      </p>
+      <p role="status" style={{margin: 0}}>
+        {done === current.items.length ? "Every item is ticked. Now test it with a keyboard and a screen reader." : "Tick each item you have really checked."}
+      </p>
+    </form>
+  );
+}
+
+export const transcript = [
+  {who: "Narrator", text: "Four rising notes: C, E, G, E."},
+  {who: "Narrator", text: "A gentle wobble: D, F, A, F."},
+  {who: "Narrator", text: "The melody climbs to a high C."},
+  {who: "Narrator", text: "[the notes slow down] Coming home: G, E, D, C."},
+];
+
+export function TranscriptDemo() {
+  const audioRef = useRef(null);
+  const [url, setUrl] = useState(null);
+  const [time, setTime] = useState(0);
+  const [follow, setFollow] = useState(true);
+  useEffect(() => {
+    const made = makeMelodyUrl();
+    setUrl(made);
+    return () => URL.revokeObjectURL(made);
+  }, []);
+  const active = Math.min(transcript.length - 1, Math.floor(time / 2));
+  return (
+    <div>
+      {url === null ? (
+        <p role="status">Preparing the sound…</p>
+      ) : (
+        <figure style={{margin: 0}}>
+          <figcaption style={{fontWeight: 600, marginBottom: "0.3rem"}}>Episode 1: A short melody</figcaption>
+          <audio
+            ref={audioRef}
+            src={url}
+            controls
+            preload="metadata"
+            onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
+          />
+        </figure>
+      )}
+      <p style={{margin: "0.6rem 0 0.3rem"}}>
+        <label>
+          <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.target.checked)} /> Highlight the line that is playing
+        </label>
+      </p>
+      <section aria-labelledby="td-title">
+        <h4 id="td-title" style={{margin: "0 0 0.3rem"}}>Transcript</h4>
+        <ul style={{listStyle: "none", margin: 0, padding: 0}}>
+          {transcript.map((line, index) => (
+            <li
+              key={index}
+              aria-current={follow && url !== null && index === active && time > 0 ? "true" : undefined}
+              style={{padding: "0.25rem 0.5rem", borderRadius: "4px", background: follow && time > 0 && index === active ? "#fef08a" : "transparent", color: follow && time > 0 && index === active ? "#0f172a" : "inherit"}}
+            >
+              <button
+                type="button"
+                disabled={url === null}
+                onClick={() => { audioRef.current.currentTime = index * 2 + 0.05; audioRef.current.play().catch(() => {}); }}
+                style={{marginInlineEnd: "0.5rem"}}
+                aria-label={"Play from " + index * 2 + " seconds"}
+              >
+                0:0{index * 2}
+              </button>
+              <strong>{line.who}:</strong> {line.text}
+            </li>
+          ))}
+        </ul>
+      </section>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The transcript is ordinary text on the page, so it can be read without sound, searched, translated, and used with a screen reader. Each time button jumps to that line.
+      </p>
+    </div>
+  );
+}
+
+export function MotionDemo() {
+  const [reduce, setReduce] = useState(false);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setReduce(query.matches);
+      if (query.matches) setPaused(true);
+    };
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return (
+    <div>
+      <style>{"@keyframes am-slide { from { transform: translateX(0); } to { transform: translateX(calc(100% - 3rem)); } }"}</style>
+      <div aria-hidden="true" style={{background: "#0f172a", borderRadius: "6px", padding: "0.75rem", overflow: "hidden"}}>
+        <div
+          style={{
+            width: "3rem",
+            height: "3rem",
+            borderRadius: "50%",
+            background: "#38bdf8",
+            animation: "am-slide 2s ease-in-out infinite alternate",
+            animationPlayState: paused ? "paused" : "running",
+          }}
+        />
+      </div>
+      <p style={{margin: "0.6rem 0 0.3rem"}}>
+        <button type="button" onClick={() => setPaused((old) => !old)}>
+          {paused ? "Play animation" : "Pause animation"}
+        </button>
+      </p>
+      <p role="status" style={{margin: "0 0 0.3rem"}}>
+        Your system setting for reduced motion is <strong>{reduce ? "ON" : "off"}</strong>.{" "}
+        {reduce ? "The animation starts paused, and you can still start it." : "Turn it on in your device's accessibility settings, and this demo will start paused."}
+      </p>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        This is a CSS animation standing in for a moving background video. The same two ideas apply: respect the setting, and always offer a pause button.
+      </p>
+    </div>
+  );
+}
+
+Audio and video can teach, entertain, and persuade, but only if people can **get at them**. A video with no captions is silent to a deaf viewer. A chart shown only in a video is invisible to a blind one. A looping background can make someone dizzy.
+
+This lesson pulls the whole section together. It covers what each group of people needs, which HTML features give it to them, and a practical checklist you can use on every page.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What different viewers need from audio and video
+- Captions, transcripts, and audio description
+- Keyboard-friendly controls
+- Autoplay, audio control, and pause buttons
+- Motion, flashing, and seizure safety
+- Labelling players and embedded videos
+- A checklist for every kind of media
+
+## Who Are We Building For?
+
+| Viewer | Barrier | What helps |
+| :-- | :-- | :-- |
+| **Deaf or hard of hearing** | Cannot hear speech or sounds | Captions, transcripts, visual alerts |
+| **Blind or low vision** | Cannot see the picture | Audio description or a text alternative, accessible controls |
+| **Motor or mobility difficulties** | Cannot use a mouse, or need larger targets | Keyboard access, big controls, no time limits |
+| **Cognitive or learning differences** | Fast pace, too much at once | Pause and replay, slower speed, transcripts, simple language |
+| **Vestibular disorders, migraines, epilepsy** | Motion or flashing causes harm | No autoplay, pause buttons, reduced motion, no flashing |
+| **Everyone, sometimes** | Noisy train, sleeping baby, bad connection | Captions, transcripts, small files |
+
+Planning for the first five groups improves the experience for **everyone** in the last.
+
+## What Each Kind of Media Needs
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Video with speech: captions + transcript -->
+<figure>
+  <figcaption>How to build a signup form (8 minutes)</figcaption>
+  <video controls width="640" height="360" src="lesson.mp4" poster="cover.jpg">
+    <track kind="captions" src="lesson.en.vtt" srclang="en" label="English" default>
+  </video>
+</figure>
+
+<details>
+  <summary>Read the transcript</summary>
+  <p><strong>Asha:</strong> Welcome back! Today we will build a signup form.</p>
+</details>
+
+<!-- Embedded video from another site: give the frame a title -->
+<iframe
+  title="Interview with a baker (video, 12 minutes)"
+  src="https://player.example.com/embed/123"
+  width="640" height="360"
+  allowfullscreen></iframe>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AuditDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use the checklist above on your own pages. Switch the kind of media and see how the requirements change.
+
+## Transcripts
+
+A **transcript** is the full text of the audio, written on the page. It is the single most useful alternative, because it helps nearly everybody:
+
+- Deaf and hard of hearing visitors, and anyone who cannot play sound.
+- Blind visitors with a screen reader, **if** it also describes what is seen.
+- Non-native speakers, who can read at their own pace, or translate it.
+- Everyone who wants to **search, skim, copy, or quote** the content.
+- Search engines, which can then index what is said.
+
+A good transcript includes:
+
+1. **Who is speaking**, at each change.
+2. **Everything spoken,** in the order it is said.
+3. **Important sounds,** in square brackets: "[laughter]", "[door slams]".
+4. **Visual information** that matters, for video: "[Asha holds up a loaf of bread]".
+5. **Headings or timestamps** for long ones, so people can find their place.
+
+### Try It: A Transcript That Follows the Sound
+
+Play the sound, and see the transcript line highlight. Click a time to jump. Turn the highlight off, and the transcript is still plain, readable text.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<figure>
+  <figcaption>Episode 1: A short melody</figcaption>
+  <audio id="sound" src="melody.wav" controls></audio>
+</figure>
+
+<section aria-labelledby="t-title">
+  <h2 id="t-title">Transcript</h2>
+  <ul id="lines">
+    <li><button type="button" data-time="0">0:00</button>
+        <strong>Narrator:</strong> Four rising notes: C, E, G, E.</li>
+    <li><button type="button" data-time="2">0:02</button>
+        <strong>Narrator:</strong> A gentle wobble: D, F, A, F.</li>
+  </ul>
+</section>
+```
+
+```js title="script.js"
+const sound = document.getElementById("sound");
+const items = document.querySelectorAll("#lines li");
+
+document.querySelectorAll("#lines button").forEach((button) => {
+  button.addEventListener("click", () => {
+    sound.currentTime = Number(button.dataset.time) + 0.05;
+    sound.play().catch(() => {});
+  });
+});
+
+sound.addEventListener("timeupdate", () => {
+  const active = Math.floor(sound.currentTime / 2);
+  items.forEach((item, index) => {
+    if (index === active) item.setAttribute("aria-current", "true");
+    else item.removeAttribute("aria-current");
+  });
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TranscriptDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+If the transcript is long, put it in a [`<details>`](/tutorials/html/semantic-html/details) widget, or on its own page, linked right next to the player.
+
+## Captions and Subtitles
+
+For video with speech or meaningful sound, add **captions**: `<track kind="captions">`. They give deaf viewers the speech **and** the sounds. Add **subtitles** for other languages. The details are in [Track](./track), [Captions](./captions), and [Subtitles](./subtitles).
+
+## Audio Description
+
+Some video carries important information **only in the picture**: a chart, a demonstration, an action, or on-screen text that is never spoken. Blind and low vision viewers need that information too.
+
+Ways to provide it, from best to simplest:
+
+1. **Say it out loud.** Write the narration so that the speaker describes what is happening ("I click the blue Save button in the top right"). This often needs no extra work, and helps everybody.
+2. **An audio description version.** A second version of the video (or audio track) where a narrator describes key visuals in the pauses. Offer a link or toggle: "Watch with audio description".
+3. **A text alternative.** A transcript that includes the visual information, for example in brackets.
+4. **A descriptions text track.** `<track kind="descriptions">` stores timed text descriptions, but browsers **do not read it out for you**. Your script must pass it to assistive technology (for example, by writing the active cue into an `aria-live` region), and support varies. Treat it as an advanced option and test carefully.
+
+```html
+<video controls src="lesson.mp4">
+  <track kind="captions" src="lesson.en.vtt" srclang="en" label="English" default>
+  <track kind="descriptions" src="lesson.desc.vtt" srclang="en" label="Descriptions">
+</video>
+
+<p><a href="lesson-described.mp4">Watch with audio description (MP4, 22 MB)</a></p>
+```
+
+Not every video needs description. If everything on the screen is already explained in the narration, you have met the need.
+
+## Keyboard and Controls
+
+- **Use `controls`,** or custom controls built from real `button` and `input` elements. See [Media Controls](./media-controls).
+- **Every control must be reachable with Tab,** and used with Enter or Space, and arrow keys on sliders.
+- **Make the focus ring visible,** including over the video.
+- **Give every button a name,** especially icon-only buttons.
+- **Keep targets large,** at least 24 by 24 CSS pixels, and ideally 44.
+- **Never make controls disappear** with no way to bring them back by keyboard.
+- **Do not trap the keyboard,** especially with embedded players. A visitor must be able to Tab out.
+
+## Autoplay and Audio Control
+
+- **Do not autoplay audio.** If sound starts on its own and lasts more than about 3 seconds, the visitor must have a way to **pause or stop it**, or to control its volume separately from the system volume. The simplest solution is never to autoplay with sound.
+- **Screen reader users** hear their screen reader and the page sound at the same time. Loud, unexpected audio makes the page unusable.
+- **Any moving, blinking, or auto-updating content** that starts by itself and lasts longer than 5 seconds needs a way to **pause, stop, or hide** it.
+- **Do not loop** audio with no stop button.
+
+## Motion, Flashing, and Reduced Motion
+
+### Flashing
+
+Content that **flashes more than three times in any one second** can trigger seizures in some people. Check videos and animations for strobing, rapid cuts between very bright and very dark frames, and flickering patterns. If in doubt, slow it down, or use a free tool to test it.
+
+### Reduced Motion
+
+Many people set their device to **reduce motion**, because movement can cause nausea, dizziness, or distraction. Respect it:
+
+```js
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const video = document.querySelector("#bg");
+
+if (reduce) {
+  video.removeAttribute("autoplay");
+  video.pause();
+}
+```
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .animated { animation: none; }
+}
+```
+
+### Try It: Respect the Setting, Offer a Pause Button
+
+This demo reads your device setting. If you have reduced motion turned on, the animation starts paused. Either way, you can pause or play it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video id="bg" src="waves.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
+<button type="button" id="toggle">Pause background video</button>
+```
+
+```js title="script.js"
+const bg = document.getElementById("bg");
+const toggle = document.getElementById("toggle");
+const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+function setPlaying(playing) {
+  if (playing) bg.play(); else bg.pause();
+  toggle.textContent = playing ? "Pause background video" : "Play background video";
+}
+
+if (query.matches) setPlaying(false);
+
+toggle.addEventListener("click", () => setPlaying(bg.paused));
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MotionDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Labelling Media
+
+- **Give the player a name** with a nearby heading, a `figcaption`, or `aria-label="Interview with a baker"`.
+- **Give every embedded video frame a `title`:** `<iframe title="Interview with a baker (video, 12 minutes)">`. Screen reader users often list the frames on a page, and an untitled frame is just "frame".
+- **Say how long it is** ("8 minutes"), so people can decide whether to play it.
+- **Say what the format is** when it is not obvious: "Video", "Audio", "Download (MP4, 22 MB)".
+- **Use the `poster`** as a clear preview, but **do not rely on it** to describe the video.
+- **Keep fallback content** inside the media element, with a download link.
+
+## Contrast and Text
+
+- **Captions and any on-screen text** should have at least 4.5 to 1 contrast against their background.
+- **Do not put text over busy or bright parts** of a video without a background box or shadow.
+- **Do not use colour alone** to carry meaning in the picture ("press the green button").
+- **Keep text large enough** to read on a phone, including text inside the picture.
+- **Check controls on top of the video:** a white icon vanishes on a bright frame.
+
+## Which Standards Apply?
+
+The Web Content Accessibility Guidelines (WCAG) are the usual reference. These success criteria are the ones that matter most for media:
+
+| Criterion | In plain words |
+| :-- | :-- |
+| **1.2.1** Audio-only and video-only (prerecorded) | Give a transcript for audio-only, and a transcript or audio track for silent video |
+| **1.2.2** Captions (prerecorded) | Captions for video with sound |
+| **1.2.3 and 1.2.5** Audio description | Audio description or a text alternative for visual information |
+| **1.2.4** Captions (live) | Captions for live video |
+| **1.4.2** Audio control | Control or stop sound that plays by itself |
+| **2.2.2** Pause, stop, hide | A way to pause moving content that starts by itself |
+| **2.3.1** Three flashes | No more than three flashes in a second |
+
+Rules differ by country, sector, and the level you aim for, and the guidelines change over time. This is a guide for learning, not legal advice, so check the standards that apply to you.
+
+## Testing Your Media
+
+1. **Turn the sound off,** and try to follow the page. Do captions and the transcript give you the content?
+2. **Close your eyes,** or turn the screen off, and listen. Does the narration make sense without the picture?
+3. **Use only the keyboard.** Can you reach, start, pause, seek, and leave the player?
+4. **Use a screen reader.** Is the player named? Are the controls labelled? Is the transcript easy to find?
+5. **Turn on reduced motion** in your system settings. Does anything still move by itself?
+6. **Zoom to 200%,** and check the layout on a phone.
+7. **Check the contrast** of captions and controls.
+8. **Try a slow connection.** Does the page still work before the media loads?
+9. **Ask real users,** including disabled people, wherever you can.
+
+## Security and Privacy Notes
+
+- **Transcripts and captions are public text.** Do not include private remarks or confidential details, even in comments.
+- **Text alternatives expose what the media holds.** If the video is private, protect the transcript on the server as well.
+- **Embedded players can track viewers,** including people who never press play. Use privacy-friendly embed modes, load them only after a click, and ask for consent where the law requires.
+- **Treat any user-supplied text** (a comment, a title, a caption) as text. Use `textContent`, not `innerHTML`.
+- **Auto-captioning and transcription services** may store your audio. Check the terms before uploading private recordings.
+- **Accessibility data is sensitive.** Do not record or publish which viewers turned on captions, or other settings that could reveal a disability, without clear consent.
+
+## Global Audience Notes
+
+- **Provide captions in the language of the audio,** and subtitles in the languages your visitors need.
+- **Offer transcripts in more than one language** if you can. They are easy to translate, and help search.
+- **Write plainly.** Short sentences, familiar words, and few idioms are easier to caption, translate, and understand.
+- **Do not rely on sound or colour alone,** because conventions differ across cultures.
+- **Plan for slow and expensive connections.** A transcript loads in a moment, and may be the only part some visitors can use. Compress media and use `preload="metadata"`.
+- **Test right-to-left and non-Latin languages** for captions, transcripts, and control layouts.
+- **Be careful with accents and speech speed.** Offer slower playback, and clear captions for language learners.
+
+## Common Mistakes to Avoid
+
+1. **No captions** on video with speech.
+2. **Auto-generated captions published without review.**
+3. **No transcript** for audio.
+4. **Information shown only in the picture,** and never spoken or described.
+5. **Autoplaying media with sound.**
+6. **Moving backgrounds with no pause button,** and ignoring reduced motion.
+7. **Flashing or strobing content.**
+8. **Controls built from `div` elements,** or hidden from the keyboard.
+9. **Icon-only buttons with no name.**
+10. **An `iframe` with no `title`.**
+11. **Relying on `kind="descriptions"` alone,** expecting browsers to read it aloud.
+12. **Never testing** with the sound off, the keyboard, or a screen reader.
+
+## Practice Time
+
+Try these on a page of your own, or on a small test page:
+
+1. Watch a video with the sound off. List everything you could not understand.
+2. Add captions with `kind="captions"`, and review them line by line.
+3. Write a transcript with speaker names, and put it in a `details` widget.
+4. Make the transcript clickable, so each line jumps to its time in the audio.
+5. Find one thing in a video that is shown but never spoken, and add it to the narration or the transcript.
+6. Add an `iframe` with a clear `title`, and listen to how a screen reader announces it.
+7. Use the Tab key to play, pause, seek, and leave the player.
+8. Add a pause button to a moving background, and respect `prefers-reduced-motion`.
+9. Test your captions' contrast over a bright frame.
+10. Bonus: run the checklist above for each type of media on your site, and fix three items.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which alternatives help people who cannot hear audio?</summary>
+
+Captions for video, and transcripts for audio and video. Both should name speakers and describe meaningful sounds.
+
+</details>
+
+<details>
+<summary>2. What is audio description for?</summary>
+
+It tells blind and low vision viewers what is shown but not spoken. You can write narration that says it, provide a described version, or add a text alternative.
+
+</details>
+
+<details>
+<summary>3. When must media have a pause or stop control?</summary>
+
+Whenever sound plays by itself for more than about 3 seconds, or moving content starts by itself and lasts more than 5 seconds. The simplest approach is not to autoplay.
+
+</details>
+
+<details>
+<summary>4. How do you respect people who prefer reduced motion?</summary>
+
+Check `prefers-reduced-motion` in CSS and JavaScript, and start animations and background video paused. Still provide a button to play them.
+
+</details>
+
+<details>
+<summary>5. Why give an embedded video frame a `title`?</summary>
+
+Screen reader users navigate by frames, and an `iframe` with no title is announced with no useful name. A short title says what it holds and how long it is.
+
+</details>
+
+<details>
+<summary>6. Does `kind="descriptions"` make browsers read descriptions aloud?</summary>
+
+No. Browsers do not voice description tracks for you. Your script must send the text to assistive technology, so most sites offer a described version or a text alternative instead.
+
+</details>
+
+## Key Takeaways
+
+- Accessible media means **captions, transcripts, audio description or a text alternative, usable controls, and safe motion.**
+- **Captions** are for deaf viewers, **transcripts** help almost everyone, and **description** covers what is only visible.
+- **Do not autoplay sound.** Give any automatic motion a pause button, and respect `prefers-reduced-motion`.
+- **Avoid flashing** more than three times in a second.
+- Controls must work by **keyboard**, with names, focus rings, and large targets.
+- **Label** players and embedded frames, and say how long the media is.
+- Test with the **sound off, the screen off, the keyboard, a screen reader, and reduced motion.**
+- Plan for many languages, slow connections, and privacy.
+
+Next, learn how to make video fit every screen in [Responsive Video](./responsive-video), or return to the [Audio and Video overview](../audio-video).

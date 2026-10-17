@@ -1,15 +1,364 @@
 ---
 id: audio-video-overview
-title: "Working with HTML Audio and Video"
+title: "HTML Audio and Video"
 sidebar_label: "Audio and Video"
 sidebar_position: 1
 slug: /html/audio-video
-description: "Learn how to embed, manage, and deliver media in modern web applications using native HTML5 audio and video elements with CodeHarborHub."
+description: "Start learning HTML audio and video: the audio, video, source and track elements, built-in controls, captions and subtitles, accessible and responsive media, and the formats browsers can play, with a live format checker and a map of this section."
 keywords:
-  - HTML audio video overview
-  - HTML5 media guide
-  - embedding media HTML
-  - web audio video tutorial
+  - HTML audio and video
+  - HTML5 video tag
+  - HTML5 audio tag
+  - embed video in HTML
+  - source element track element
+  - video captions subtitles HTML
+  - accessible media HTML
+  - responsive video CSS
+  - video formats MP4 WebM
+  - canPlayType browser support
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, audio, video, media, beginner]
+tags: [html, web-development, beginner, audio, video, media, accessibility, frontend]
 ---
+
+import {useEffect, useState} from 'react';
+
+export function FormatCheckDemo() {
+  const [rows, setRows] = useState(null);
+  const tests = [
+    {kind: "video", label: "MP4 (H.264 and AAC)", type: 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'},
+    {kind: "video", label: "WebM (VP9 and Opus)", type: 'video/webm; codecs="vp9, opus"'},
+    {kind: "video", label: "MP4 (AV1)", type: 'video/mp4; codecs="av01.0.05M.08"'},
+    {kind: "video", label: "Ogg (Theora and Vorbis)", type: 'video/ogg; codecs="theora, vorbis"'},
+    {kind: "audio", label: "MP3", type: "audio/mpeg"},
+    {kind: "audio", label: "AAC (in M4A)", type: 'audio/mp4; codecs="mp4a.40.2"'},
+    {kind: "audio", label: "Ogg (Opus)", type: 'audio/ogg; codecs="opus"'},
+    {kind: "audio", label: "WAV", type: "audio/wav"},
+    {kind: "audio", label: "FLAC", type: "audio/flac"},
+  ];
+  const run = () => {
+    const video = document.createElement("video");
+    const audio = document.createElement("audio");
+    setRows(tests.map((test) => {
+      const element = test.kind === "video" ? video : audio;
+      return {...test, answer: element.canPlayType(test.type)};
+    }));
+  };
+  useEffect(() => { run(); }, []);
+  const words = {
+    probably: "Yes, probably plays",
+    maybe: "Maybe plays",
+    "": "No, not supported",
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={run}>Check this browser again</button>
+      </p>
+      {rows === null ? (
+        <p role="status">Checking…</p>
+      ) : (
+        <table>
+          <caption>What your browser says it can play</caption>
+          <thead>
+            <tr><th scope="col">Format</th><th scope="col">Element</th><th scope="col">canPlayType() answer</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.label}>
+                <th scope="row" style={{textAlign: "start"}}>{row.label}</th>
+                <td>{row.kind}</td>
+                <td style={{color: row.answer ? "#15803d" : "#b91c1c"}}>{words[row.answer]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The answer is the browser's own guess. Only "probably" means it recognised the exact codecs, and even then, a broken file can still fail.
+      </p>
+    </div>
+  );
+}
+
+export function PickerDemo() {
+  const [need, setNeed] = useState("music");
+  const options = [
+    {key: "music", label: "A podcast, song or voice clip", tag: "audio", lesson: "Audio", code: '<audio controls src="episode.mp3"></audio>'},
+    {key: "clip", label: "A tutorial or product video", tag: "video", lesson: "Video", code: '<video controls src="tutorial.mp4"></video>'},
+    {key: "formats", label: "The same media in several formats", tag: "source", lesson: "Source", code: '<video controls>\n  <source src="clip.webm" type="video/webm">\n  <source src="clip.mp4" type="video/mp4">\n</video>'},
+    {key: "captions", label: "Captions or subtitles for a video", tag: "track", lesson: "Track", code: '<video controls src="clip.mp4">\n  <track kind="captions" src="clip.en.vtt" srclang="en" label="English">\n</video>'},
+  ];
+  const current = options.find((item) => item.key === need);
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>What do you want to add to the page?</legend>
+        {options.map((item) => (
+          <p key={item.key} style={{margin: "0.2rem 0"}}>
+            <label>
+              <input type="radio" name="pick-need" checked={need === item.key} onChange={() => setNeed(item.key)} /> {item.label}
+            </label>
+          </p>
+        ))}
+      </fieldset>
+      <p role="status" style={{margin: "0 0 0.3rem"}}>
+        Use the <code>{item(current.tag)}</code> element. Learn it in the <strong>{current.lesson}</strong> lesson.
+      </p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{current.code}</code></pre>
+    </div>
+  );
+}
+
+export function item(tag) {
+  return "<" + tag + ">";
+}
+
+A web page that only shows text and pictures is like a book. With **audio and video**, the page can talk, sing, teach, and show how things move. A cooking page can play the sizzle, a language lesson can play the pronunciation, and a tutorial can show every click.
+
+For many years, this needed a plugin. Today, it is just HTML: two elements, **`<audio>`** and **`<video>`**, play media directly in the browser, with built-in controls, keyboard support, and no extra software.
+
+This section shows you how to add media, give it more than one format, add captions for people who cannot hear it, and make it work on every screen size.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn in This Section
+
+- Adding sound and video with `<audio>` and `<video>`
+- Offering several file formats with `<source>`
+- Using the built-in controls, and building your own
+- Adding **captions and subtitles** with `<track>` and WebVTT files
+- Making media **accessible** to everyone
+- Making video **responsive**, so it fits any screen
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video controls width="480" poster="cover.jpg">
+  <source src="lesson.webm" type="video/webm">
+  <source src="lesson.mp4" type="video/mp4">
+  <track kind="captions" src="lesson.en.vtt" srclang="en" label="English">
+  <p>
+    Your browser cannot play this video.
+    <a href="lesson.mp4">Download it instead</a>.
+  </p>
+</video>
+```
+
+</TabItem>
+<TabItem value="output" label="What Each Part Does">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<table>
+  <caption>The parts of a video element</caption>
+  <thead>
+    <tr><th scope="col">Part</th><th scope="col">Its job</th></tr>
+  </thead>
+  <tbody>
+    <tr><th scope="row" style={{textAlign: "start"}}><code>controls</code></th><td>Shows play, pause, volume, and a progress bar</td></tr>
+    <tr><th scope="row" style={{textAlign: "start"}}><code>poster</code></th><td>A picture shown before the video plays</td></tr>
+    <tr><th scope="row" style={{textAlign: "start"}}><code>source</code> (twice)</th><td>Two formats: the browser uses the first one it can play</td></tr>
+    <tr><th scope="row" style={{textAlign: "start"}}><code>track</code></th><td>A captions file for people who cannot hear the sound</td></tr>
+    <tr><th scope="row" style={{textAlign: "start"}}>The text inside</th><td>A fallback for browsers that cannot play video at all</td></tr>
+  </tbody>
+</table>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The browser reads the children from top to bottom, picks the **first source it can play**, loads the captions, and shows the controls. You do not write any JavaScript.
+
+## Try It: What Can Your Browser Play?
+
+Not every browser plays every format. The `canPlayType()` method lets the page ask. Here it is, asking about common formats:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```js title="script.js"
+const video = document.createElement("video");
+
+console.log(video.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"'));
+console.log(video.canPlayType('video/webm; codecs="vp9, opus"'));
+// Each answer is "probably", "maybe", or "" (empty: not supported)
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FormatCheckDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You will see this question again in the [Source](./source) lesson. In practice, you rarely call `canPlayType()` yourself, because the `<source>` element lets the browser choose for you.
+
+## Which Element Do I Need?
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Sound only -->
+<audio controls src="episode.mp3"></audio>
+
+<!-- Sound and picture -->
+<video controls src="tutorial.mp4"></video>
+
+<!-- Same media, several formats -->
+<video controls>
+  <source src="clip.webm" type="video/webm">
+  <source src="clip.mp4" type="video/mp4">
+</video>
+
+<!-- Add captions -->
+<video controls src="clip.mp4">
+  <track kind="captions" src="clip.en.vtt" srclang="en" label="English">
+</video>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PickerDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Is in This Section
+
+<DocCardList />
+
+## Good Habits from the Start
+
+Before you read the lessons, remember these four ideas. They come back in every one:
+
+1. **Always show controls** (`controls`), unless you build your own full set. A video with no way to pause it is a trap.
+2. **Never start sound on its own.** Autoplay with sound surprises people, and browsers usually block it anyway.
+3. **Provide a text alternative:** captions for video, and a transcript for audio.
+4. **Mind the weight.** Media files are the heaviest part of most pages, so compress them, and do not load what nobody has asked for.
+
+:::warning Media is not a secret
+Anything a browser can play, a visitor can download. A hidden `source` or a "disable right-click" script does not protect a file. If media must be private, serve it from a server that checks who is asking.
+:::
+
+## Accessibility at a Glance
+
+- **Add captions** to every video with speech or meaningful sound.
+- **Add a transcript** for audio-only content, and for video if you can.
+- **Keep controls visible and keyboard-operable.** The built-in controls already are.
+- **Do not autoplay** sound, or flashing or moving content that cannot be paused.
+- **Do not flash** more than three times in any second.
+- **Give media a nearby heading or label,** so people know what it is before they play it.
+
+## Security and Privacy Notes
+
+- **Embedding a third-party player** (for example through an `iframe`) can let that company track your visitors. Check what is loaded, and ask for consent where the law requires.
+- **Only link to media you have the rights to share.** Music, film clips, and voice recordings are usually protected by copyright.
+- **Serve media over HTTPS,** so browsers do not block it as mixed content.
+- **Be careful with user uploads.** Check the type and size on the server, and never trust the file name or the type the browser reports.
+
+## Global Audience Notes
+
+- **Media is heavy.** Many visitors have slow, expensive, or limited connections. Compress your files, and use `preload="none"` or `preload="metadata"` where it makes sense.
+- **Offer captions in more than one language** (the Subtitles lesson shows how).
+- **Do not rely on sound alone** to carry instructions: a visitor may be on a train, in a library, or deaf.
+- **Check the format support** of your audience's browsers. Which formats work best can change over time, so test before you decide.
+- **Right-to-left languages** need captions that display correctly. WebVTT supports this, and you will see how in the Captions lesson.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting `controls`,** so nobody can play, pause, or change the volume.
+2. **Autoplaying with sound.**
+3. **Only one format,** so some browsers cannot play it.
+4. **No captions or transcript.**
+5. **Huge, uncompressed files** that make the page slow.
+6. **Fixed `width` and `height` only,** so the video overflows on phones.
+7. **No fallback content** for browsers that cannot play the media.
+8. **Missing `type` on `source`,** so the browser downloads files it cannot play.
+9. **Embedding sound that cannot be paused** (looping background music).
+10. **Assuming a hidden file is private.**
+
+## Practice Time
+
+Try these in your editor, using any short MP3 and MP4 you have the right to use:
+
+1. Add an `audio` element with `controls`, and play it with the keyboard only.
+2. Add a `video` element with `controls` and a `poster` image.
+3. Give the video two `source` elements, and check which one loads in the network panel.
+4. Add fallback text inside the video, and read it by pointing at an unsupported type.
+5. Run `canPlayType()` in the console for three formats.
+6. Add `preload="none"` and see what the page downloads before you press play.
+7. Make the video fit a narrow phone width, with `max-width: 100%`.
+8. Write a three-line WebVTT file, and attach it with `track`.
+9. Mute the sound, and check that the video still makes sense. What is missing?
+10. Bonus: list every file in your project that is over 1 MB, and decide how to shrink each one.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which elements play media in HTML?</summary>
+
+`audio` for sound and `video` for sound with pictures. Both work without plugins, and both can show built-in controls with the `controls` attribute.
+
+</details>
+
+<details>
+<summary>2. Why use more than one `source`?</summary>
+
+Browsers support different formats. With several `source` elements, each with a `type`, the browser plays the first one it understands and skips the rest.
+
+</details>
+
+<details>
+<summary>3. How do you make video accessible to people who cannot hear it?</summary>
+
+Add captions with a `track` element and a WebVTT file. Captions show speech and important sounds. A transcript helps too, especially for audio-only content.
+
+</details>
+
+<details>
+<summary>4. Why should media never autoplay with sound?</summary>
+
+It surprises and distracts visitors, can disturb people around them, makes screen reader speech hard to hear, and most browsers block it anyway.
+
+</details>
+
+<details>
+<summary>5. Is media you hide on a page private?</summary>
+
+No. Anything the browser can play can be downloaded. Private media must be protected on the server.
+
+</details>
+
+## Key Takeaways
+
+- `<audio>` and `<video>` play media directly in the browser, with no plugins.
+- Add **`controls`**, and use `<source>` to offer more than one format.
+- Use `<track>` to add **captions and subtitles**, and provide transcripts as well.
+- Never autoplay sound, and keep everything operable by keyboard.
+- Media is heavy: compress it, choose `preload` carefully, and make it responsive.
+- Hidden media is not private, and embedded players can track visitors.
+- Plan for slow connections, many languages, and visitors who cannot hear or see the media.
+
+Ready to start? Begin with [Audio](./audio), the simplest media element.

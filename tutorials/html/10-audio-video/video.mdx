@@ -1,15 +1,528 @@
 ---
-id: video-element
-title: "The HTML Video Element: Embedding Video Content"
-sidebar_label: "Video (<video>)"
+id: html-video
+title: "HTML Video Element"
+sidebar_label: "Video"
 sidebar_position: 3
 slug: /html/audio-video/video
-description: "Discover how to embed responsive, self-hosted video players with poster images, playback controls, and preload settings."
+description: "Learn the HTML video element: embedding video with src, controls, width, height, poster, preload, muted, loop, playsinline and autoplay, choosing MP4 or WebM, avoiding layout shift, background videos done safely, compressing files, and accessibility, with a live video player you can try."
 keywords:
-  - HTML video tag
-  - video element usage
-  - HTML5 video player
-  - video poster attribute
+  - HTML video element
+  - HTML5 video tag
+  - video controls poster muted autoplay
+  - embed video in HTML
+  - background video HTML
+  - playsinline video
+  - MP4 WebM HTML video
+  - video width height aspect ratio
+  - compress video for web ffmpeg
+  - video accessibility captions
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, video, media, elements]
+tags: [html, web-development, beginner, video, media, accessibility, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function VideoLab() {
+  const videoRef = useRef(null);
+  const [supported, setSupported] = useState(true);
+  const [width, setWidth] = useState(360);
+  const [muted, setMuted] = useState(true);
+  const [info, setInfo] = useState({paused: true, size: "not loaded yet", events: []});
+  useEffect(() => {
+    // A small animated canvas stands in for a video file, so no download is needed.
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 360;
+    if (typeof canvas.captureStream !== "function" || !videoRef.current) {
+      setSupported(false);
+      return undefined;
+    }
+    const context = canvas.getContext("2d");
+    let frame = 0;
+    let handle = 0;
+    const draw = () => {
+      frame++;
+      const x = 320 + Math.sin(frame / 25) * 220;
+      const y = 180 + Math.cos(frame / 17) * 100;
+      context.fillStyle = "#0f172a";
+      context.fillRect(0, 0, 640, 360);
+      context.fillStyle = "#38bdf8";
+      context.beginPath();
+      context.arc(x, y, 40, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#f8fafc";
+      context.font = "24px sans-serif";
+      context.fillText("Frame " + frame, 20, 40);
+      handle = requestAnimationFrame(draw);
+    };
+    draw();
+    const stream = canvas.captureStream(30);
+    videoRef.current.srcObject = stream;
+    return () => {
+      cancelAnimationFrame(handle);
+      stream.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+  const note = (name) => {
+    const video = videoRef.current;
+    setInfo((old) => ({
+      paused: video ? video.paused : old.paused,
+      size: video && video.videoWidth ? video.videoWidth + " × " + video.videoHeight : old.size,
+      events: name ? [...old.events.slice(-3), name] : old.events,
+    }));
+  };
+  if (!supported) {
+    return <p role="status">This browser cannot create the demo stream. The code on the left still shows how a real video element works.</p>;
+  }
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Try the attributes</legend>
+        <label htmlFor="vl-width">Width </label>
+        <select id="vl-width" value={width} onChange={(event) => setWidth(Number(event.target.value))}>
+          <option value={240}>240 px</option>
+          <option value={360}>360 px</option>
+          <option value={520}>520 px</option>
+        </select>
+        {" "}
+        <label style={{marginInlineStart: "1rem"}}>
+          <input type="checkbox" checked={muted} onChange={(event) => setMuted(event.target.checked)} /> muted
+        </label>
+      </fieldset>
+      <video
+        ref={videoRef}
+        controls
+        playsInline
+        muted={muted}
+        width={width}
+        style={{maxWidth: "100%", height: "auto", background: "#0f172a", display: "block"}}
+        onLoadedMetadata={() => note("loadedmetadata")}
+        onPlay={() => note("play")}
+        onPause={() => note("pause")}
+        onVolumeChange={() => note("volumechange")}
+        aria-label="Demo video: a ball moving across the screen"
+      >
+        Your browser cannot play this video.
+      </video>
+      <ul style={{margin: "0.6rem 0 0.3rem", paddingLeft: "1.25rem"}}>
+        <li><code>paused</code>: {String(info.paused)}</li>
+        <li><code>videoWidth × videoHeight</code>: {info.size}</li>
+        <li>Latest events: {info.events.length ? info.events.join(", ") : "none yet"}</li>
+      </ul>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        This is a real <code>video</code> element showing a live, animated canvas (so it has no fixed length). Press play, change the width, and toggle the sound.
+      </p>
+    </div>
+  );
+}
+
+export function AttributeBuilder() {
+  const [opts, setOpts] = useState({controls: true, autoplay: false, muted: false, loop: false, playsinline: true, poster: true});
+  const [preload, setPreload] = useState("metadata");
+  const [ratio, setRatio] = useState("16 / 9");
+  const toggle = (key) => setOpts((old) => ({...old, [key]: !old[key]}));
+  const dims = {"16 / 9": [640, 360], "4 / 3": [640, 480], "1 / 1": [480, 480], "9 / 16": [360, 640]}[ratio];
+  const parts = ['src="lesson.mp4"', 'width="' + dims[0] + '"', 'height="' + dims[1] + '"'];
+  if (opts.poster) parts.push('poster="cover.jpg"');
+  ["controls", "autoplay", "muted", "loop", "playsinline"].forEach((key) => { if (opts[key]) parts.push(key); });
+  if (preload !== "metadata") parts.push('preload="' + preload + '"');
+  const code = "<video " + parts.join("\n       ") + "></video>";
+  const notes = [];
+  if (opts.autoplay && !opts.muted) notes.push({bad: true, text: "Autoplay with sound is blocked by most browsers, and it is rude when it works."});
+  if (opts.autoplay && opts.muted && opts.loop && !opts.controls) notes.push({bad: true, text: "A silent looping background video is fine only if people can pause it (WCAG asks for this for motion longer than 5 seconds) and it respects reduced-motion settings."});
+  if (opts.autoplay && opts.muted && !opts.playsinline) notes.push({bad: true, text: "Without playsinline, some mobile browsers open autoplay video in full screen."});
+  if (!opts.controls && !opts.autoplay) notes.push({bad: true, text: "No controls and no autoplay: nobody can start this video."});
+  if (preload === "auto") notes.push({bad: false, text: "preload=\"auto\" may download the whole video early. Costly on mobile data."});
+  if (!opts.poster && preload === "none") notes.push({bad: false, text: "preload=\"none\" with no poster shows a black box. Add a poster."});
+  if (notes.length === 0) notes.push({bad: false, text: "A sensible, polite video."});
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{margin: "0 0 0.5rem"}}>
+        <legend>Attributes</legend>
+        {Object.keys(opts).map((key) => (
+          <label key={key} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input type="checkbox" checked={opts[key]} onChange={() => toggle(key)} /> {key}
+          </label>
+        ))}
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="vb-preload">preload </label>
+        <select id="vb-preload" value={preload} onChange={(event) => setPreload(event.target.value)}>
+          <option value="none">none</option>
+          <option value="metadata">metadata</option>
+          <option value="auto">auto</option>
+        </select>
+        {" "}
+        <label htmlFor="vb-ratio" style={{marginInlineStart: "1rem"}}>shape </label>
+        <select id="vb-ratio" value={ratio} onChange={(event) => setRatio(event.target.value)}>
+          <option>16 / 9</option>
+          <option>4 / 3</option>
+          <option>1 / 1</option>
+          <option>9 / 16</option>
+        </select>
+      </p>
+      <div style={{display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "flex-start"}}>
+        <div
+          aria-hidden="true"
+          style={{width: "7rem", aspectRatio: ratio, background: "#0f172a", color: "#f8fafc", display: "grid", placeItems: "center", borderRadius: "4px", fontSize: "0.8em"}}
+        >
+          {opts.poster ? "poster" : "black"}
+        </div>
+        <pre style={{margin: 0, flex: "1 1 14rem", whiteSpace: "pre-wrap"}}><code>{code}</code></pre>
+      </div>
+      <ul role="status" style={{margin: "0.6rem 0 0", paddingLeft: "1.25rem"}}>
+        {notes.map((entry) => (
+          <li key={entry.text} style={{color: entry.bad ? "#b91c1c" : "#15803d"}}>{entry.text}</li>
+        ))}
+      </ul>
+    </form>
+  );
+}
+
+Video is the richest thing you can put on a page. It can teach a skill step by step, show a product from every side, or tell a story. The **`<video>`** element embeds it directly, with the browser's own player, so there is nothing to install and no outside service needed.
+
+It works almost like `<audio>`, with a few extra things to think about: the **size**, the **poster picture**, the **file weight**, and what to do when there is no sound or no picture to rely on.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Embedding video with `<video>`, `src`, and `controls`
+- The attributes: `width`, `height`, `poster`, `preload`, `muted`, `loop`, `playsinline`, and `autoplay`
+- Choosing MP4 or WebM, and compressing files
+- Avoiding layout jumps with the right size
+- Background videos, done safely
+- The JavaScript API, accessibility, and global notes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video
+  src="lesson.mp4"
+  width="640"
+  height="360"
+  poster="cover.jpg"
+  controls
+  playsinline
+  preload="metadata"
+>
+  Your browser cannot play this video.
+  <a href="lesson.mp4">Download it (MP4, 18 MB)</a>.
+</video>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<VideoLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo is a **real** `<video>` element. So you can try it without a file, it plays a small animated picture drawn by the page. Your own videos work the same way, except that they have a fixed length.
+
+## Attributes
+
+| Attribute | What it does | Advice |
+| :-- | :-- | :-- |
+| `src` | The address of the video file | Or use `source` elements for several formats (see [Source](./source)) |
+| `controls` | Shows the player | **Almost always include it** |
+| `width`, `height` | The size, in pixels, with no units | Set both, so the browser reserves space |
+| `poster` | A picture shown before the video plays | Use a clear, light image |
+| `preload` | `none`, `metadata`, or `auto` | Prefer `metadata` or `none` |
+| `muted` | Starts silent | Required for any autoplay attempt |
+| `autoplay` | Tries to start by itself | Avoid, except for silent background clips |
+| `loop` | Repeats when finished | Only for short, silent, decorative clips |
+| `playsinline` | Plays inside the page on iPhones | Add it, so video does not jump to full screen |
+| `crossorigin` | How to fetch from another site | Needed for captions from another domain |
+
+### Try It: Build the Tag
+
+Change the attributes and the shape of the video, and read the advice.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A polite lesson video -->
+<video src="lesson.mp4" width="640" height="360"
+       poster="cover.jpg" controls playsinline preload="metadata"></video>
+
+<!-- A silent decorative loop (see "Background videos" below) -->
+<video src="bg.mp4" width="640" height="360"
+       autoplay muted loop playsinline></video>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AttributeBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Size and Layout Jumps
+
+Without a size, the browser does not know how tall the video will be until it has downloaded the start of the file. The page then **jumps** as the video box appears, which is annoying, and pushes the text the visitor was reading.
+
+The cure: always set **`width` and `height`**. They tell the browser the **shape** (the aspect ratio), even if CSS later changes the real size.
+
+```html
+<video src="lesson.mp4" width="640" height="360" controls></video>
+```
+
+```css
+video {
+  max-width: 100%;   /* never wider than its container */
+  height: auto;      /* keep the shape */
+}
+```
+
+You can also set `aspect-ratio: 16 / 9` in CSS. For full responsive techniques, such as videos that fill their column, see [Responsive Video](./responsive-video).
+
+## Choosing a Format
+
+| Format | Typical file | Notes |
+| :-- | :-- | :-- |
+| **MP4** (H.264 video, AAC audio) | `.mp4` | The safest choice. Plays almost everywhere |
+| **WebM** (VP9 or AV1 video, Opus audio) | `.webm` | Often smaller at the same quality. Check support in the browsers you need |
+| **Ogg** (Theora) | `.ogv` | Old. Rarely needed today |
+
+For most sites, **one well-made MP4** is enough. To also offer a smaller WebM, list both with `<source>`, and the browser takes the first it can play. See [Source](./source). Support changes over time, so test before you decide.
+
+### Make the File Small
+
+Raw video from a phone or screen recorder can be enormous. Compress it before it goes on the web. A common tool is **FFmpeg**:
+
+```bash title="terminal"
+# MP4: widely compatible, "+faststart" lets it begin playing before it fully downloads
+ffmpeg -i input.mov -c:v libx264 -crf 23 -preset slow \
+       -c:a aac -b:a 128k -movflags +faststart output.mp4
+
+# WebM: often smaller
+ffmpeg -i input.mov -c:v libvpx-vp9 -crf 32 -b:v 0 \
+       -c:a libopus output.webm
+```
+
+Higher `-crf` numbers give smaller files and lower quality. Try a few values and watch a clip. Also **trim** the video, and **lower the resolution** if it is only shown small: a 4K video in a 640-pixel box is wasted data.
+
+## The Poster
+
+A **poster** is the picture shown before the video starts. Without one, the box can be black or empty until the browser loads a frame.
+
+```html
+<video src="lesson.mp4" poster="cover.jpg" controls width="640" height="360"></video>
+```
+
+- Use a **clear, representative frame**, not a blurry or dark one.
+- Keep the poster file **small** (a compressed JPEG or WebP).
+- With `preload="none"`, the poster is all the visitor sees, so it matters even more.
+- The poster is **not** announced like an image. Describe the video in a nearby heading, or with `aria-label`.
+
+## Background Videos, Done Safely
+
+A silent, looping clip behind a heading is a popular design. It can be done kindly:
+
+```html
+<video id="bg" src="waves.mp4" autoplay muted loop playsinline
+       aria-hidden="true" width="1280" height="720"></video>
+<button type="button" id="bg-toggle">Pause background video</button>
+```
+
+```js
+const bg = document.getElementById("bg");
+const toggle = document.getElementById("bg-toggle");
+
+// Respect people who ask for less motion
+if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  bg.removeAttribute("autoplay");
+  bg.pause();
+}
+
+toggle.addEventListener("click", () => {
+  if (bg.paused) {
+    bg.play();
+    toggle.textContent = "Pause background video";
+  } else {
+    bg.pause();
+    toggle.textContent = "Play background video";
+  }
+});
+```
+
+The rules for good manners:
+
+1. It must be **muted** (or browsers block it) and use **`playsinline`**.
+2. It must carry **no essential information.** Mark it `aria-hidden="true"`.
+3. Give visitors a **pause button.** Moving content that lasts more than 5 seconds needs one.
+4. **Respect `prefers-reduced-motion`.**
+5. **Keep text readable** over it, with enough contrast.
+6. Keep the file **tiny**, and consider a still image on slow connections.
+
+## Controlling Video with JavaScript
+
+The API is the same as for audio, with a few extras:
+
+```js
+const video = document.querySelector("video");
+
+video.play().catch(() => console.log("Blocked: show a Play button"));
+video.pause();
+video.currentTime = 12;
+video.playbackRate = 1.25;
+
+video.requestFullscreen();            // full screen
+video.requestPictureInPicture?.();    // a floating window, where supported
+
+console.log(video.videoWidth, video.videoHeight);   // the real size, once loaded
+video.addEventListener("ended", () => console.log("Finished"));
+```
+
+More on building your own controls is in [Media Controls](./media-controls).
+
+## Captions and Alternatives
+
+A video usually needs **three** kinds of access:
+
+| For people who… | Provide |
+| :-- | :-- |
+| Cannot hear, or cannot play sound | **Captions** (`track kind="captions"`), see [Captions](./captions) |
+| Read another language | **Subtitles**, see [Subtitles](./subtitles) |
+| Cannot see the picture | Narration that describes what happens, or an **audio description** track or version |
+| Prefer to read, or cannot play video | A **transcript** on the page |
+
+The attached text files are added with [`<track>`](./track). The full checklist is in [Accessible Media](./accessible-media).
+
+## Accessibility at a Glance
+
+- **Include `controls`** that work with the keyboard. The built-in ones do.
+- **Add captions** to every video with speech or meaningful sound.
+- **Do not autoplay with sound,** and give any moving background a pause button.
+- **Avoid flashing** more than three times in a second.
+- **Describe the video** with a heading or `aria-label`, so people know what it is before they play it.
+- **Give a transcript** or text summary.
+- **Do not put important information only in the picture.** Say it in the narration too.
+- **Keep contrast** for any text drawn over the video.
+
+## Security and Privacy Notes
+
+- **Videos can be downloaded** by anyone who can play them. Hiding the controls or blocking right-click does not protect a file. Private video must be served only to authorised users, by the server.
+- **Own the rights** to every clip and soundtrack.
+- **Use HTTPS** to avoid mixed content blocking.
+- **Third-party embeds** (for example in an `iframe`) can track your visitors. Check what they load, and ask for consent where required.
+- **User uploads need care:** check the type and size on the server, and re-encode if you can. Never trust the file name or the declared type.
+- **Do not reveal private details** in a video's file name or poster, such as a customer's name.
+
+## Global Audience Notes
+
+- **Video is heavy.** Many visitors have slow or metered connections. Compress files, use `preload="metadata"` or `none`, and show the file size on download links.
+- **Offer captions, and subtitles in more languages.** See [Subtitles](./subtitles).
+- **Do not rely on one language** in on-screen text. Put key words in captions too, so they can be translated.
+- **Avoid idioms and humour** that do not translate, or explain them in the transcript.
+- **Test on small, old phones** and on a slow network.
+- **Use `playsinline`,** because many visitors watch on phones.
+
+## Common Mistakes to Avoid
+
+1. **Leaving out `controls`.**
+2. **No `width` and `height`,** so the page jumps.
+3. **Fixed pixel sizes only,** so the video overflows on phones. Use `max-width: 100%`.
+4. **Autoplaying with sound.**
+5. **No captions or transcript.**
+6. **Huge, uncompressed files.**
+7. **Only one format when you need to support unusual browsers.**
+8. **Forgetting `playsinline`** on mobile.
+9. **No poster,** so the box is black.
+10. **A looping background with no pause button.**
+11. **Putting essential information only in the picture.**
+12. **Assuming a hidden video is private.**
+
+## Practice Time
+
+Try these in your editor, with a short MP4 you have the right to use:
+
+1. Add a `<video controls>` with `width` and `height`, and play it with the keyboard only.
+2. Add a `poster` image, and compare it with no poster.
+3. Add `max-width: 100%; height: auto;` and narrow your browser window.
+4. Set `preload="none"` and check the network panel before pressing play.
+5. Compress your video with FFmpeg, and compare the file sizes.
+6. Add fallback text with a download link.
+7. Build a muted, looping background clip with a pause button.
+8. Add the `prefers-reduced-motion` check, and test it in your system settings.
+9. Add a button that jumps back 10 seconds with `currentTime`.
+10. Bonus: use `requestFullscreen()` from a custom button, and test with the keyboard.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why set `width` and `height` on a video?</summary>
+
+They tell the browser the shape of the video before it loads, so it can reserve the space. Without them, the page jumps when the video appears.
+
+</details>
+
+<details>
+<summary>2. What is `poster` for?</summary>
+
+It is the picture shown before the video plays. A clear, small poster stops the box from looking black or empty.
+
+</details>
+
+<details>
+<summary>3. When is autoplay acceptable?</summary>
+
+Only for short, silent, decorative clips that carry no essential information, with `muted` and `playsinline`, a pause button, and respect for reduced-motion settings. Never with sound.
+
+</details>
+
+<details>
+<summary>4. Which format is the safest?</summary>
+
+MP4 with H.264 video and AAC audio plays almost everywhere. WebM can be smaller, and both can be offered with `source`.
+
+</details>
+
+<details>
+<summary>5. What does `playsinline` do?</summary>
+
+On iPhones and some mobile browsers, it keeps the video playing inside the page, instead of jumping to full screen.
+
+</details>
+
+<details>
+<summary>6. How do you make a video accessible?</summary>
+
+Add captions, provide a transcript, describe visual-only information in the narration or with an audio description, avoid flashing, and make sure the controls work with a keyboard.
+
+</details>
+
+## Key Takeaways
+
+- `<video controls src="…">` embeds video with a full, keyboard-friendly player.
+- Always set **`width` and `height`**, and use `max-width: 100%; height: auto;` in CSS.
+- Add a **`poster`**, `playsinline`, and a sensible `preload`.
+- Use **MP4** for safety, compress your files, and offer WebM with `source` if you need to.
+- **Never autoplay with sound.** A silent background loop needs a pause button and must respect reduced motion.
+- Provide **captions, subtitles, and a transcript**, using `track`.
+- Hidden video is not private, and embedded players can track visitors.
+- Plan for slow connections, small phones, and many languages.
+
+Next, learn how to offer several formats in [Source](./source), or return to the [Audio and Video overview](../audio-video).

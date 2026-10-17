@@ -1,15 +1,549 @@
 ---
-id: captions
-title: "Adding Closed Captions for Hearing-Impaired Users"
+id: html-captions
+title: "HTML Captions"
 sidebar_label: "Captions"
-sidebar_position: 6
+sidebar_position: 7
 slug: /html/audio-video/captions
-description: "Learn how to author and configure closed caption tracks (kind='captions') to transcribe speech and critical audio cues."
+description: "Learn how to add and write good captions for HTML video: the track element with kind captions, what captions must include (speech, speakers, sounds), timing and reading speed, line length, styling and contrast, open versus closed captions, reviewing automatic captions, and common mistakes, with live checkers."
 keywords:
-  - HTML media captions
-  - closed captions WebVTT
-  - accessibility captions HTML
+  - HTML captions
+  - video captions accessibility
   - track kind captions
+  - closed captions WebVTT
+  - caption reading speed
+  - caption line length
+  - sound descriptions in captions
+  - speaker identification captions
+  - WCAG captions
+  - caption contrast styling
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, captions, accessibility, media]
+tags: [html, web-development, beginner, captions, webvtt, video, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function toRgb(hex) {
+  const clean = hex.replace("#", "");
+  return [0, 2, 4].map((start) => parseInt(clean.slice(start, start + 2), 16));
+}
+
+export function luminance(rgb) {
+  const [r, g, b] = rgb.map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function ratio(a, b) {
+  const l1 = luminance(a);
+  const l2 = luminance(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+export function CaptionStyler() {
+  const cues = [
+    "Welcome back! Today we will build a signup form.",
+    "[keyboard clicking]\nFirst, open the editor.",
+    "ASHA: Any questions so far?",
+  ];
+  const frames = {dark: "#0f172a", mid: "#64748b", bright: "#e2e8f0"};
+  const [cue, setCue] = useState(0);
+  const [frame, setFrame] = useState("mid");
+  const [color, setColor] = useState("#ffffff");
+  const [background, setBackground] = useState("#000000");
+  const [opacity, setOpacity] = useState(0.4);
+  const [size, setSize] = useState(20);
+  const [top, setTop] = useState(false);
+  const frameRgb = toRgb(frames[frame]);
+  const backgroundRgb = toRgb(background);
+  const blended = backgroundRgb.map((value, index) => Math.round(value * opacity + frameRgb[index] * (1 - opacity)));
+  const score = ratio(toRgb(color), blended);
+  let verdict = "Fails: hard to read.";
+  let verdictColor = "#b91c1c";
+  if (score >= 7) { verdict = "Excellent (7 to 1 or more)."; verdictColor = "#15803d"; }
+  else if (score >= 4.5) { verdict = "Good (4.5 to 1 or more)."; verdictColor = "#15803d"; }
+  else if (score >= 3) { verdict = "Weak: below 4.5 to 1."; verdictColor = "#b45309"; }
+  return (
+    <div>
+      <div
+        aria-hidden="true"
+        style={{position: "relative", aspectRatio: "16 / 9", background: frames[frame], borderRadius: "6px", overflow: "hidden", maxWidth: "34rem"}}
+      >
+        <div style={{position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "rgba(255,255,255,0.35)", fontSize: "0.9em"}}>(the picture)</div>
+        <div style={{position: "absolute", left: 0, right: 0, [top ? "top" : "bottom"]: "8%", textAlign: "center"}}>
+          <span
+            style={{
+              display: "inline-block",
+              maxWidth: "90%",
+              padding: "0.15em 0.5em",
+              whiteSpace: "pre-line",
+              color,
+              fontSize: size + "px",
+              lineHeight: 1.3,
+              background: "rgba(" + backgroundRgb.join(",") + "," + opacity + ")",
+            }}
+          >
+            {cues[cue]}
+          </span>
+        </div>
+      </div>
+      <form onSubmit={(event) => event.preventDefault()} style={{marginTop: "0.6rem"}}>
+        <fieldset style={{margin: "0 0 0.5rem"}}>
+          <legend>Caption text</legend>
+          {cues.map((text, index) => (
+            <label key={text} style={{display: "block"}}>
+              <input type="radio" name="cs-cue" checked={cue === index} onChange={() => setCue(index)} /> {text.replace("\n", " ")}
+            </label>
+          ))}
+        </fieldset>
+        <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+          <label>Text <input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
+          <label>Box <input type="color" value={background} onChange={(event) => setBackground(event.target.value)} /></label>
+          <label>Box opacity{" "}
+            <input type="range" min="0" max="1" step="0.05" value={opacity} onChange={(event) => setOpacity(Number(event.target.value))} aria-valuetext={Math.round(opacity * 100) + " percent"} />
+          </label>
+          <label>Size{" "}
+            <input type="range" min="12" max="32" step="1" value={size} onChange={(event) => setSize(Number(event.target.value))} aria-valuetext={size + " pixels"} />
+          </label>
+        </p>
+        <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+          <label>Picture behind{" "}
+            <select value={frame} onChange={(event) => setFrame(event.target.value)}>
+              <option value="dark">dark</option>
+              <option value="mid">medium</option>
+              <option value="bright">bright</option>
+            </select>
+          </label>
+          <label><input type="checkbox" checked={top} onChange={(event) => setTop(event.target.checked)} /> Move to the top</label>
+        </p>
+      </form>
+      <p role="status" style={{margin: 0}}>
+        <strong>Contrast: {score.toFixed(1)} to 1.</strong>{" "}
+        <span style={{color: verdictColor}}>{verdict}</span>
+      </p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simulation of a video frame, so you can experiment safely. Real viewers can also override your styling with their own caption settings.
+      </p>
+    </div>
+  );
+}
+
+export function parseCues(text) {
+  const pattern = /^\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*\|\s*(.*)$/;
+  const rows = [];
+  const problems = [];
+  text.split("\n").forEach((line, index) => {
+    if (!line.trim()) return;
+    const match = line.match(pattern);
+    if (!match) {
+      problems.push("Line " + (index + 1) + ": use the form 0.0-2.5 | caption text");
+      return;
+    }
+    const start = Number(match[1]);
+    const end = Number(match[2]);
+    const lines = match[3].split("/").map((part) => part.trim());
+    const letters = lines.join(" ").length;
+    const seconds = end - start;
+    const longest = Math.max(...lines.map((part) => part.length));
+    const flags = [];
+    if (seconds <= 0) flags.push("The end must come after the start.");
+    else {
+      if (seconds < 1) flags.push("Shown for under 1 second. Too short to read.");
+      if (seconds > 7) flags.push("Longer than 7 seconds. Split it into two cues.");
+      if (letters / seconds > 20) flags.push("Too fast: " + Math.round(letters / seconds) + " characters per second (aim for about 15 to 20).");
+    }
+    if (lines.length > 2) flags.push("More than two lines.");
+    if (longest > 42) flags.push("A line is " + longest + " characters. Keep lines to about 42 or fewer.");
+    if (letters === 0) flags.push("No text.");
+    rows.push({start, end, lines, letters, seconds, flags, cps: seconds > 0 ? letters / seconds : 0});
+  });
+  return {rows, problems};
+}
+
+export function CaptionChecker() {
+  const sample = [
+    "0-2.5 | Welcome back! Today we will build / a signup form.",
+    "2.5-3.2 | [keyboard clicking] First, open the editor and create a new file called index.html",
+    "3.2-6 | [keyboard clicking] First, open the editor / and create a new file.",
+    "6-8 | ASHA: Any questions so far?",
+  ].join("\n");
+  const [text, setText] = useState(sample);
+  const {rows, problems} = parseCues(text);
+  const withFlags = rows.filter((row) => row.flags.length > 0).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="cc-text" style={{display: "block"}}>
+          One cue per line: <code>start-end | text</code> (seconds). Use <code>/</code> for a line break.
+        </label>
+        <textarea id="cc-text" value={text} onChange={(event) => setText(event.target.value)} rows={6} spellCheck={false} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setText(sample)}>Reset the example</button>
+      </p>
+      <div role="status">
+        {problems.length > 0 && (
+          <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.25rem", color: "#b91c1c"}}>
+            {problems.map((problem) => (<li key={problem}>{problem}</li>))}
+          </ul>
+        )}
+        <p style={{margin: "0 0 0.5rem"}}>
+          {rows.length} cues checked. {withFlags === 0 ? "No problems found." : withFlags + " with problems."}
+        </p>
+      </div>
+      {rows.length > 0 && (
+        <table>
+          <caption>Caption quality check</caption>
+          <thead>
+            <tr><th scope="col">Time</th><th scope="col">Text</th><th scope="col">Speed</th><th scope="col">Notes</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={index}>
+                <td>{row.start}–{row.end} s</td>
+                <td style={{whiteSpace: "pre-line"}}>{row.lines.join("\n")}</td>
+                <td>{row.cps.toFixed(0)} cps</td>
+                <td style={{color: row.flags.length ? "#b91c1c" : "#15803d"}}>
+                  {row.flags.length ? row.flags.join(" ") : "Good"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The numbers (about 42 characters per line, two lines, 15 to 20 characters per second) are common guidelines, not browser rules. Different style guides pick slightly different limits.
+      </p>
+    </div>
+  );
+}
+
+Imagine watching a video with the **sound off**: on a train, in a library, or because you cannot hear. Without captions, you lose everything that is spoken. For many people, that is not an occasional problem but an everyday one.
+
+**Captions** are the fix. They are the **spoken words and important sounds, written as text, in time with the video.** They are one of the most useful accessibility features you can add, and they are surprisingly easy to attach with HTML. The harder (and more important) part is writing them well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What captions are, and how they differ from subtitles and transcripts
+- Adding captions with `<track kind="captions">`
+- What good captions contain
+- Timing, reading speed, and line length
+- Styling captions, and keeping them readable
+- Open versus closed captions, and checking automatic captions
+- Common mistakes
+
+## Who Needs Captions?
+
+| Person | Why captions help |
+| :-- | :-- |
+| People who are **deaf or hard of hearing** | They are the only way to follow the speech and sounds |
+| Someone in a **noisy or quiet place** | A busy station, an open office, or a sleeping baby |
+| A **language learner** | Reading along helps them understand and remember |
+| People with **attention or processing differences** | Text and sound together support focus |
+| Anyone with a **poor connection** or **bad speakers** | Words stay clear, even if the sound is not |
+
+Captions also let search engines and tools **index** what is said, and let visitors search and skim the text of a talk.
+
+## Adding Captions
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video controls width="640" height="360" src="lesson.mp4" crossorigin="anonymous">
+  <track
+    kind="captions"
+    src="lesson.en.vtt"
+    srclang="en"
+    label="English"
+    default
+  >
+</video>
+```
+
+```text title="lesson.en.vtt"
+WEBVTT
+
+00:00.000 --> 00:02.500
+Welcome back! Today we will build
+a signup form.
+
+00:02.500 --> 00:05.000
+[keyboard clicking]
+First, open the editor.
+
+00:06.000 --> 00:08.000
+<v Asha>Any questions so far?
+```
+
+</TabItem>
+<TabItem value="output" label="What Viewers See">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CaptionStyler />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The player adds a **"CC"** or captions button, and viewers choose a track from its menu. The `default` attribute turns the track on from the start, and is a **good idea for captions**, since the people who need them may not be able to find the menu.
+
+You met the `<track>` element in detail in [Track](./track). Captions are `<track>` with `kind="captions"`, and a lot of care in the text.
+
+### Captions, Subtitles, and Transcripts
+
+| | Captions | Subtitles | Transcript |
+| :-- | :-- | :-- | :-- |
+| Audience | People who **cannot hear** | People who **can hear** but do not know the language | Anyone who prefers to read |
+| Contains | Speech **and** important sounds and speakers | The translated speech only | The full text, on a page |
+| Timed to the video? | Yes | Yes | No |
+| HTML | `track kind="captions"` | `track kind="subtitles"` | Plain text next to the media |
+
+You can offer all three. See [Subtitles](./subtitles) and [Accessible Media](./accessible-media).
+
+## What Good Captions Contain
+
+Good captions are **complete, accurate, and clear**:
+
+1. **All the speech,** in the order and way it is said, including words in other languages.
+2. **Who is speaking,** whenever it is not obvious: `<v Asha>`, or a name in capital letters if your style guide uses them.
+3. **Important sounds:** "[door slams]", "[phone ringing]", "[audience laughs]". Include sounds that carry meaning, but not every background noise.
+4. **Music,** described where it matters: "[tense music]", "[upbeat piano]". For songs, show the lyrics.
+5. **Tone and manner** when it changes the meaning: "[sarcastically]", "[whispering]".
+6. **Off-screen speech and narration,** marked so viewers know the speaker is not in view.
+7. **Correct spelling and punctuation,** with proper names written correctly.
+
+What to avoid:
+
+- **Leaving things out** to save space. If the speaker says it, the caption shows it.
+- **"Cleaning up" the meaning.** You may drop "um" and stutters in most cases, but do not change what was said.
+- **Describing the picture** ("A man walks into the room"). That is a job for descriptions, not captions.
+- **Spoilers in sound labels,** such as "[the killer laughs]" before the reveal.
+- **Jokes or opinions** in the sound labels.
+
+## Timing, Speed, and Line Length
+
+Readable captions respect how people read:
+
+| Guideline | Typical value |
+| :-- | :-- |
+| Characters per line | About **42 or fewer** |
+| Lines per cue | **Two** at most |
+| Reading speed | About **15 to 20 characters per second** (slower for children's content) |
+| Cue length on screen | At least **1 second**, and no more than about **7 seconds** |
+| Sync with speech | Appears within a fraction of a second of the words |
+| Line breaks | At **natural phrase breaks**, not in the middle of a name or a phrase |
+| Gap between cues | A brief gap, so the viewer sees one change to the next |
+
+Style guides differ a little, so treat these as sensible defaults.
+
+Good line breaks follow meaning:
+
+```text
+Poor:   I think the best way to build a
+        signup form is to start small.
+
+Better: I think the best way
+        to build a signup form is to start small.
+```
+
+### Try It: Check Your Captions
+
+Type captions in the form `start-end | text`, and the checker shows reading speed and problems. The example has one cue that flies by too fast. Try fixing it by splitting it into two cues, or by shortening the text.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```js title="script.js"
+// The same maths the checker uses
+const characters = text.replace(/\s+/g, " ").trim().length;
+const speed = characters / (end - start);   // characters per second
+
+if (speed > 20) console.log("Too fast: " + Math.round(speed) + " cps");
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CaptionChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Styling Captions
+
+By default, browsers draw white text on a dark box at the bottom of the video. That is a safe choice. If you restyle with `::cue`, do it carefully:
+
+```css
+video::cue {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.75);
+  font-family: system-ui, sans-serif;
+  font-size: 1.1rem;
+}
+```
+
+- **Keep strong contrast:** at least **4.5 to 1** between the text and what is behind it. Play with the demo above to see how the picture behind the captions changes the contrast.
+- **Do not use colour alone** to show speakers. Add names, too.
+- **Do not make captions too small.** A viewer's own browser or device settings may also change them, and you should allow that.
+- **Use the VTT `line` setting** to move captions away from important text in the picture (for example, a name tag at the bottom).
+- **Respect viewer preferences.** Many people set their own caption look in the device settings. Do not use `!important` to fight them.
+
+## Open and Closed Captions
+
+| Type | What it is | Good | Not so good |
+| :-- | :-- | :-- | :-- |
+| **Closed captions** | Separate text track that can be turned on and off | Searchable, resizable, translatable, can be turned off | Needs a player that supports them |
+| **Open captions** | "Burned into" the picture | Always shown, even where there is no player support | Cannot be turned off, resized, translated, or searched. Poor on small screens |
+
+For websites, **use closed captions** (`<track>`). Burned-in text is sometimes added **in addition**, for short social media clips, but it should never be the only option.
+
+## Automatic Captions
+
+Speech recognition tools can create a first draft quickly. But drafts are **not finished captions**:
+
+- They misspell **names, technical words, and accents.**
+- They miss **punctuation, speaker changes, and sound descriptions.**
+- They can make serious or embarrassing mistakes, and sound sure of themselves while doing it.
+
+A sensible workflow:
+
+1. **Generate** a draft with a tool.
+2. **Review and fix** every cue: spelling, names, speakers, sounds, line breaks, and timing.
+3. **Have a second person check** important content.
+4. **Save as UTF-8** `.vtt`, and test it in the browser.
+
+Plan for **live content** too. Live events need real-time captioning, either by a human captioner or a service, and the standards for live and pre-recorded video are different. For published, pre-recorded video, accurate captions are the usual expectation, and a legal requirement in many places. Check the rules that apply to you.
+
+## Accessibility at a Glance
+
+- **Provide captions** for all pre-recorded video with speech or meaningful sound.
+- **Include speakers and important sounds,** not just the words.
+- **Make them accurate, in sync, and readable** (line length, speed, and timing).
+- **Use `kind="captions"`** and a clear `label` and `srclang`.
+- **Use `default`,** so captions are on for people who need them.
+- **Keep contrast high,** and respect viewer settings.
+- **Check the menu with a keyboard** and a screen reader.
+- **Also give a transcript** where you can.
+- **Do not rely on auto-captions** without a human review.
+
+## Security and Privacy Notes
+
+- **Captions are public text.** A caption file can be read by anyone, so do not include private remarks, internal notes, or unreleased information in it, even in comments.
+- **Treat cue text as text, not HTML,** when your script shows it on the page. Use `textContent`.
+- **Names and sensitive details spoken in a video appear in captions,** and are searchable. Review them with the same care you give the video.
+- **Be careful with auto-caption services.** Uploading recordings to a third party shares the audio, so check who receives it, where it is stored, and for how long.
+- **Serve `.vtt` files over HTTPS,** with the correct type (`text/vtt`) and, for another origin, the right CORS headers.
+
+## Global Audience Notes
+
+- **Write the captions in the language of the audio.** Translations belong in subtitles. See [Subtitles](./subtitles).
+- **Set `srclang` correctly** (`en`, `hi`, `ar`), and write the `label` in the language itself.
+- **Save files as UTF-8,** so every script appears correctly.
+- **Line breaks differ between languages.** A good break in English may be wrong in Japanese, Arabic, or German. Check with a native reader.
+- **Right-to-left languages** are supported in WebVTT, but test numbers, English words, and punctuation, which can appear out of order.
+- **Reading speed varies by language and script.** Languages with dense characters, such as Chinese, may use fewer characters per second, and some alphabets use more. Follow the guidance for each language.
+- **Do not translate sound labels word for word.** Use the usual phrase in that language.
+
+## Common Mistakes to Avoid
+
+1. **Using subtitles where captions are needed,** so sounds and speakers are missing.
+2. **Publishing automatic captions without review.**
+3. **No speaker names** when the voice is unclear.
+4. **Leaving out sounds** that matter to the story.
+5. **Cues that flash too fast,** or stay on screen for too long.
+6. **Long lines, or three or more lines.**
+7. **Line breaks in the middle of a phrase.**
+8. **Low contrast,** or captions hidden behind other on-screen text.
+9. **Burned-in captions as the only option.**
+10. **Captions that are out of sync** with the speech.
+11. **No `default`,** so the people who need captions must find the menu.
+12. **Files not saved as UTF-8,** so non-English characters are broken.
+
+## Practice Time
+
+Try these in your editor, with a short video clip you have the right to use:
+
+1. Write a `.vtt` file with five captioned cues, and attach it with `kind="captions"` and `default`.
+2. Add a speaker name using `<v Name>`.
+3. Add two sound descriptions, such as "[applause]".
+4. Use the checker above to find a cue that is too fast, and fix it.
+5. Split a long cue into two, with natural line breaks.
+6. Style the captions with `::cue`, and check the contrast.
+7. Turn the captions on and off with the keyboard in your browser.
+8. Move a cue to the top with the VTT `line` setting.
+9. Run an automatic captioning tool on a clip, and list every mistake it made.
+10. Bonus: write the transcript of the same clip, and put it next to the video in a `details` widget.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between captions and subtitles?</summary>
+
+Captions are for people who cannot hear, so they include speech, speaker names, and important sounds. Subtitles translate speech for people who can hear but do not know the language.
+
+</details>
+
+<details>
+<summary>2. How do you add captions in HTML?</summary>
+
+Add a `track` element with `kind="captions"`, `src` pointing to a WebVTT file, `srclang`, `label`, and usually `default`, inside the `video` element.
+
+</details>
+
+<details>
+<summary>3. What should good captions include besides the words?</summary>
+
+Speaker names where unclear, meaningful sounds and music, and tone where it changes the meaning, all with accurate spelling and good timing.
+
+</details>
+
+<details>
+<summary>4. What are sensible limits for reading comfort?</summary>
+
+About 42 characters per line, two lines per cue, roughly 15 to 20 characters per second, and a cue on screen for between about 1 and 7 seconds.
+
+</details>
+
+<details>
+<summary>5. Why use closed captions instead of burned-in captions on a website?</summary>
+
+Closed captions can be turned on and off, resized, translated, and searched. Burned-in text cannot, and it often looks poor on small screens.
+
+</details>
+
+<details>
+<summary>6. Are automatic captions enough?</summary>
+
+No. They are a first draft that needs a human review for names, technical words, punctuation, speakers, and sounds.
+
+</details>
+
+## Key Takeaways
+
+- **Captions** turn speech and important sound into **timed text**, using `<track kind="captions">` and a WebVTT file.
+- Good captions are **complete, accurate, and in sync,** with **speaker names and sound descriptions**.
+- Aim for about **42 characters per line, two lines, and 15 to 20 characters per second**, with line breaks at natural phrases.
+- Keep **contrast high** (4.5 to 1 or better), and respect viewers' own caption settings.
+- Prefer **closed captions** to burned-in ones, and add `default`.
+- **Review automatic captions** by hand before publishing.
+- Treat caption files as public text, and use `textContent` when your script shows them.
+- Save as UTF-8, and write the captions in the language of the audio.
+
+Next, learn how to reach viewers in other languages in [Subtitles](./subtitles), or return to the [Audio and Video overview](../audio-video).

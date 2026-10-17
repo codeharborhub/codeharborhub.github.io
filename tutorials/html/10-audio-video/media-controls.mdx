@@ -1,15 +1,591 @@
 ---
-id: media-controls
-title: "Managing Native Attributes: controls, autoplay, loop, and muted"
-sidebar_label: "Media Controls & Attributes"
-sidebar_position: 8
+id: html-media-controls
+title: "HTML Media Controls"
+sidebar_label: "Media Controls"
+sidebar_position: 5
 slug: /html/audio-video/media-controls
-description: "Master native media attributes to manage playback controls, muted behavior, loop conditions, and browser autoplay policies."
+description: "Learn HTML media controls: the built-in controls attribute, what browsers add, how to build your own accessible player with buttons and sliders using the media API (play, pause, currentTime, volume, playbackRate and events), keyboard support, and common mistakes, with a live custom player."
 keywords:
-  - HTML video controls attribute
-  - autoplay policy HTML5
-  - media loop muted attributes
-  - audio controls configuration
+  - HTML media controls
+  - controls attribute audio video
+  - custom video player HTML JavaScript
+  - HTMLMediaElement API
+  - play pause currentTime volume playbackRate
+  - accessible custom media player
+  - seek bar input range
+  - controlsList nodownload
+  - timeupdate event
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, media, attributes, UX]
+tags: [html, web-development, beginner, media, controls, javascript, accessibility, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function makeMelodyUrl() {
+  // Builds an 8-second WAV melody in memory, so the demos need no audio file.
+  const rate = 11025;
+  const notes = [262, 330, 392, 330, 294, 349, 440, 349, 262, 330, 392, 523, 392, 330, 294, 262];
+  const per = Math.floor(rate * 0.5);
+  const total = per * notes.length;
+  const buffer = new ArrayBuffer(44 + total * 2);
+  const view = new DataView(buffer);
+  const write = (offset, text) => {
+    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + total * 2, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, total * 2, true);
+  let index = 0;
+  notes.forEach((frequency) => {
+    for (let i = 0; i < per; i++) {
+      const fade = Math.min(1, i / 400, (per - i) / 400);
+      view.setInt16(44 + index * 2, Math.sin((2 * Math.PI * frequency * i) / rate) * 0.3 * fade * 32767, true);
+      index++;
+    }
+  });
+  return URL.createObjectURL(new Blob([buffer], {type: "audio/wav"}));
+}
+
+export function clock(seconds) {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const whole = Math.floor(seconds);
+  const minutes = Math.floor(whole / 60);
+  const rest = String(whole % 60).padStart(2, "0");
+  return minutes + ":" + rest;
+}
+
+export function CustomPlayer() {
+  const audioRef = useRef(null);
+  const [url, setUrl] = useState(null);
+  const [s, setS] = useState({playing: false, time: 0, duration: 0, volume: 1, muted: false, rate: 1});
+  useEffect(() => {
+    const made = makeMelodyUrl();
+    setUrl(made);
+    return () => URL.revokeObjectURL(made);
+  }, []);
+  const sync = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setS({
+      playing: !audio.paused,
+      time: audio.currentTime,
+      duration: isFinite(audio.duration) ? audio.duration : 0,
+      volume: audio.volume,
+      muted: audio.muted,
+      rate: audio.playbackRate,
+    });
+  };
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (audio.paused) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  };
+  const skip = (seconds) => {
+    const audio = audioRef.current;
+    audio.currentTime = Math.min(Math.max(0, audio.currentTime + seconds), audio.duration || 0);
+  };
+  const btn = {padding: "0.4rem 0.8rem", minWidth: "2.75rem", minHeight: "2.75rem"};
+  return (
+    <div>
+      {url !== null && (
+        <audio
+          ref={audioRef}
+          src={url}
+          preload="metadata"
+          onLoadedMetadata={sync}
+          onTimeUpdate={sync}
+          onPlay={sync}
+          onPause={sync}
+          onEnded={sync}
+          onVolumeChange={sync}
+          onRateChange={sync}
+        />
+      )}
+      <div role="group" aria-label="Audio player: a short melody" style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.75rem"}}>
+        <p style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center", margin: "0 0 0.6rem"}}>
+          <button type="button" style={btn} onClick={() => skip(-5)} aria-label="Back 5 seconds">−5 s</button>
+          <button type="button" style={{...btn, fontWeight: 700}} onClick={toggle} disabled={url === null}>
+            {s.playing ? "Pause" : "Play"}
+          </button>
+          <button type="button" style={btn} onClick={() => skip(5)} aria-label="Forward 5 seconds">+5 s</button>
+          <span aria-hidden="true" dir="ltr" style={{fontVariantNumeric: "tabular-nums"}}>{clock(s.time)} / {clock(s.duration)}</span>
+        </p>
+        <p style={{margin: "0 0 0.6rem"}}>
+          <label htmlFor="cp-seek" style={{display: "block"}}>Seek</label>
+          <input
+            id="cp-seek"
+            type="range"
+            min="0"
+            max={s.duration || 0}
+            step="0.1"
+            value={s.time}
+            aria-valuetext={clock(s.time) + " of " + clock(s.duration)}
+            onChange={(event) => { audioRef.current.currentTime = Number(event.target.value); }}
+            style={{width: "100%"}}
+            disabled={url === null}
+          />
+        </p>
+        <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", margin: 0}}>
+          <label>
+            Volume{" "}
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={s.volume}
+              aria-valuetext={Math.round(s.volume * 100) + " percent"}
+              onChange={(event) => { audioRef.current.volume = Number(event.target.value); }}
+            />
+          </label>
+          <label>
+            <input type="checkbox" checked={s.muted} onChange={(event) => { audioRef.current.muted = event.target.checked; }} /> Mute
+          </label>
+          <label>
+            Speed{" "}
+            <select value={s.rate} onChange={(event) => { audioRef.current.playbackRate = Number(event.target.value); }}>
+              <option value={0.75}>0.75×</option>
+              <option value={1}>1×</option>
+              <option value={1.25}>1.25×</option>
+              <option value={1.5}>1.5×</option>
+            </select>
+          </label>
+        </p>
+      </div>
+      <p role="status" style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Every control here is a real <code>button</code>, <code>input</code> or <code>select</code>, so Tab, Space and the arrow keys already work. The sound is generated by the page, so no file is needed.
+      </p>
+    </div>
+  );
+}
+
+export function NativeControlsDemo() {
+  const [url, setUrl] = useState(null);
+  const [controls, setControls] = useState(true);
+  const [noDownload, setNoDownload] = useState(false);
+  useEffect(() => {
+    const made = makeMelodyUrl();
+    setUrl(made);
+    return () => URL.revokeObjectURL(made);
+  }, []);
+  const code = "<audio src=\"melody.wav\"" + (controls ? " controls" : "") + (controls && noDownload ? " controlslist=\"nodownload\"" : "") + "></audio>";
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Native controls</legend>
+        <label style={{marginRight: "1rem"}}>
+          <input type="checkbox" checked={controls} onChange={(event) => setControls(event.target.checked)} /> controls
+        </label>
+        <label>
+          <input type="checkbox" checked={noDownload} disabled={!controls} onChange={(event) => setNoDownload(event.target.checked)} /> controlslist="nodownload"
+        </label>
+      </fieldset>
+      {url === null ? (
+        <p role="status">Preparing the sound…</p>
+      ) : (
+        <audio key={String(controls) + String(noDownload)} src={url} controls={controls} controlsList={noDownload ? "nodownload" : undefined} />
+      )}
+      {url !== null && !controls && (
+        <p role="status" style={{margin: "0.4rem 0", color: "#b91c1c"}}>
+          Nothing is shown, and the visitor cannot play it. The element is on the page, but invisible.
+        </p>
+      )}
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        <code>controlslist</code> is a hint that only some browsers follow, and it does not stop anyone from getting the file.
+      </p>
+    </div>
+  );
+}
+
+Every media player needs a way to **start, stop, skip, and turn the volume up and down.** HTML gives you two choices:
+
+1. **Use the browser's built-in controls** with one attribute: `controls`.
+2. **Build your own** with buttons and sliders, using the media API.
+
+This lesson covers both, and shows how to make a custom player that works for everyone, including people who use only a keyboard or a screen reader.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The `controls` attribute, and what it gives you
+- When a custom player is worth building
+- The media API: properties, methods, and events
+- Building play, seek, volume, mute, and speed controls
+- Accessibility rules for custom controls
+- Common mistakes
+
+## The Built-in Controls
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<audio src="melody.wav" controls></audio>
+<video src="lesson.mp4" controls width="640" height="360"></video>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NativeControlsDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Adding `controls` gives you, with no code, things that take real work to build yourself:
+
+- Play and pause, a seek bar, a time display, volume, and mute.
+- On video: full screen, and often picture-in-picture, captions, and a speed menu.
+- **Keyboard and screen reader support,** tested by the browser makers.
+- A look that matches the visitor's device.
+
+The look **differs in every browser.** You cannot restyle it with CSS beyond a few things, such as size, borders, and colour scheme. That is fine for most sites.
+
+Without `controls`, the media element is **invisible** (audio) or a **silent, unclickable picture** (video), unless you provide your own controls.
+
+### Other Attributes That Affect Controls
+
+| Attribute | What it does | Notes |
+| :-- | :-- | :-- |
+| `controls` | Shows the built-in controls | The default choice |
+| `controlslist="nodownload"` | Asks the browser to hide the download button | Only some browsers follow it, and it does **not** protect the file |
+| `disablepictureinpicture` | Hides the floating-window option on video | Use only if you have a good reason |
+| `disableremoteplayback` | Hides the "cast to a screen" option | Same advice |
+
+None of these protects your media. A visitor can still find the file in the network panel.
+
+## Why Build Your Own?
+
+Sometimes the built-in player is not enough:
+
+- You want the **same look** in every browser.
+- You need **extra features**: chapters, a playlist, jump-back buttons, or a transcript that follows the sound.
+- You want to **start and stop the media** from other buttons on the page.
+- You are building a **game or interactive lesson** where media is part of the design.
+
+But a custom player is **extra work to make accessible.** Before you build one, ask: "Does this give my visitors something the built-in controls cannot?" If not, keep `controls`.
+
+## The Media API
+
+Both `<audio>` and `<video>` share one set of properties, methods, and events (called `HTMLMediaElement`).
+
+### Properties
+
+| Property | Meaning | Writable? |
+| :-- | :-- | :-- |
+| `paused` | `true` when not playing | No |
+| `currentTime` | The playing position, in seconds | **Yes** (this is seeking) |
+| `duration` | Total length in seconds (`NaN` until known) | No |
+| `volume` | `0` (silent) to `1` (full) | **Yes** |
+| `muted` | Sound off, volume kept | **Yes** |
+| `playbackRate` | Speed: `1` is normal, `1.5` faster | **Yes** |
+| `loop` | Repeats at the end | **Yes** |
+| `ended` | `true` at the end | No |
+| `readyState` | How much is loaded (0 to 4) | No |
+| `buffered` | Which time ranges are downloaded | No |
+| `currentSrc` | The file the browser chose | No |
+
+### Methods
+
+| Method | What it does |
+| :-- | :-- |
+| `play()` | Starts. Returns a **promise** that can be rejected (blocked) |
+| `pause()` | Pauses |
+| `load()` | Starts loading again, after changing the source |
+| `canPlayType(type)` | Asks whether a type can be played |
+
+### Events
+
+| Event | When it fires |
+| :-- | :-- |
+| `loadedmetadata` | The duration and size are known |
+| `play` and `pause` | The state changed |
+| `timeupdate` | The position changed (several times a second) |
+| `ended` | Playback finished |
+| `volumechange` | Volume or mute changed |
+| `ratechange` | The speed changed |
+| `waiting` and `playing` | Buffering started and stopped |
+| `error` | Something failed |
+
+## Try It: A Custom Player
+
+This player uses a real `<audio>` element **with no `controls`**, and builds everything else with ordinary form controls. Play it, drag the seek bar, change the speed, and then try it with only the keyboard (Tab, Space, and the arrow keys).
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<audio id="sound" src="melody.wav" preload="metadata"></audio>
+
+<div role="group" aria-label="Audio player">
+  <button type="button" id="back" aria-label="Back 5 seconds">−5 s</button>
+  <button type="button" id="play">Play</button>
+  <button type="button" id="forward" aria-label="Forward 5 seconds">+5 s</button>
+  <span id="time" aria-hidden="true">0:00 / 0:00</span>
+
+  <label for="seek">Seek</label>
+  <input type="range" id="seek" min="0" max="0" step="0.1" value="0">
+
+  <label>Volume <input type="range" id="vol" min="0" max="1" step="0.05" value="1"></label>
+  <label><input type="checkbox" id="mute"> Mute</label>
+  <label>Speed
+    <select id="speed">
+      <option value="0.75">0.75×</option>
+      <option value="1" selected>1×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5">1.5×</option>
+    </select>
+  </label>
+</div>
+```
+
+```js title="script.js"
+const sound = document.getElementById("sound");
+const play = document.getElementById("play");
+const seek = document.getElementById("seek");
+const time = document.getElementById("time");
+
+const clock = (s) =>
+  Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+sound.addEventListener("loadedmetadata", () => {
+  seek.max = sound.duration;
+});
+
+sound.addEventListener("timeupdate", () => {
+  seek.value = sound.currentTime;
+  seek.setAttribute("aria-valuetext", clock(sound.currentTime) + " of " + clock(sound.duration));
+  time.textContent = clock(sound.currentTime) + " / " + clock(sound.duration);
+});
+
+play.addEventListener("click", () => {
+  if (sound.paused) {
+    sound.play().catch(() => {});
+  } else {
+    sound.pause();
+  }
+});
+sound.addEventListener("play",  () => (play.textContent = "Pause"));
+sound.addEventListener("pause", () => (play.textContent = "Play"));
+
+seek.addEventListener("input", () => (sound.currentTime = Number(seek.value)));
+back.onclick    = () => (sound.currentTime = Math.max(0, sound.currentTime - 5));
+forward.onclick = () => (sound.currentTime = Math.min(sound.duration, sound.currentTime + 5));
+
+vol.addEventListener("input",    () => (sound.volume = Number(vol.value)));
+mute.addEventListener("change",  () => (sound.muted = mute.checked));
+speed.addEventListener("change", () => (sound.playbackRate = Number(speed.value)));
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CustomPlayer />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A few design choices in this player are worth copying:
+
+- **The state comes from the media element,** not from a separate variable. Every control reads from `sound.paused`, `sound.currentTime`, and so on, through events. So if the visitor uses a keyboard media key, a headset button, or another tab, the player still stays correct.
+- **The Play button's label changes** between "Play" and "Pause", because the **action** changes. This is different from a disclosure widget, where the label should stay put and the state is announced.
+- **The seek bar has `aria-valuetext`,** so a screen reader says "0:03 of 0:08" instead of "3.1".
+- **The time text is hidden** from screen readers (`aria-hidden`), because it changes several times a second and would be read out over and over. The seek bar already carries the information.
+- **Buttons are large,** with a comfortable tap target.
+
+### Progressive Enhancement
+
+A smart way to build it: ship the native `controls` in the HTML, and **remove them with script** only when your custom player is ready.
+
+```html
+<video src="lesson.mp4" controls width="640" height="360"></video>
+```
+
+```js
+const video = document.querySelector("video");
+video.controls = false;       // hide the native controls
+buildMyPlayer(video);         // then add your own
+```
+
+If your script fails to load, the visitor still has working controls.
+
+## Showing Progress and Buffering
+
+```js
+sound.addEventListener("progress", () => {
+  if (sound.buffered.length > 0) {
+    const end = sound.buffered.end(sound.buffered.length - 1);
+    console.log("Downloaded up to " + end.toFixed(1) + " seconds");
+  }
+});
+
+sound.addEventListener("waiting", () => console.log("Buffering…"));
+sound.addEventListener("playing", () => console.log("Playing again"));
+```
+
+Show a **text message** such as "Buffering…" in a `role="status"` element, so people who cannot see a spinner know what is happening.
+
+## Keyboard Shortcuts
+
+The built-in player already supports the keyboard. In a custom player, native controls give you **Tab, Space, Enter, and the arrow keys on sliders** for free. Extra shortcuts are optional, but follow these rules:
+
+- **Do not take over Space or the arrow keys** for the whole page. Handle keys only when the player has focus.
+- **Use common keys:** `k` or Space for play and pause, `m` for mute, `f` for full screen, left and right arrows for seeking.
+- **Tell visitors** the shortcuts exist, in text near the player.
+- **Do not make a shortcut the only way** to do something.
+
+```js
+player.addEventListener("keydown", (event) => {
+  if (event.target.matches("input, select, textarea")) return;   // leave form fields alone
+  if (event.key.toLowerCase() === "m") {
+    sound.muted = !sound.muted;
+  }
+});
+```
+
+## Accessibility at a Glance
+
+- **Use real elements:** `button` for actions, `input type="range"` for sliders, `select` for choices. Do not build them from `div` elements.
+- **Give every control a name:** visible text, a `label`, or `aria-label`.
+- **Do not remove `controls` unless your replacement is complete,** keyboard-friendly, and tested.
+- **Show a visible focus ring** on every control.
+- **Set `aria-valuetext`** on sliders so values make sense ("0:03 of 0:08", "50 percent").
+- **Make targets large:** at least 24 by 24 CSS pixels, and ideally 44.
+- **Keep enough contrast** on controls drawn over video (4.5 to 1 for text, 3 to 1 for icons and borders).
+- **Announce changes sparingly.** Use one `role="status"` message for buffering or errors, not for every second of time.
+- **Do not hide controls forever.** If they fade away while playing, they must return on focus and on keyboard use.
+- **Provide a way to pause,** stop, or hide anything that moves or sounds for more than 5 seconds.
+
+## Security and Privacy Notes
+
+- **Controls do not protect media.** Hiding the download button, or the player, does not stop anyone fetching the file. Serve private media only to authorised visitors, on the server.
+- **Do not trust values from the page** (for example a time passed in a URL) without checking that they are numbers within range. Clamp `currentTime` between 0 and `duration`.
+- **Use `textContent`, not `innerHTML`,** when showing titles or lyrics from user data.
+- **Do not track more than you need.** Sending an analytics event every second of playback can reveal what people watch. Collect only what you need, and explain it in your privacy notice.
+- **Do not auto-send** playback data to third parties without consent where the law requires it.
+
+## Global Audience Notes
+
+- **Translate all control labels,** including `aria-label` and `aria-valuetext`. Do not hard-code English strings in script.
+- **Use `Intl.NumberFormat`** for percent and speed values, so numbers appear in the visitor's style.
+- **Right-to-left pages:** the **time order** in a seek bar usually still runs left to right, and many players keep it that way. Mirror the buttons (use logical CSS properties), but test with native speakers.
+- **Keep layouts flexible,** since translated labels can be much longer.
+- **Do not depend on icons alone.** A play triangle is familiar to many people, but a text label or tooltip helps everyone.
+- **Test on touch screens and slow connections.** Large targets and clear "Buffering…" messages help a lot.
+
+## Common Mistakes to Avoid
+
+1. **Removing `controls` and providing no replacement,** so nobody can play it.
+2. **Building controls from `div` elements,** with no keyboard or screen reader support.
+3. **No accessible names** on icon-only buttons.
+4. **A seek bar with no `aria-valuetext`.**
+5. **Storing the state in your own variable** and falling out of step with the element.
+6. **Not handling the rejected promise** from `play()`.
+7. **Reading the `duration` before it is known,** and getting `NaN`.
+8. **Announcing every `timeupdate`** to screen readers.
+9. **Hiding the controls with no way to bring them back by keyboard.**
+10. **Tiny buttons** that are hard to tap.
+11. **Taking over Space and the arrow keys** for the whole page.
+12. **Treating `controlslist="nodownload"` as protection.**
+
+## Practice Time
+
+Try these in your editor, with a short audio or video file you have the right to use:
+
+1. Add `controls` to an `<audio>`, and use it with the keyboard only.
+2. Remove `controls`, and see that nothing is shown.
+3. Build a Play and Pause button that uses `play()` and `pause()`.
+4. Keep the button's label in step with the `play` and `pause` events.
+5. Build a seek bar with `input type="range"`, driven by `timeupdate`.
+6. Add `aria-valuetext` to it, and test it with a screen reader.
+7. Add volume, mute, and speed controls.
+8. Add Back 5 s and Forward 5 s buttons that never go out of range.
+9. Show a "Buffering…" message with `waiting` and `playing`.
+10. Bonus: add a `controls` attribute in the HTML, and remove it in script, so the page still works if the script fails.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `controls` attribute do?</summary>
+
+It shows the browser's built-in player, with play, pause, seek, volume, and (on video) full screen. It includes keyboard and screen reader support, and looks different in each browser.
+
+</details>
+
+<details>
+<summary>2. When should you build a custom player?</summary>
+
+Only when it gives visitors something the built-in controls cannot: a consistent design, extra features, or interaction with other parts of the page. Otherwise, keep `controls`.
+
+</details>
+
+<details>
+<summary>3. Which properties do you change to seek, set volume, and change speed?</summary>
+
+`currentTime`, `volume` (0 to 1), and `playbackRate`. Use `muted` to mute without changing the volume.
+
+</details>
+
+<details>
+<summary>4. Why should a custom player read its state from the media element?</summary>
+
+Media can be controlled from outside your buttons (keyboard media keys, headsets, other tabs). If the controls listen to events like `play`, `pause`, and `timeupdate`, they always show the true state.
+
+</details>
+
+<details>
+<summary>5. How do you make a custom slider accessible?</summary>
+
+Use `input type="range"` with a label, and set `aria-valuetext` so assistive technology says something meaningful, such as "0:03 of 0:08".
+
+</details>
+
+<details>
+<summary>6. Does hiding the controls protect the file?</summary>
+
+No. The file can still be found and downloaded. Protect private media on the server.
+
+</details>
+
+## Key Takeaways
+
+- Use **`controls`** by default: it is free, accessible, and familiar.
+- Build a custom player only when it adds real value, and make it **keyboard and screen reader friendly** from the start.
+- The media API gives you `play()`, `pause()`, `currentTime`, `volume`, `muted`, `playbackRate`, and events such as `timeupdate`.
+- Let **events drive the interface,** so the player is never out of step with the media.
+- Use **real form controls,** give them names, and add `aria-valuetext` to sliders.
+- Handle the rejected promise from `play()`, and announce buffering in text.
+- Controls do not protect files, so keep private media on the server.
+- Translate every label, and plan for touch screens, slow connections, and right-to-left pages.
+
+Next, add text to your media with [Track](./track), or return to the [Audio and Video overview](../audio-video).

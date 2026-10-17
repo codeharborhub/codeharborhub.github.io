@@ -1,15 +1,543 @@
 ---
-id: subtitles
-title: "Adding Subtitles for Multi-Language Support"
+id: html-subtitles
+title: "HTML Subtitles"
 sidebar_label: "Subtitles"
-sidebar_position: 7
+sidebar_position: 8
 slug: /html/audio-video/subtitles
-description: "Implement multi-language subtitle tracks (kind='subtitles') to translate dialogue and voiceovers for international audiences."
+description: "Learn how to add subtitles in several languages to HTML video: track elements with kind subtitles, srclang and native-language labels, language codes, translation tips, right-to-left and Asian scripts, choosing a language with JavaScript, and common mistakes, with a live multi-language demo."
 keywords:
-  - HTML media subtitles
-  - multi language subtitles WebVTT
-  - video translation HTML
-  - track kind subtitles
+  - HTML subtitles
+  - multilingual video subtitles
+  - track kind subtitles srclang label
+  - WebVTT translation
+  - language codes BCP 47 HTML
+  - right to left subtitles Arabic Hebrew
+  - subtitle languages JavaScript textTracks
+  - video localization HTML
+  - subtitles vs captions
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, subtitles, localization, media]
+tags: [html, web-development, beginner, subtitles, webvtt, video, localization, accessibility, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function makeMelodyUrl() {
+  // Builds an 8-second WAV melody in memory, so the demo needs no audio file.
+  const rate = 11025;
+  const notes = [262, 330, 392, 330, 294, 349, 440, 349, 262, 330, 392, 523, 392, 330, 294, 262];
+  const per = Math.floor(rate * 0.5);
+  const total = per * notes.length;
+  const buffer = new ArrayBuffer(44 + total * 2);
+  const view = new DataView(buffer);
+  const write = (offset, text) => {
+    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  write(0, "RIFF");
+  view.setUint32(4, 36 + total * 2, true);
+  write(8, "WAVE");
+  write(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, total * 2, true);
+  let index = 0;
+  notes.forEach((frequency) => {
+    for (let i = 0; i < per; i++) {
+      const fade = Math.min(1, i / 400, (per - i) / 400);
+      view.setInt16(44 + index * 2, Math.sin((2 * Math.PI * frequency * i) / rate) * 0.3 * fade * 32767, true);
+      index++;
+    }
+  });
+  return URL.createObjectURL(new Blob([buffer], {type: "audio/wav"}));
+}
+
+export const subtitleSets = [
+  {lang: "en", label: "English", dir: "ltr", lines: ["Rising notes: C, E, G, E", "A wobble: D, F, A, F", "Climbing: C, E, G, high C", "Coming home: G, E, D, C"]},
+  {lang: "es", label: "Español", dir: "ltr", lines: ["Notas ascendentes: do, mi, sol, mi", "Un vaivén: re, fa, la, fa", "Subiendo: do, mi, sol, do agudo", "Volviendo a casa: sol, mi, re, do"]},
+  {lang: "hi", label: "हिन्दी", dir: "ltr", lines: ["चढ़ते सुर: सा, ग, प, ग", "लहराते सुर: रे, म, ध, म", "ऊपर चढ़ते हुए: सा, ग, प, ऊँचा सा", "घर वापसी: प, ग, रे, सा"]},
+  {lang: "ar", label: "العربية", dir: "rtl", lines: ["نغمات صاعدة: دو، مي، صول، مي", "تمايل: ري، فا، لا، فا", "صعود: دو، مي، صول، دو عالٍ", "العودة إلى البيت: صول، مي، ري، دو"]},
+];
+
+export function makeVtt(lines) {
+  const stamp = (seconds) => "00:" + String(seconds).padStart(2, "0") + ".000";
+  const blocks = lines.map((text, index) => stamp(index * 2) + " --> " + stamp(index * 2 + 2) + "\n" + text);
+  return "WEBVTT\n\n" + blocks.join("\n\n") + "\n";
+}
+
+export function SubtitlePicker() {
+  const audioRef = useRef(null);
+  const chosenRef = useRef("en");
+  const [urls, setUrls] = useState(null);
+  const [lang, setLang] = useState("en");
+  const [line, setLine] = useState("");
+  const [info, setInfo] = useState([]);
+  useEffect(() => {
+    const sound = makeMelodyUrl();
+    const vtts = subtitleSets.map((set) => URL.createObjectURL(new Blob([makeVtt(set.lines)], {type: "text/vtt"})));
+    setUrls({sound, vtts});
+    return () => {
+      URL.revokeObjectURL(sound);
+      vtts.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!urls || !audio) return undefined;
+    const tracks = Array.from(audio.textTracks);
+    const handlers = tracks.map((track) => {
+      track.mode = "hidden";                      // load the cues, draw nothing
+      const handler = () => {
+        if (track.language === chosenRef.current) {
+          const cue = track.activeCues && track.activeCues[0];
+          setLine(cue ? cue.text : "");
+        }
+      };
+      track.addEventListener("cuechange", handler);
+      return [track, handler];
+    });
+    setInfo(tracks.map((track) => ({language: track.language, label: track.label, kind: track.kind})));
+    return () => handlers.forEach(([track, handler]) => track.removeEventListener("cuechange", handler));
+  }, [urls]);
+  const choose = (value) => {
+    chosenRef.current = value;
+    setLang(value);
+    const audio = audioRef.current;
+    if (!audio || value === "off") {
+      setLine("");
+      return;
+    }
+    const track = Array.from(audio.textTracks).find((item) => item.language === value);
+    const cue = track && track.activeCues && track.activeCues[0];
+    setLine(cue ? cue.text : "");
+  };
+  const current = subtitleSets.find((set) => set.lang === lang);
+  return (
+    <div>
+      {urls === null ? (
+        <p role="status">Preparing the sound and four subtitle files…</p>
+      ) : (
+        <audio ref={audioRef} src={urls.sound} controls preload="metadata">
+          {subtitleSets.map((set, index) => (
+            <track key={set.lang} kind="subtitles" src={urls.vtts[index]} srcLang={set.lang} label={set.label} />
+          ))}
+        </audio>
+      )}
+      <p style={{margin: "0.6rem 0 0.3rem"}}>
+        <label htmlFor="sp-lang">Subtitle language </label>
+        <select id="sp-lang" value={lang} onChange={(event) => choose(event.target.value)}>
+          <option value="off">Off</option>
+          {subtitleSets.map((set) => (
+            <option key={set.lang} value={set.lang} lang={set.lang}>{set.label}</option>
+          ))}
+        </select>
+      </p>
+      <div
+        role="status"
+        lang={current ? current.lang : undefined}
+        dir={current ? current.dir : undefined}
+        style={{minHeight: "3rem", background: "#0f172a", color: "#fff", borderRadius: "6px", padding: "0.75rem", fontSize: "1.1rem", textAlign: "center"}}
+      >
+        {line || (lang === "off" ? "(subtitles are off)" : "(press play: the subtitles appear here)")}
+      </div>
+      {info.length > 0 && (
+        <table style={{marginTop: "0.6rem"}}>
+          <caption>The tracks the browser found</caption>
+          <thead>
+            <tr><th scope="col">kind</th><th scope="col">language</th><th scope="col">label</th></tr>
+          </thead>
+          <tbody>
+            {info.map((item) => (
+              <tr key={item.language}><td>{item.kind}</td><td><code>{item.language}</code></td><td lang={item.language}>{item.label}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Four real <code>track</code> elements, one per language. Audio has no built-in subtitle display, so the page reads the active cue with <code>cuechange</code> and shows it in the box. On a <code>video</code>, the browser draws it for you.
+      </p>
+    </div>
+  );
+}
+
+export const languageList = [
+  {code: "en", label: "English", rtl: false},
+  {code: "es", label: "Español", rtl: false},
+  {code: "fr", label: "Français", rtl: false},
+  {code: "de", label: "Deutsch", rtl: false},
+  {code: "pt-BR", label: "Português (Brasil)", rtl: false},
+  {code: "hi", label: "हिन्दी", rtl: false},
+  {code: "ar", label: "العربية", rtl: true},
+  {code: "he", label: "עברית", rtl: true},
+  {code: "ja", label: "日本語", rtl: false},
+  {code: "zh-Hans", label: "简体中文", rtl: false},
+];
+
+export function TrackBuilder() {
+  const [picked, setPicked] = useState({en: true, es: true, hi: true});
+  const [first, setFirst] = useState("");
+  const chosen = languageList.filter((item) => picked[item.code]);
+  const toggle = (code) => setPicked((old) => ({...old, [code]: !old[code]}));
+  const tags = chosen.map((item) => {
+    const dflt = first === item.code ? " default" : "";
+    return '<track kind="subtitles" src="lesson.' + item.code + '.vtt"\n       srclang="' + item.code + '" label="' + item.label + '"' + dflt + ">";
+  });
+  const hasRtl = chosen.some((item) => item.rtl);
+  const hasCjk = chosen.some((item) => ["ja", "zh-Hans"].includes(item.code));
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset style={{margin: "0 0 0.5rem"}}>
+        <legend>Languages you will offer</legend>
+        {languageList.map((item) => (
+          <label key={item.code} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input type="checkbox" checked={!!picked[item.code]} onChange={() => toggle(item.code)} />{" "}
+            <span lang={item.code}>{item.label}</span> (<code>{item.code}</code>)
+          </label>
+        ))}
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tb-default">Turn on by default </label>
+        <select id="tb-default" value={first} onChange={(event) => setFirst(event.target.value)}>
+          <option value="">none (the viewer chooses)</option>
+          {chosen.map((item) => (<option key={item.code} value={item.code}>{item.label}</option>))}
+        </select>
+      </p>
+      <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{chosen.length ? tags.join("\n") : "Pick at least one language."}</code></pre>
+      <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+        {chosen.length > 4 && <li>That is {chosen.length} files to translate, check, and keep up to date. Start with the languages your visitors use most.</li>}
+        {hasRtl && <li>Right-to-left language selected: test the subtitles in more than one browser, especially numbers and English names.</li>}
+        {hasCjk && <li>Chinese and Japanese have no spaces between words, so line breaks need a native reader.</li>}
+        {first && <li>A browser may show a default subtitle track only when its language fits the viewer's settings, so do not rely on it to force a language.</li>}
+        {chosen.length > 0 && !hasRtl && !hasCjk && chosen.length <= 4 && !first && <li>A manageable set. Remember that each label is written in its own language.</li>}
+      </ul>
+    </form>
+  );
+}
+
+Your video speaks one language, but your visitors speak many. **Subtitles** are the bridge: the speech, **translated** and shown as text, in time with the video.
+
+With HTML, you can offer subtitles in as many languages as you like. Each language is one small text file, and the viewer picks the one they want from the player's menu. This lesson shows how to set it up, and how to make translations that are good to read.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How subtitles differ from captions
+- Adding several languages with `<track kind="subtitles">`
+- Language codes, and labels in each language's own writing
+- Translation tips for natural, readable subtitles
+- Right-to-left, Chinese, Japanese, and other scripts
+- Choosing a language with JavaScript
+- Common mistakes
+
+## Subtitles or Captions?
+
+| | Subtitles | Captions |
+| :-- | :-- | :-- |
+| For | Viewers who **can hear**, but do not understand the language | Viewers who **cannot hear** the audio |
+| Language | **Translated** into the viewer's language | The **same language** as the audio |
+| Includes sounds and speakers | Usually **not** | **Yes** |
+| HTML | `kind="subtitles"` | `kind="captions"` |
+
+A viewer who is deaf and reads Spanish needs **Spanish captions**, which are both: Spanish text, with sounds and speakers. For that, use `kind="captions"` with `srclang="es"`. Choose the kind by **what the viewer needs**, not just by language. See [Captions](./captions).
+
+## Adding Subtitles in Several Languages
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video controls width="640" height="360" src="lesson.mp4" crossorigin="anonymous">
+  <track kind="captions"  src="lesson.en.vtt" srclang="en" label="English" default>
+  <track kind="subtitles" src="lesson.es.vtt" srclang="es" label="Español">
+  <track kind="subtitles" src="lesson.hi.vtt" srclang="hi" label="हिन्दी">
+  <track kind="subtitles" src="lesson.ar.vtt" srclang="ar" label="العربية">
+</video>
+```
+
+```text title="lesson.es.vtt"
+WEBVTT
+
+00:00.000 --> 00:02.500
+Bienvenidos de nuevo. Hoy vamos a
+crear un formulario de registro.
+
+00:02.500 --> 00:05.000
+Primero, abre el editor.
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SubtitlePicker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The demo has four real `<track>` elements. Change the language while the sound plays, and the text changes at once, from the same moment. Look at the table to see what the browser read from your attributes.
+
+On a `<video>`, the browser draws the chosen subtitles on top of the picture, and lists every track in the player's captions menu. You write only the files and the `<track>` lines.
+
+### Rules for the Attributes
+
+| Attribute | For subtitles |
+| :-- | :-- |
+| `kind` | `subtitles` (also the default if you leave `kind` out) |
+| `src` | One `.vtt` file **per language** |
+| `srclang` | **Required.** The language code of the **text in the file** |
+| `label` | The menu name, written **in that language** ("Español", not "Spanish") |
+| `default` | Optional. Turns a track on by default. Use sparingly |
+
+## Language Codes
+
+`srclang` takes a **BCP 47** language tag, the same kind of code as the `lang` attribute:
+
+| Tag | Language | Notes |
+| :-- | :-- | :-- |
+| `en` | English | `en-GB`, `en-US` for regional spelling |
+| `es` | Spanish | `es-MX`, `es-ES` for regional forms |
+| `pt-BR` | Portuguese (Brazil) | Differs from `pt-PT` in words and spelling |
+| `hi` | Hindi | |
+| `ar` | Arabic | Right to left |
+| `he` | Hebrew | Right to left |
+| `ja` | Japanese | |
+| `zh-Hans`, `zh-Hant` | Chinese, Simplified and Traditional | Two different writing systems |
+
+Use the **short tag** (`es`) unless you really have a regional version.
+
+### Try It: Build the Track List
+
+Pick the languages you plan to offer, and see the HTML and the things to watch out for.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<track kind="subtitles" src="lesson.es.vtt" srclang="es" label="Español">
+<track kind="subtitles" src="lesson.hi.vtt" srclang="hi" label="हिन्दी">
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TrackBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Labels in Their Own Language
+
+A visitor who reads only Japanese must be able to **find** "日本語" in a menu, even on an English page. If you write "Japanese", they may not recognise it.
+
+```html
+<!-- Good: each language names itself -->
+<track kind="subtitles" srclang="ja" label="日本語" src="lesson.ja.vtt">
+
+<!-- Weaker: only readable if you know English -->
+<track kind="subtitles" srclang="ja" label="Japanese" src="lesson.ja.vtt">
+```
+
+A good compromise for some sites is to put the language in both forms: "日本語 (Japanese)".
+
+## Writing Good Translations
+
+Translating subtitles is not the same as translating a book. The viewer is **listening and reading at the same time.**
+
+1. **Translate meaning, not words.** A word-for-word version often sounds strange, or is wrong.
+2. **Handle idioms and jokes** with an equivalent in the target language, or a clear paraphrase.
+3. **Keep it short.** Many languages need more words than English. Make the text **shorter and simpler** so the viewer can read it in time.
+4. **Keep the timing.** Each cue should still match what is being said.
+5. **Follow the same limits** as for captions: about two lines, short lines, and a comfortable reading speed. Some languages need fewer characters per line.
+6. **Use the language's own punctuation and number style.** Quotation marks, decimals, dates, and units differ.
+7. **Be consistent with names and terms,** and keep a short glossary for your project.
+8. **Keep names, product names, and code unchanged** where translating them would cause confusion.
+9. **Keep the tone** (formal or friendly) that suits the audience. Some languages have formal and informal forms of "you".
+10. **Have a native speaker review it.** Machine translation is a draft, not a finished product.
+
+### Mixed Languages in One Cue
+
+If a subtitle contains words from another language, mark them with the WebVTT language tag:
+
+```text
+00:08.000 --> 00:10.000
+La palabra <lang en>"hello"</lang> se usa en todo el mundo.
+```
+
+The `<lang>` tag lets assistive technology and fonts treat that part correctly.
+
+## Right-to-Left and Other Scripts
+
+- **Arabic, Hebrew, Persian, and Urdu** run right to left. WebVTT supports them, but test the cues in your target browsers. Numbers, English names, and punctuation sometimes appear in a surprising order, and you may need to adjust the text.
+- **Chinese and Japanese** do not use spaces between words, so a line break in the wrong place can change the meaning or read awkwardly. Have a native reader check where lines break.
+- **Indian scripts** (Hindi, Tamil, Bengali) use joined letters and need a font that supports them. If characters look broken, the problem is usually the font or the file encoding.
+- **Save every `.vtt` file as UTF-8.** This is the most common cause of garbled text in subtitles.
+- **Use a font that covers the script** when you style captions with `::cue`. The default system fonts are usually safe.
+
+```css
+video::cue {
+  font-family: system-ui, "Noto Sans", sans-serif;
+}
+```
+
+## Choosing a Language with JavaScript
+
+The player menu lets viewers choose. Sometimes you want your own control, or you want to **pick a sensible default** for the visitor.
+
+```js
+const video = document.querySelector("video");
+
+function showSubtitles(language) {
+  for (const track of video.textTracks) {
+    if (track.kind === "subtitles" || track.kind === "captions") {
+      track.mode = track.language === language ? "showing" : "disabled";
+    }
+  }
+}
+
+// A visitor's preferred languages, most wanted first
+const wanted = navigator.languages.map((tag) => tag.split("-")[0]);
+const offered = Array.from(video.textTracks).map((track) => track.language);
+const match = wanted.find((code) => offered.includes(code));
+
+if (match) showSubtitles(match);
+```
+
+Be careful with automatic choices:
+
+- **Do not turn subtitles on** for a viewer who understands the audio. Show them only when the viewer's language differs from the audio's.
+- **Let the visitor override it,** and **remember their choice** (a setting in `localStorage` wrapped in `try`/`catch` is fine, as storage can be unavailable).
+- **The `default` attribute is a suggestion.** Browsers may turn a subtitle track on by default only when its language matches the visitor's language settings, so do not depend on it to force a language.
+
+## Accessibility at a Glance
+
+- **Provide captions in the audio language** for people who cannot hear. Subtitles alone are not enough.
+- **Set `srclang` correctly,** and write the `label` in the language itself.
+- **Keep timing and reading speed comfortable** in every language.
+- **Keep contrast high,** and respect the viewer's own subtitle settings.
+- **Make the language menu keyboard-accessible.** Native players already are. A custom menu needs real controls and labels.
+- **Mark mixed-language text** with `lang`, or the WebVTT `<lang>` tag.
+- **Do not change the meaning** during translation. Review sensitive content with an expert.
+
+## Security and Privacy Notes
+
+- **Translation files are public,** and are part of your site's content. Do not leave private notes or internal comments in them.
+- **Treat translated cue text as plain text** in your own scripts. Use `textContent`, never `innerHTML`.
+- **Only load subtitle files from sources you trust.** A third-party file is words you did not write, appearing in front of your visitors.
+- **Be careful with online translation tools.** Pasting a transcript into a free service may share the content with that company. Check the terms, especially for confidential or personal material.
+- **Review machine translations** for mistakes that could mislead, offend, or cause harm in medical, legal, and safety content.
+
+## Global Audience Notes
+
+- **Start with the languages your visitors really use.** Check your analytics, support emails, and your audience. Each new language is a file to maintain.
+- **Keep every file in step.** If you edit the video, update **all** the subtitle files, or the wrong words appear at the wrong time.
+- **Use consistent file names:** `lesson.es.vtt`, `lesson.hi.vtt`.
+- **Think about regions,** not just languages. Spanish in Mexico, Spain, and Argentina uses different words. Choose a version your audience understands.
+- **Check the text on small screens,** where long lines in some scripts can become hard to read.
+- **Also offer a translated transcript** where you can, for people who prefer to read at their own pace.
+- **Avoid wordplay and local references** in your source language, or add a note for translators.
+
+## Common Mistakes to Avoid
+
+1. **Using subtitles for deaf viewers,** with no sounds or speaker names. Use captions.
+2. **A missing or wrong `srclang`.**
+3. **Labels in only one language,** so viewers cannot find their own.
+4. **Files not saved as UTF-8,** so letters appear broken.
+5. **Word-for-word machine translation** with no review.
+6. **Timing copied unchanged** into a language that needs more reading time.
+7. **Subtitles left out of date** after the video was edited.
+8. **More than one `default`,** or a `default` language that does not suit your visitors.
+9. **Forcing subtitles on** for viewers who understand the audio.
+10. **Ignoring right-to-left or Asian line-break problems.**
+11. **Too many languages,** so none gets properly maintained.
+12. **Not testing** in the player, with the keyboard.
+
+## Practice Time
+
+Try these in your editor, with a short video and a friend who speaks another language:
+
+1. Add two `<track kind="subtitles">` elements with different `srclang` values.
+2. Write each `label` in its own language.
+3. Translate three cues, and ask a native speaker to improve them.
+4. Save one file with the wrong encoding, and see how it breaks. Then fix it.
+5. Add a right-to-left language, and test numbers and names.
+6. List `video.textTracks` in the console, with each track's `language` and `mode`.
+7. Write a function that turns on the subtitles that match `navigator.languages`.
+8. Add a button that turns subtitles on and off.
+9. Add a `<lang>` tag around an English word in a Spanish cue.
+10. Bonus: compare your English captions with your translation, and list the cues where the translation is too long to read in time.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How do subtitles differ from captions?</summary>
+
+Subtitles translate the speech for viewers who can hear. Captions are in the audio's own language and also include sounds and speaker names, for viewers who cannot hear.
+
+</details>
+
+<details>
+<summary>2. How do you offer several languages?</summary>
+
+Add one `track` element per language, each with `kind="subtitles"`, its own `.vtt` file, a `srclang` code, and a `label`.
+
+</details>
+
+<details>
+<summary>3. Why write each label in its own language?</summary>
+
+So a viewer can recognise their own language in the menu, even if they cannot read the rest of the page.
+
+</details>
+
+<details>
+<summary>4. What makes a good subtitle translation?</summary>
+
+It keeps the meaning rather than the words, is short enough to read in time, handles idioms and names well, follows the language's punctuation, and is reviewed by a native speaker.
+
+</details>
+
+<details>
+<summary>5. What is the most common cause of broken characters?</summary>
+
+A `.vtt` file that is not saved as UTF-8. Also check that the font supports the script.
+
+</details>
+
+<details>
+<summary>6. Should subtitles always be on by default?</summary>
+
+No. Turn them on only when they help, for example when the viewer's language differs from the audio. Let the visitor choose and remember it, and do not rely on `default` to force a language.
+
+</details>
+
+## Key Takeaways
+
+- **Subtitles** translate speech for viewers who can hear. For viewers who cannot hear, provide **captions**.
+- Add **one `<track kind="subtitles">` per language,** each with `src`, `srclang`, and a `label` written **in its own language**.
+- Use **BCP 47 codes** (`es`, `pt-BR`, `zh-Hans`), and save every file as **UTF-8**.
+- **Translate meaning, not words:** keep it short, keep the timing, and have a native speaker check it.
+- Test **right-to-left** and **Chinese or Japanese** line breaks with real readers.
+- Choose languages with `textTracks` and `navigator.languages`, but let viewers override, and remember their choice.
+- Keep all files up to date, and use `textContent` when your script shows cue text.
+- Start with the languages your visitors need, and add more only when you can keep them correct.
+
+Next, bring everything together for every viewer in [Accessible Media](./accessible-media), or return to the [Audio and Video overview](../audio-video).

@@ -1,15 +1,547 @@
 ---
-id: responsive-video
-title: "Building Responsive HTML Videos with CSS"
+id: html-responsive-video
+title: "Responsive HTML Video"
 sidebar_label: "Responsive Video"
-sidebar_position: 9
+sidebar_position: 10
 slug: /html/audio-video/responsive-video
-description: "Design fluid video embeds that scale across devices using modern CSS ratio properties, container constraints, and wrapper techniques."
+description: "Make HTML video fit every screen: width and height attributes with max-width and height auto, the CSS aspect-ratio property, object-fit and object-position, responsive iframe embeds, preventing layout shift, saving data on mobile, vertical video, and common mistakes, with live resizable demos."
 keywords:
-  - responsive video CSS
-  - aspect-ratio video HTML
-  - fluid video container
-  - mobile video scaling
+  - responsive video HTML CSS
+  - video max-width 100% height auto
+  - CSS aspect-ratio video
+  - object-fit cover contain video
+  - responsive iframe embed YouTube
+  - video layout shift CLS
+  - mobile video bandwidth
+  - vertical video 9:16
+  - preload none poster
+  - fluid video layout
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, video, css, responsive]
+tags: [html, web-development, beginner, responsive, video, css, performance, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function useDemoStream(videoRef) {
+  // An animated canvas stands in for a video file, so the demos need no download.
+  const [ok, setOk] = useState(true);
+  useEffect(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 360;
+    if (typeof canvas.captureStream !== "function" || !videoRef.current) {
+      setOk(false);
+      return undefined;
+    }
+    const context = canvas.getContext("2d");
+    let frame = 0;
+    let handle = 0;
+    const draw = () => {
+      frame++;
+      const x = 320 + Math.sin(frame / 30) * 240;
+      const y = 180 + Math.cos(frame / 21) * 110;
+      context.fillStyle = "#0f172a";
+      context.fillRect(0, 0, 640, 360);
+      context.strokeStyle = "#38bdf8";
+      context.lineWidth = 4;
+      context.strokeRect(6, 6, 628, 348);
+      context.fillStyle = "#38bdf8";
+      context.beginPath();
+      context.arc(x, y, 36, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#f8fafc";
+      context.font = "22px sans-serif";
+      context.fillText("640 × 360 (16:9)", 24, 44);
+      handle = requestAnimationFrame(draw);
+    };
+    draw();
+    const stream = canvas.captureStream(30);
+    videoRef.current.srcObject = stream;
+    return () => {
+      cancelAnimationFrame(handle);
+      stream.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+  return ok;
+}
+
+export function SizeDemo() {
+  const videoRef = useRef(null);
+  const ok = useDemoStream(videoRef);
+  const [technique, setTechnique] = useState("fluid");
+  const [boxWidth, setBoxWidth] = useState(300);
+  const [measured, setMeasured] = useState(0);
+  const styles = {
+    fixed: {display: "block"},
+    fluid: {display: "block", maxWidth: "100%", height: "auto"},
+    fill: {display: "block", width: "100%", height: "auto", aspectRatio: "16 / 9"},
+  };
+  const css = {
+    fixed: "/* No CSS: the width and height attributes win */",
+    fluid: "video {\n  max-width: 100%;\n  height: auto;\n}",
+    fill: "video {\n  width: 100%;\n  height: auto;\n  aspect-ratio: 16 / 9;\n}",
+  };
+  useEffect(() => {
+    if (videoRef.current) setMeasured(Math.round(videoRef.current.getBoundingClientRect().width));
+  }, [technique, boxWidth, ok]);
+  const over = measured - boxWidth;
+  if (!ok) return <p role="status">This browser cannot create the demo stream. The CSS shown still works on a real video.</p>;
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.5rem"}}>
+        <legend>CSS technique</legend>
+        <label style={{display: "block"}}><input type="radio" name="sd-tech" checked={technique === "fixed"} onChange={() => setTechnique("fixed")} /> Fixed size only (<code>width="640"</code>)</label>
+        <label style={{display: "block"}}><input type="radio" name="sd-tech" checked={technique === "fluid"} onChange={() => setTechnique("fluid")} /> <code>max-width: 100%; height: auto</code></label>
+        <label style={{display: "block"}}><input type="radio" name="sd-tech" checked={technique === "fill"} onChange={() => setTechnique("fill")} /> <code>width: 100%</code> with <code>aspect-ratio</code></label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sd-width">Width of the container: <strong>{boxWidth} px</strong></label><br />
+        <input id="sd-width" type="range" min="160" max="700" step="10" value={boxWidth} onChange={(event) => setBoxWidth(Number(event.target.value))} style={{width: "100%", maxWidth: "24rem"}} aria-valuetext={boxWidth + " pixels"} />
+      </p>
+      <div style={{overflowX: "auto", paddingBottom: "0.25rem"}}>
+        <div style={{width: boxWidth + "px", border: "2px dashed #94a3b8", borderRadius: "4px"}}>
+          <video ref={videoRef} controls autoPlay muted playsInline width="640" height="360" style={styles[technique]} aria-label="Demo video: a ball moving across a frame" />
+        </div>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0.3rem", color: over > 1 ? "#b91c1c" : "#15803d"}}>
+        The video is {measured} px wide in a {boxWidth} px container.{" "}
+        {over > 1 ? "It sticks out by " + over + " px, so the page would scroll sideways." : "It fits."}
+      </p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{css[technique]}</code></pre>
+    </div>
+  );
+}
+
+export function FitDemo() {
+  const videoRef = useRef(null);
+  const ok = useDemoStream(videoRef);
+  const [shape, setShape] = useState("1 / 1");
+  const [fit, setFit] = useState("cover");
+  const [position, setPosition] = useState("center");
+  if (!ok) return <p role="status">This browser cannot create the demo stream. The CSS shown still works on a real video.</p>;
+  return (
+    <div>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.6rem"}}>
+        <label>Box shape{" "}
+          <select value={shape} onChange={(event) => setShape(event.target.value)}>
+            <option value="16 / 9">16:9 (wide)</option>
+            <option value="1 / 1">1:1 (square)</option>
+            <option value="9 / 16">9:16 (tall)</option>
+          </select>
+        </label>
+        <label><code>object-fit</code>{" "}
+          <select value={fit} onChange={(event) => setFit(event.target.value)}>
+            <option value="contain">contain</option>
+            <option value="cover">cover</option>
+            <option value="fill">fill</option>
+          </select>
+        </label>
+        <label><code>object-position</code>{" "}
+          <select value={position} onChange={(event) => setPosition(event.target.value)}>
+            <option value="center">center</option>
+            <option value="left">left</option>
+            <option value="right">right</option>
+          </select>
+        </label>
+      </p>
+      <div style={{width: "12rem", maxWidth: "100%", aspectRatio: shape, background: "#334155", border: "2px dashed #94a3b8", borderRadius: "4px", overflow: "hidden"}}>
+        <video
+          ref={videoRef}
+          muted
+          autoPlay
+          playsInline
+          aria-label="Demo video: a ball moving across a frame"
+          style={{display: "block", width: "100%", height: "100%", objectFit: fit, objectPosition: position}}
+        />
+      </div>
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{"video {\n  width: 100%;\n  height: 100%;\n  object-fit: " + fit + ";\n  object-position: " + position + ";\n}"}</code></pre>
+      <p role="status" style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        {fit === "contain" && "contain: the whole video is visible, with empty bars where the shapes differ."}
+        {fit === "cover" && "cover: the box is filled, and the edges of the video are cropped. Watch the left and right edges of the frame."}
+        {fit === "fill" && "fill: the video is stretched to the box, so shapes look distorted. Avoid it for real video."}
+      </p>
+    </div>
+  );
+}
+
+A video that looks perfect on your big monitor can be a disaster on a phone: it spills out of the screen, forces the page to scroll sideways, or squashes into a thin strip. People watch on phones, tablets, laptops, TVs, and everything in between, and your page must fit them all.
+
+The good news is that making video **responsive** takes only a few lines of CSS. This lesson shows the ones that matter, and how to also save your visitors' data and keep the page steady while the video loads.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Why a fixed-size video breaks small screens
+- `max-width: 100%` with `height: auto`
+- The `aspect-ratio` property, and why it prevents layout jumps
+- `object-fit` and `object-position`
+- Responsive embedded players (`iframe`)
+- Vertical video, saving data, and lazy loading
+- Common mistakes
+
+## The Problem: A Fixed Size
+
+```html
+<video controls width="640" height="360" src="lesson.mp4"></video>
+```
+
+On a 1200-pixel screen, this is fine. On a 360-pixel phone, the video is **280 pixels too wide.** The browser does not shrink it for you, so the page scrolls sideways, and the right part of the video is cut off.
+
+## The Fix: Let It Shrink
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<video controls width="640" height="360" src="lesson.mp4" poster="cover.jpg"></video>
+```
+
+```css title="style.css"
+video {
+  max-width: 100%;   /* never wider than the container */
+  height: auto;      /* keep the shape as the width changes */
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SizeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the demo, drag the container width down. With **fixed size only,** the video sticks out. With **`max-width: 100%; height: auto`,** it shrinks to fit and keeps its shape. The third option also fits, and sets the shape in CSS.
+
+How it works:
+
+- **`width="640" height="360"`** (the HTML attributes) tell the browser the video's **shape** before it loads. The browser works out the aspect ratio from them, and reserves the right space.
+- **`max-width: 100%`** says "never wider than the box that holds me".
+- **`height: auto`** says "work out the height from the width, so the shape stays right". Without it, the attribute height stays at 360 while the width shrinks, and the video looks squashed.
+
+## Aspect Ratio
+
+The **aspect ratio** is the shape: width divided by height. Common ones:
+
+| Ratio | Shape | Used for |
+| :-- | :-- | :-- |
+| `16 / 9` | Wide | Most video, TV, YouTube |
+| `4 / 3` | Slightly wide | Older video, some slides |
+| `1 / 1` | Square | Social media posts |
+| `9 / 16` | Tall | Phone-shot "vertical" video |
+| `21 / 9` | Very wide | Cinema, banners |
+
+The CSS **`aspect-ratio`** property lets you state the shape directly:
+
+```css
+.player {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+```
+
+### Why It Prevents Layout Jumps
+
+While a video (or an `iframe`) is loading, the browser may not know how tall it will be. When it finally knows, the content below jumps down. That jump is called **layout shift**, and it annoys visitors and can hurt your page-quality scores.
+
+To avoid it, **give the space a shape** before the content arrives, with `width` and `height` attributes, or with `aspect-ratio`. The browser then reserves the right amount of room immediately.
+
+## Fitting a Video into a Box: `object-fit`
+
+Sometimes the box and the video have **different shapes**: a wide video in a square card, for example. `object-fit` decides what happens, just as it does for images:
+
+| Value | Result | Good for |
+| :-- | :-- | :-- |
+| `contain` | The **whole video** is visible, with empty bars | Anything where you must not crop, such as lessons and demos |
+| `cover` | The box is **filled**, and the edges are cropped | Decorative backgrounds and thumbnails |
+| `fill` | The video is **stretched** to the box | Almost never. It distorts the picture |
+| `none`, `scale-down` | Original size, or the smaller of `none` and `contain` | Rare |
+
+`object-position` chooses **which part** to keep when cropping: `center` (default), `left`, `right`, `top`, `bottom`, or exact values such as `30% 20%`.
+
+### Try It: Fit a Video into Different Boxes
+
+Change the shape of the box and the `object-fit` value. With `cover`, change `object-position` too, and watch which edge of the frame is cut off.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<div class="card">
+  <video src="clip.mp4" muted autoplay loop playsinline></video>
+</div>
+```
+
+```css title="style.css"
+.card {
+  width: 12rem;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FitDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::warning Do not crop what matters
+`cover` removes part of the picture. That is fine for a decorative loop, but not for a lesson where the speaker, a chart, or the captions sit at the edge. For informative video, use `contain`, or keep the box the same shape as the video.
+:::
+
+## Responsive Embedded Players
+
+Video from another site usually arrives in an `<iframe>`, which has **no natural shape.** It defaults to a small, fixed size. Give it a shape with `aspect-ratio`:
+
+```html
+<iframe
+  class="embed"
+  title="Interview with a baker (video, 12 minutes)"
+  src="https://player.example.com/embed/123"
+  loading="lazy"
+  allowfullscreen></iframe>
+```
+
+```css
+.embed {
+  display: block;
+  width: 100%;
+  max-width: 48rem;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+```
+
+You may see an older trick on the web: a wrapper with `padding-bottom: 56.25%` and an absolutely placed frame. It does the same job, but it is more complex. Today, **`aspect-ratio` is simpler and widely supported**, so prefer it. Check your audience's browsers if you need to support very old ones.
+
+Two extras for embeds:
+
+- **`loading="lazy"`** on the `iframe` delays loading until the visitor scrolls near it, which saves data. (It is for `iframe` and `img`. The `video` element uses `preload` instead.)
+- **Always give the `iframe` a `title`.** See [Accessible Media](./accessible-media).
+
+## Vertical Video
+
+Videos shot on phones are often **tall** (9:16). On a wide desktop screen, a tall video can fill the whole height, and force a lot of scrolling.
+
+```css
+.vertical {
+  width: 100%;
+  max-width: 22rem;      /* keep it narrow on big screens */
+  max-height: 80vh;      /* never taller than the window */
+  aspect-ratio: 9 / 16;
+  margin-inline: auto;
+}
+```
+
+Set the **shape to match the real video,** not a one-size-fits-all 16:9, or you will get black bars on the sides or cropping.
+
+## Saving Data on Phones
+
+Responsive means more than size. Many mobile visitors pay for data, or have slow connections. Be kind:
+
+- **Do not preload everything.** Use `preload="metadata"` or `preload="none"`, with a `poster`, so nothing big downloads until the visitor presses play.
+- **Do not autoplay** video on mobile. It uses data without being asked.
+- **Compress the file,** and **do not serve a huge video** to a small screen. A 4K file in a 360-pixel box is wasted data.
+- **Offer smaller versions** when it matters. Browsers do not reliably pick a video by screen size through `source` elements, so for large libraries, use a video service or **adaptive streaming** (formats such as HLS or DASH), which switches quality automatically. For a single clip, a modestly sized, well-compressed file is usually enough.
+- **Keep the poster small:** a compressed JPEG or WebP, sized for the screen.
+- **Choose a version with JavaScript** if you need to, and check connection hints carefully. Some browsers offer `navigator.connection`, but support is incomplete, so treat it as a bonus and not a rule.
+
+```js
+const video = document.querySelector("video");
+const small = window.matchMedia("(max-width: 600px)").matches;
+
+video.src = small ? "lesson-480.mp4" : "lesson-1080.mp4";
+video.preload = small ? "none" : "metadata";
+```
+
+## Full Screen, Orientation, and Touch
+
+- **Add `playsinline`,** so video on iPhones plays inside the page instead of jumping to full screen.
+- **Use full screen** with the player's own button, or `video.requestFullscreen()` from a button of your own.
+- **Do not lock the orientation.** Let visitors turn the phone.
+- **Keep controls large,** with room for a thumb: at least 24 by 24 CSS pixels, and ideally 44.
+- **Keep the captions readable** on a small screen. Do not set them in a tiny fixed size.
+- **Beware of controls drawn over the video** on a narrow screen. They can cover most of the picture.
+
+## Putting It All Together
+
+A small, solid pattern for most pages:
+
+```html
+<figure class="media">
+  <video
+    controls
+    width="1280" height="720"
+    poster="cover.jpg"
+    preload="metadata"
+    playsinline>
+    <source src="lesson.webm" type="video/webm">
+    <source src="lesson.mp4" type="video/mp4">
+    <track kind="captions" src="lesson.en.vtt" srclang="en" label="English" default>
+    <p><a href="lesson.mp4">Download the video (MP4, 22 MB)</a></p>
+  </video>
+  <figcaption>How to build a signup form (8 minutes)</figcaption>
+</figure>
+```
+
+```css
+.media {
+  margin: 0 auto 1.5rem;
+  max-width: 48rem;       /* a comfortable reading width on large screens */
+}
+
+.media video {
+  display: block;         /* removes the small gap that inline video leaves below */
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: #000;       /* a calm box while it loads */
+}
+
+@media print {
+  .media video { display: none; }   /* video cannot play on paper */
+}
+```
+
+This gives you a shape that is known before loading, a width that follows the container, a limit on very wide screens, captions, a download fallback, and a quiet print version.
+
+## Accessibility at a Glance
+
+- **Never let video scroll the page sideways.** Horizontal scrolling is hard for people with low vision or motor difficulties, and it can break at high zoom.
+- **Make sure it still works at 200 to 400% zoom,** where your layout behaves like a small screen.
+- **Do not crop out captions, speakers, or key content** with `object-fit: cover`.
+- **Keep controls and captions readable** at every size.
+- **Keep the focus ring visible,** even on small screens.
+- **Keep the shape consistent** so people with attention difficulties are not startled by jumping content.
+- **Provide captions and a transcript** at every screen size. See [Accessible Media](./accessible-media).
+
+## Security and Privacy Notes
+
+- **Responsive embeds are still third-party content.** A frame can set cookies and track visitors, even before anyone presses play. Load it only after a click where you can, and ask for consent where the law requires it.
+- **Use `sandbox` and `allow` attributes** on iframes where the provider supports them, so the player gets only the permissions it needs.
+- **Do not build `src` from untrusted input,** for example a video address typed by a visitor.
+- **Serve over HTTPS,** so media is not blocked as mixed content.
+- **Do not reveal private details** in file names such as `lesson-480-customer-name.mp4`.
+- **Choosing a version by connection or device** can reveal information about the visitor. Do not send those hints to third parties without a reason and consent.
+
+## Global Audience Notes
+
+- **Bandwidth varies enormously.** Many people use older phones and metered data. Small files, `preload="none"`, and a good poster make your page usable for them.
+- **Make a text alternative available** (a transcript), which loads instantly and works on any device.
+- **Allow translated captions and labels to be longer.** Check that buttons and captions fit at small widths.
+- **Use logical CSS properties** (`margin-inline`, `padding-inline`) so layouts mirror correctly in right-to-left languages.
+- **Test on real, modest phones** and on a throttled connection, not just on a large monitor.
+- **Consider large screens and TVs too.** A `max-width` stops video from stretching until it is uncomfortably huge.
+
+## Common Mistakes to Avoid
+
+1. **Fixed `width` only,** so the video overflows on phones.
+2. **`max-width: 100%` without `height: auto`,** so the video is squashed.
+3. **No `width` and `height` or `aspect-ratio`,** so the page jumps while loading.
+4. **Using `object-fit: fill`,** which stretches the picture.
+5. **Using `cover` on informative video,** and cropping out important parts.
+6. **Embedding an `iframe` with no shape** (the tiny default size).
+7. **A tall video with no `max-height`,** which swamps the screen on desktop.
+8. **Serving a huge file** to a small screen.
+9. **Autoplaying video on mobile.**
+10. **Forgetting `playsinline`.**
+11. **Leaving the inline gap** below a video, by not using `display: block`.
+12. **Never testing at narrow widths** or at high zoom.
+
+## Practice Time
+
+Try these in your editor, with a short video or an embed code you can use:
+
+1. Add a video with `width="640" height="360"`, and narrow the browser. Note what breaks.
+2. Add `max-width: 100%; height: auto;` and narrow it again.
+3. Replace the attributes with `width: 100%; aspect-ratio: 16 / 9;`.
+4. Reload with a throttled network, and check that the page does not jump.
+5. Put a wide video in a square box, and compare `contain`, `cover`, and `fill`.
+6. Change `object-position` with `cover`, and see what is cropped.
+7. Make an `iframe` embed responsive with `aspect-ratio`, and give it a `title`.
+8. Add a 9:16 video, and limit it with `max-width` and `max-height`.
+9. Set `preload="none"` with a `poster`, and check the network panel.
+10. Bonus: zoom the page to 400%, and fix anything that scrolls sideways.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which two CSS lines make a video shrink to fit its container?</summary>
+
+`max-width: 100%;` stops it being wider than its container, and `height: auto;` keeps the shape correct as the width changes.
+
+</details>
+
+<details>
+<summary>2. Why set `width` and `height` attributes or `aspect-ratio`?</summary>
+
+They tell the browser the video's shape before it loads, so it can reserve space and the page does not jump when the video appears.
+
+</details>
+
+<details>
+<summary>3. What does `object-fit: cover` do?</summary>
+
+It fills the box and crops the video's edges to keep its shape. It is good for decorative loops, but should not be used when important content sits near the edges.
+
+</details>
+
+<details>
+<summary>4. How do you make an embedded `iframe` player responsive?</summary>
+
+Set `width: 100%` (with a `max-width` if you like) and `aspect-ratio: 16 / 9` on the frame, add a `title`, and consider `loading="lazy"`.
+
+</details>
+
+<details>
+<summary>5. How can you save data for mobile visitors?</summary>
+
+Use `preload="none"` or `metadata` with a small `poster`, avoid autoplay, compress the file, and use adaptive streaming or a smaller version for big libraries.
+
+</details>
+
+<details>
+<summary>6. Why add `playsinline`?</summary>
+
+On iPhones and some other mobile browsers, it keeps video playing inside the page, instead of forcing it to full screen.
+
+</details>
+
+## Key Takeaways
+
+- Fixed-size video breaks small screens. Use **`max-width: 100%; height: auto;`**, or **`width: 100%` with `aspect-ratio`.**
+- Give video and embeds a **shape before they load** (with `width` and `height`, or `aspect-ratio`) to avoid layout shift.
+- **`object-fit`** controls how video fits an odd-shaped box. Prefer `contain` for informative video, and avoid `fill`.
+- Make `iframe` embeds responsive with `aspect-ratio`, and give them a `title`.
+- Limit very tall and very wide video with `max-width` and `max-height`.
+- Save data: `preload="none"` or `metadata`, a small `poster`, no mobile autoplay, compressed files, and adaptive streaming for large libraries.
+- Add **`playsinline`**, big controls, and readable captions on small screens.
+- Test at narrow widths, at 400% zoom, on slow connections, and on real phones.
+
+Congratulations, you have finished the Audio and Video section. You can now add sound and video, give browsers choices with `source`, attach captions and subtitles with `track`, build accessible controls, and make it all fit every screen. Return to the [Audio and Video overview](../audio-video) to review the lessons, or revisit [Accessible Media](./accessible-media) for the full checklist.
