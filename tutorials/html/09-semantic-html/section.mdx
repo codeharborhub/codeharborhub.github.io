@@ -1,15 +1,606 @@
 ---
-id: section-element
-title: "The Section Element: Grouping Thematic Content"
-sidebar_label: "Section (<section>)"
+id: html-section
+title: "HTML Section Element"
+sidebar_label: "Section"
 sidebar_position: 6
 slug: /html/semantic-html/section
-description: "Learn when and how to divide web pages into standalone thematic groups using section elements with proper heading hierarchies."
+description: "Learn the HTML section element: grouping content by theme with a heading, when to use section instead of div, article, or main, naming a section as a region landmark with aria-labelledby, heading levels and why the document outline algorithm does not work, landing page patterns, and common mistakes, with live examples."
 keywords:
-  - HTML section tag
-  - thematic grouping HTML
-  - section tag vs div
-  - document sectioning element
+  - HTML section element
+  - section vs div
+  - section vs article
+  - HTML5 section tag
+  - region landmark aria-labelledby
+  - heading levels section
+  - document outline algorithm
+  - semantic HTML grouping
+  - landing page sections HTML
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, layout, structure]
+tags: [html, web-development, beginner, semantic-html, section, headings, accessibility, frontend]
 ---
+
+import {useState, useRef, useEffect} from 'react';
+
+export function SectionScanDemo() {
+  const rootRef = useRef(null);
+  const [rows, setRows] = useState(null);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  return (
+    <div>
+      <div ref={rootRef}>
+        <section id="ss-one" aria-labelledby="ss-one-title" style={box}>
+          <h4 id="ss-one-title" style={{margin: "0 0 0.2rem"}}>Pricing</h4>
+          <p style={{margin: 0}}>Day pass $20. Family bundle $60.</p>
+        </section>
+        <section id="ss-two" style={box}>
+          <h4 style={{margin: "0 0 0.2rem"}}>Frequently asked questions</h4>
+          <p style={{margin: 0}}>Can I bring my own apron? Yes.</p>
+        </section>
+        <section id="ss-three" style={box}>
+          <p style={{margin: 0}}>Some content with no heading at all, wrapped in a section only for its background colour.</p>
+        </section>
+      </div>
+      <p style={{margin: "0.5rem 0"}}>
+        <button
+          type="button"
+          onClick={() => {
+            const list = Array.from(rootRef.current.querySelectorAll("section")).map((el) => {
+              const heading = el.querySelector("h1, h2, h3, h4, h5, h6");
+              const named = el.getAttribute("aria-labelledby") || el.getAttribute("aria-label");
+              return {
+                id: el.id,
+                heading: heading ? heading.textContent : null,
+                role: named ? "region landmark" : "generic (not a landmark)",
+              };
+            });
+            setRows(list);
+          }}
+        >
+          Check each section
+        </button>
+      </p>
+      {rows ? (
+        <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+          {rows.map((row) => (
+            <li key={row.id} style={{marginBottom: "0.3rem"}}>
+              <strong>{row.heading ? "“" + row.heading + "”" : "No heading"}</strong>: {row.role}.{" "}
+              <span style={{color: row.heading ? "#15803d" : "#b91c1c"}}>
+                {row.heading ? "Good: it has a heading." : "Problem: a section should have a heading. A div would be better here."}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+export function OutlineDemo() {
+  const rootRef = useRef(null);
+  const [fixed, setFixed] = useState(false);
+  const [outline, setOutline] = useState([]);
+  useEffect(() => {
+    if (!rootRef.current) return;
+    const found = Array.from(rootRef.current.querySelectorAll("h1, h2, h3, h4, h5, h6")).map((el) => ({
+      level: Number(el.tagName.slice(1)),
+      text: el.textContent,
+    }));
+    let previous = 0;
+    const marked = found.map((item) => {
+      const skipped = previous !== 0 && item.level > previous + 1;
+      previous = item.level;
+      return {...item, skipped};
+    });
+    setOutline(marked);
+  }, [fixed]);
+  const H = ({level, children}) => {
+    const Tag = "h" + level;
+    return <Tag style={{margin: "0.3rem 0 0.1rem", fontSize: "1rem"}}>{children}</Tag>;
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label>
+          <input type="checkbox" checked={fixed} onChange={(event) => setFixed(event.target.checked)} />{" "}
+          Fix the skipped heading level
+        </label>
+      </p>
+      <div style={{display: "flex", gap: "1rem", flexWrap: "wrap"}}>
+        <div ref={rootRef} style={{flex: "1 1 14rem", border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem"}}>
+          <H level={1}>Spring Bread Festival</H>
+          <section>
+            <H level={2}>Programme</H>
+            <section>
+              <H level={fixed ? 3 : 4}>Saturday</H>
+              <p style={{margin: 0}}>Baking contest.</p>
+            </section>
+            <section>
+              <H level={fixed ? 3 : 4}>Sunday</H>
+              <p style={{margin: 0}}>Family workshop.</p>
+            </section>
+          </section>
+          <section>
+            <H level={2}>Tickets</H>
+            <p style={{margin: 0}}>Day passes on sale.</p>
+          </section>
+        </div>
+        <div style={{flex: "1 1 14rem"}} role="status">
+          <strong>The outline a screen reader user sees:</strong>
+          <ul style={{margin: "0.3rem 0 0", paddingLeft: 0, listStyle: "none"}}>
+            {outline.map((item, i) => (
+              <li key={item.text + i} style={{paddingLeft: (item.level - 1) * 16 + "px"}}>
+                h{item.level} {item.text}
+                {item.skipped ? <span style={{color: "#b91c1c"}}> ← skipped a level</span> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Open any long book and you will see that it is divided into **chapters**, each with a **title**. You can flip to the one you want, and each chapter makes sense as a unit. The **`<section>`** element is HTML's chapter: a **themed group of content**, introduced by a **heading**.
+
+It is also one of the most **over-used** elements on the web. Many developers wrap everything in `<section>` as if it were a fancier `<div>`. That adds noise instead of meaning. This lesson shows you what `<section>` is really for, how to tell it apart from `<div>` and `<article>`, and how headings and sections work together.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<section>` means, and the one rule that decides when to use it
+- How it differs from `<div>`, `<article>`, `<aside>`, and `<main>`
+- When a section becomes a **region** landmark
+- Heading levels, and why you must choose them yourself
+- Typical patterns: landing pages, long guides, and documentation
+- Styling, accessibility, security, and global notes
+- The most common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<main>
+  <h1>Spring Bread Festival</h1>
+
+  <section>
+    <h2>Programme</h2>
+    <p>Two days of baking contests, talks, and tastings.</p>
+  </section>
+
+  <section>
+    <h2>Tickets</h2>
+    <p>Day passes and family bundles are on sale now.</p>
+  </section>
+
+  <section>
+    <h2>Find us</h2>
+    <p>Market Square, next to the old town hall.</p>
+  </section>
+</main>
+```
+
+```css title="style.css"
+section {
+  margin-block: 2rem;
+  padding: 1rem;
+  border-top: 2px solid #cbd5e1;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<main>
+  <h3 style={{margin: "0 0 0.5rem"}}>Spring Bread Festival</h3>
+  <section style={{marginBlock: "1rem", padding: "0.75rem", borderTop: "2px solid #cbd5e1"}}>
+    <h4 style={{margin: "0 0 0.25rem"}}>Programme</h4>
+    <p style={{margin: 0}}>Two days of baking contests, talks, and tastings.</p>
+  </section>
+  <section style={{marginBlock: "1rem", padding: "0.75rem", borderTop: "2px solid #cbd5e1"}}>
+    <h4 style={{margin: "0 0 0.25rem"}}>Tickets</h4>
+    <p style={{margin: 0}}>Day passes and family bundles are on sale now.</p>
+  </section>
+  <section style={{marginBlock: "1rem", padding: "0.75rem", borderTop: "2px solid #cbd5e1"}}>
+    <h4 style={{margin: "0 0 0.25rem"}}>Find us</h4>
+    <p style={{margin: 0}}>Market Square, next to the old town hall.</p>
+  </section>
+</main>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Each `<section>` groups content about **one theme** (programme, tickets, location), and starts with a **heading** that names it. Like most semantic containers, `<section>` has **no visual style** of its own. The lines and spacing above are CSS.
+
+## The One Rule: A Section Needs a Heading
+
+If you cannot give the group a meaningful heading, it is probably **not** a section. That single test settles most "should I use `<section>`?" questions:
+
+| Question | If yes | If no |
+| :-- | :-- | :-- |
+| Does this group have a natural **heading** (even a visually hidden one)? | `<section>` may fit | Use `<div>` |
+| Is it a **theme** in a longer page or document? | `<section>` | Maybe `<div>` |
+| Would you want it in a **table of contents**? | `<section>` | `<div>` |
+| Is it only for **layout or colour**? | | `<div>` |
+
+## Section, Div, Article, Aside, Main: Which One?
+
+These elements are easy to mix up. This table is worth bookmarking:
+
+| Element | Meaning | Ask yourself | Example |
+| :-- | :-- | :-- | :-- |
+| `<main>` | The page's dominant content | "Is this the thing the visitor came for?" | The whole body of the page |
+| `<article>` | A **self-contained** piece that makes sense **on its own** | "Could it be shared, syndicated, or read alone?" | A blog post, a news story, a comment, a product card |
+| `<section>` | A **themed group** that belongs to a larger whole | "Is it a chapter of something bigger, with a heading?" | "Pricing", "FAQ", "Chapter 2" |
+| `<aside>` | **Related but separate** content | "Could I remove it without losing the main point?" | A sidebar, a pull quote |
+| `<div>` | **No meaning**, just a wrapper | "Do I only need a box for layout or script?" | A grid container, a style wrapper |
+
+A short way to remember it: **an `<article>` stands alone, a `<section>` belongs to something bigger, and a `<div>` means nothing.** Sections and articles also nest: a blog `<article>` can contain several `<section>` parts, and a `<section>` of a page (such as "Latest news") can contain several `<article>` items.
+
+### Try It: Check Your Sections
+
+Here are three sections. One is well built, one has a heading but is not named as a landmark, and one has no heading at all. Press the button, and a small script checks each of them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Good: a heading, and the section is named by it -->
+<section aria-labelledby="pricing-title">
+  <h2 id="pricing-title">Pricing</h2>
+  <p>Day pass $20. Family bundle $60.</p>
+</section>
+
+<!-- Fine: a heading, but a plain section (not a landmark) -->
+<section>
+  <h2>Frequently asked questions</h2>
+  <p>Can I bring my own apron? Yes.</p>
+</section>
+
+<!-- Poor: no heading. A div would be better here -->
+<section>
+  <p>Some content with no heading at all, wrapped only for its background.</p>
+</section>
+```
+
+```js title="script.js"
+document.querySelectorAll("section").forEach((section) => {
+  const heading = section.querySelector("h1, h2, h3, h4, h5, h6");
+  const named = section.getAttribute("aria-labelledby") || section.getAttribute("aria-label");
+
+  console.log({
+    heading: heading ? heading.textContent : "none",
+    role: named ? "region landmark" : "generic (not a landmark)",
+  });
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SectionScanDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Is a Section a Landmark?
+
+By default, **no**. A plain `<section>` has the role **generic**, much like a `<div>`, and does not appear in a screen reader's landmark list. It **becomes a `region` landmark only when it has an accessible name**:
+
+```html
+<section aria-labelledby="pricing-title">
+  <h2 id="pricing-title">Pricing</h2>
+  …
+</section>
+```
+
+A screen reader now announces "Pricing, region" and lists it among the landmarks.
+
+Use this **sparingly**. Landmarks are most useful when there are few of them, so name a section as a region only when it is an important area people will want to jump to directly (for example, "Search results" or "Order summary"). Most sections on a page should stay plain, and be reached through their headings.
+
+:::tip Link the name to the visible heading
+Prefer `aria-labelledby` pointing at the heading's `id` over a separate `aria-label` string. The spoken name then always matches what sighted visitors read, and stays correct when the heading is translated.
+:::
+
+## Headings and Sections: Choose the Level Yourself
+
+HTML5 once proposed a "document outline algorithm", where each `<section>` would reset heading levels, so an `<h1>` inside a section would count as a level-2 heading, and so on. **Browsers and screen readers never implemented it.** An `<h1>` is read as level 1 wherever it is.
+
+So the working rule is simple:
+
+1. **Choose the heading level that matches the real depth** of the content.
+2. **Do not skip levels.** Go `h1`, then `h2`, then `h3`, not `h1` straight to `h4`.
+3. **One page title:** a single `<h1>` for the page (normally inside `<main>`).
+4. **Never pick a level for its size.** Use CSS for size.
+
+Compare the two outlines below. Tick the box to fix the skipped level, and watch what a screen reader user hears and sees in a list of headings.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h1>Spring Bread Festival</h1>
+
+<section>
+  <h2>Programme</h2>
+
+  <section>
+    <h3>Saturday</h3>           <!-- not h4 -->
+    <p>Baking contest.</p>
+  </section>
+
+  <section>
+    <h3>Sunday</h3>
+    <p>Family workshop.</p>
+  </section>
+</section>
+
+<section>
+  <h2>Tickets</h2>
+  <p>Day passes on sale.</p>
+</section>
+```
+
+```js title="script.js"
+// Print the heading outline, and flag skipped levels
+let previous = 0;
+
+document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((heading) => {
+  const level = Number(heading.tagName.slice(1));
+  const skipped = previous !== 0 && level > previous + 1;
+
+  console.log("  ".repeat(level - 1) + heading.tagName + " " + heading.textContent + (skipped ? "  <-- skipped" : ""));
+  previous = level;
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OutlineDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Many screen reader users open a **list of headings** to scan a page. That list is their table of contents. A tidy outline makes the page feel organised, and a broken one makes it feel lost.
+
+## Common Patterns
+
+### A landing page
+
+```html
+<main>
+  <section aria-labelledby="hero-title">
+    <h1 id="hero-title">Bake better bread</h1>
+    <p>Online courses for home bakers.</p>
+    <a href="/courses">See the courses</a>
+  </section>
+
+  <section>
+    <h2>Why learn with us</h2>
+    <ul>…features…</ul>
+  </section>
+
+  <section>
+    <h2>Pricing</h2>
+    …
+  </section>
+
+  <section>
+    <h2>Frequently asked questions</h2>
+    …
+  </section>
+</main>
+```
+
+### A long guide
+
+```html
+<article>
+  <h1>The complete guide to sourdough</h1>
+
+  <section>
+    <h2>1. Make a starter</h2>
+    …
+  </section>
+
+  <section>
+    <h2>2. Feed and care</h2>
+    …
+  </section>
+</article>
+```
+
+### A section with its own header and footer
+
+A section can have its own `<header>` (title and intro) and `<footer>` (links, notes):
+
+```html
+<section>
+  <header>
+    <h2>Latest news</h2>
+    <p>Updated weekly</p>
+  </header>
+
+  <article>…</article>
+  <article>…</article>
+
+  <footer><a href="/news">All news</a></footer>
+</section>
+```
+
+### A visually hidden heading
+
+Sometimes the design does not show a heading, but a section still needs a name. Hide it visually, but keep it for assistive tools:
+
+```css title="style.css"
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+```
+
+```html
+<section aria-labelledby="gallery-title">
+  <h2 id="gallery-title" class="visually-hidden">Photo gallery</h2>
+  …images…
+</section>
+```
+
+Do **not** use `display: none` for this, because it removes the heading from assistive technology as well.
+
+## When to Use `<div>` Instead
+
+Using `<section>` for everything is as unhelpful as using `<div>` for everything, because each one that has no real meaning adds noise. Use `<div>` when you only need a box:
+
+```html
+<section>
+  <h2>Our team</h2>
+
+  <div class="grid">                 <!-- layout only -->
+    <article class="card">…</article>
+    <article class="card">…</article>
+  </div>
+</section>
+```
+
+The `div.grid` is for CSS, so it is correct as a plain `<div>`.
+
+## Accessibility at a Glance
+
+- **Give each section a heading,** at the right level, with no skipped levels.
+- **Use `aria-labelledby`** to name only the **important** sections as region landmarks.
+- **Do not wrap everything in `<section>`.** Too many landmarks make navigation harder.
+- **Keep the HTML order the same as the visual order,** so keyboard and screen reader users follow the same path.
+- **Use a visually hidden heading** (not `display: none`) when a design hides the title.
+- **Make sure section backgrounds keep enough contrast** for the text inside (at least 4.5 to 1).
+- **Test with a list of headings** in a screen reader, and with your browser's accessibility panel.
+
+## Security and Privacy Notes
+
+- **A `<section>` hides and protects nothing.** If you toggle sections with `hidden` or CSS, the content is still in the page source, so never put private data in a hidden section.
+- **Escape user-generated text** that you put in headings and sections, so it cannot inject code.
+- **Be careful with headings made from user input,** such as a greeting that includes the visitor's name. Escape it, and set it with `textContent`.
+- **Do not rely on ids alone** for access control. Ids like `admin-section` are visible and guessable.
+
+## Global Audience Notes
+
+- **Keep headings short and plain,** so they translate well and read well in a screen reader's heading list.
+- **Set `lang`** on sections that are in another language, such as `lang="fr"` on a French quotation section.
+- **Right-to-left pages** need no special section markup. Use logical CSS properties (`margin-block`, `padding-inline`) so spacing mirrors correctly.
+- **Headings grow in other languages.** German or Finnish headings can be much longer than English ones, so let them wrap.
+- **Do not number headings by hand in a way that breaks in translation.** Use ordered lists, or CSS counters, where numbering is needed.
+- **Make sure sections still work on small screens and slow connections.** Stacked sections read well even without CSS.
+
+## Common Mistakes to Avoid
+
+1. **Using `<section>` as a generic wrapper** where `<div>` is right.
+2. **A `<section>` with no heading.**
+3. **Choosing heading levels by size,** or skipping levels.
+4. **Several `<h1>` elements** because "each section has its own."
+5. **Expecting sections to reset heading levels** (the outline algorithm is not implemented).
+6. **Using `<section>` for a self-contained item** such as a blog post (that is an `<article>`).
+7. **Using `<section>` for side content** (that is an `<aside>`).
+8. **Naming every section as a region** with `aria-label`, creating too many landmarks.
+9. **Using `aria-label` text that does not match the visible heading.**
+10. **Hiding a section's heading with `display: none`.**
+11. **Splitting one idea into many tiny sections.**
+12. **Putting the whole page inside one `<section>`.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a page with an `<h1>` and three `<section>` elements, each with an `<h2>`.
+2. Write a one-line reason for each section, in your own words. If you cannot, change it to a `<div>`.
+3. Add a nested `<section>` with an `<h3>`, and check that no level is skipped.
+4. Use the console to print every heading's level and text, and look for skips.
+5. Name one important section as a region with `aria-labelledby`, and check it in the browser's accessibility panel.
+6. Add a visually hidden heading to a section whose design shows no title.
+7. Replace a `<section>` that has no heading with a `<div>`.
+8. Decide, for three pieces of content on a site you know, whether each is an `<article>`, a `<section>`, or a `<div>`.
+9. Give a section its own `<header>` and `<footer>`.
+10. Bonus: open a screen reader's headings list on a page of your own. Does it read like a good table of contents?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<section>` element for?</summary>
+
+It groups content about one theme, as part of a larger whole, and it should start with a heading that names it.
+
+</details>
+
+<details>
+<summary>2. How do you decide between `<section>` and `<div>`?</summary>
+
+Use `<section>` when the group has a natural heading and would belong in a table of contents. Use `<div>` when you only need a wrapper for layout, styling, or scripting.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `<section>` and `<article>`?</summary>
+
+An `<article>` is self-contained and makes sense on its own (a post, a story, a comment). A `<section>` is a themed part of something bigger, and usually does not stand alone.
+
+</details>
+
+<details>
+<summary>4. When does a `<section>` become a landmark?</summary>
+
+Only when it has an accessible name, for example with `aria-labelledby` pointing at its heading. It is then announced as a `region`. Without a name, it is generic, like a `<div>`.
+
+</details>
+
+<details>
+<summary>5. Does a `<section>` reset heading levels?</summary>
+
+No. The document outline algorithm was never implemented by browsers or screen readers. Choose the correct heading level yourself, and do not skip levels.
+
+</details>
+
+<details>
+<summary>6. How do you give a section a heading that the design does not show?</summary>
+
+Add the heading, and hide it with a visually hidden CSS class (small, clipped, absolutely positioned). Do not use `display: none`, which removes it for assistive technology, too.
+
+</details>
+
+## Key Takeaways
+
+- `<section>` is a **themed group** of content that belongs to a larger whole, and it should have a **heading**.
+- If there is no natural heading, use `<div>` instead.
+- `<article>` stands alone, `<section>` belongs to something bigger, `<aside>` is related but separate, and `<div>` has no meaning.
+- A plain section is **not** a landmark. Add `aria-labelledby` to make an important one a **region**, and do this sparingly.
+- Choose heading levels yourself, and do not skip levels. The outline algorithm does not exist in practice.
+- Use a visually hidden heading when the design hides the title.
+- Do not wrap everything in `<section>`, and do not use it for security or hiding secrets.
+- Short, plain headings help translation and screen reader heading lists.
+
+Next, learn how to mark up content that stands on its own, in [Article](./article), or return to the [Semantic HTML overview](/tutorials/html/semantic-html).

@@ -1,15 +1,519 @@
 ---
-id: address-element
-title: "The Address Element: Author and Contact Information"
-sidebar_label: "Address (<address>)"
+id: html-address
+title: "HTML Address Element"
+sidebar_label: "Address"
 sidebar_position: 10
 slug: /html/semantic-html/address
-description: "Learn how to supply contact details for document or article authors using the address element without misusing it for physical postal addresses."
+description: "Learn the HTML address element: marking contact information for a page or an article's author, what it is not for (postal addresses in general), mailto and tel links, line breaks, resetting italic styling, privacy and spam concerns, international phone and address formats, and common mistakes, with live examples."
 keywords:
-  - HTML address tag
-  - contact information HTML
-  - author contact semantic tag
-  - address element rules
+  - HTML address element
+  - address tag contact information
+  - mailto link HTML
+  - tel link E.164
+  - address vs postal address
+  - HTML5 address footer
+  - author contact article
+  - international address format
+  - bdi phone number rtl
+  - email spam obfuscation
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, metadata, contact]
+tags: [html, web-development, beginner, semantic-html, address, contact, links, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function LinkBuilderDemo() {
+  const kinds = {
+    email: {label: "Email", sample: "hello@example.com", hint: "An email address"},
+    phone: {label: "Phone", sample: "+91 98765 43210", hint: "A phone number with its country code"},
+    whatsapp: {label: "Chat app", sample: "+91 98765 43210", hint: "The same number, for a chat link"},
+    map: {label: "Map search", sample: "Market Square, Springfield", hint: "A place name or street address"},
+  };
+  const [kind, setKind] = useState("email");
+  const [value, setValue] = useState(kinds.email.sample);
+  const [subject, setSubject] = useState("Question about tickets");
+  let href = "";
+  let warning = "";
+  const digits = value.replace(/[^\d+]/g, "");
+  if (kind === "email") {
+    href = "mailto:" + value.trim() + (subject ? "?subject=" + encodeURIComponent(subject) : "");
+    if (!value.includes("@")) warning = "An email address needs an @ sign.";
+  } else if (kind === "phone") {
+    href = "tel:" + digits;
+    if (!digits.startsWith("+")) warning = "Add the country code (for example +91) so the link works from anywhere.";
+  } else if (kind === "whatsapp") {
+    href = "https://wa.me/" + digits.replace(/\D/g, "");
+    if (!digits.startsWith("+")) warning = "Use the full international number, with country code.";
+  } else {
+    href = "https://www.openstreetmap.org/search?query=" + encodeURIComponent(value.trim());
+  }
+  const text = kind === "email" ? value.trim() : kind === "map" ? "Find us on the map" : value.trim();
+  const code = '<a href="' + href + '">' + text + "</a>";
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="lb-kind">Kind of link</label><br />
+        <select
+          id="lb-kind"
+          value={kind}
+          onChange={(event) => {
+            setKind(event.target.value);
+            setValue(kinds[event.target.value].sample);
+          }}
+        >
+          {Object.keys(kinds).map((key) => (<option key={key} value={key}>{kinds[key].label}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="lb-value">{kinds[kind].hint}</label><br />
+        <input
+          type="text"
+          id="lb-value"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          style={{width: "100%", maxWidth: "24rem"}}
+        />
+      </p>
+      {kind === "email" ? (
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="lb-subject">Subject line (optional)</label><br />
+          <input
+            type="text"
+            id="lb-subject"
+            value={subject}
+            onChange={(event) => setSubject(event.target.value)}
+            style={{width: "100%", maxWidth: "24rem"}}
+          />
+        </p>
+      ) : null}
+      <pre style={{margin: "0.4rem 0", whiteSpace: "pre-wrap", wordBreak: "break-all"}}><code>{code}</code></pre>
+      <p style={{margin: "0 0 0.3rem"}}>
+        Try the link:{" "}
+        <a href={href} onClick={(event) => event.preventDefault()}>{text}</a>{" "}
+        <span style={{fontSize: "0.85em", color: "#64748b"}}>(disabled in this demo)</span>
+      </p>
+      {warning ? <p role="status" style={{margin: 0, color: "#b45309"}}>{warning}</p> : null}
+    </form>
+  );
+}
+
+export function ScopeDemo() {
+  const rootRef = useRef(null);
+  const [rows, setRows] = useState(null);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  const plain = {fontStyle: "normal", margin: 0};
+  return (
+    <div>
+      <div ref={rootRef}>
+        <main style={box}>
+          <article style={{...box, marginBottom: 0}} data-title="How to shape a loaf">
+            <h4 style={{margin: "0 0 0.2rem"}}>How to shape a loaf</h4>
+            <p style={{margin: "0 0 0.3rem"}}>Start with a round of dough…</p>
+            <footer>
+              <address id="sc-author" style={plain}>
+                Written by Ada. Write to <a href="#sc" onClick={(event) => event.preventDefault()}>ada@example.com</a>
+              </address>
+            </footer>
+          </article>
+        </main>
+        <footer style={box}>
+          <address id="sc-site" style={plain}>
+            Spring Bread Festival, Market Square · <a href="#sc" onClick={(event) => event.preventDefault()}>hello@example.com</a>
+          </address>
+        </footer>
+      </div>
+      <p style={{margin: "0.5rem 0"}}>
+        <button
+          type="button"
+          onClick={() => {
+            const list = Array.from(rootRef.current.querySelectorAll("address")).map((el) => {
+              const owner = el.closest("article");
+              return {
+                id: el.id,
+                text: owner
+                  ? "contact information for the article “" + owner.getAttribute("data-title") + "”"
+                  : "contact information for the whole page",
+              };
+            });
+            setRows(list);
+          }}
+        >
+          Whose contact details are these?
+        </button>
+      </p>
+      {rows ? (
+        <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+          {rows.map((row) => (
+            <li key={row.id}><code>{row.id === "sc-author" ? "The author's address" : "The site's address"}</code>: {row.text}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+When you need to get in touch with someone, you look for a **name, an email, a phone number**, or maybe a place to visit. The **`<address>`** element tells browsers and assistive tools that a piece of content is exactly that: **contact information**.
+
+The name is a trap. `<address>` is **not** for any postal address you happen to mention. It has a narrow, specific meaning. This lesson explains what it is for, what it is not for, how to build useful contact links, and how to handle privacy and international formats.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<address>` means, and the **two things it can be the contact for**
+- What does **not** belong in an `<address>`
+- Building email, phone, and map links
+- Where to put it: footer, article, contact page
+- Resetting the default italic style
+- Spam and privacy concerns
+- International phone numbers and address formats
+- Accessibility and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<footer>
+  <address>
+    Spring Bread Festival<br />
+    Market Square<br />
+    Springfield, 12345<br />
+    <a href="mailto:hello@example.com">hello@example.com</a><br />
+    <a href="tel:+15551234567">+1 555 123 4567</a>
+  </address>
+</footer>
+```
+
+```css title="style.css"
+address {
+  font-style: normal;   /* browsers show address in italics by default */
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<footer>
+  <address style={{fontStyle: "normal"}}>
+    Spring Bread Festival<br />
+    Market Square<br />
+    Springfield, 12345<br />
+    <a href="#ad" onClick={(event) => event.preventDefault()}>hello@example.com</a><br />
+    <a href="#ad" onClick={(event) => event.preventDefault()}>+1 555 123 4567</a>
+  </address>
+</footer>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A few details worth noticing:
+
+- The **`<br />`** line breaks are a **correct** use of `<br>`: in a postal address, the line break is part of the content, not just spacing.
+- The email and phone are **real links**: `mailto:` and `tel:`.
+- Browsers show `<address>` in **italics** by default. That is only a default style, and most sites reset it with `font-style: normal`.
+
+## What `<address>` Is For
+
+The specification gives it one precise job:
+
+> The `<address>` element represents the **contact information** for its **nearest `<article>` ancestor**, or, if there is none, for the **page** (the `<body>`).
+
+So it answers one of two questions:
+
+| Where it sits | It means | Example |
+| :-- | :-- | :-- |
+| Inside an `<article>` | **How to reach the author or owner of that article** | "Written by Ada. Write to ada@example.com" |
+| Anywhere else on the page | **How to reach the owner of the whole page or site** | The company's contact details in the footer |
+
+### Try It: Whose Contact Details Are These?
+
+This page has two addresses. Press the button, and the script works out whose contact details each one is, using the "nearest article" rule.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<main>
+  <article>
+    <h2>How to shape a loaf</h2>
+    <p>Start with a round of dough…</p>
+
+    <footer>
+      <address>
+        Written by Ada. Write to <a href="mailto:ada@example.com">ada@example.com</a>
+      </address>
+    </footer>
+  </article>
+</main>
+
+<footer>
+  <address>
+    Spring Bread Festival, Market Square ·
+    <a href="mailto:hello@example.com">hello@example.com</a>
+  </address>
+</footer>
+```
+
+```js title="script.js"
+document.querySelectorAll("address").forEach((address) => {
+  const article = address.closest("article");
+
+  console.log(
+    article
+      ? "Contact for the article: " + article.querySelector("h2").textContent
+      : "Contact for the whole page"
+  );
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ScopeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What `<address>` Is **Not** For
+
+Because of its name, people use `<address>` for **every** address. That is wrong, and the specification is clear about it.
+
+| Situation | Use `<address>`? | What to use instead |
+| :-- | :-- | :-- |
+| Your company's contact details in the footer | **Yes** | |
+| The author's contact details in an article | **Yes** | |
+| A **delivery address** the visitor types in a form | **No** | Form fields. See [Autocomplete](/tutorials/html/forms/autocomplete) |
+| An address **mentioned in the text** ("The festival is held at 12 Market Square.") | **No** | Plain text in a paragraph |
+| A **list of other businesses'** addresses (a directory) | **No** | A list, a table, or a description list |
+| A **publication date**, "last updated", or opening hours | **No** | `<time>`, or a paragraph |
+| A **postal address as a sample** in a tutorial | **No** | A code block or a paragraph |
+| An **email address** in a sentence ("Email us at ...") | Not needed | A link in the paragraph |
+
+Also, the **content** of `<address>` should be **only contact information**. The specification says not to put other things in it, such as a publication date or a long biography. And `<address>` **cannot contain** headings, sectioning elements (`<article>`, `<section>`, `<nav>`, `<aside>`), a `<header>`, a `<footer>`, or another `<address>`.
+
+:::note What about a list of branches?
+A "Our offices" page with ten branch addresses is not the contact information for the page's owner in the narrow sense, though many sites mark them up with `<address>` anyway. The safe approach: use `<address>` for the **primary** contact details, and use a list with a `<h3>` for each branch (plus clear text), or an `<address>` inside each branch's own `<article>`, if each branch has its own page.
+:::
+
+## Building Contact Links
+
+Contact details are most useful as **links** that do something. Here is the toolbox. Try the builder, and watch the `href` change.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Email, with an optional subject -->
+<a href="mailto:hello@example.com?subject=Question%20about%20tickets">hello@example.com</a>
+
+<!-- Phone: the href has no spaces, and has the country code -->
+<a href="tel:+919876543210">+91 98765 43210</a>
+
+<!-- Chat link -->
+<a href="https://wa.me/919876543210">Message us</a>
+
+<!-- Map search (a place name, URL-encoded) -->
+<a href="https://www.openstreetmap.org/search?query=Market%20Square%2C%20Springfield">Find us on the map</a>
+```
+
+```js title="script.js"
+// Build safe links from values in code, never by gluing raw text together
+const subject = "Question about tickets & prices";
+const href = "mailto:hello@example.com?subject=" + encodeURIComponent(subject);
+
+console.log(href);
+// mailto:hello@example.com?subject=Question%20about%20tickets%20%26%20prices
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkBuilderDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Rules for each link type
+
+| Link | Rules |
+| :-- | :-- |
+| `mailto:` | Optional `?subject=` and `&body=`, **URL-encoded** with `encodeURIComponent`. Opens the visitor's email app, so also offer a contact form for people without one |
+| `tel:` | Use the **international format** with `+` and the country code, with **no spaces or punctuation** in the `href` (`tel:+919876543210`). The visible text can be formatted for people |
+| Chat links | Follow the service's own link format, and offer another way to reach you |
+| Map links | Link to a map for a place, and **also write the address as text**, because a map is not enough for everyone |
+
+:::tip Write the visible text as clearly as the link
+A screen reader reads the visible text: "hello at example dot com". For phone numbers, spaces help it read the digits in groups. A link such as "Call us on +91 98765 43210" is clearer than "Click here".
+:::
+
+## Where to Put It
+
+| Place | Use |
+| :-- | :-- |
+| In the **page footer** | The site or company contact details (the most common use) |
+| In an **article's footer or header** | How to reach the author |
+| On a **contact page**, in `<main>` | The main way to reach the organisation. Combine with a contact form |
+| In a **"Contact us" section** of a landing page | Inside a `<section>` with a heading |
+
+An `<address>` has no heading of its own. If it needs one ("Contact us"), put the heading **outside** it, in the surrounding `<section>`.
+
+## Styling
+
+```css title="style.css"
+address {
+  font-style: normal;          /* remove the default italics */
+  line-height: 1.6;
+}
+
+address a {
+  display: inline-block;       /* easier to tap on phones */
+  padding-block: 0.25rem;
+}
+```
+
+Keep contact links **large enough to tap** (at least 24 by 24 CSS pixels, ideally 44).
+
+## Accessibility at a Glance
+
+- **Use real links** (`mailto:` and `tel:`), with clear visible text.
+- **Do not put contact information only in an image** (a picture of a phone number cannot be read, copied, or tapped).
+- **Offer more than one way to get in touch:** email, phone, a form, and a postal address. Some visitors cannot use the phone, or cannot use a form.
+- **Write the address as text,** not only as a map link or an embedded map.
+- **Say when you answer:** "Mon to Fri, 9:00 to 17:00 (UTC+05:30)", in a nearby paragraph.
+- **Do not rely on icons** (an envelope or a phone) without text.
+- **Keep the font style readable:** if you keep the default italics, make sure the text is still easy to read.
+- **Give a contact form real labels,** and clear error messages. See [Accessible Forms](/tutorials/html/forms/accessible-forms).
+
+## Security and Privacy Notes
+
+- **Spam bots harvest email addresses** from pages. Publishing one invites spam. Options: use a contact form, use a role address (such as `hello@`) that you can filter, or accept the risk knowingly. Hiding the address with JavaScript tricks stops simple bots only, and also breaks the page for some real visitors.
+- **Never publish a private person's contact details** (home address, personal phone) without their clear permission. This can expose people to harassment. Business contact details are different, but still need consent from the people named.
+- **Data protection laws** (such as the GDPR in Europe, and similar laws elsewhere) treat names, emails, and phone numbers as personal data. Publish only what you need, and be ready to remove it on request.
+- **Build `mailto:` and `tel:` links safely.** If a value comes from user input, **encode** it, and do not allow line breaks or extra parameters to be injected into the link.
+- **Beware of phishing:** a link that shows one address and goes to another is deceptive. Keep the visible text and the real target in agreement.
+- **Third-party maps and chat widgets** may track your visitors. Load them only with consent, and give the address as plain text as well.
+- **Open outside links safely:** `rel="noopener"` for map and chat links in a new tab.
+
+## Global Audience Notes
+
+- **Use the international phone format** (`+`, country code, then the number) in both the `href` and the visible text, so the number works from any country.
+- **Address formats differ** a lot: the order of lines, whether there is a postal code, whether there are states or districts, and which script is used. Write addresses in the way **that country's post** expects, and include the **country**.
+- **Provide the local-language version** of an address (and a Latin-letter version, if your visitors may need it), so couriers and taxi drivers can read it.
+- **Where street addresses are informal,** add landmarks, a map link, or a location code such as a Plus Code.
+- **Right-to-left pages:** phone numbers and email addresses are left-to-right text. Wrap them in `<bdi>` or set `dir="ltr"` so punctuation such as the `+` does not jump to the wrong side:
+
+```html
+<p dir="rtl">اتصل بنا: <bdi><a href="tel:+971501234567">+971 50 123 4567</a></bdi></p>
+```
+
+- **Show hours with a time zone,** and mention languages your support speaks.
+- **Do not assume every visitor has a phone, or an email app.** Offer a form or chat as well.
+- **Currency and regional contact numbers:** list a local number for each region you serve, if you can.
+
+## Common Mistakes to Avoid
+
+1. **Using `<address>` for every postal address,** including addresses in the story text.
+2. **Using it for a form's delivery address.**
+3. **Putting a publication date, opening hours, or a biography inside it.**
+4. **Putting a heading or a `<footer>` inside it.**
+5. **Leaving the default italics on** without meaning to.
+6. **Plain-text email and phone numbers** that are not links.
+7. **A `tel:` link with spaces or no country code.**
+8. **Putting contact details only in an image.**
+9. **Publishing a private person's home address or phone.**
+10. **Building `mailto:` links from unencoded user input.**
+11. **Only a map link and no written address.**
+12. **Using `<br>` for spacing everywhere,** instead of only for real line breaks in addresses.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a footer with an `<address>` containing a name, two address lines, an email link, and a phone link.
+2. Reset the italics with `font-style: normal`.
+3. Add an article with its own `<address>` for the author, and use the console script to confirm it belongs to the article.
+4. Write a `mailto:` link with a subject that includes spaces and an ampersand, and encode it properly.
+5. Write a `tel:` link in international format, and check it on a phone.
+6. Add a map link **and** the address as text.
+7. Take five addresses you can find on a website. Decide which should be `<address>` and which should not.
+8. Write contact details for a page on a right-to-left site, using `<bdi>`.
+9. Replace a picture of a phone number with real text and a link.
+10. Bonus: write a short paragraph for your own site, saying when you answer and in which languages.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<address>` element for?</summary>
+
+It marks contact information for its nearest `<article>` ancestor, or, if there is none, for the whole page. For example, an author's details in an article, or a company's details in the page footer.
+
+</details>
+
+<details>
+<summary>2. Is `<address>` for any postal address?</summary>
+
+No. It is not for delivery addresses in forms, addresses mentioned in a story, or lists of other people's addresses. Use plain text, form fields, or lists for those.
+
+</details>
+
+<details>
+<summary>3. What should and should not go inside it?</summary>
+
+Only contact information. No headings, sectioning elements, headers, footers, other addresses, or unrelated details such as publication dates. Use `<br>` for real line breaks within the address.
+
+</details>
+
+<details>
+<summary>4. How do you write a good phone link?</summary>
+
+Use `tel:` with the international format and no spaces or punctuation in the `href`, for example `tel:+919876543210`. Show the number in a readable format as the link text.
+
+</details>
+
+<details>
+<summary>5. How do you deal with the default italic style?</summary>
+
+Browsers show `<address>` in italics by default. Reset it with `address { font-style: normal; }` if you do not want italics.
+
+</details>
+
+<details>
+<summary>6. What are the main privacy and spam concerns?</summary>
+
+Published emails are harvested by bots, and personal details of private people can lead to harassment and may be protected by data laws. Prefer contact forms or role addresses, get consent, and encode values in `mailto:` links.
+
+</details>
+
+## Key Takeaways
+
+- `<address>` holds **contact information** for the nearest article's author or owner, or else for the whole page.
+- It is **not** for arbitrary postal addresses, form delivery addresses, or other people's addresses.
+- Put only contact details in it. It cannot contain headings, sectioning elements, a header, a footer, or another address.
+- Make contact details **real links**: `mailto:` (with encoded subject) and `tel:` (international format, no spaces).
+- Reset the default italics with `font-style: normal`, and use `<br>` only for true line breaks.
+- Write the address as text as well as a map link, and offer more than one way to get in touch.
+- Protect privacy: beware of spam harvesting, publish only what people agreed to, and encode link values.
+- For international audiences, use `+` country codes, local address formats, and `<bdi>` for numbers on right-to-left pages.
+
+Next, learn how to build expandable content with no JavaScript, in [Details](./details), or return to the [Semantic HTML overview](../semantic-html).

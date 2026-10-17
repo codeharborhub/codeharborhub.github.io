@@ -1,16 +1,582 @@
 ---
-id: why-semantic-html
-title: "Why Use Semantic HTML? Accessibility, SEO, and Maintainability"
-sidebar_label: "Why Semantic HTML?"
+id: html-why-semantic-html
+title: "Why Semantic HTML Matters"
+sidebar_label: "Why Semantic HTML"
 sidebar_position: 2
 slug: /html/semantic-html/why-semantic-html
-description: "Explore the core benefits of semantic HTML tags over generic div containers, including accessibility features for assistive technology and SEO advantages."
+description: "Learn why semantic HTML matters: how browsers turn markup into an accessibility tree, why a real button beats a clickable div, how semantic elements help screen readers, keyboard users, search engines, and teammates, common myths, and a step-by-step refactor from div soup to meaningful markup, with live examples."
 keywords:
-  - importance of semantic HTML
-  - semantic HTML vs div
-  - HTML accessibility benefits
-  - semantic tags SEO
+  - why semantic HTML
+  - semantic HTML benefits
+  - div soup
+  - HTML accessibility tree
+  - button vs div onclick
+  - semantic HTML SEO
+  - HTML landmarks screen reader
+  - first rule of ARIA
+  - refactor div to semantic
+  - HTML5 semantic elements
+  - learn HTML
   - CodeHarborHub HTML
-authors: [ajay-dhangar]
-tags: [html, semantic-html, accessibility, seo]
+tags: [html, web-development, beginner, semantic-html, accessibility, seo, best-practices, frontend]
 ---
+
+import {useState} from 'react';
+
+export function ButtonDemo() {
+  const [fake, setFake] = useState(0);
+  const [real, setReal] = useState(0);
+  const look = {
+    display: "inline-block",
+    padding: "0.4rem 0.9rem",
+    border: "1px solid #1d4ed8",
+    borderRadius: "6px",
+    background: "#dbeafe",
+    color: "#1e3a8a",
+    font: "inherit",
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        Press <kbd>Tab</kbd> to move focus, then <kbd>Enter</kbd> or <kbd>Space</kbd>. Try the mouse too.
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <span onClick={() => setFake(fake + 1)} style={{...look, cursor: "pointer"}}>Like (a div)</span>{" "}
+        Clicks: <strong>{fake}</strong>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <button type="button" onClick={() => setReal(real + 1)} style={{...look, cursor: "pointer"}}>Like (a button)</button>{" "}
+        Clicks: <strong>{real}</strong>
+      </p>
+      <table style={{borderCollapse: "collapse", fontSize: "0.9em"}}>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left", padding: "0.2rem 0.75rem 0.2rem 0"}}> </th>
+            <th style={{textAlign: "left", padding: "0.2rem 0.75rem 0.2rem 0"}}>div</th>
+            <th style={{textAlign: "left", padding: "0.2rem 0"}}>button</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style={{padding: "0.2rem 0.75rem 0.2rem 0"}}>Reachable with Tab</td><td style={{padding: "0.2rem 0.75rem 0.2rem 0", color: "#b91c1c"}}>no</td><td style={{color: "#15803d"}}>yes</td></tr>
+          <tr><td style={{padding: "0.2rem 0.75rem 0.2rem 0"}}>Enter and Space work</td><td style={{padding: "0.2rem 0.75rem 0.2rem 0", color: "#b91c1c"}}>no</td><td style={{color: "#15803d"}}>yes</td></tr>
+          <tr><td style={{padding: "0.2rem 0.75rem 0.2rem 0"}}>Announced as a button</td><td style={{padding: "0.2rem 0.75rem 0.2rem 0", color: "#b91c1c"}}>no</td><td style={{color: "#15803d"}}>yes</td></tr>
+          <tr><td style={{padding: "0.2rem 0.75rem 0.2rem 0"}}>Visible focus ring</td><td style={{padding: "0.2rem 0.75rem 0.2rem 0", color: "#b91c1c"}}>no</td><td style={{color: "#15803d"}}>yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function StylesDemo() {
+  const [styled, setStyled] = useState(true);
+  const title = styled ? {fontSize: "1.4rem", fontWeight: 700, margin: "0 0 0.25rem"} : {};
+  const sub = styled ? {fontSize: "1.1rem", fontWeight: 600, margin: "0.5rem 0 0.25rem"} : {};
+  const menu = styled ? {display: "flex", gap: "1rem", margin: "0 0 0.5rem"} : {};
+  const item = styled ? {color: "#1d4ed8", textDecoration: "underline"} : {};
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.6rem"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label>
+          <input type="checkbox" checked={styled} onChange={(event) => setStyled(event.target.checked)} />{" "}
+          Styles on (untick to see the page with no styling at all)
+        </label>
+      </p>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1rem"}}>
+        <div style={{flex: "1 1 15rem"}}>
+          <p style={{margin: "0 0 0.3rem"}}><strong>Page A: divs</strong></p>
+          <div style={box}>
+            <div style={title}>Spring Bread Festival</div>
+            <div style={menu}>
+              <div style={item}>Programme</div>
+              <div style={item}>Tickets</div>
+            </div>
+            <div style={sub}>Saturday</div>
+            <div>Baking contest at 10:00.</div>
+            <div style={sub}>Sunday</div>
+            <div>Family workshop at 11:00.</div>
+          </div>
+        </div>
+        <div style={{flex: "1 1 15rem"}}>
+          <p style={{margin: "0 0 0.3rem"}}><strong>Page B: semantic elements</strong></p>
+          <div style={box}>
+            <h3 style={{margin: "0 0 0.25rem", fontSize: styled ? "1.4rem" : "1.17em"}}>Spring Bread Festival</h3>
+            <ul style={{display: styled ? "flex" : "block", gap: "1rem", listStyle: styled ? "none" : "disc", padding: styled ? 0 : "0 0 0 1.25rem", margin: "0 0 0.5rem"}}>
+              <li><a href="#fest" onClick={(event) => event.preventDefault()}>Programme</a></li>
+              <li><a href="#fest" onClick={(event) => event.preventDefault()}>Tickets</a></li>
+            </ul>
+            <h4 style={{margin: "0.5rem 0 0.25rem"}}>Saturday</h4>
+            <p style={{margin: 0}}>Baking contest at 10:00.</p>
+            <h4 style={{margin: "0.5rem 0 0.25rem"}}>Sunday</h4>
+            <p style={{margin: 0}}>Family workshop at 11:00.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Picture a book with no cover, no chapter titles, no page numbers, and no table of contents, just one long wall of text. You could still read it, but finding anything would be miserable. Now picture a book with chapters, headings, and an index. Same words, completely different experience.
+
+That is the difference semantic HTML makes to a web page. This lesson explains **why** it matters, in plain language, with live proof. By the end, you will not need to memorise a rule such as "use `<nav>` for menus". You will understand the reason behind it, which makes every later lesson easier.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How a browser turns your HTML into something assistive tools can use
+- What you get **for free** when you pick the right element
+- How semantic HTML helps screen reader users, keyboard users, search engines, and your team
+- Four common myths, and the truth behind each
+- How to refactor "div soup" into meaningful markup, step by step
+- When `<div>` and `<span>` are still the right tool
+
+## The Basics: A Button Is Not a Box
+
+The best way to feel the difference is to compare two things that look the same. Below, one "Like" control is a `<span>` styled to look like a button, and one is a real `<button>`. Use only your keyboard on them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Looks like a button, but is not one -->
+<span class="btn" onclick="like()">Like</span>
+
+<!-- A real button -->
+<button type="button" class="btn" onclick="like()">Like</button>
+```
+
+```css title="style.css"
+.btn {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font: inherit;
+  cursor: pointer;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ButtonDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+With the mouse, both work. With the keyboard, only the real button does. You wrote no extra code for that. The browser gave the `<button>`:
+
+| Free behaviour | What it means |
+| :-- | :-- |
+| **Focusable** | It joins the Tab order |
+| **Keyboard activation** | Enter and Space both press it |
+| **A role** | Assistive technology announces "button" |
+| **A name** | The text inside becomes its accessible name |
+| **A state** | It can be disabled, and works with forms |
+| **A focus ring** | Keyboard users can see where they are |
+
+To make the `<span>` behave the same, you would need `role="button"`, `tabindex="0"`, key handlers for Enter **and** Space, focus styling, and disabled handling, and you would probably still miss something. That is the heart of semantic HTML: **the right element already did the work.**
+
+## How a Browser Reads Your Page
+
+When the browser loads your HTML, it builds two things:
+
+1. **The DOM**, the tree of elements your scripts and styles work with.
+2. **The accessibility tree**, a simplified copy for assistive technology such as screen readers and voice control.
+
+In the accessibility tree, every important element becomes a node with four pieces of information:
+
+| Piece | Question it answers | Example |
+| :-- | :-- | :-- |
+| **Role** | What is this? | `button`, `navigation`, `heading`, `link` |
+| **Name** | What is it called? | "Subscribe", "Main menu" |
+| **State** | What condition is it in? | expanded, checked, disabled |
+| **Value** | What does it hold? | The text in a field |
+
+Semantic elements give you the **role** for free. A `<nav>` is a navigation, an `<h2>` is a heading of level 2, a `<button>` is a button. A `<div>` has the role "generic", which really means "I have no idea". Everything else in this section builds on that one idea.
+
+## Who Benefits
+
+### 1. Screen Reader Users
+
+A screen reader reads the page aloud, and offers **shortcuts** based on the structure you gave it. People often:
+
+- **Jump between landmarks** (`header`, `nav`, `main`, `footer`) to skip straight to what they want.
+- **List all headings** to scan a page the way you scan with your eyes. Surveys of screen reader users keep finding that headings are one of the most common ways they look for information.
+- **List all links, buttons, and form fields** to find what they need.
+
+Without semantic markup, those shortcuts have nothing to offer. The user listens from the top, every time, including your whole menu on every page.
+
+### 2. Keyboard and Voice Users
+
+Many people cannot use a mouse: those with motor disabilities, a broken wrist, a tremor, or simply a trackpad that has stopped working. Native elements (`button`, `a`, `details`, `dialog`, form fields) work with the keyboard without any extra code. Voice control tools say "click Subscribe", and need a real name and role to find the target.
+
+### 3. People Using Other Tools
+
+Reader modes strip a page to its main content, and use structure such as `article` and headings to find it. Translation tools, text-to-speech, and voice assistants read your structure as well. Print and "save as PDF" tools follow your document order.
+
+### 4. Search Engines
+
+Search engines read your HTML to work out what the page is about. A clear structure (a proper `h1`, a `main` that holds the real content, an `article`, and a `nav` that is clearly navigation) helps them understand which parts matter. Be realistic about this: semantic tags help a crawler **understand** your page, but they are not a magic ranking switch. Good content, speed, and good links still do the heavy lifting.
+
+### 5. You and Your Team
+
+Compare these two snippets and ask which one a new colleague can understand in two seconds:
+
+```html
+<div class="a1"><div class="a2"><div class="a3">…</div></div></div>
+
+<header><nav>…</nav></header>
+```
+
+Semantic markup is self-documenting. It is also easier to style, because you can write `nav a { … }` instead of inventing and remembering class names.
+
+### 6. Everyone, Sometimes
+
+Accessibility is not only for people with permanent disabilities. A parent holding a baby uses one hand. A commuter sits in glare, with the screen barely readable. A developer's mouse stops working before a deadline. Good structure and keyboard support help all of them.
+
+:::info It can also be the law
+In many countries, laws and rules require websites to be accessible, and they usually point to the Web Content Accessibility Guidelines (WCAG). Examples include the European Accessibility Act in the EU, and the Americans with Disabilities Act as applied to websites in the US. The details change, so check what applies to you, but semantic HTML is the foundation of meeting them.
+:::
+
+## Try It: Take the Styles Away
+
+Here are two versions of the same small page. In **Page A**, every line is a `<div>` that is **styled** to look like a title, a menu, and sub-headings. In **Page B**, the same content uses real elements. Untick the box to remove the styling.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Page A: looks like a page, but means nothing -->
+<div class="title">Spring Bread Festival</div>
+<div class="menu">
+  <div class="item">Programme</div>
+  <div class="item">Tickets</div>
+</div>
+<div class="sub">Saturday</div>
+<div>Baking contest at 10:00.</div>
+<div class="sub">Sunday</div>
+<div>Family workshop at 11:00.</div>
+
+<!-- Page B: the same content, with meaning -->
+<h1>Spring Bread Festival</h1>
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/programme">Programme</a></li>
+    <li><a href="/tickets">Tickets</a></li>
+  </ul>
+</nav>
+<h2>Saturday</h2>
+<p>Baking contest at 10:00.</p>
+<h2>Sunday</h2>
+<p>Family workshop at 11:00.</p>
+```
+
+```css title="style.css"
+/* Page A needs CSS just to fake what Page B already is */
+.title { font-size: 1.4rem; font-weight: 700; }
+.sub   { font-size: 1.1rem; font-weight: 600; }
+.menu  { display: flex; gap: 1rem; }
+.item  { color: #1d4ed8; text-decoration: underline; }
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StylesDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+With styles on, the two look alike. With styles off, Page A is a flat run of lines. Page B still shows a title, a list of links, and sub-headings. That is what a screen reader, a reader mode, a slow connection, or a broken stylesheet gives your visitors. **If the page only has meaning when the CSS loads, it does not have meaning.**
+
+## Four Myths
+
+| Myth | The truth |
+| :-- | :-- |
+| "Semantic elements look different, so I cannot use them." | They only have default styles, and CSS can change every one of them. `<nav>` and `<header>` have almost no default look at all. |
+| "Semantic HTML will put me at the top of search results." | It helps machines understand the page. It is not a ranking trick. |
+| "I can use ARIA to fix any `<div>`." | ARIA only changes what assistive technology is **told**. It adds no keyboard behaviour. The first rule of ARIA: **if a native element does the job, use it.** |
+| "It is only for screen reader users." | Keyboard users, voice users, reader modes, translation tools, search engines, and developers all benefit. |
+
+## The First Rule of ARIA
+
+You may meet attributes such as `role="navigation"` or `aria-label="Main"`. They belong to **ARIA** (Accessible Rich Internet Applications), a toolkit for adding meaning when HTML alone cannot. The guidance is simple:
+
+1. **Use a native element if one exists.** `<nav>`, not `<div role="navigation">`.
+2. **Do not change native meaning** unless you really must.
+3. **Every ARIA control must work with a keyboard.**
+4. **Do not hide a focusable element** with `aria-hidden`.
+5. **Give interactive elements an accessible name.**
+
+**No ARIA is better than bad ARIA.** Wrong ARIA actively misleads people.
+
+## Refactoring Div Soup, Step by Step
+
+Here is a real-feeling messy page, and how to turn it into good markup one safe step at a time. You can stop after any step and still be better off.
+
+<Tabs>
+<TabItem value="before" label="Before" default>
+
+```html title="index.html"
+<div id="top">
+  <div class="logo">Spring Bread Festival</div>
+  <div class="links">
+    <span onclick="go('/programme')">Programme</span>
+    <span onclick="go('/tickets')">Tickets</span>
+  </div>
+</div>
+
+<div id="content">
+  <div class="big">Saturday</div>
+  <div>Baking contest at 10:00.</div>
+  <div class="big">Sunday</div>
+  <div>Family workshop at 11:00.</div>
+  <div class="note">Bring your own apron!</div>
+</div>
+
+<div id="bottom">Contact: hello@example.com</div>
+```
+
+</TabItem>
+<TabItem value="step1" label="Step 1: Links and text">
+
+Real links go where `onclick` pretended to, and plain text becomes paragraphs:
+
+```html title="index.html"
+<div id="top">
+  <div class="logo">Spring Bread Festival</div>
+  <div class="links">
+    <a href="/programme">Programme</a>
+    <a href="/tickets">Tickets</a>
+  </div>
+</div>
+
+<div id="content">
+  <div class="big">Saturday</div>
+  <p>Baking contest at 10:00.</p>
+  <div class="big">Sunday</div>
+  <p>Family workshop at 11:00.</p>
+  <div class="note">Bring your own apron!</div>
+</div>
+
+<div id="bottom">Contact: hello@example.com</div>
+```
+
+Already a big win: keyboard users can reach the links, and the browser knows what is a paragraph.
+
+</TabItem>
+<TabItem value="step2" label="Step 2: Headings">
+
+Visual "titles" become real headings, in a sensible order:
+
+```html title="index.html"
+<div id="top">
+  <h1 class="logo">Spring Bread Festival</h1>
+  <div class="links">
+    <a href="/programme">Programme</a>
+    <a href="/tickets">Tickets</a>
+  </div>
+</div>
+
+<div id="content">
+  <h2 class="big">Saturday</h2>
+  <p>Baking contest at 10:00.</p>
+  <h2 class="big">Sunday</h2>
+  <p>Family workshop at 11:00.</p>
+  <div class="note">Bring your own apron!</div>
+</div>
+
+<div id="bottom">Contact: hello@example.com</div>
+```
+
+Now the page has an outline that a screen reader can list. Choose heading levels for **structure**, and use CSS for size.
+
+</TabItem>
+<TabItem value="step3" label="Step 3: Landmarks">
+
+The big wrapper `div`s become landmarks, and the links become a list inside a named `nav`:
+
+```html title="index.html"
+<header id="top">
+  <h1 class="logo">Spring Bread Festival</h1>
+  <nav aria-label="Main">
+    <ul>
+      <li><a href="/programme">Programme</a></li>
+      <li><a href="/tickets">Tickets</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="content">
+  <h2 class="big">Saturday</h2>
+  <p>Baking contest at 10:00.</p>
+  <h2 class="big">Sunday</h2>
+  <p>Family workshop at 11:00.</p>
+  <aside class="note">Bring your own apron!</aside>
+</main>
+
+<footer id="bottom">
+  <address>Contact: <a href="mailto:hello@example.com">hello@example.com</a></address>
+</footer>
+```
+
+Now the page has a banner, a navigation, a main area, a complementary note, and a footer with contact information, all with almost no new code.
+
+</TabItem>
+<TabItem value="step4" label="Step 4: Tidy">
+
+Drop classes that only existed to fake meaning, and style the elements directly:
+
+```css title="style.css"
+header h1 { font-size: 1.4rem; }
+nav ul    { display: flex; gap: 1rem; list-style: none; padding: 0; }
+main h2   { font-size: 1.1rem; }
+aside     { background: #fef9c3; padding: 0.5rem; }
+```
+
+The HTML is shorter, the CSS is simpler, and nothing depends on remembering what `.big` or `#top` meant.
+
+</TabItem>
+</Tabs>
+
+## When `div` and `span` Are Still Right
+
+Semantic HTML does not ban `<div>` and `<span>`. They are the right tool when **nothing else fits**:
+
+| Use `div` for | Use `span` for |
+| :-- | :-- |
+| A wrapper that exists only for layout (a grid or flex container) | A piece of text inside a sentence that needs a style or a script hook |
+| Grouping items so you can style or position them together | A small inline wrapper, such as a coloured word |
+| A mount point for a JavaScript component | An icon container inside a button |
+
+A useful test: **"Is there an element whose meaning matches this content?"** If yes, use it. If no, use `div` or `span`.
+
+## Accessibility at a Glance
+
+- **Pick the element that matches the job:** `button` for actions, `a` for navigation, `nav` for menus, `h1` to `h6` for headings.
+- **Do not use `div` or `span` with a click handler** for something a button or link can do.
+- **Use headings for structure,** not for size or bold text.
+- **Provide landmarks:** one `main`, a `header`, a `footer`, and named `nav` regions.
+- **Keep the HTML order the same as the reading order,** because screen readers and the Tab key follow the source.
+- **Name things.** If a page has two `nav` elements, give each an `aria-label`.
+- **Test with a keyboard and a screen reader** instead of trusting that it "looks right".
+
+## Security and Privacy Notes
+
+- **Structure is not protection.** Hiding content in a `<details>` or a closed `<dialog>` only hides it visually. Do not put secrets there.
+- **A real `<button>` and `<form>`** are also easier to protect and test than hand-made controls, because the browser handles them in standard ways.
+- **Escape user content** you place in any element, to prevent cross-site scripting.
+- **Do not publish more in `<address>` or `<footer>` than you mean to.** Personal contact details attract spam and scams.
+
+## Global Audience Notes
+
+- **Set `lang` on `<html>`** so screen readers use the right voice and pronunciation, and translation tools detect the language. Mark passages in other languages with their own `lang`.
+- **Use `dir="rtl"`** for right-to-left languages. Semantic order mirrors correctly, because it follows reading order rather than pixel positions.
+- **Translate landmark names** such as `aria-label="Main"`.
+- **Keep headings short and plain,** so they translate well and read well in a list.
+- **Structure survives bad connections.** A well-built page degrades gracefully on slow networks, old phones, and basic reader tools, which matters to a worldwide audience.
+
+## Common Mistakes to Avoid
+
+1. **Using `<div>` or `<span>` for everything.**
+2. **Making clickable `div`s** instead of buttons and links.
+3. **Choosing headings by size,** skipping levels, or using bold paragraphs as headings.
+4. **Using semantic elements only for their default look,** or avoiding them because of it.
+5. **Adding ARIA roles to fix what the right element would do** (`<div role="button">`).
+6. **Using `<nav>` for every group of links.**
+7. **Using more than one `<main>`.**
+8. **Wrapping everything in `<section>`** with no heading.
+9. **Layout tables, or tables for non-tabular layout,** and `<br>` for spacing.
+10. **Ordering the HTML by looks** and then rearranging it with CSS, so the reading order is wrong.
+11. **Treating semantic HTML as an SEO trick.**
+12. **Never testing with a keyboard or a screen reader.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a clickable `<span>` and a real `<button>`. Try each with only the keyboard.
+2. Open your browser's developer tools, and find the **Accessibility** panel. Compare the roles of a `div` and a `button`.
+3. Take a page of your own, and turn off all CSS. Is it still in a sensible order?
+4. Replace three "fake headings" with real `h1` to `h3` elements, in a logical order.
+5. Replace a `<div class="menu">` with a `<nav>` that contains a list of links.
+6. Wrap the main content of a page in one `<main>`.
+7. Give two navigation regions different `aria-label` values.
+8. Replace one `div` with a `click` handler by a `button` (or a link, if it goes somewhere).
+9. List five `<div>` elements on a site you built, and decide which have a better element.
+10. Bonus: install a screen reader (or use VoiceOver, NVDA, or TalkBack), and listen to the first screen of your page.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do you get for free when you use a real `<button>` instead of a styled `<div>`?</summary>
+
+Keyboard focus, Enter and Space activation, a "button" role and name for assistive technology, disabled and form behaviour, and a focus ring.
+
+</details>
+
+<details>
+<summary>2. What is the accessibility tree?</summary>
+
+A simplified copy of the page that the browser builds for assistive technology. Each node has a role, a name, a state, and sometimes a value. Semantic elements give you the role for free.
+
+</details>
+
+<details>
+<summary>3. Who benefits from semantic HTML?</summary>
+
+Screen reader users, keyboard and voice users, people using reader modes and translation tools, search engines, and developers. In some moments, everyone does.
+
+</details>
+
+<details>
+<summary>4. Will semantic HTML make me rank first on a search engine?</summary>
+
+No. It helps machines understand your page, but rankings depend on many other things, such as content quality, speed, and links.
+
+</details>
+
+<details>
+<summary>5. What is the first rule of ARIA?</summary>
+
+If a native HTML element can do the job, use it instead of adding ARIA to a `div`. No ARIA is better than bad ARIA.
+
+</details>
+
+<details>
+<summary>6. When is `<div>` the right choice?</summary>
+
+When no element has the right meaning, for example a wrapper for layout or a styling hook. `<span>` plays the same role inside text.
+
+</details>
+
+## Key Takeaways
+
+- A semantic element **says what its content is**, and the browser gives it a role, a name, and often built-in behaviour.
+- A real `<button>` beats a clickable `<div>`: it is focusable, keyboard-operable, and announced correctly.
+- The browser builds an accessibility tree from your markup, and screen readers, voice tools, and reader modes depend on it.
+- Landmarks and headings let people jump around a page. Without them, people must listen to everything.
+- Semantic HTML helps accessibility, search engines **understanding** (not magic ranking), teamwork, and resilience.
+- ARIA is a last resort. Use a native element first.
+- Refactor in small steps: real links, real headings, landmarks, then simpler CSS.
+- Keep `<div>` and `<span>` for cases where nothing semantic fits.
+
+Next, learn the first landmark, the page introduction, in [Header](./header), or return to the [Semantic HTML overview](/tutorials/html/semantic-html).

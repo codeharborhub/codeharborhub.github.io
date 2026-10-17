@@ -1,15 +1,520 @@
 ---
-id: details-element
-title: "Native Disclosure Widgets: The details Element"
-sidebar_label: "Details (<details>)"
+id: html-details
+title: "HTML Details Element"
+sidebar_label: "Details"
 sidebar_position: 11
 slug: /html/semantic-html/details
-description: "Create native, zero-JavaScript accordions and expandable toggle content widgets using the details tag."
+description: "Learn the HTML details element: building expandable and collapsible content with no JavaScript, the open attribute, exclusive accordions with the name attribute, the toggle event, FAQ patterns, styling the marker, accessibility and keyboard behaviour, printing and find-in-page notes, what not to hide, and common mistakes, with live examples."
 keywords:
-  - HTML details tag
-  - native accordion HTML
-  - disclosure widget element
+  - HTML details element
+  - details summary accordion
+  - HTML collapsible content
   - details open attribute
+  - details name exclusive accordion
+  - toggle event details
+  - HTML FAQ markup
+  - no JavaScript accordion
+  - details accessibility
+  - style details marker
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, interactive, accordion]
+tags: [html, web-development, beginner, semantic-html, details, accordion, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function FaqDemo() {
+  const items = [
+    {q: "Can I bring my own apron?", a: "Yes. Aprons are welcome, and spares are available at the desk."},
+    {q: "Is there parking?", a: "Limited parking is behind the town hall. Cycling or walking is easier on busy days."},
+    {q: "Are there gluten-free options?", a: "Several stalls offer gluten-free bread. Look for the green label."},
+  ];
+  const refs = useRef([]);
+  const [log, setLog] = useState([]);
+  const setAll = (value) => {
+    refs.current.forEach((el) => {
+      if (el) el.open = value;
+    });
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => setAll(true)} style={{marginRight: "0.5rem"}}>Open all</button>
+        <button type="button" onClick={() => setAll(false)}>Close all</button>
+      </p>
+      {items.map((item, i) => (
+        <details
+          key={item.q}
+          ref={(el) => (refs.current[i] = el)}
+          onToggle={(event) => {
+            const state = event.currentTarget.open ? "opened" : "closed";
+            setLog((old) => [state + ": " + item.q].concat(old).slice(0, 4));
+          }}
+          style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.4rem 0.75rem", marginBottom: "0.4rem"}}
+        >
+          <summary style={{cursor: "pointer", fontWeight: 600}}>{item.q}</summary>
+          <p style={{margin: "0.4rem 0 0"}}>{item.a}</p>
+        </details>
+      ))}
+      <p style={{margin: "0.5rem 0 0.2rem", fontSize: "0.9em"}}><strong>Toggle events:</strong></p>
+      <ul role="status" style={{margin: 0, paddingLeft: "1.25rem", fontSize: "0.9em"}}>
+        {log.length === 0 ? <li style={{color: "#64748b"}}>Nothing yet. Open or close an item.</li> : null}
+        {log.map((line, i) => (<li key={line + i}>{line}</li>))}
+      </ul>
+    </div>
+  );
+}
+
+export function ExclusiveDemo() {
+  const steps = [
+    {t: "Step 1: Mix", d: "Combine flour, water, salt, and yeast."},
+    {t: "Step 2: Knead", d: "Knead for ten minutes until smooth and elastic."},
+    {t: "Step 3: Rest", d: "Cover and rest until doubled in size."},
+  ];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem", fontSize: "0.9em"}}>
+        These three share the same <code>name</code>. In current browsers, opening one closes the others.
+      </p>
+      {steps.map((step, i) => (
+        <details
+          key={step.t}
+          name="ex-steps"
+          open={i === 0}
+          style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.4rem 0.75rem", marginBottom: "0.4rem"}}
+        >
+          <summary style={{cursor: "pointer", fontWeight: 600}}>{step.t}</summary>
+          <p style={{margin: "0.4rem 0 0"}}>{step.d}</p>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+Some content is helpful, but not everyone needs it all at once: a list of frequently asked questions, the technical details of a product, a long set of terms, a spoiler. You want to **tuck it away** so the page stays calm, and let people **open it when they want it**.
+
+For years, that meant writing JavaScript. Today HTML does it by itself with the **`<details>`** element. It is a small, built-in **disclosure widget**: a heading you can click to reveal more. It works with the mouse, the keyboard, and screen readers, and needs no script at all.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<details>` is and how its parts fit together
+- Starting open with the `open` attribute
+- Exclusive accordions with the `name` attribute
+- Reacting in JavaScript: the `open` property and the `toggle` event
+- Styling the marker and the box
+- Good and bad uses
+- Accessibility, printing, search, and security notes
+- Common mistakes
+
+## The Basics
+
+`<details>` contains **one `<summary>`** (the always-visible label), followed by the **hidden content**.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<details>
+  <summary>Can I bring my own apron?</summary>
+  <p>Yes. Aprons are welcome, and spares are available at the desk.</p>
+</details>
+```
+
+```css title="style.css"
+details {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<details style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.5rem 0.75rem"}}>
+  <summary style={{cursor: "pointer", fontWeight: 600}}>Can I bring my own apron?</summary>
+  <p style={{margin: "0.4rem 0 0"}}>Yes. Aprons are welcome, and spares are available at the desk.</p>
+</details>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Click the summary. The content appears, and a small triangle (the **marker**) turns to show the open state. Click again to close it. Nobody wrote a line of JavaScript.
+
+The two parts:
+
+| Part | Role |
+| :-- | :-- |
+| `<summary>` | The **visible label** that is always shown. It must be the **first child** of `<details>`. See [Summary](./summary) |
+| Everything else | The **hidden content**, shown when the widget is open |
+
+If you leave out the `<summary>`, the browser supplies a default label such as "Details". Always write your own.
+
+## Starting Open
+
+The boolean attribute **`open`** makes the widget start expanded:
+
+```html
+<details open>
+  <summary>Opening times</summary>
+  <p>Saturday and Sunday, 9:00 to 18:00.</p>
+</details>
+```
+
+The browser **adds and removes** the `open` attribute itself as the visitor clicks. In JavaScript, you can read or set it:
+
+```js
+const box = document.querySelector("details");
+
+console.log(box.open);   // true or false
+box.open = true;         // expand it
+box.open = false;        // collapse it
+```
+
+### Try It: Several Questions at Once
+
+This FAQ uses independent `<details>` items. Use the buttons to open and close them all with the `open` property, and watch the `toggle` event fire.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<button type="button" id="open-all">Open all</button>
+<button type="button" id="close-all">Close all</button>
+
+<details>
+  <summary>Can I bring my own apron?</summary>
+  <p>Yes. Aprons are welcome, and spares are available at the desk.</p>
+</details>
+
+<details>
+  <summary>Is there parking?</summary>
+  <p>Limited parking is behind the town hall.</p>
+</details>
+
+<details>
+  <summary>Are there gluten-free options?</summary>
+  <p>Several stalls offer gluten-free bread. Look for the green label.</p>
+</details>
+```
+
+```js title="script.js"
+const items = document.querySelectorAll("details");
+
+document.getElementById("open-all").addEventListener("click", () => {
+  items.forEach((item) => (item.open = true));
+});
+
+document.getElementById("close-all").addEventListener("click", () => {
+  items.forEach((item) => (item.open = false));
+});
+
+// The toggle event fires after the widget opens or closes
+items.forEach((item) => {
+  item.addEventListener("toggle", () => {
+    const label = item.querySelector("summary").textContent;
+    console.log((item.open ? "opened: " : "closed: ") + label);
+  });
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FaqDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Two details of the `toggle` event:
+
+- It fires **after** the state changes, for clicks, for keyboard use, **and** when your script changes `open`.
+- It does **not** bubble, so listen on each `<details>` element, not on a parent. (In frameworks, use the event the framework provides, such as `onToggle` in React.)
+
+## Exclusive Accordions: the `name` Attribute
+
+Sometimes you want only **one item open at a time**, like an accordion. Give several `<details>` elements the **same `name`**:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<details name="steps" open>
+  <summary>Step 1: Mix</summary>
+  <p>Combine flour, water, salt, and yeast.</p>
+</details>
+
+<details name="steps">
+  <summary>Step 2: Knead</summary>
+  <p>Knead for ten minutes until smooth and elastic.</p>
+</details>
+
+<details name="steps">
+  <summary>Step 3: Rest</summary>
+  <p>Cover and rest until doubled in size.</p>
+</details>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ExclusiveDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Opening one now closes the other members of the group. This works in current versions of the major browsers. In an older browser that does not know `name`, the items simply behave as **independent** widgets, so nothing breaks, and the page still works. That is a good example of **progressive enhancement**.
+
+Rules for the group:
+
+- Items with the **same `name`** in the same page form one group.
+- Use `open` on **at most one** of them at the start.
+- It is the browser's job, so you do not need any JavaScript for it.
+
+:::tip Is exclusive really better?
+A group that closes the others hides what the visitor just read, and makes it hard to compare two answers. Use the exclusive style for **sequential** content such as steps, and independent items for FAQs.
+:::
+
+## Good Uses
+
+| Good use | Why it works |
+| :-- | :-- |
+| **FAQ** lists | Visitors scan the questions and open only what they need |
+| **Extra technical detail** ("Full specifications") | Keeps the main page short |
+| **Long legal text or terms** you must show but few will read | Out of the way, still available |
+| **Step-by-step help** with optional hints | Reveal a hint only when asked |
+| **Spoilers** and answers to quiz questions | The visitor decides when to look |
+| **Optional advanced settings** in a form | Keeps the simple path simple |
+| **Code or log output** that is long | Shows the heading, hides the wall of text |
+
+## Bad Uses (Use Something Else)
+
+| Do not use `<details>` for | Use instead |
+| :-- | :-- |
+| **A navigation menu** or dropdown of links | `<nav>` with a button using `aria-expanded` (see [Nav](./nav)) |
+| **Tabs** | A proper tabs pattern, or separate sections |
+| **A pop-up or modal** that blocks the page | [`<dialog>`](./dialog) |
+| **A tooltip** | `aria-describedby` and a visible hint |
+| **Essential information** the visitor must see (errors, warnings, prices, the main message) | Show it in the open |
+| **A list of things people compare often** | A table or a plain list |
+| **Hiding content for security** | Access control on the server |
+
+## Styling
+
+The default look is plain: a triangle and a label. You can change a lot with CSS:
+
+```css title="style.css"
+details {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Style the box when it is open */
+details[open] {
+  background: #f8fafc;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding-block: 0.25rem;
+}
+
+/* Replace the default triangle */
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;                  /* older WebKit browsers */
+}
+
+summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1.25rem;
+  font-weight: 700;
+}
+
+details[open] > summary::before {
+  content: "−";
+}
+
+/* A visible focus ring for keyboard users */
+summary:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+```
+
+Some points:
+
+- The built-in triangle is the **marker** (`summary::marker`, or `list-style` on the summary). You can swap it for your own icon, but **always keep a visible sign** of whether the item is open or closed.
+- **Do not remove the focus ring.** Keyboard users need it.
+- Very new browsers also let you style the hidden content with `details::details-content` and animate opening, but support is still growing. Test before you rely on it.
+- Do not hide the summary text with `display: none`. A summary should always be visible.
+
+## How It Works for Assistive Technology
+
+- A `<details>` is exposed as a **group**. Its summary acts like a **button** with an **expanded** or **collapsed** state, so a screen reader says something like "Can I bring my own apron? Collapsed, button". When opened, it says "expanded".
+- It is **keyboard accessible by default.** Tab moves focus to the summary, and Enter or Space opens and closes it.
+- You do not need ARIA. **Do not add** `role="button"` or `aria-expanded` to a `<summary>`, because the browser already does the right thing, and extra ARIA can conflict.
+
+## Printing, Searching, and Sharing
+
+- **Print:** content inside a **closed** `<details>` generally does not print. If the content matters on paper, open the items before printing (for example, with a small script on the `beforeprint` event), or provide a print version.
+- **Find in page:** some browsers can search inside closed `<details>` and open the item to show the match. Others do not. Do not depend on it.
+- **Search engines** can generally read content in closed `<details>`, but visitors may overlook it. Do not hide your most important content.
+- **Links to an item:** an `id` on the `<details>` lets you link to it (`#parking`), but the browser will not open it for you in every case. You can open it with a small script when the hash matches.
+
+```js
+function openFromHash() {
+  const target = document.querySelector(location.hash || "#none");
+  if (target && target.tagName === "DETAILS") target.open = true;
+}
+
+window.addEventListener("hashchange", openFromHash);
+openFromHash();
+```
+
+## Accessibility at a Glance
+
+- **Use a clear, short summary** that says what is inside. "Opening times" beats "Click here".
+- **Keep the summary text visible** and in a good colour contrast (at least 4.5 to 1).
+- **Show an open and closed indicator** that is not only colour.
+- **Keep a visible focus style** on the summary.
+- **Do not put interactive elements** (links, buttons, form fields) **inside the summary.** Put them in the content area.
+- **Do not hide essential content** in a closed `<details>`.
+- **Do not nest too deeply.** Two levels is the most most people can follow.
+- **Make tap targets big enough:** padding on the summary gives at least 44 by 44 pixels where you can.
+- **Do not change focus or scroll** unexpectedly when it opens.
+- **Test with a keyboard and a screen reader.**
+
+## Security and Privacy Notes
+
+- **A closed `<details>` hides content visually, not from the page.** Anyone can open it, read the HTML source, or use developer tools. Never put secrets, private data, or "hidden" answers you need to protect in it.
+- **Escape user-supplied text** you place in a summary or its content, so it cannot inject markup or scripts.
+- **If you load content when the item opens** (using the `toggle` event and `fetch`), request only what the visitor is allowed to see, and check permission on the server.
+- **Do not store sensitive state** (such as which items a user opened) in a place other people can read.
+- **Be careful with user-generated HTML** inside `<details>`. Sanitise it, as you would anywhere else.
+
+## Global Audience Notes
+
+- **Translate the summary text,** and keep it short, since translated labels can be much longer.
+- **Right-to-left pages:** the built-in marker moves to the right side automatically with `dir="rtl"`. If you draw your own marker with CSS, use logical properties (`margin-inline-end`) so it flips correctly.
+- **Do not rely on the triangle alone** to mean "open me". Some people may not recognise it, so keep the label clear.
+- **Long answers on small screens:** FAQs are popular on phones. Keep the content short, and keep touch targets large.
+- **Slow or older devices** work fine with `<details>`, because it needs no JavaScript.
+- **Legal text:** if the law requires that visitors can see something (such as terms or consent details), check whether hiding it in a collapsed item meets the rule.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting the `<summary>`,** or putting it somewhere other than the first child.
+2. **A vague summary** such as "More" or "Click here".
+3. **Hiding essential information** in a closed `<details>`.
+4. **Using it for navigation menus,** tabs, or modals.
+5. **Removing the focus outline** or the open and closed indicator.
+6. **Putting links or buttons inside the `<summary>`.**
+7. **Adding `role="button"` or `aria-expanded`** to `<summary>`.
+8. **Expecting the `toggle` event to bubble.**
+9. **Expecting closed content to print,** or to be found by every browser's find-in-page.
+10. **Using `name` groups without testing** in the browsers you support.
+11. **Hiding secrets** in a closed item.
+12. **Nesting many levels deep.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a `<details>` with a `<summary>` and one paragraph.
+2. Add the `open` attribute, and compare how it loads.
+3. Build an FAQ with five questions, using independent `<details>` elements.
+4. Add "Open all" and "Close all" buttons with JavaScript.
+5. Log a message with the `toggle` event each time an item opens or closes.
+6. Make a three-step accordion where only one step stays open, using the `name` attribute.
+7. Replace the default triangle with a "+" and "−" using CSS.
+8. Give the summary a clear focus ring, and test it with Tab, Enter, and Space.
+9. Open an item automatically when the page address has a matching `#id`.
+10. Bonus: open all items before printing, using the `beforeprint` event.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `<details>` element do?</summary>
+
+It creates a built-in disclosure widget: a visible `<summary>` label that the visitor can click, or activate with the keyboard, to show or hide extra content. It needs no JavaScript.
+
+</details>
+
+<details>
+<summary>2. How do you make a `<details>` start open?</summary>
+
+Add the boolean `open` attribute. The browser adds and removes it as the visitor interacts, and you can read or set it with the `open` property in JavaScript.
+
+</details>
+
+<details>
+<summary>3. How do you make only one item open at a time?</summary>
+
+Give several `<details>` elements the same `name` value. Opening one closes the others in current browsers. In older browsers, they just work independently.
+
+</details>
+
+<details>
+<summary>4. How do you react when an item opens or closes?</summary>
+
+Listen for the `toggle` event on the `<details>` element. It fires after the state changes, including changes made by script, and it does not bubble.
+
+</details>
+
+<details>
+<summary>5. What should you not do with `<details>`?</summary>
+
+Do not use it for navigation menus, tabs, or modals, do not hide essential information in it, do not put links or buttons in the summary, and do not rely on it to keep secrets.
+
+</details>
+
+<details>
+<summary>6. Do you need ARIA on `<details>` and `<summary>`?</summary>
+
+No. The browser already exposes the group, and the summary's expanded or collapsed state. Adding `role="button"` or `aria-expanded` can conflict with the built-in behaviour.
+
+</details>
+
+## Key Takeaways
+
+- `<details>` plus `<summary>` is a built-in, JavaScript-free **disclosure widget**, with keyboard and screen reader support.
+- The `<summary>` is the first child and is always visible. Everything else is revealed when the item opens.
+- The `open` attribute starts it expanded, and the `open` property and `toggle` event let scripts work with it.
+- Give several items the same `name` for an **exclusive accordion** (current browsers), and they degrade to independent items elsewhere.
+- Great for FAQs, extra detail, and spoilers. Poor for navigation, tabs, modals, and essential content.
+- Keep a visible marker and focus ring, write a clear summary, and never put links or buttons in it.
+- Closed content may not print or be found by find-in-page, and it is **not** hidden from the page source, so it is never a place for secrets.
+
+Next, learn more about the label of a disclosure widget, in [Summary](./summary), or return to the [Semantic HTML overview](../semantic-html).

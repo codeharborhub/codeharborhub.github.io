@@ -1,15 +1,599 @@
 ---
-id: header-element
-title: "The Header Element: Defining Page and Section Headings"
-sidebar_label: "Header (<header>)"
+id: html-header
+title: "HTML Header Element"
+sidebar_label: "Header"
 sidebar_position: 3
 slug: /html/semantic-html/header
-description: "Learn how to use the header tag to enclose introductory content, site branding, titles, and navigational links across page layouts and article blocks."
+description: "Learn the HTML header element: introductory content for a page, article, or section, how it becomes a banner landmark only at page level, the difference between header, head, and headings, skip links, sticky headers and keyboard focus, accessible logos, language switchers, and common mistakes, with live examples."
 keywords:
-  - HTML header tag
-  - header element usage
-  - page header semantic tag
-  - banner landmark HTML
+  - HTML header element
+  - header vs head HTML
+  - banner landmark
+  - header inside article
+  - skip to main content link
+  - sticky header focus obscured
+  - HTML semantic header
+  - site header logo accessibility
+  - header nav HTML
+  - HTML5 header tag
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, layout, structure]
+tags: [html, web-development, beginner, semantic-html, header, banner, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function headerRole(el) {
+  const inside = el.parentElement && el.parentElement.closest("article, aside, main, nav, section");
+  return inside ? "no landmark (just a header for its " + inside.tagName.toLowerCase() + ")" : "banner landmark";
+}
+
+export function ScopeDemo() {
+  const rootRef = useRef(null);
+  const [rows, setRows] = useState(null);
+  const box = {border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.5rem", marginBottom: "0.4rem"};
+  return (
+    <div>
+      <div ref={rootRef}>
+        <header id="sc-site" style={box}>
+          <strong>Spring Bread Festival</strong> <span style={{color: "#64748b"}}>(site header)</span>
+        </header>
+        <main style={box}>
+          <article style={{...box, marginBottom: 0}}>
+            <header id="sc-article">
+              <h4 style={{margin: "0 0 0.15rem"}}>How to shape a loaf</h4>
+              <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>By Ada · <time dateTime="2026-04-12">12 April 2026</time> <span>(article header)</span></p>
+            </header>
+            <p style={{margin: "0.4rem 0 0"}}>Start with a round of dough…</p>
+          </article>
+        </main>
+      </div>
+      <p style={{margin: "0.5rem 0"}}>
+        <button
+          type="button"
+          onClick={() => {
+            const list = Array.from(rootRef.current.querySelectorAll("header")).map((el) => ({
+              id: el.id,
+              text: headerRole(el),
+            }));
+            setRows(list);
+          }}
+        >
+          Ask the browser what each header is
+        </button>
+      </p>
+      {rows ? (
+        <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+          {rows.map((row) => (
+            <li key={row.id}>
+              <code>{row.id === "sc-site" ? "site header" : "article header"}</code>: {row.text}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+export function SkipLinkDemo() {
+  const mainRef = useRef(null);
+  const [focused, setFocused] = useState(false);
+  const [moved, setMoved] = useState(false);
+  const hidden = {
+    position: "absolute",
+    left: "-9999px",
+    top: "auto",
+    width: "1px",
+    height: "1px",
+    overflow: "hidden",
+  };
+  const shown = {
+    position: "static",
+    display: "inline-block",
+    padding: "0.35rem 0.7rem",
+    background: "#1d4ed8",
+    color: "#fff",
+    borderRadius: "4px",
+    marginBottom: "0.4rem",
+  };
+  return (
+    <div style={{position: "relative"}}>
+      <p style={{margin: "0 0 0.5rem"}}>
+        Click inside this box, then press <kbd>Tab</kbd> once. A skip link appears.
+      </p>
+      <div tabIndex={-1} style={{border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.6rem"}}>
+        <a
+          href="#sk-main"
+          style={focused ? shown : hidden}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onClick={(event) => {
+            event.preventDefault();
+            if (mainRef.current) mainRef.current.focus();
+            setMoved(true);
+          }}
+        >
+          Skip to main content
+        </a>
+        <header style={{display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap"}}>
+          <strong>My Site</strong>
+          <nav aria-label="Demo menu">
+            <a href="#sk" onClick={(event) => event.preventDefault()}>Home</a>{" · "}
+            <a href="#sk" onClick={(event) => event.preventDefault()}>Shop</a>{" · "}
+            <a href="#sk" onClick={(event) => event.preventDefault()}>Blog</a>{" · "}
+            <a href="#sk" onClick={(event) => event.preventDefault()}>Contact</a>
+          </nav>
+        </header>
+        <main
+          id="sk-main"
+          ref={mainRef}
+          tabIndex={-1}
+          style={{marginTop: "0.6rem", padding: "0.4rem", outline: moved ? "2px solid #15803d" : "none"}}
+          onBlur={() => setMoved(false)}
+        >
+          <h4 style={{margin: 0}}>Main content</h4>
+          <p style={{margin: "0.25rem 0 0"}}>
+            {moved ? "Focus jumped straight here, past the whole menu." : "The real content starts here."}
+          </p>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+Think of the first thing you see when you walk into a shop: the sign above the door, the shop's name, maybe a welcome mat. It tells you where you are before anything else. On a web page, that role belongs to the **`<header>`** element.
+
+It sounds simple, but `<header>` hides a few surprises: it is **not** the same as `<head>`, it is **not** the same as a heading, you can use it **more than once**, and it only becomes a major page landmark in one particular place. This lesson clears all of that up.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<header>` is for, and what can go inside it
+- How it differs from `<head>`, `<h1>`, and "the top of the page"
+- When a header is a **banner** landmark, and when it is not
+- Using headers inside articles and sections
+- Skip links, sticky headers, and keyboard focus
+- Logos, search, and language switchers in a header
+- Accessibility, security, and global notes
+- The most common mistakes
+
+## The Basics
+
+`<header>` holds **introductory content** for the page, or for a section of it. That usually means a logo or site name, a title, navigation, a search box, or an author and date line.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<header>
+  <a href="/" class="logo">
+    <img src="/logo.svg" alt="Spring Bread Festival, home" width="140" height="40" />
+  </a>
+
+  <nav aria-label="Main">
+    <ul>
+      <li><a href="/programme">Programme</a></li>
+      <li><a href="/tickets">Tickets</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+```
+
+```css title="style.css"
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+header nav ul {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<header style={{display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", padding: "0.75rem 1rem", border: "1px solid #cbd5e1", borderRadius: "6px", flexWrap: "wrap"}}>
+  <a href="#hd" onClick={(event) => event.preventDefault()} style={{fontWeight: 700, textDecoration: "none"}}>🍞 Spring Bread Festival</a>
+  <nav aria-label="Main">
+    <ul style={{display: "flex", gap: "1rem", listStyle: "none", margin: 0, padding: 0}}>
+      <li><a href="#hd" onClick={(event) => event.preventDefault()}>Programme</a></li>
+      <li><a href="#hd" onClick={(event) => event.preventDefault()}>Tickets</a></li>
+      <li><a href="#hd" onClick={(event) => event.preventDefault()}>Contact</a></li>
+    </ul>
+  </nav>
+</header>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+By default, a `<header>` is a plain block with **no visual style at all**. Everything you see above comes from CSS. Its value is in the **meaning**, not the look.
+
+## What Can Go Inside
+
+| Typical content | Example |
+| :-- | :-- |
+| A logo or site name | A linked image or text that returns to the home page |
+| A page or article title | `<h1>` or `<h2>` |
+| Navigation | A `<nav>` with links |
+| A search form | `<form role="search">` |
+| Author and date | "By Ada, 12 April 2026" with a `<time>` element |
+| A tagline or short intro | "Fresh bread, every weekend" |
+| A language or account switcher | Links or a button group |
+
+What you **cannot** put inside:
+
+- **Another `<header>` or a `<footer>`** (they cannot be nested directly in each other).
+- **A `<main>`** (the main content never lives inside a header).
+
+:::note Not every page needs a heading inside the header
+A header may contain a heading, but it does not have to. Your page's `<h1>` can sit inside the header (common on a landing page), or in `<main>` (common on an article page). Choose what matches your content, and keep the heading **levels** logical.
+:::
+
+## Three Things That Sound Alike
+
+Beginners often mix these up. They are completely different:
+
+| Element | What it is | Where it goes | Visible? |
+| :-- | :-- | :-- | :-- |
+| `<head>` | Invisible information about the page: `<title>`, `<meta>`, `<link>`, `<script>` | Directly inside `<html>`, before `<body>` | No |
+| `<header>` | Introductory **content** shown on the page | Inside `<body>` (or inside an article or section) | Yes |
+| `<h1>` to `<h6>` | **Headings**: titles of topics | Anywhere in the content | Yes |
+
+```html
+<html>
+  <head>
+    <title>Spring Bread Festival</title>   <!-- tab title, not on the page -->
+  </head>
+  <body>
+    <header>                               <!-- visible introduction -->
+      <h1>Spring Bread Festival</h1>       <!-- a heading -->
+    </header>
+  </body>
+</html>
+```
+
+## The Same Element, Different Meanings
+
+This is the most important idea in the lesson. A `<header>` takes its meaning from **where it is placed**:
+
+| Where the header sits | What it means | Announced by a screen reader as |
+| :-- | :-- | :-- |
+| **Directly in `<body>`** (not inside another sectioning element) | The header for the **whole page** | **banner** landmark |
+| Inside an `<article>` | The header for **that article** (title, author, date) | Nothing special (no landmark) |
+| Inside a `<section>` | The header for **that section** | Nothing special (no landmark) |
+| Inside `<main>`, `<nav>`, or `<aside>` | The header for that region | Nothing special (no landmark) |
+
+So you can have **many** `<header>` elements on a page, but only the one at page level becomes the **banner** that screen reader users jump to. A page should have **one** banner.
+
+### Try It: Which Header Is the Banner?
+
+This page has two headers. Press the button, and the script works out what each one is, using the same rule a browser follows.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<header>
+  <strong>Spring Bread Festival</strong>
+</header>
+
+<main>
+  <article>
+    <header>
+      <h2>How to shape a loaf</h2>
+      <p>By Ada · <time datetime="2026-04-12">12 April 2026</time></p>
+    </header>
+    <p>Start with a round of dough…</p>
+  </article>
+</main>
+```
+
+```js title="script.js"
+document.querySelectorAll("header").forEach((header) => {
+  const inside = header.parentElement.closest("article, aside, main, nav, section");
+
+  console.log(
+    inside
+      ? "A header for its " + inside.tagName.toLowerCase() + " (no landmark)"
+      : "The page banner landmark"
+  );
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ScopeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## A Header Inside an Article
+
+An article's own header holds the title and details about that piece. It is a great place for the `<time>` element, which gives machines an exact date:
+
+```html
+<article>
+  <header>
+    <h2>How to shape a loaf</h2>
+    <p>
+      By <a href="/authors/ada">Ada</a> ·
+      <time datetime="2026-04-12">12 April 2026</time> ·
+      5 min read
+    </p>
+  </header>
+
+  <p>Start with a round of dough…</p>
+</article>
+```
+
+The same pattern works for a `<section>` that has a title and an intro line. You will meet both in [Article](./article) and [Section](./section).
+
+## Skip Links: A Gift to Keyboard Users
+
+A header usually holds a long menu. Keyboard and screen reader users would have to move through **every link** on **every page** to reach the content. A **skip link** solves that: the first focusable thing on the page is a link that jumps straight to the main content.
+
+Click inside the box below, and press <kbd>Tab</kbd> once. The skip link appears. Press <kbd>Enter</kbd>, and focus moves past the menu to the main content.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header>
+    <strong>My Site</strong>
+    <nav aria-label="Main">
+      <a href="/">Home</a>
+      <a href="/shop">Shop</a>
+      <a href="/blog">Blog</a>
+      <a href="/contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <h1>Main content</h1>
+    <p>The real content starts here.</p>
+  </main>
+</body>
+```
+
+```css title="style.css"
+.skip-link {
+  position: absolute;
+  left: -9999px;        /* off-screen until focused */
+}
+
+.skip-link:focus {
+  position: static;     /* appears when a keyboard user reaches it */
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #1d4ed8;
+  color: #fff;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SkipLinkDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Key points:
+
+- **It must be the very first focusable element,** before the header.
+- **Hide it visually until it receives focus.** Never use `display: none` or `visibility: hidden`, because then it cannot be focused at all.
+- **The target needs to accept focus.** Adding `tabindex="-1"` to `<main>` makes sure focus really moves there in every browser.
+- **Write plain words,** such as "Skip to main content", and translate them for translated pages.
+
+## Sticky Headers and Keyboard Focus
+
+A header that stays at the top while the page scrolls is popular, and easy to do:
+
+```css title="style.css"
+header.site {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+}
+
+html {
+  scroll-padding-top: 4.5rem;   /* about the height of the sticky header */
+}
+```
+
+The danger: when a keyboard user tabs to a link lower on the page, the browser scrolls it into view, and it can end up **hidden behind the sticky header**. WCAG 2.2 (success criterion 2.4.11) says a focused item must not be completely hidden. `scroll-padding-top` tells the browser to leave room, and fixes it. Also:
+
+- **Keep sticky headers short,** especially on phones where space is tight.
+- **Avoid hiding and showing** the header in surprising ways while scrolling.
+- **Make sure it still works** when the visitor zooms to 200% or more.
+
+## Logos, Search, and Language Switchers
+
+### The logo
+
+A logo that links home needs a useful text alternative. Say **where it goes**, not what it looks like:
+
+```html
+<a href="/">
+  <img src="/logo.svg" alt="Spring Bread Festival, home" width="140" height="40" />
+</a>
+```
+
+Only the **first**, page-level logo needs this. If the logo is a decorative repeat, use `alt=""`. See [Accessible Images](/tutorials/html/images/accessible-images).
+
+### Search
+
+A search form in the header should be named as a search landmark, so users can find it quickly:
+
+```html
+<form role="search" action="/search" method="get">
+  <label for="q">Search the site</label>
+  <input type="search" id="q" name="q" />
+  <button type="submit">Search</button>
+</form>
+```
+
+See [Search](/tutorials/html/forms/input-types/search).
+
+### A language switcher
+
+```html
+<nav aria-label="Language">
+  <ul>
+    <li><a href="/en/" hreflang="en" lang="en">English</a></li>
+    <li><a href="/hi/" hreflang="hi" lang="hi">हिन्दी</a></li>
+    <li><a href="/ar/" hreflang="ar" lang="ar">العربية</a></li>
+  </ul>
+</nav>
+```
+
+Write each language name **in its own language**, and mark it with `lang`, so a screen reader pronounces it correctly, and a speaker of that language can find it without reading the current one.
+
+## Accessibility at a Glance
+
+- **One banner per page.** Use one page-level `<header>`, and do not give other headers `role="banner"`.
+- **Provide a skip link** as the first focusable element when the header has more than a few links.
+- **Name your navigation** with `aria-label` when there is more than one `<nav>`.
+- **Give logos and icons useful text alternatives.**
+- **Keep sticky headers from covering focus,** with `scroll-padding-top`.
+- **Keep the tab order logical:** logo, then menu, then search, in the same order as the visual layout.
+- **Make touch targets big enough** (at least 24 by 24 CSS pixels, ideally 44) for menu links and buttons on phones.
+- **Use real headings,** not bold text, for titles inside headers.
+- **Do not hide the header's content** behind a mouse-only hover menu.
+
+## Security and Privacy Notes
+
+- **Do not put sensitive data in the header,** such as a full email address of a signed-in user, or account numbers. Headers appear on every page, in screenshots, and in screen recordings.
+- **Escape anything dynamic,** such as a user's display name ("Hello, Ada"), so it cannot inject code.
+- **Be careful with login and account links** that appear in the header. Make sure they point to your real, HTTPS addresses.
+- **Third-party widgets** (chat, banners, consent tools) added to the header run with your page's permissions. Load only trusted ones.
+
+## Global Audience Notes
+
+- **Set `lang`** on `<html>`, and on header items in another language (see the language switcher above).
+- **Right-to-left languages:** use `dir="rtl"` on `<html>`. Flexbox and grid mirror automatically, so the logo moves to the right, and the menu reads from right to left. Avoid fixed `left` and `right` values, and prefer logical properties such as `margin-inline-start`.
+- **Menus grow in other languages.** German or Finnish labels can be much longer than English ones. Let the header wrap or collapse rather than overflow.
+- **Avoid icon-only items** without text alternatives, because symbols such as a hamburger or a magnifier may not mean the same to everyone. Provide a visible or accessible label.
+- **Mind the weight on slow connections:** a giant logo or hero image in the header slows every page. Compress it, and give it `width` and `height` to avoid layout shifts.
+- **Keep text short,** so translation does not break the layout.
+
+## Common Mistakes to Avoid
+
+1. **Confusing `<header>` with `<head>`,** and putting `<title>` or `<meta>` inside a header.
+2. **Confusing `<header>` with a heading.** A header is a container, and `<h1>` is a heading.
+3. **Assuming a header must be at the top of the screen.** It is about meaning, not position.
+4. **Nesting a header inside a footer, or another header.**
+5. **Putting `<main>` inside a header.**
+6. **Adding `role="banner"` to every header,** creating many banners.
+7. **Using `<header>` for any wrapper** that has nothing introductory in it.
+8. **No skip link,** forcing keyboard users through the whole menu on every page.
+9. **A skip link hidden with `display: none`,** so nobody can reach it.
+10. **A sticky header that covers focused items.**
+11. **A logo with a useless `alt`** such as "logo" or the file name.
+12. **Using a header only for styling,** when a `<div>` would do.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Create a page with a `<header>` that has a linked logo and a `<nav>` with four links.
+2. Style the header with flexbox so the logo sits on one side and the menu on the other.
+3. Add an `<article>` with its own `<header>` containing a title, an author, and a `<time>`.
+4. Use your browser's accessibility panel to see which header is a banner.
+5. Add a skip link that appears only on focus, and test it with the Tab key.
+6. Make the header sticky, then tab through a long page. Is any focus hidden? Fix it with `scroll-padding-top`.
+7. Add a search form with `role="search"` and a visible label.
+8. Add a language switcher with `lang` and `hreflang` on each link.
+9. Switch the page to `dir="rtl"`, and see how the header changes.
+10. Bonus: audit a website you use. Does it have one banner, a skip link, and named navigation?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<header>` element for?</summary>
+
+It holds introductory content for a page, an article, or a section: a logo or title, navigation, a search form, or author and date details.
+
+</details>
+
+<details>
+<summary>2. How is `<header>` different from `<head>`?</summary>
+
+`<head>` holds invisible information about the page (title, meta tags, links, scripts). `<header>` is visible introductory content inside `<body>` or another sectioning element.
+
+</details>
+
+<details>
+<summary>3. When does a `<header>` become a banner landmark?</summary>
+
+When it is the page-level header, directly in `<body>` and not inside `<article>`, `<aside>`, `<main>`, `<nav>`, or `<section>`. Headers in those elements are just headers for that part.
+
+</details>
+
+<details>
+<summary>4. Can a page have more than one `<header>`?</summary>
+
+Yes. One for the whole page, plus one for each article or section that needs it. Only the page-level one is the banner.
+
+</details>
+
+<details>
+<summary>5. What is a skip link, and how should it be hidden?</summary>
+
+A link at the very start of the page that jumps to the main content, so keyboard users skip the menu. Hide it off-screen until it receives focus. Never use `display: none`, because then it cannot be focused.
+
+</details>
+
+<details>
+<summary>6. How do you stop a sticky header hiding focused items?</summary>
+
+Add `scroll-padding-top` to `html`, about the height of the header, so the browser leaves room when it scrolls a focused element into view.
+
+</details>
+
+## Key Takeaways
+
+- `<header>` holds **introductory content** for a page, an article, or a section. It has no default look.
+- It is **not** `<head>` (invisible page information) and **not** a heading (`<h1>` to `<h6>`).
+- Its meaning depends on **placement**: only the page-level header is a **banner** landmark.
+- A page can have **many** headers, but should have **one** banner.
+- Do not nest headers or footers inside a header, and do not put `<main>` in it.
+- Provide a **skip link**, name your navigation, and give logos useful text alternatives.
+- Keep sticky headers from hiding focus with `scroll-padding-top`.
+- Plan for other languages: `lang`, `dir="rtl"`, longer labels, and logical CSS properties.
+
+Next, learn how to mark up your menus, in [Nav](./nav), or return to the [Semantic HTML overview](./semantic-html).

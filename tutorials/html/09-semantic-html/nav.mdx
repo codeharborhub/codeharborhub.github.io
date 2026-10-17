@@ -1,15 +1,578 @@
 ---
-id: nav-element
-title: "The Navigation Element: Structuring Site Menus"
-sidebar_label: "Navigation (<nav>)"
+id: html-nav
+title: "HTML Nav Element"
+sidebar_label: "Nav"
 sidebar_position: 4
 slug: /html/semantic-html/nav
-description: "Discover how to wrap primary, secondary, and breadcrumb navigation links with the nav tag for optimal landmark navigation."
+description: "Learn the HTML nav element: marking major navigation blocks as landmarks, building menus with lists, naming several navs with aria-label, showing the current page with aria-current, breadcrumbs and pagination, accessible mobile menu buttons with aria-expanded, which link groups should not use nav, and common mistakes, with live examples."
 keywords:
-  - HTML nav tag
-  - navigation element usage
-  - site menu semantic markup
-  - navigation landmark ARIA
+  - HTML nav element
+  - navigation landmark
+  - aria-current page
+  - breadcrumb HTML
+  - aria-label nav
+  - accessible mobile menu
+  - aria-expanded hamburger button
+  - dropdown menu accessibility
+  - HTML5 nav tag
+  - semantic navigation
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, navigation, accessibility]
+tags: [html, web-development, beginner, semantic-html, nav, navigation, accessibility, frontend]
 ---
+
+import {useState, useRef} from 'react';
+
+export function CurrentPageDemo() {
+  const pages = [
+    {name: "Home", text: "Welcome to the festival. Doors open at 9:00."},
+    {name: "Programme", text: "Two days of baking contests, talks, and tastings."},
+    {name: "Tickets", text: "Day passes and family bundles are on sale now."},
+    {name: "Contact", text: "Write to us, or visit the information desk."},
+  ];
+  const [current, setCurrent] = useState("Home");
+  const active = pages.find((page) => page.name === current);
+  return (
+    <div>
+      <nav aria-label="Main">
+        <ul style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0}}>
+          {pages.map((page) => (
+            <li key={page.name}>
+              <a
+                href={"#" + page.name.toLowerCase()}
+                aria-current={current === page.name ? "page" : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setCurrent(page.name);
+                }}
+                style={{
+                  display: "inline-block",
+                  padding: "0.35rem 0.75rem",
+                  textDecoration: "none",
+                  borderBottom: current === page.name ? "3px solid #1d4ed8" : "3px solid transparent",
+                  fontWeight: current === page.name ? 700 : 400,
+                }}
+              >
+                {page.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div style={{border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.6rem", marginTop: "0.5rem"}}>
+        <h4 style={{margin: "0 0 0.25rem"}}>{active.name}</h4>
+        <p style={{margin: 0}}>{active.text}</p>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0", fontSize: "0.9em"}}>
+        The link for this page has: <code>{'<a href="/' + current.toLowerCase() + '" aria-current="page">'}</code>
+      </p>
+    </div>
+  );
+}
+
+export function MenuToggleDemo() {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef(null);
+  return (
+    <div
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          setOpen(false);
+          if (buttonRef.current) buttonRef.current.focus();
+        }
+      }}
+    >
+      <nav aria-label="Main">
+        <button
+          type="button"
+          ref={buttonRef}
+          aria-expanded={open}
+          aria-controls="mt-list"
+          onClick={() => setOpen(!open)}
+          style={{padding: "0.4rem 0.8rem", font: "inherit", cursor: "pointer"}}
+        >
+          {open ? "Close menu" : "Menu"}
+        </button>
+        <ul id="mt-list" hidden={!open} style={{margin: "0.4rem 0 0", paddingLeft: "1.25rem"}}>
+          <li><a href="#mt" onClick={(event) => event.preventDefault()}>Programme</a></li>
+          <li><a href="#mt" onClick={(event) => event.preventDefault()}>Tickets</a></li>
+          <li><a href="#mt" onClick={(event) => event.preventDefault()}>Contact</a></li>
+        </ul>
+      </nav>
+      <p role="status" style={{margin: "0.5rem 0 0", fontSize: "0.9em"}}>
+        The button currently has <code>aria-expanded="{String(open)}"</code>. Open the menu, then press <kbd>Esc</kbd>.
+      </p>
+    </div>
+  );
+}
+
+Every website has a few important routes: "Home", "Products", "About", "Contact". The **`<nav>`** element is how you tell the browser, "this block of links is for **finding your way around**." Screen reader users can then jump straight to it, or skip past it, in a single keystroke.
+
+The trick with `<nav>` is knowing when **not** to use it. Not every list of links is navigation, and too many `<nav>` regions make a page harder to use, not easier. This lesson shows the right way to build menus, breadcrumbs, and mobile buttons, and the wrong ways to avoid.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<nav>` means, and which links deserve it
+- Building a menu with a list inside `<nav>`
+- Naming several navigation regions with `aria-label`
+- Showing the **current page** with `aria-current`
+- Breadcrumbs and pagination
+- An accessible mobile menu button with `aria-expanded`
+- Dropdown menus, and why to avoid the ARIA `menu` role
+- Accessibility, security, and global notes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/programme">Programme</a></li>
+    <li><a href="/tickets">Tickets</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+```css title="style.css"
+nav ul {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0.5rem 0.75rem;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<nav aria-label="Main">
+  <ul style={{display: "flex", gap: "1rem", listStyle: "none", margin: 0, padding: 0}}>
+    <li><a href="#nb" onClick={(event) => event.preventDefault()} style={{display: "inline-block", padding: "0.5rem 0.75rem"}}>Home</a></li>
+    <li><a href="#nb" onClick={(event) => event.preventDefault()} style={{display: "inline-block", padding: "0.5rem 0.75rem"}}>Programme</a></li>
+    <li><a href="#nb" onClick={(event) => event.preventDefault()} style={{display: "inline-block", padding: "0.5rem 0.75rem"}}>Tickets</a></li>
+    <li><a href="#nb" onClick={(event) => event.preventDefault()} style={{display: "inline-block", padding: "0.5rem 0.75rem"}}>Contact</a></li>
+  </ul>
+</nav>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Three things are happening in that small snippet:
+
+1. **`<nav>`** marks the block as a **navigation landmark**.
+2. **`<ul>` and `<li>`** list the links. A screen reader announces "list, 4 items," so people know how long the menu is before they start.
+3. **`aria-label="Main"`** names the landmark. A screen reader says "Main navigation." (Do not write "Main navigation" in the label, or it is read as "Main navigation navigation.")
+
+Like `<header>`, `<nav>` has no default look beyond being a block. The row of links is all CSS.
+
+## Which Links Deserve a `<nav>`?
+
+The rule: **major** blocks of navigation links. The specification itself says that not all groups of links need to be in a `<nav>`.
+
+| Use `<nav>` for | Do **not** use `<nav>` for |
+| :-- | :-- |
+| The main site menu | A few links inside a paragraph |
+| A secondary menu (account, language) | A list of "related articles" (use `<aside>` or a `<section>`) |
+| Breadcrumbs | Social-media icons in a footer (a plain list is enough) |
+| A table of contents for the page | Links to legal pages in the footer, if there are only two or three |
+| Pagination ("Previous", "1 2 3", "Next") | Any random group of links |
+| A section menu in a documentation site | A set of buttons that do actions (they are not links) |
+
+Why the restraint? Every `<nav>` becomes an entry in the screen reader's landmark list. If a page has **ten** of them, the list is noise. Most pages need between **one and four**.
+
+:::tip A simple test
+Ask: "Would a visitor who is **lost** look here to find their way?" If yes, `<nav>`. If the links are only "also interesting," it is not navigation.
+:::
+
+## Several Navs: Give Each a Name
+
+When there is more than one `<nav>`, a screen reader says just "navigation" for each, and the user cannot tell them apart. Add an `aria-label` (or point to a visible heading with `aria-labelledby`):
+
+```html
+<header>
+  <nav aria-label="Main">…</nav>
+</header>
+
+<main>
+  <nav aria-label="Breadcrumb">…</nav>
+  …
+</main>
+
+<footer>
+  <nav aria-label="Footer">…</nav>
+</footer>
+```
+
+| Label | Read aloud as |
+| :-- | :-- |
+| `aria-label="Main"` | "Main navigation" |
+| `aria-label="Breadcrumb"` | "Breadcrumb navigation" |
+| `aria-label="Footer"` | "Footer navigation" |
+| `aria-label="Pagination"` | "Pagination navigation" |
+
+Each label should be **unique** on the page, short, and written in the page's language. A page with a single `<nav>` does not strictly need a label, but it does no harm.
+
+## Showing the Current Page
+
+Visitors need to know where they are. Mark the link to the **current page** with `aria-current="page"`:
+
+```html
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/programme">Programme</a></li>
+    <li><a href="/tickets" aria-current="page">Tickets</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+A screen reader says "Tickets, current page, link." You can also style it with the attribute selector, so the visual and the spoken version always agree:
+
+```css title="style.css"
+nav a[aria-current="page"] {
+  font-weight: 700;
+  border-bottom: 3px solid #1d4ed8;   /* not colour alone */
+}
+```
+
+### Try It: Move Around
+
+Click a link. The "current" mark moves, and the markup changes with it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/" aria-current="page">Home</a></li>
+    <li><a href="/programme">Programme</a></li>
+    <li><a href="/tickets">Tickets</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+```js title="script.js"
+// In a real site, your server or framework adds aria-current when it builds
+// each page. This sketch shows the idea for a single-page script.
+const links = document.querySelectorAll("nav a");
+
+links.forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+
+    links.forEach((other) => other.removeAttribute("aria-current"));
+    link.setAttribute("aria-current", "page");
+  });
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CurrentPageDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Other `aria-current` values exist (`step` for a progress trail, `location`, `date`, `true`), but `page` is the one you will use most.
+
+## Breadcrumbs
+
+Breadcrumbs show the path from the home page to the current page. Use an **ordered list**, because the order matters, and a clear name:
+
+```html
+<nav aria-label="Breadcrumb">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/shop">Shop</a></li>
+    <li><a href="/shop/bread">Bread</a></li>
+    <li><a href="/shop/bread/sourdough" aria-current="page">Sourdough</a></li>
+  </ol>
+</nav>
+```
+
+```css title="style.css"
+nav[aria-label="Breadcrumb"] ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* The separators are decoration, so CSS draws them */
+nav[aria-label="Breadcrumb"] li + li::before {
+  content: "/";
+  margin-inline-end: 0.25rem;
+  color: #64748b;
+}
+```
+
+Drawing the separator with CSS keeps `/` or `>` out of what a screen reader reads.
+
+## Pagination
+
+```html
+<nav aria-label="Pagination">
+  <ul>
+    <li><a href="/blog?page=1" rel="prev">Previous</a></li>
+    <li><a href="/blog?page=1">1</a></li>
+    <li><a href="/blog?page=2" aria-current="page">2</a></li>
+    <li><a href="/blog?page=3">3</a></li>
+    <li><a href="/blog?page=3" rel="next">Next</a></li>
+  </ul>
+</nav>
+```
+
+Give the numbers clear text, such as "Page 3" (you can hide the word "Page" visually), so a screen reader user hearing just "3" is not left guessing.
+
+## A Mobile Menu Button
+
+On a small screen, a long menu is often hidden behind a "Menu" button. This is a **disclosure** pattern: a button that shows or hides a block. The accessible version needs a real `<button>` and two attributes:
+
+| Attribute | Job |
+| :-- | :-- |
+| `aria-expanded="false"` or `"true"` | Tells assistive technology whether the menu is open |
+| `aria-controls="menu-list"` | Points to the id of the list the button controls |
+
+Try it. Open the menu, then press <kbd>Esc</kbd>. Focus goes back to the button.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav aria-label="Main">
+  <button type="button" aria-expanded="false" aria-controls="menu-list" id="menu-button">
+    Menu
+  </button>
+
+  <ul id="menu-list" hidden>
+    <li><a href="/programme">Programme</a></li>
+    <li><a href="/tickets">Tickets</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+```js title="script.js"
+const button = document.getElementById("menu-button");
+const list = document.getElementById("menu-list");
+
+function setOpen(open) {
+  button.setAttribute("aria-expanded", String(open));
+  button.textContent = open ? "Close menu" : "Menu";
+  list.hidden = !open;
+}
+
+button.addEventListener("click", () => {
+  setOpen(button.getAttribute("aria-expanded") !== "true");
+});
+
+// Esc closes the menu and returns focus to the button
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && button.getAttribute("aria-expanded") === "true") {
+    setOpen(false);
+    button.focus();
+  }
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MenuToggleDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notes:
+
+- The **hidden** attribute removes the list from view **and** from the accessibility tree, so a screen reader skips it while it is closed.
+- Keep the **button's name** consistent, or update `aria-expanded` and leave the label alone. Do not do both in a way that reads "Close menu, expanded."
+- The button is a **real `<button>`** so Enter and Space work with no extra code. See [Why Semantic HTML](./why-semantic-html).
+- A hamburger icon alone needs a text name: either visible text, or `aria-label="Menu"` on the button.
+- Show the full menu on **wide** screens with CSS, and keep the button for small ones.
+
+## Dropdown Submenus
+
+Many sites show a submenu when you hover over "Products." A mouse-only hover is **not accessible**: keyboard and touch users cannot open it. The safe pattern is the same disclosure button:
+
+```html
+<li>
+  <button type="button" aria-expanded="false" aria-controls="products-menu">Products</button>
+  <ul id="products-menu" hidden>
+    <li><a href="/products/bread">Bread</a></li>
+    <li><a href="/products/cakes">Cakes</a></li>
+  </ul>
+</li>
+```
+
+Avoid the ARIA `menu`, `menubar`, and `menuitem` roles for website navigation. They promise the keyboard behaviour of an **application menu** (arrow keys, type-ahead), which you would have to build completely, and they change how screen readers treat the links. A plain list of links and disclosure buttons is simpler and more reliable. Also remember:
+
+- **Do not open on hover only.** Offer a click, tap, or Enter key.
+- **Keep submenus shallow.** Two levels is plenty, and one is better.
+- **Make the parent a button or link with a real purpose,** and not a link that goes nowhere.
+
+## Where to Put `<nav>`
+
+It does **not** have to be inside `<header>`. Common places:
+
+| Place | Typical use |
+| :-- | :-- |
+| In the page `<header>` | Main menu |
+| At the top of `<main>` | Breadcrumbs |
+| Inside `<aside>` or beside the content | A section menu or table of contents |
+| In the `<footer>` | A secondary or sitemap-style menu |
+| After the content | Pagination, "previous and next" links |
+
+## Accessibility at a Glance
+
+- **Use `<nav>` for major link blocks only,** typically one to four per page.
+- **Use a list** (`ul` or `ol`) inside, so the number of links is announced.
+- **Name each `<nav>`** with a unique, short `aria-label` when there is more than one.
+- **Mark the current page** with `aria-current="page"`, and do not rely on colour alone.
+- **Use real links** (`<a href>`) for navigation, and real **buttons** for opening and closing menus.
+- **Keep keyboard order** the same as the visual order.
+- **Provide a visible focus style,** and large enough touch targets (at least 24 by 24 CSS pixels, ideally 44).
+- **Do not open menus on hover only,** and let <kbd>Esc</kbd> close them.
+- **Keep the same menu in the same place** on every page (consistent navigation is a WCAG rule).
+- **Add a skip link** before the header, so keyboard users can bypass a long menu. See [Header](./header).
+
+## Security and Privacy Notes
+
+- **Open links to other sites safely.** For links that open in a new tab, `rel="noopener"` is applied by modern browsers for `target="_blank"`, but adding `rel="noopener noreferrer"` is still good practice for untrusted destinations.
+- **Never build menu links from untrusted input** (such as a `?next=` parameter), or attackers can send visitors to fake sites. Allow only your own paths.
+- **Do not link to admin pages from public menus.** Hiding a link does not protect a page; always check permissions on the server.
+- **Escape dynamic labels,** such as a user's name in an account menu.
+- **Do not put private data in link addresses,** such as session tokens or personal IDs. See [Links and Navigation](/tutorials/html/links-and-navigation).
+
+## Global Audience Notes
+
+- **Set `lang`** for the page, and name regions in the page's language: `aria-label="Principal"` on a French page.
+- **Labels get longer in translation.** Let the menu wrap, or collapse into a button, instead of overflowing.
+- **Right-to-left languages:** with `dir="rtl"`, flex menus mirror on their own. Use logical CSS properties (`margin-inline-end`) for separators and spacing, and mirror arrows and "next" and "previous" icons.
+- **Do not rely on icons alone.** A house means "Home" in many places, but not everywhere. Add text.
+- **Keep menu text short and plain,** so it translates well and fits small screens.
+- **Provide a language switcher** as a `<nav aria-label="Language">`, with each language name written in its own language and marked with `lang`.
+- **Slow connections:** a menu that works as plain links without JavaScript is the most resilient.
+
+## Common Mistakes to Avoid
+
+1. **Wrapping every group of links in `<nav>`.**
+2. **Several `<nav>` elements with no labels,** so they are indistinguishable.
+3. **Writing "navigation" inside the label** ("Main navigation navigation").
+4. **No list inside the nav,** so the number of links is not announced.
+5. **No indication of the current page,** or colour as the only indication.
+6. **Using `<div onclick>`** instead of real links.
+7. **A hamburger icon with no text name,** and no `aria-expanded`.
+8. **Menus that open on hover only.**
+9. **Using ARIA `menu` roles for ordinary website menus.**
+10. **Hiding the menu with `display: none` on desktop by mistake,** leaving no way in for keyboard users.
+11. **Different menu order or position on different pages.**
+12. **Putting buttons that perform actions** (such as "Delete") **inside `<nav>`.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a main menu with `<nav>`, a `<ul>`, and four links, and style it as a row.
+2. Add `aria-label="Main"`, and check how the browser's accessibility panel names it.
+3. Mark one link with `aria-current="page"`, and style it using the attribute selector.
+4. Add a breadcrumb `<nav>` with an ordered list, and draw the separators with CSS.
+5. Add a pagination `<nav>` with "Previous", numbers, and "Next".
+6. Make a "Menu" button with `aria-expanded` and `aria-controls` that shows and hides the list.
+7. Add the Esc key to close the menu and return focus to the button.
+8. Turn the menu into a row on wide screens with a media query, and hide the button there.
+9. Tab through the page. Is the focus always visible, and the order logical?
+10. Bonus: count the `<nav>` elements on a site you use. Does each have a clear name, and are there too many?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `<nav>` element do?</summary>
+
+It marks a block of major navigation links as a navigation landmark, so assistive technology users can jump to it or skip past it.
+
+</details>
+
+<details>
+<summary>2. Should every group of links be wrapped in `<nav>`?</summary>
+
+No. Use it for major navigation: the main menu, breadcrumbs, pagination, a table of contents. Too many `<nav>` regions make the landmark list noisy.
+
+</details>
+
+<details>
+<summary>3. How do you tell apart several `<nav>` elements?</summary>
+
+Give each a unique, short `aria-label` (such as "Main", "Breadcrumb", or "Footer"), or link it to a visible heading with `aria-labelledby`. Do not add the word "navigation" to the label.
+
+</details>
+
+<details>
+<summary>4. How do you show the current page in a menu?</summary>
+
+Add `aria-current="page"` to that link, and style it with `a[aria-current="page"]`, using more than colour alone.
+
+</details>
+
+<details>
+<summary>5. What does an accessible mobile menu button need?</summary>
+
+A real `<button>`, `aria-expanded` that switches between `false` and `true`, `aria-controls` pointing at the list, a text name, and Esc to close with focus returned to the button.
+
+</details>
+
+<details>
+<summary>6. Why avoid the ARIA `menu` role for website navigation?</summary>
+
+It promises application-menu keyboard behaviour (arrow keys, type-ahead) that you would have to build, and it changes how screen readers treat the links. A list of links with disclosure buttons is simpler and more reliable.
+
+</details>
+
+## Key Takeaways
+
+- `<nav>` marks **major** navigation blocks as landmarks. Most pages need only one to four.
+- Put the links in a **list** (`ul`, or `ol` for breadcrumbs), so the count is announced.
+- Give each `<nav>` a unique short `aria-label` when there is more than one.
+- Show the current page with `aria-current="page"`, styled with more than colour.
+- Use a real `<button>` with `aria-expanded` and `aria-controls` for mobile menus and submenus, and make sure Esc and keyboard users are covered.
+- Never rely on hover alone, and avoid ARIA `menu` roles for website menus.
+- Keep navigation consistent from page to page, and plan for longer labels, RTL layouts, and text alternatives for icons.
+- A `<nav>` is for links that help people find their way, not for every list of links.
+
+Next, learn the container for the page's real content, in [Main](./main), or return to the [Semantic HTML overview](/tutorials/html/semantic-html).

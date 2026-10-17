@@ -1,15 +1,521 @@
 ---
-id: summary-element
-title: "Defining Disclosure Titles: The summary Element"
-sidebar_label: "Summary (<summary>)"
+id: html-summary
+title: "HTML Summary Element"
+sidebar_label: "Summary"
 sidebar_position: 12
 slug: /html/semantic-html/summary
-description: "Pair the summary element with details tags to specify clickable headers, custom disclosure icons, and accessible labels."
+description: "Learn the HTML summary element: the visible label and toggle control of a details widget, writing clear summary text, what content is allowed inside it, styling or replacing the marker, keyboard and screen reader behaviour, why headings and links inside a summary cause trouble, stable labels, and common mistakes, with live examples."
 keywords:
-  - HTML summary tag
-  - accordion header HTML
-  - details and summary tags
-  - customizable summary marker
+  - HTML summary element
+  - summary details marker
+  - style summary marker CSS
+  - summary heading accessibility
+  - details summary label text
+  - summary list-style none
+  - details toggle show hide label
+  - summary keyboard accessibility
+  - HTML5 summary tag
+  - semantic HTML disclosure
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, interactive, accordion]
+tags: [html, web-development, beginner, semantic-html, summary, details, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function LabelCheckDemo() {
+  const [text, setText] = useState("Click here for more");
+  const vague = ["click here", "more", "read more", "details", "info", "information", "see more", "open", "expand", "show", "this"];
+  const clean = text.trim();
+  const lower = clean.toLowerCase();
+  const findings = [];
+  if (clean.length === 0) {
+    findings.push({ok: false, text: "The summary is empty. A visitor would see only the marker, and a screen reader would say nothing useful."});
+  } else {
+    if (clean.length < 4) findings.push({ok: false, text: "Very short. Say what is inside."});
+    if (clean.length > 80) findings.push({ok: false, text: "Long (" + clean.length + " characters). Keep summaries short enough to scan."});
+    const hit = vague.find((word) => lower === word || lower.startsWith(word + " ") || lower.endsWith(" " + word) || lower.includes(word + " for"));
+    if (hit) findings.push({ok: false, text: "Vague: it does not say what is inside. Words like “" + hit + "” work for any content, so they help nobody."});
+    if (clean === clean.toUpperCase() && /[A-Z]/.test(clean)) findings.push({ok: false, text: "All capitals are harder to read, and some screen readers spell them out."});
+    if (/\b(show|hide|open|close)\b/i.test(clean) && !hit) findings.push({ok: false, text: "A label that says “show” or “hide” goes stale when the state changes. The widget already announces open or closed, so name the content instead."});
+    if (findings.length === 0) findings.push({ok: true, text: "Clear and specific: a visitor can tell what is inside without opening it."});
+  }
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="lc-text">Write a summary label</label><br />
+        <input
+          type="text"
+          id="lc-text"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          style={{width: "100%", maxWidth: "26rem"}}
+        />
+      </p>
+      <details style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.4rem 0.75rem", marginBottom: "0.5rem"}}>
+        <summary style={{cursor: "pointer", fontWeight: 600}}>{clean || "(empty)"}</summary>
+        <p style={{margin: "0.4rem 0 0"}}>The hidden content goes here.</p>
+      </details>
+      <p style={{margin: "0 0 0.2rem"}}><strong>A screen reader would say:</strong> “{clean || "…"}, button, collapsed”</p>
+      <ul role="status" style={{margin: "0.3rem 0 0", paddingLeft: "1.25rem"}}>
+        {findings.map((finding) => (
+          <li key={finding.text} style={{color: finding.ok ? "#15803d" : "#b91c1c"}}>{finding.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Try: “Opening times”, “Is there parking?”, “Full specifications”, “MORE INFO”, “Show details”.
+      </p>
+    </form>
+  );
+}
+
+export function MarkerDemo() {
+  const [kind, setKind] = useState("default");
+  const css = {
+    default: "",
+    plus:
+      ".sm-demo summary { list-style: none; }\n" +
+      ".sm-demo summary::-webkit-details-marker { display: none; }\n" +
+      ".sm-demo summary::before { content: '+'; display: inline-block; width: 1.25em; font-weight: 700; }\n" +
+      ".sm-demo[open] > summary::before { content: '\\2212'; }",
+    chevron:
+      ".sm-demo summary { list-style: none; }\n" +
+      ".sm-demo summary::-webkit-details-marker { display: none; }\n" +
+      ".sm-demo summary::before { content: ''; display: inline-block; width: 0.5em; height: 0.5em; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); margin-inline-end: 0.7em; transition: transform 0.15s; }\n" +
+      ".sm-demo[open] > summary::before { transform: rotate(45deg); }\n" +
+      "@media (prefers-reduced-motion: reduce) { .sm-demo summary::before { transition: none; } }",
+  };
+  const kinds = [
+    {key: "default", label: "Default triangle"},
+    {key: "plus", label: "Plus and minus"},
+    {key: "chevron", label: "Turning chevron"},
+  ];
+  const shown = css[kind] || "/* no CSS: the browser's default marker */";
+  return (
+    <div>
+      <style>{css[kind]}</style>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Marker style</legend>
+        {kinds.map((item) => (
+          <label key={item.key} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input type="radio" name="sm-kind" checked={kind === item.key} onChange={() => setKind(item.key)} /> {item.label}
+          </label>
+        ))}
+      </fieldset>
+      <details className="sm-demo" style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.4rem 0.75rem"}}>
+        <summary style={{cursor: "pointer", fontWeight: 600}}>Full specifications</summary>
+        <p style={{margin: "0.4rem 0 0"}}>Weight 1.2 kg. Dimensions 30 by 20 by 8 cm. Dishwasher safe.</p>
+      </details>
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{shown}</code></pre>
+    </div>
+  );
+}
+
+Every container in HTML that holds something important tends to have a **caption** that says what is inside: `<figcaption>` for a figure, `<caption>` for a table, `<legend>` for a fieldset, and **`<summary>`** for a `<details>` widget.
+
+The summary is the **part you always see**, and the **thing you click** to open the rest. It is also the part that most often goes wrong: vague labels, hidden focus rings, headings that disappear for screen readers, and links tucked inside where they do not belong. This lesson shows how to get it right.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<summary>` does and where it must go
+- Writing clear, specific summary text
+- What may and may not go inside a summary
+- How it is announced and operated (keyboard and screen readers)
+- Styling and replacing the marker
+- Why a changing "Show" and "Hide" label causes trouble
+- Accessibility, security, and global notes
+- Common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<details>
+  <summary>Opening times</summary>
+  <p>Saturday and Sunday, 9:00 to 18:00.</p>
+</details>
+```
+
+```css title="style.css"
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding-block: 0.25rem;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<details style={{border: "1px solid #cbd5e1", borderRadius: "6px", padding: "0.4rem 0.75rem"}}>
+  <summary style={{cursor: "pointer", fontWeight: 600, paddingBlock: "0.25rem"}}>Opening times</summary>
+  <p style={{margin: "0.4rem 0 0"}}>Saturday and Sunday, 9:00 to 18:00.</p>
+</details>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The rules are short:
+
+| Rule | Detail |
+| :-- | :-- |
+| It belongs **only** inside `<details>` | Outside a `<details>`, a `<summary>` has no special meaning |
+| It must be the **first child** of the `<details>` | The browser uses the first `<summary>` that is a direct child |
+| It is **always visible** | Whether the widget is open or closed |
+| It is the **toggle control** | Clicking it, or pressing Enter or Space when it has focus, opens and closes the widget |
+| If it is missing | The browser supplies a default label, usually "Details", which tells nobody anything |
+
+By default, a `<summary>` is displayed like a list item, with a **marker** (a small triangle) at its start. That is why you can style the marker the way you style a list bullet.
+
+## Writing Good Summary Text
+
+The summary is like a **door sign**: a visitor decides whether to open the door by reading it. It has to say what is inside.
+
+| Content | Weak summary | Strong summary |
+| :-- | :-- | :-- |
+| An FAQ answer | "Click here" | "Can I bring my own apron?" |
+| Opening hours | "More" | "Opening times" |
+| Technical specs | "Details" | "Full specifications" |
+| Terms and conditions | "Read this" | "Booking and cancellation terms" |
+| A hint in a puzzle | "Open" | "Hint 2: the rule for even numbers" |
+| A long log | "Show" | "Build log (240 lines)" |
+
+Good habits:
+
+1. **Name the content,** not the action. The widget already tells assistive technology that it can be opened.
+2. **Use a question** for FAQs, using the visitor's own words.
+3. **Be specific and short.** A summary should be quick to scan, ideally under 10 words.
+4. **Make each summary unique** on the page, so a list of controls reads clearly.
+5. **Use plain sentence case.** Avoid ALL CAPS.
+6. **Add useful hints** in brackets when needed: "Download the guide (PDF, 2 MB)".
+
+### Try It: Test a Label
+
+Type a summary label and see how it reads and what a checker would say about it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Weak -->
+<details>
+  <summary>Click here for more</summary>
+  <p>…</p>
+</details>
+
+<!-- Strong -->
+<details>
+  <summary>Full specifications</summary>
+  <p>Weight 1.2 kg. Dimensions 30 by 20 by 8 cm.</p>
+</details>
+```
+
+```js title="script.js"
+const vague = ["click here", "more", "read more", "details", "info", "show", "open"];
+
+document.querySelectorAll("details > summary").forEach((summary) => {
+  const text = summary.textContent.trim().toLowerCase();
+
+  if (!text) console.log("Empty summary");
+  else if (vague.some((word) => text === word || text.startsWith(word + " ")))
+    console.log("Vague summary: " + summary.textContent.trim());
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LabelCheckDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Can Go Inside a Summary
+
+The specification says a `<summary>` holds **phrasing content** (text, `<strong>`, `<em>`, `<code>`, `<span>`, `<img>`, and so on), **optionally mixed with a heading**. In practice, it is best to keep it to **plain text**, with light inline formatting.
+
+| Inside a summary | Verdict |
+| :-- | :-- |
+| Plain text | **Best** |
+| `<strong>`, `<em>`, `<code>`, `<span>` | Fine |
+| An `<img>` with `alt` text, or an inline icon marked `aria-hidden="true"` | Fine, if decorative or well described |
+| A **heading** (`<h3>`) | Allowed, but see below |
+| A **link**, **button**, or **form field** | **Avoid.** See below |
+| Paragraphs, lists, tables, forms | **No.** Put these in the hidden content, not in the summary |
+
+### Headings inside a summary
+
+You may want the question to count as a heading, so people can navigate your FAQ by headings:
+
+```html
+<details>
+  <summary><h3>Can I bring my own apron?</h3></summary>
+  <p>Yes.</p>
+</details>
+```
+
+This is **allowed** by the specification, but support is uneven. The summary acts as a **button**, and a button's children are generally treated as plain text by assistive technology, so **some screen readers do not announce the heading** or list it in their heading navigation. A safer approach:
+
+- For most pages, **use plain summary text.** The widget list is already easy to scan.
+- If you really need real headings in the page outline, put the heading **outside** and keep a short, clear summary inside:
+
+```html
+<h3 id="parking-title">Parking</h3>
+<details aria-labelledby="parking-title">
+  <summary>Where to park</summary>
+  <p>Limited parking is behind the town hall.</p>
+</details>
+```
+
+Test with the screen readers your visitors use.
+
+### Links and buttons inside a summary
+
+Clicking a summary toggles the widget. A **link or button inside it** fights with that behaviour: do you open the widget, or follow the link? Different browsers and screen readers handle it differently, and it can be impossible to reach by keyboard. Keep links, buttons, and form fields in the **hidden content**, below the summary.
+
+## Keyboard and Screen Reader Behaviour
+
+With no extra code, a `<summary>`:
+
+- Is **focusable** (it joins the Tab order).
+- Opens and closes with **Enter** or **Space**.
+- Is announced much like a **button**, with its **expanded** or **collapsed** state: "Opening times, button, collapsed."
+- Shows a focus ring (unless you remove it).
+
+You do **not** need `role="button"`, `tabindex="0"`, `aria-expanded`, or key handlers. Adding them is at best redundant, and at worst, it breaks things.
+
+If you need to **stop** a particular summary from toggling (rare), you can prevent the default action in JavaScript, but then it is no longer a working disclosure, so consider whether you should use `<details>` at all:
+
+```js
+document.querySelector("summary").addEventListener("click", (event) => {
+  event.preventDefault();
+});
+```
+
+## Styling the Marker
+
+The default marker is a small triangle. You have three options:
+
+1. **Leave it.** It is familiar, free, and works.
+2. **Restyle it** with `summary::marker` (colour, size).
+3. **Replace it** with your own icon, using `list-style: none` and a `::before` pseudo-element.
+
+Try the three styles, and see the CSS behind each:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<details>
+  <summary>Full specifications</summary>
+  <p>Weight 1.2 kg. Dimensions 30 by 20 by 8 cm. Dishwasher safe.</p>
+</details>
+```
+
+```css title="style.css"
+/* Plain: restyle the built-in marker */
+summary::marker {
+  color: #1d4ed8;
+}
+
+/* Replace the marker with a turning chevron */
+summary {
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;               /* older WebKit browsers */
+}
+
+summary::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  margin-inline-end: 0.7em;
+  transition: transform 0.15s;
+}
+
+details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  summary::before { transition: none; }
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MarkerDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Things to keep in mind:
+
+- **Always keep a visible sign** of whether the item is open or closed. A summary with no marker looks like plain text, and visitors will not know it can be clicked.
+- **Make the whole row clickable and large.** Add padding to the summary, so the target is comfortable (at least 24 by 24 CSS pixels, ideally 44).
+- **Respect reduced motion.** If you animate the marker, switch it off for people who asked for less movement.
+- **Do not remove the focus ring.** Style it instead: `summary:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }`.
+- **Keep the marker out of the text.** Draw it with CSS, so a screen reader does not read "plus" or "greater than".
+
+### Do Not Swap "Show" and "Hide" in the Label
+
+A common trick uses CSS to change the label when the widget opens:
+
+```css
+/* Not recommended */
+details > summary::after { content: "Show"; }
+details[open] > summary::after { content: "Hide"; }
+```
+
+This causes trouble:
+
+- Text generated by CSS is **not reliably translated** or read the same way by every screen reader.
+- The widget **already announces** "collapsed" or "expanded". A changing label adds noise, and can say the opposite of what happened ("Hide, expanded").
+- Labels that change are harder for voice control users ("click Show" stops working after it opens).
+
+Keep the **label stable**, name the **content**, and let the state announce itself. If you want a visual cue, change the marker instead, as in the demo above.
+
+## Accessibility at a Glance
+
+- **Write a clear, specific, unique label** that names the content.
+- **Keep the summary visible,** with a contrast ratio of at least 4.5 to 1.
+- **Keep a visible marker** that shows open and closed, and not only through colour.
+- **Keep a visible focus indicator.**
+- **Do not put links, buttons, or form fields inside.**
+- **Be careful with headings inside.** Test with a screen reader, or put the heading outside.
+- **Do not add `role`, `tabindex`, or `aria-expanded`** to a summary.
+- **Make the target large,** with padding.
+- **Use icons only as decoration** (`aria-hidden="true"`), with the meaning in the text.
+- **Do not auto-open or auto-close** items in ways the visitor did not ask for.
+
+## Security and Privacy Notes
+
+- **The summary and the content below it are both part of the page source,** whether the item is open or closed. Never hide secrets, private data, or "protected" answers in a `<details>`.
+- **Escape user-supplied text** before putting it in a summary (for example a user's question in a Q&A list). Use `textContent` in JavaScript, not `innerHTML`.
+- **Do not build a summary from untrusted HTML.** A malicious label could add a link, a script, or a fake button.
+- **Do not reveal sensitive state in the label.** A summary such as "Account 4821 balance" shows that detail to anyone looking at the screen, even while the widget is closed.
+
+## Global Audience Notes
+
+- **Translate summaries,** and keep them short, since the same idea can take much longer in another language.
+- **The built-in marker flips by itself** on right-to-left pages. For a custom marker, use `margin-inline-end` and other logical properties, so it appears on the correct side.
+- **Write questions in the visitor's own words,** using phrases they would really use. Machine-translated or jargon-heavy labels are hard to scan.
+- **Avoid idioms and wordplay** in labels, which translate badly.
+- **Do not rely on the marker alone** to show that an item can be opened. Some visitors will not recognise the symbol.
+- **Check that all-capital labels** do not hurt readability in your languages. Capitalisation rules differ, and some scripts have no capital letters at all.
+
+## Common Mistakes to Avoid
+
+1. **Leaving out the `<summary>`,** so the label is a generic "Details".
+2. **Putting the `<summary>` anywhere but first.**
+3. **A vague label:** "Click here", "More", "Info".
+4. **Changing the label between "Show" and "Hide".**
+5. **Putting links, buttons, or inputs inside the summary.**
+6. **Relying on a heading inside the summary** for page navigation, without testing.
+7. **Removing the marker and the focus ring** with no replacement.
+8. **Adding `role="button"`, `tabindex`, or `aria-expanded`** to the summary.
+9. **Putting long paragraphs, lists, or forms inside the summary.**
+10. **Using the same label for many items.**
+11. **All-capital labels.**
+12. **Using `<summary>` outside `<details>`,** expecting it to do something.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a `<details>` with a clear `<summary>`, and remove the summary to see the default label.
+2. Rewrite five vague labels ("More", "Click here", "Info", "Open", "Details") as specific ones.
+3. Add padding and a pointer cursor to a summary, and check the click area.
+4. Restyle the marker colour with `summary::marker`.
+5. Replace the marker with a "+" and "−" using `::before`.
+6. Replace it with a rotating chevron, and add a reduced-motion rule.
+7. Give the summary a `:focus-visible` style, and tab to it.
+8. Put a link inside a summary, and test how it behaves with the mouse and the keyboard. Then move the link into the content.
+9. Try a heading inside a summary, and listen with a screen reader's heading list.
+10. Bonus: turn five questions from your own site's FAQ into `<details>` items with good summaries.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `<summary>` element for?</summary>
+
+It is the always-visible label of a `<details>` widget, and also the control that opens and closes it. It must be the first child of the `<details>`.
+
+</details>
+
+<details>
+<summary>2. What makes a good summary label?</summary>
+
+A short, specific, unique phrase that names the content (such as "Opening times" or a real FAQ question), not an action like "Click here" or "Show more".
+
+</details>
+
+<details>
+<summary>3. What should you avoid putting inside a summary?</summary>
+
+Links, buttons, and form fields, which conflict with the toggle behaviour, and long block content. Headings are allowed, but support in screen readers is uneven, so test them.
+
+</details>
+
+<details>
+<summary>4. Do you need ARIA or `tabindex` on a summary?</summary>
+
+No. It is focusable, works with Enter and Space, and is announced as a button with its expanded or collapsed state. Adding `role`, `tabindex`, or `aria-expanded` is redundant and can cause conflicts.
+
+</details>
+
+<details>
+<summary>5. How can you change the triangle marker?</summary>
+
+Restyle it with `summary::marker`, or hide it with `list-style: none` (plus `summary::-webkit-details-marker { display: none }` for older WebKit) and draw your own with `::before`. Always keep a visible open and closed cue, and respect reduced motion.
+
+</details>
+
+<details>
+<summary>6. Why not swap the label between "Show" and "Hide"?</summary>
+
+The widget already announces collapsed or expanded, so a changing label adds noise and can contradict the state. CSS-generated text may not be translated or read reliably, and voice control commands based on the old label stop working.
+
+</details>
+
+## Key Takeaways
+
+- `<summary>` is the **visible label and toggle** of a `<details>`, and must be its **first child**.
+- It is operated by Enter, Space, or a click, and announced like a **button** with an expanded or collapsed state, with no ARIA needed.
+- Write **specific, short, unique** labels that name the content, and avoid "Click here" and "More".
+- Keep summaries to plain text and light inline formatting. **Avoid links, buttons, and fields** inside them, and test headings before relying on them.
+- You can restyle or replace the marker with CSS, but always keep a visible open and closed cue, a focus ring, and a large target.
+- Keep the label **stable**. Do not swap "Show" and "Hide".
+- Everything in a summary and its content is in the page source, so never hide secrets there, and escape user-supplied text.
+- Plan for translation, right-to-left layouts, and visitors who do not recognise the marker.
+
+Next, learn how to create pop-ups that need attention, in [Dialog](./dialog), or return to the [Semantic HTML overview](../semantic-html).

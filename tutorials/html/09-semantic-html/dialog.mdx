@@ -1,15 +1,485 @@
 ---
-id: dialog-element
-title: "Native Modals and Popups: The dialog Element"
-sidebar_label: "Dialog (<dialog>)"
+id: html-dialog
+title: "HTML Dialog Element"
+sidebar_label: "Dialog"
 sidebar_position: 13
 slug: /html/semantic-html/dialog
-description: "Build accessible modal dialogs and confirmation popups with backdrop styling, showModal() APIs, and focus trapping."
+description: "Learn the HTML dialog element: modal and non-modal dialogs, showModal() and close(), forms with method dialog, the returnValue, the backdrop, focus handling, closing with Escape or a click outside, alert dialogs, accessibility, security, and common mistakes, with live examples."
 keywords:
-  - HTML dialog tag
-  - native modal popup HTML
-  - dialog showModal method
-  - modal backdrop styling CSS
+  - HTML dialog element
+  - dialog showModal close
+  - HTML modal without JavaScript library
+  - dialog backdrop CSS
+  - form method dialog
+  - dialog returnValue
+  - alertdialog confirm delete
+  - modal accessibility focus trap
+  - dialog Escape key cancel event
+  - HTML5 dialog tag
+  - semantic HTML dialog
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, semantic-html, dialog, modal]
+tags: [html, web-development, beginner, semantic-html, dialog, modal, accessibility, frontend]
 ---
+
+import {useRef, useState} from 'react';
+
+export function ModalDemo() {
+  const dialogRef = useRef(null);
+  const [log, setLog] = useState([]);
+  const [result, setResult] = useState("(nothing yet)");
+  const add = (line) => setLog((old) => [...old.slice(-5), line]);
+  const open = () => {
+    dialogRef.current.returnValue = "";
+    dialogRef.current.showModal();
+    add("showModal() called");
+  };
+  return (
+    <div>
+      <style>{".dlg-demo::backdrop { background: rgba(15, 23, 42, 0.55); }"}</style>
+      <button type="button" onClick={open}>Delete project…</button>
+      <dialog
+        ref={dialogRef}
+        className="dlg-demo"
+        role="alertdialog"
+        aria-labelledby="dlg-title"
+        aria-describedby="dlg-desc"
+        onCancel={() => add("cancel event (Escape pressed)")}
+        onClose={() => {
+          const value = dialogRef.current.returnValue || "(none: closed with Escape)";
+          setResult(value);
+          add("close event, returnValue = " + value);
+        }}
+        style={{border: "none", borderRadius: "10px", padding: 0, maxWidth: "24rem", width: "90%"}}
+      >
+        <form method="dialog" style={{padding: "1.25rem"}}>
+          <h2 id="dlg-title" style={{marginTop: 0, fontSize: "1.2rem"}}>Delete this project?</h2>
+          <p id="dlg-desc">This removes all 14 files. You cannot undo it.</p>
+          <p style={{display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginBottom: 0}}>
+            <button type="submit" value="cancel" autoFocus>Keep it</button>
+            <button type="submit" value="delete" style={{color: "#b91c1c"}}>Delete</button>
+          </p>
+        </form>
+      </dialog>
+      <p style={{margin: "0.6rem 0 0.2rem"}}><strong>returnValue:</strong> {result}</p>
+      <ul style={{margin: 0, paddingLeft: "1.25rem", fontSize: "0.9em"}} role="status">
+        {log.map((line, index) => (<li key={index}>{line}</li>))}
+      </ul>
+    </div>
+  );
+}
+
+export function ModeDemo() {
+  const modalRef = useRef(null);
+  const plainRef = useRef(null);
+  const [status, setStatus] = useState("Open one of the dialogs, then try to click or Tab to the other controls.");
+  const dismissOnBackdrop = (event) => {
+    if (event.target === event.currentTarget) event.currentTarget.close("dismissed");
+  };
+  return (
+    <div>
+      <style>{".mode-modal::backdrop { background: rgba(15, 23, 42, 0.45); }"}</style>
+      <p style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: 0}}>
+        <button type="button" onClick={() => { modalRef.current.showModal(); setStatus("Modal: the page behind is inert. Escape or a click outside closes it."); }}>showModal()</button>
+        <button type="button" onClick={() => { plainRef.current.show(); setStatus("Non-modal: the page behind still works. Escape does nothing."); }}>show()</button>
+        <button type="button" onClick={() => setStatus("This button works only while no modal dialog is open.")}>A page button</button>
+      </p>
+      <dialog ref={modalRef} className="mode-modal" onClick={dismissOnBackdrop} aria-labelledby="mode-m-title" style={{border: "none", borderRadius: "10px", padding: 0, maxWidth: "22rem", width: "90%"}}>
+        <div style={{padding: "1.25rem"}}>
+          <h2 id="mode-m-title" style={{marginTop: 0, fontSize: "1.1rem"}}>Modal dialog</h2>
+          <p>Everything behind me is inert. Click the dark area or press Escape.</p>
+          <button type="button" onClick={() => modalRef.current.close()}>Close</button>
+        </div>
+      </dialog>
+      <dialog ref={plainRef} aria-labelledby="mode-p-title" style={{border: "1px solid #94a3b8", borderRadius: "10px", padding: "1rem", maxWidth: "22rem"}}>
+        <h2 id="mode-p-title" style={{marginTop: 0, fontSize: "1.1rem"}}>Non-modal dialog</h2>
+        <p>You can still use the page. I stay until you close me.</p>
+        <button type="button" onClick={() => plainRef.current.close()}>Close</button>
+      </dialog>
+      <p role="status" style={{margin: "0.6rem 0 0"}}>{status}</p>
+    </div>
+  );
+}
+
+A **dialog** is a small window that appears on top of the page and asks for the visitor's attention: "Delete this project?", "Sign in", "Choose a date". For years, developers built these with piles of `div` elements, scripts to trap the focus, and extra libraries.
+
+The **`<dialog>`** element does most of that work for you. The browser handles the layer on top of the page, the dark backdrop, the Escape key, and keeping the focus inside. This lesson shows how to use it well.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<dialog>` is, and modal versus non-modal
+- Opening and closing with `showModal()`, `show()`, and `close()`
+- Forms with `method="dialog"`, and the `returnValue`
+- Styling the dialog and its `::backdrop`
+- Closing with Escape or a click outside
+- Focus, accessibility, and alert dialogs
+- Security, global notes, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<button type="button" id="open">Delete project…</button>
+
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title">Delete this project?</h2>
+    <p>This removes all 14 files. You cannot undo it.</p>
+    <button value="cancel" autofocus>Keep it</button>
+    <button value="delete">Delete</button>
+  </form>
+</dialog>
+```
+
+```js title="script.js"
+const dialog = document.getElementById("confirm");
+
+document.getElementById("open").addEventListener("click", () => {
+  dialog.showModal();
+});
+
+dialog.addEventListener("close", () => {
+  console.log("Closed with:", dialog.returnValue);
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ModalDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try it above: open the dialog, press **Escape**, then open it again and press a button. Watch the log and the `returnValue`.
+
+| Part | What it does |
+| :-- | :-- |
+| `<dialog>` | The element. It is **hidden** until you open it |
+| `showModal()` | Opens it as a **modal**: on top of everything, with a backdrop, and the page behind becomes inert |
+| `show()` | Opens it as **non-modal**: the page stays usable |
+| `close(value)` | Closes it, and optionally sets the `returnValue` |
+| `<form method="dialog">` | A form that closes the dialog instead of sending data, and sets `returnValue` to the pressed button's `value` |
+| `::backdrop` | The layer behind a modal dialog, styled with CSS |
+| `close` and `cancel` events | Fired after it closes, and when Escape is pressed |
+
+## Modal or Non-Modal?
+
+Think of a **modal** like a bank teller asking you to sign before they continue: nothing else happens until you deal with it. A **non-modal** dialog is more like a sticky note on the side of the screen: you can ignore it and carry on.
+
+| | Modal (`showModal()`) | Non-modal (`show()`) |
+| :-- | :-- | :-- |
+| Page behind | **Inert**: cannot be clicked, focused, or read by a screen reader | Fully usable |
+| Backdrop | Yes (`::backdrop`) | No |
+| Escape key | Closes it | Does nothing by default |
+| Focus | Moves into the dialog, and returns to the opener on close | Not moved for you |
+| Use for | Confirmations, sign-in, forms that need an answer | Side panels, chat widgets, helper notes |
+
+Use a modal **only when the visitor must decide before going on.** Anything else is more polite as a non-modal element or a plain part of the page.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<button type="button" id="m">showModal()</button>
+<button type="button" id="n">show()</button>
+
+<dialog id="modal">
+  <h2>Modal dialog</h2>
+  <p>Everything behind me is inert.</p>
+  <button type="button" data-close>Close</button>
+</dialog>
+
+<dialog id="plain">
+  <h2>Non-modal dialog</h2>
+  <p>You can still use the page.</p>
+  <button type="button" data-close>Close</button>
+</dialog>
+```
+
+```js title="script.js"
+document.getElementById("m").onclick = () => modal.showModal();
+document.getElementById("n").onclick = () => plain.show();
+
+document.querySelectorAll("[data-close]").forEach((button) => {
+  button.addEventListener("click", () => button.closest("dialog").close());
+});
+
+// Light dismiss: a click on the backdrop targets the dialog itself
+modal.addEventListener("click", (event) => {
+  if (event.target === modal) modal.close();
+});
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ModeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip The click-outside trick
+A click on the backdrop is reported as a click **on the dialog element itself**. So the dialog must have **no padding**, with an inner wrapper that holds the padding. Otherwise, a click on the padding looks like a click on the backdrop, and closes the dialog by mistake. The demo above does exactly that.
+:::
+
+## The `open` Attribute: Do Not Use It to Open
+
+You can write `<dialog open>`, and it will show. But a dialog opened this way is **non-modal, with no backdrop, no inert page, and no focus handling.** It is fine for something you want visible from the start, but for a real pop-up, always call `showModal()` or `show()`.
+
+```html
+<!-- Visible straight away, but not a modal -->
+<dialog open>Hello</dialog>
+```
+
+Never **set** `open` yourself to show a modal. Use the methods, and let the browser manage the attribute.
+
+## Forms Inside a Dialog
+
+A form with **`method="dialog"`** does not send anything to a server. When submitted, it **closes the dialog** and sets `dialog.returnValue` to the `value` of the button that was pressed. This lets you collect an answer with no JavaScript at all.
+
+```html
+<dialog id="pick">
+  <form method="dialog">
+    <h2 id="pick-title">Choose a plan</h2>
+
+    <p>
+      <label for="plan">Plan</label>
+      <select id="plan" name="plan">
+        <option>Free</option>
+        <option>Pro</option>
+      </select>
+    </p>
+
+    <button value="cancel" formnovalidate>Cancel</button>
+    <button value="ok">Choose</button>
+  </form>
+</dialog>
+```
+
+```js
+pick.addEventListener("close", () => {
+  if (pick.returnValue === "ok") {
+    console.log("Chosen:", new FormData(pick.querySelector("form")).get("plan"));
+  }
+});
+```
+
+Tips:
+
+- Give a **Cancel** button `formnovalidate`, so it works even when required fields are empty.
+- The form data is **not sent anywhere.** Read it yourself with `FormData` in the `close` handler, or use a normal form and `fetch`.
+- To collect data and send it to the server, use `method="post"`, and close the dialog yourself after success.
+
+## Closing a Dialog
+
+| How | What happens |
+| :-- | :-- |
+| `dialog.close()` | Closes it, and fires `close` |
+| A `method="dialog"` form submit | Closes it, with the button's value as `returnValue` |
+| **Escape** (modal only) | Fires `cancel`, then closes it, and fires `close` |
+| A click on the backdrop | **Does nothing by default.** Add your own handler, or use the newer `closedby` attribute (see below) |
+
+Some points to know:
+
+- The **`cancel`** event can be stopped with `event.preventDefault()`, but do this rarely. Blocking Escape traps people. If you must, make sure the dialog has another visible way out.
+- The **`close`** event fires every time, however the dialog closes, so it is the best place to run your follow-up code.
+- Newer browsers support a **`closedby`** attribute (`closedby="any"`, `closedby="closerequest"`, or `closedby="none"`) to control Escape and outside clicks without scripts. Support is still spreading, so check a compatibility table before relying on it, and keep the manual handler as a fallback.
+
+## Styling
+
+The dialog and its backdrop are styled with ordinary CSS:
+
+```css title="style.css"
+dialog {
+  border: none;
+  border-radius: 12px;
+  padding: 0;                /* padding goes on an inner wrapper */
+  width: min(90vw, 28rem);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+dialog::backdrop {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+/* Stop the page behind from scrolling while a modal is open */
+body:has(dialog[open]:modal) {
+  overflow: hidden;
+}
+```
+
+Notes:
+
+- **Do not set `display` on `dialog`** unconditionally (for example `display: flex`). It overrides the browser's hiding rule, so the dialog shows all the time. Style `dialog[open]` instead.
+- A modal appears in the browser's **top layer**, so `z-index` battles do not matter, and no parent's `overflow` or `transform` can clip it.
+- **Animating** the open and close is possible with newer CSS features, but keep it short, and respect `prefers-reduced-motion`.
+- On small screens, use `width: min(90vw, 28rem)` and `max-height: 90vh` with `overflow: auto`, so the dialog never gets bigger than the screen.
+
+## Focus and Accessibility
+
+`showModal()` gives you a lot for free:
+
+- The **page behind becomes inert**: no clicks, no Tab, no screen reader access.
+- The **focus moves into the dialog**, and **returns to the button that opened it** when it closes.
+- **Escape** closes it.
+- Screen readers announce it as a **dialog**.
+
+You still need to do your part:
+
+1. **Give it a name:** `aria-labelledby` pointing at the dialog's heading (or `aria-label` if there is no visible title).
+2. **Describe it** with `aria-describedby` for short messages.
+3. **Choose where the focus starts** with `autofocus`. For a confirmation, put it on the **safe** button ("Keep it"), not on "Delete". If a dialog starts with a long text, focus the heading (with `tabindex="-1"`) instead of the first button.
+4. **Provide a visible close button or Cancel,** so nobody depends on knowing Escape.
+5. **Make the buttons clear:** "Delete project" and "Keep it", not "OK" and "Cancel", when the question is not obvious.
+6. **Keep it short.** A dialog is for one task. A whole page inside a dialog is a sign it should be a real page.
+7. **Never open a modal automatically** on page load (newsletter pop-ups, for example). It interrupts reading, and is a common reason visitors leave.
+
+### Alert dialogs
+
+For urgent confirmations, such as destructive actions, add `role="alertdialog"` and `aria-describedby` that points at the message. Screen readers then announce the message straight away.
+
+```html
+<dialog role="alertdialog" aria-labelledby="t" aria-describedby="d">
+  <h2 id="t">Delete this project?</h2>
+  <p id="d">This removes all 14 files. You cannot undo it.</p>
+  …
+</dialog>
+```
+
+Use `alertdialog` sparingly. Most dialogs do not need it.
+
+## Dialog or Something Else?
+
+| You need | Use |
+| :-- | :-- |
+| A confirmation or a form that needs an answer first | `<dialog>` with `showModal()` |
+| A small panel the visitor can ignore | Non-modal `<dialog>`, or a `popover` |
+| A tooltip, menu, or hint | The `popover` attribute, not a dialog |
+| Content the visitor opens and reads in place | [`<details>` and `<summary>`](./details) |
+| A short message after an action ("Saved") | A status message with `role="status"`, not a dialog |
+| A full flow (checkout, long forms) | A normal page |
+
+The **`popover`** attribute is another built-in way to show floating content, better suited to menus and hints that do not need to block the page. Check browser support for your audience.
+
+## Security and Privacy Notes
+
+- **A dialog is not a security boundary.** Its content is in the page source, even when it is closed. Never hide secrets, admin controls, or "protected" content inside a hidden dialog. Check permissions on the **server**.
+- **Confirmations are for people, not safety.** A "Delete" dialog stops accidents, but the delete request still needs proper server-side authorisation and CSRF protection.
+- **Escape untrusted text** that you put into a dialog (a file name, a user's comment). Use `textContent`, not `innerHTML`.
+- **Beware of fake dialogs.** Do not make a dialog that imitates a system or browser prompt, or a login box for another site. It is deceptive, and teaches people to trust look-alikes.
+- **Do not use a dialog for consent tricks.** Make "Reject" as easy as "Accept" in cookie and privacy prompts.
+- **Do not collect more data than needed** in a dialog form, and use the correct `autocomplete` and input types, just as in any form.
+
+## Global Audience Notes
+
+- **Translate** the title, message, and button labels, and allow for longer words in other languages. Do not give buttons a fixed width.
+- **Right-to-left languages:** use logical properties (`margin-inline-start`, `text-align: start`) so the buttons and close icon flip correctly.
+- **Put the safest action first in the reading order,** and explain what each button does, since "OK" and "Cancel" translate poorly and are easily confused.
+- **Do not depend on colour** (a red "Delete") alone to show danger. Use clear words too.
+- **Consider slow connections and small phones.** Keep dialogs light, avoid loading heavy content when they open, and test with large text sizes and on a narrow screen.
+- **Check support** for newer features (`closedby`, animated dialogs, `popover`) on the browsers your visitors use. The basic `<dialog>` is well supported in current browsers.
+
+## Common Mistakes to Avoid
+
+1. **Using `open` to show a modal** instead of `showModal()`.
+2. **Forgetting `type="button"`** on buttons that should not submit a form.
+3. **No accessible name:** no `aria-labelledby` or `aria-label`.
+4. **No visible way to close,** relying on Escape alone.
+5. **Putting padding on the dialog,** so a click inside the padding closes it.
+6. **Setting `display: flex` or `grid` on `dialog`,** so it can never hide.
+7. **Blocking Escape with `preventDefault()`** with no other exit.
+8. **Starting the focus on the dangerous button.**
+9. **Opening a modal on page load.**
+10. **Vague buttons:** "OK" and "Cancel" for a question that deserves clearer words.
+11. **Treating a hidden dialog as secret.**
+12. **Using a modal for things that should be a page, a tooltip, or a message.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Build a dialog with a title, a message, and a Close button, and open it with `showModal()`.
+2. Open the same dialog with `show()` and compare how the page behaves.
+3. Style the `::backdrop` with a colour of your choice.
+4. Add `aria-labelledby` and check it with a screen reader or the browser's accessibility panel.
+5. Build a delete confirmation with `method="dialog"` and two buttons with `value`s, and log the `returnValue`.
+6. Add a click-outside handler, with the padding on an inner wrapper.
+7. Add `autofocus` to the safe button, and test with the keyboard only.
+8. Listen for the `cancel` and `close` events, and log which one fires for Escape.
+9. Build a small form dialog ("Choose a plan"), and read the value with `FormData` on `close`.
+10. Bonus: add `body:has(dialog[open]:modal) { overflow: hidden; }`, and check that the page stops scrolling behind a modal.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between `showModal()` and `show()`?</summary>
+
+`showModal()` opens a modal: it sits in the top layer with a backdrop, the page behind becomes inert, the focus moves inside, and Escape closes it. `show()` opens a non-modal dialog that leaves the page usable, with no backdrop and no Escape handling.
+
+</details>
+
+<details>
+<summary>2. What does `method="dialog"` do on a form?</summary>
+
+Submitting the form closes the dialog instead of sending data, and sets `dialog.returnValue` to the `value` of the button that was pressed.
+
+</details>
+
+<details>
+<summary>3. Why not just add the `open` attribute to show a modal?</summary>
+
+A dialog shown with `open` is non-modal: no backdrop, no inert page, and no focus handling. Use `showModal()` for a real modal.
+
+</details>
+
+<details>
+<summary>4. How do you close a dialog when the visitor clicks outside it?</summary>
+
+Add a click handler that closes it when `event.target` is the dialog itself, and put the padding on an inner wrapper so clicks inside the content are not mistaken for backdrop clicks. Newer browsers also offer the `closedby` attribute.
+
+</details>
+
+<details>
+<summary>5. What must you add yourself for accessibility?</summary>
+
+An accessible name (`aria-labelledby` or `aria-label`), a sensible starting focus (with `autofocus`, on the safe action), clear button labels, and a visible way to close it. Use `role="alertdialog"` for urgent confirmations.
+
+</details>
+
+<details>
+<summary>6. Is a closed dialog a safe place to hide content?</summary>
+
+No. Everything inside it is in the page source. Keep secrets and permission checks on the server.
+
+</details>
+
+## Key Takeaways
+
+- `<dialog>` is the built-in way to make pop-ups, with **no libraries**, and it handles the top layer, backdrop, Escape, and focus for you.
+- Use **`showModal()`** when the visitor must answer first, **`show()`** for side panels, and never rely on the `open` attribute to open a modal.
+- `<form method="dialog">` closes the dialog and sets the **`returnValue`**, so you can read the answer in the `close` event.
+- Style the box and the **`::backdrop`** with CSS, keep padding on an inner wrapper, and never force `display` on the dialog.
+- Give every dialog a **name**, a sensible first focus, and a visible way out. Use `alertdialog` for urgent confirmations.
+- A dialog is not a security boundary. Check permissions on the server and escape untrusted text.
+- Do not open modals automatically, and plan for translation, right-to-left layouts, and small screens.
+
+Next, put everything in this section together on one page, in [Semantic Page Layout](./semantic-page-layout), or return to the [Semantic HTML overview](../semantic-html).
