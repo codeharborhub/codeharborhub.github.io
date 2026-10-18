@@ -1,15 +1,661 @@
 ---
-id: canvas-element
-title: "Dynamic Bitmaps and Rendering: The canvas Element"
-sidebar_label: "Canvas (<canvas>)"
-sidebar_position: 5
+id: html-canvas
+title: "HTML Canvas"
+sidebar_label: "Canvas"
+sidebar_position: 6
 slug: /html/embedded-content/canvas
-description: "Explore pixel-based dynamic drawing, 2D/3D graphics, games, and real-time visual renders using the HTML5 canvas tag and JavaScript APIs."
+description: "Learn the HTML canvas element: drawing shapes, paths and text with the 2D context, animating with requestAnimationFrame, keeping drawings sharp on high-resolution screens, handling clicks with correct coordinates, making canvas accessible, performance, security and tainted canvases, with live demos."
 keywords:
-  - HTML canvas tag
-  - 2D 3D graphics HTML
-  - dynamic pixel rendering
-  - HTML5 canvas graphics
+  - HTML canvas tutorial
+  - canvas 2D context
+  - canvas fillRect arc path
+  - requestAnimationFrame animation
+  - canvas devicePixelRatio sharp
+  - canvas click coordinates
+  - canvas accessibility fallback content
+  - tainted canvas CORS
+  - canvas vs SVG
+  - HTML5 canvas beginner
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, canvas, graphics, javascript]
+tags: [html, web-development, beginner, canvas, graphics, javascript, animation, accessibility, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function ShapesDemo() {
+  const canvasRef = useRef(null);
+  const [color, setColor] = useState("#2563eb");
+  const [code, setCode] = useState("// Press a button to draw");
+  const spot = () => [Math.round(30 + Math.random() * 240), Math.round(25 + Math.random() * 100)];
+  const draw = (kind) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const [x, y] = spot();
+    if (kind === "clear") {
+      ctx.clearRect(0, 0, 300, 150);
+      setCode("ctx.clearRect(0, 0, 300, 150);");
+      return;
+    }
+    if (kind === "rect") {
+      ctx.fillStyle = color;
+      ctx.fillRect(x - 20, y - 12, 40, 24);
+      setCode('ctx.fillStyle = "' + color + '";\nctx.fillRect(' + (x - 20) + ", " + (y - 12) + ", 40, 24);");
+    }
+    if (kind === "circle") {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 16, 0, Math.PI * 2);
+      ctx.fill();
+      setCode('ctx.fillStyle = "' + color + '";\nctx.beginPath();\nctx.arc(' + x + ", " + y + ", 16, 0, Math.PI * 2);\nctx.fill();");
+    }
+    if (kind === "line") {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 40, y + 15);
+      ctx.stroke();
+      setCode('ctx.strokeStyle = "' + color + '";\nctx.lineWidth = 3;\nctx.beginPath();\nctx.moveTo(' + x + ", " + y + ");\nctx.lineTo(" + (x + 40) + ", " + (y + 15) + ");\nctx.stroke();");
+    }
+    if (kind === "text") {
+      ctx.fillStyle = color;
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText("Hi!", x, y);
+      setCode('ctx.fillStyle = "' + color + '";\nctx.font = "bold 18px sans-serif";\nctx.fillText("Hi!", ' + x + ", " + y + ");");
+    }
+  };
+  return (
+    <div>
+      <p style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center", margin: "0 0 0.5rem"}}>
+        <label>Colour <input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
+        <button type="button" onClick={() => draw("rect")}>Rectangle</button>
+        <button type="button" onClick={() => draw("circle")}>Circle</button>
+        <button type="button" onClick={() => draw("line")}>Line</button>
+        <button type="button" onClick={() => draw("text")}>Text</button>
+        <button type="button" onClick={() => draw("clear")}>Clear</button>
+      </p>
+      <canvas
+        ref={canvasRef}
+        width="300"
+        height="150"
+        role="img"
+        aria-label="A drawing area. Shapes you add with the buttons appear here."
+        style={{width: "100%", maxWidth: "300px", height: "auto", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", display: "block"}}
+      >
+        A drawing area. Shapes you add with the buttons appear here.
+      </canvas>
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+    </div>
+  );
+}
+
+export function AnimationDemo() {
+  const canvasRef = useRef(null);
+  const ball = useRef({x: 60, y: 50, vx: 1, vy: 0.7});
+  const dprRef = useRef(1);
+  const [running, setRunning] = useState(true);
+  const [speed, setSpeed] = useState(1);
+  const [sharp, setSharp] = useState(true);
+  const [fps, setFps] = useState(0);
+  const [dpr, setDpr] = useState(1);
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduce(query.matches);
+    if (query.matches) setRunning(false);
+  }, []);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ratio = sharp ? window.devicePixelRatio || 1 : 1;
+    dprRef.current = ratio;
+    setDpr(window.devicePixelRatio || 1);
+    canvas.width = Math.round(300 * ratio);
+    canvas.height = Math.round(150 * ratio);
+  }, [sharp]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext("2d");
+    const paint = () => {
+      const r = dprRef.current;
+      ctx.setTransform(r, 0, 0, r, 0, 0);
+      ctx.clearRect(0, 0, 300, 150);
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(ball.current.x, ball.current.y, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    };
+    if (!running) {
+      paint();
+      return undefined;
+    }
+    let handle = 0;
+    let last = performance.now();
+    let frames = 0;
+    let mark = last;
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const b = ball.current;
+      b.x += b.vx * 140 * speed * dt;
+      b.y += b.vy * 140 * speed * dt;
+      if (b.x < 14 || b.x > 286) { b.vx = -b.vx; b.x = Math.max(14, Math.min(286, b.x)); }
+      if (b.y < 14 || b.y > 136) { b.vy = -b.vy; b.y = Math.max(14, Math.min(136, b.y)); }
+      paint();
+      frames++;
+      if (now - mark >= 1000) {
+        setFps(Math.round((frames * 1000) / (now - mark)));
+        frames = 0;
+        mark = now;
+      }
+      handle = requestAnimationFrame(loop);
+    };
+    handle = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(handle);
+  }, [running, speed, sharp]);
+  return (
+    <div>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => setRunning((old) => !old)}>{running ? "Pause animation" : "Play animation"}</button>
+        <label>Speed <input type="range" min="0.5" max="3" step="0.5" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} aria-valuetext={speed + " times"} /></label>
+        <label><input type="checkbox" checked={sharp} onChange={(event) => setSharp(event.target.checked)} /> Match screen sharpness</label>
+      </p>
+      <canvas
+        ref={canvasRef}
+        width="300"
+        height="150"
+        role="img"
+        aria-label="A ball bouncing inside a box"
+        style={{width: "300px", maxWidth: "100%", height: "auto", aspectRatio: "2 / 1", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", display: "block"}}
+      >
+        A ball bouncing inside a box.
+      </canvas>
+      <p role="status" style={{margin: "0.5rem 0 0.2rem"}}>
+        {running ? "Running at about " + fps + " frames per second." : "Paused."}{" "}
+        Your screen's pixel ratio is <strong>{dpr}</strong>.
+      </p>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        {reduce ? "Your system asks for reduced motion, so the animation started paused. " : ""}
+        {dpr > 1 ? "On this screen, turn “Match screen sharpness” off, and the ball looks blurry." : "On a high-resolution screen (pixel ratio above 1), turning “Match screen sharpness” off makes the drawing blurry."}
+      </p>
+    </div>
+  );
+}
+
+export function HitTestDemo() {
+  const canvasRef = useRef(null);
+  const circles = [
+    {name: "Red", x: 60, y: 75, r: 32, color: "#ef4444"},
+    {name: "Green", x: 150, y: 75, r: 32, color: "#22c55e"},
+    {name: "Blue", x: 240, y: 75, r: 32, color: "#3b82f6"},
+  ];
+  const [selected, setSelected] = useState(-1);
+  const [last, setLast] = useState("Nothing selected yet.");
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, 300, 150);
+    circles.forEach((circle, index) => {
+      ctx.fillStyle = circle.color;
+      ctx.beginPath();
+      ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+      ctx.fill();
+      if (index === selected) {
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#0f172a";
+        ctx.stroke();
+      }
+    });
+  }, [selected]);
+  const pick = (event) => {
+    const canvas = canvasRef.current;
+    const box = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / box.width;
+    const scaleY = canvas.height / box.height;
+    const x = (event.clientX - box.left) * scaleX;
+    const y = (event.clientY - box.top) * scaleY;
+    const hit = circles.findIndex((circle) => Math.hypot(x - circle.x, y - circle.y) <= circle.r);
+    setSelected(hit);
+    setLast("Click at (" + Math.round(x) + ", " + Math.round(y) + ") in canvas units: " + (hit >= 0 ? circles[hit].name + " circle selected." : "no circle there."));
+  };
+  return (
+    <div>
+      <canvas
+        ref={canvasRef}
+        width="300"
+        height="150"
+        role="img"
+        aria-label="Three circles: red, green and blue. Choose one with the list below."
+        onClick={pick}
+        style={{width: "100%", maxWidth: "600px", height: "auto", aspectRatio: "2 / 1", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", display: "block", cursor: "pointer"}}
+      >
+        Three circles: red, green and blue.
+      </canvas>
+      <fieldset style={{margin: "0.6rem 0 0"}}>
+        <legend>The same choice, for keyboard and screen reader users</legend>
+        {circles.map((circle, index) => (
+          <label key={circle.name} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input
+              type="radio"
+              name="hit-circle"
+              checked={selected === index}
+              onChange={() => { setSelected(index); setLast(circle.name + " circle selected from the list."); }}
+            /> {circle.name}
+          </label>
+        ))}
+      </fieldset>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>{last}</p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The canvas is drawn at 300 by 150 but shown larger, so the page converts the mouse position back into canvas units. Without that step, clicks land in the wrong place.
+      </p>
+    </div>
+  );
+}
+
+If SVG is a box of **shapes you can pick up and move**, canvas is a **blank painting that you paint on with code.** You give it a size, you ask it to draw a circle here and a line there, and it paints the pixels. Once painted, the circle is not an object any more, just coloured dots. To move it, you wipe the area and paint again.
+
+That makes canvas excellent for **games, animation, visual effects, image editing, and anything with a very large number of moving parts**. It also means you take on more work for accessibility, scaling, and clicks, which is the main subject of this lesson.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Creating a canvas, and getting its 2D drawing context
+- Drawing rectangles, circles, lines, and text
+- Animating with `requestAnimationFrame`
+- Keeping drawings sharp on high-resolution screens
+- Handling clicks with the right coordinates
+- Making canvas accessible
+- Performance, security, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<canvas id="stage" width="300" height="150" role="img"
+        aria-label="A drawing area">
+  A drawing area. Shapes added with the buttons appear here.
+</canvas>
+```
+
+```js title="script.js"
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");      // the "pen" you draw with
+
+ctx.fillStyle = "#2563eb";
+ctx.fillRect(20, 20, 80, 40);             // x, y, width, height
+
+ctx.beginPath();
+ctx.arc(180, 60, 25, 0, Math.PI * 2);     // x, y, radius, start angle, end angle
+ctx.fill();
+
+ctx.font = "bold 18px sans-serif";
+ctx.fillStyle = "#0f172a";
+ctx.fillText("Hello canvas", 20, 120);
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ShapesDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Press the buttons, and each one runs a few lines of drawing code, shown underneath. The steps are always the same:
+
+1. **Find the canvas** element.
+2. **Get its context** with `getContext("2d")`. The context is the object that has all the drawing methods.
+3. **Set a style** (`fillStyle`, `strokeStyle`, `font`, and so on).
+4. **Draw.**
+
+### The Two Sizes of a Canvas
+
+A canvas has two sizes, and mixing them up is the most common beginner problem:
+
+| Size | Set by | Meaning |
+| :-- | :-- | :-- |
+| **Bitmap size** | The `width` and `height` **attributes** | How many pixels the drawing has (default 300 by 150) |
+| **Display size** | **CSS** `width` and `height` | How big that bitmap is shown on the page |
+
+If the two differ, the browser **stretches the bitmap**, and your drawing becomes blurry or distorted. We deal with this again below, under sharpness and click coordinates.
+
+Also note: **setting `width` or `height` in script clears the canvas** and resets all styles.
+
+## Coordinates
+
+As in SVG, the origin **(0, 0) is the top-left corner**. The x value grows to the right, and the **y value grows downwards**.
+
+## Drawing Methods
+
+| Task | Methods |
+| :-- | :-- |
+| Rectangles | `fillRect(x, y, w, h)`, `strokeRect(...)`, `clearRect(...)` |
+| Paths | `beginPath()`, `moveTo(x, y)`, `lineTo(x, y)`, `arc(x, y, r, start, end)`, `closePath()`, then `fill()` or `stroke()` |
+| Curves | `quadraticCurveTo(...)`, `bezierCurveTo(...)` |
+| Text | `fillText(text, x, y)`, `strokeText(...)`, `measureText(text)` |
+| Images | `drawImage(image, x, y)` |
+| Colours | `fillStyle`, `strokeStyle` (colour names, hex, or gradients) |
+| Lines | `lineWidth`, `lineCap`, `lineJoin` |
+| Transforms | `translate`, `rotate`, `scale`, plus `save()` and `restore()` |
+| Pixels | `getImageData`, `putImageData` |
+
+A few tips:
+
+- **Always call `beginPath()`** before a new shape. If you forget, new lines join old ones, and every `stroke()` redraws all of them.
+- **`save()` and `restore()`** protect your settings. Call `save()`, change styles or transforms, draw, and call `restore()` to return to how things were.
+- **Angles are in radians.** A full circle is `Math.PI * 2`.
+- **Text is painted, not typed.** It does not wrap, cannot be selected, and screen readers cannot read it (more below).
+
+```js
+// A small helper: draw a labelled dot, without leaking styles
+function dot(ctx, x, y, color, label) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#0f172a";
+  ctx.fillText(label, x + 12, y + 4);
+  ctx.restore();
+}
+```
+
+## Animation
+
+To animate, you **erase and redraw** many times a second. Use **`requestAnimationFrame`**, which calls your function just before the browser paints the next screen, usually 60 times a second, and **pauses** when the tab is hidden, saving battery.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```js title="script.js"
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+
+let x = 40, y = 40, vx = 140, vy = 100;   // position, and speed in pixels per second
+let last = performance.now();
+let handle = 0;
+
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);   // seconds since the last frame
+  last = now;
+
+  x += vx * dt;                                      // move by speed x time
+  y += vy * dt;
+  if (x < 14 || x > 286) vx = -vx;                   // bounce
+  if (y < 14 || y > 136) vy = -vy;
+
+  ctx.clearRect(0, 0, 300, 150);                     // erase
+  ctx.beginPath();
+  ctx.arc(x, y, 14, 0, Math.PI * 2);                 // redraw
+  ctx.fill();
+
+  handle = requestAnimationFrame(frame);
+}
+
+handle = requestAnimationFrame(frame);
+
+// Stop it any time:
+// cancelAnimationFrame(handle);
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AnimationDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The most important idea is **time-based movement**. The ball moves by `speed x dt`, not "5 pixels per frame". That way it moves at the same real speed on a 60 Hz phone and a 144 Hz monitor.
+
+Also note:
+
+- **Provide a Pause button.** Anything that moves for more than about 5 seconds should be pausable.
+- **Respect `prefers-reduced-motion`.** The demo starts paused if you have it switched on in your system.
+- **Stop the loop** (`cancelAnimationFrame`) when the canvas is not needed, such as when the visitor leaves the view or the page.
+
+## Sharp on Every Screen
+
+Many phones and laptops have **high-resolution screens**, where one CSS pixel is made of 2 or 3 device pixels. A canvas that has 300 bitmap pixels, shown at 300 CSS pixels, gets stretched to 600 or 900 device pixels, and looks blurry.
+
+The fix is to make the **bitmap bigger**, and scale your drawing to match:
+
+```js
+const ratio = window.devicePixelRatio || 1;
+
+canvas.width = 300 * ratio;                 // the bitmap is bigger
+canvas.height = 150 * ratio;
+canvas.style.width = "300px";               // but shown at the same size
+canvas.style.height = "150px";
+
+ctx.setTransform(ratio, 0, 0, ratio, 0, 0); // so you can still draw in 300 by 150 units
+```
+
+Try the **Match screen sharpness** box in the demo above. On a standard-resolution screen you will not see a difference, but on a high-resolution one, switching it off makes the ball visibly soft. Do not forget to redo this when the canvas is resized, or when the visitor moves the window to a screen with a different ratio.
+
+Very large canvases use lots of memory. Do not make a canvas bigger than you need.
+
+## Clicks and Touches: Get the Coordinates Right
+
+A pointer event gives you positions relative to the **page** or **window**. You need them in **canvas units**. When the displayed size differs from the bitmap size, you must scale:
+
+```js
+canvas.addEventListener("click", (event) => {
+  const box = canvas.getBoundingClientRect();
+  const x = (event.clientX - box.left) * (canvas.width  / box.width);
+  const y = (event.clientY - box.top)  * (canvas.height / box.height);
+
+  // Is the point inside a circle?
+  const inside = Math.hypot(x - circle.x, y - circle.y) <= circle.r;
+});
+```
+
+### Try It: Click on a Circle, or Choose from a List
+
+Click a circle in the canvas. The page converts your click into canvas units, and tests which circle it hit. The canvas is shown at twice its bitmap size here, so skipping the conversion would put every click in the wrong place. Then use the **list below**, which does the same job for people who cannot click.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<canvas id="stage" width="300" height="150" role="img"
+        aria-label="Three circles: red, green and blue. Choose one with the list below."></canvas>
+
+<fieldset>
+  <legend>The same choice, for keyboard users</legend>
+  <label><input type="radio" name="c" value="0"> Red</label>
+  <label><input type="radio" name="c" value="1"> Green</label>
+  <label><input type="radio" name="c" value="2"> Blue</label>
+</fieldset>
+
+<p id="status" role="status"></p>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HitTestDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use **pointer events** (`pointerdown`, `pointermove`) rather than separate mouse and touch events, so one handler works for mouse, pen, and finger.
+
+## Accessibility
+
+A canvas is **one picture** to assistive technology. Everything you paint, including text, buttons, and charts, is invisible to a screen reader, cannot be searched, and cannot be reached by keyboard. You have to supply everything yourself.
+
+1. **Give it a name:** `role="img"` and `aria-label` for a drawing, or `aria-labelledby` pointing at a visible caption.
+2. **Provide fallback content** between the `<canvas>` tags. It is shown to browsers that cannot draw canvas, and exposed to some assistive technology. Do not rely on it alone.
+3. **Offer a text alternative** for anything that carries information. For a chart, put a **data table** or a text summary next to it. For a game, describe the state in text.
+4. **Provide keyboard and screen reader alternatives for pointer actions,** like the list in the demo above. Real `<button>`, `<input>`, and `<select>` elements next to the canvas are the most reliable way.
+5. **Announce changes** (a score, "Level 2", "Game over") in a `role="status"` element.
+6. **Do not paint text-heavy interfaces on canvas.** Menus, forms, and paragraphs belong in HTML, where they can be read, translated, searched, and focused.
+7. **Respect motion preferences,** give a pause control, and avoid flashing.
+8. **Keep contrast high,** and do not use colour alone to show meaning.
+9. **Make targets large** (at least 24 by 24 CSS pixels, ideally 44) for touch.
+10. **Test with a keyboard and a screen reader,** with the canvas as part of the whole page.
+
+If the canvas is purely **decorative**, hide it from assistive technology with `aria-hidden="true"`.
+
+:::tip Build the page first, then add canvas
+Make the information and controls work in **plain HTML** (a table, a list of buttons), then draw the canvas as an enhancement on top. That way the page stays usable if scripts or canvas fail.
+:::
+
+## Performance
+
+- **Draw only what changed,** when you can. Clearing and redrawing a small area is cheaper than the whole canvas.
+- **Avoid creating objects every frame** (new arrays, strings, gradients). Reuse them.
+- **Cache expensive drawings** by painting them once onto a hidden second canvas, and then copy that with `drawImage`.
+- **Stop when it is not visible.** `requestAnimationFrame` already pauses in hidden tabs. For canvases scrolled off screen, use `IntersectionObserver`.
+- **Do not make the canvas bigger than needed,** especially on phones.
+- **For heavy work** such as image processing, newer browsers offer `OffscreenCanvas` and web workers. Check support before relying on them.
+- **For thousands of 3D or shader-heavy objects,** look at **WebGL** (`getContext("webgl")`), which uses the graphics card. It is a larger topic than this lesson.
+
+## Canvas or SVG?
+
+| | Canvas | SVG |
+| :-- | :-- | :-- |
+| Made of | A bitmap you paint on | Elements in the page |
+| After drawing | You only have pixels | Every shape is still an element |
+| Sharp at any size | Only if you redraw at the right size | **Yes** |
+| Accessibility | You supply everything | **Mostly built in** |
+| Many moving objects | **Fast** | Slows down with thousands |
+| Events on shapes | You work out which shape was hit | Built in (`click` on a shape) |
+| Best for | Games, effects, image editing, particles | Icons, logos, charts, diagrams |
+
+If you can do the job with [SVG](./svg), do it with SVG. Choose canvas when you need speed, pixels, or effects.
+
+## Security and Privacy Notes
+
+- **Cross-origin images "taint" the canvas.** If you draw an image from another site onto a canvas, the browser blocks `toDataURL()`, `toBlob()`, and `getImageData()`, because the pixels could reveal private content. To read them, the image must be served with CORS headers, and requested with `crossorigin="anonymous"` (or `img.crossOrigin = "anonymous"`).
+- **Canvas drawing can be used for fingerprinting.** Scripts can draw hidden text and shapes, and read the tiny differences in how each device renders them, to identify a visitor. Do not use canvas for this. Be aware that some browsers add noise or ask permission for canvas reads.
+- **Painted text is not HTML,** so showing visitors' words with `fillText` cannot inject markup. Still validate any data that you draw.
+- **Treat user-supplied images and files as untrusted,** and check type and size. A giant image can freeze the page.
+- **Do not put secrets in your drawing code.** Anything in the page source is public.
+- **Exporting canvas content** (for example, a "download as PNG" button) gives visitors a copy of whatever was drawn, so do not draw private data on a shared page.
+
+## Global Audience Notes
+
+- **Text on canvas is not translatable** by the browser, and cannot be read by many tools. Keep important text in HTML.
+- **Fonts must be loaded before you draw them.** Wait for `document.fonts.ready` (or load the font first), or the canvas will use a fallback font.
+- **Choose fonts that cover your scripts,** such as Arabic, Devanagari, or Chinese. Test that nothing shows as empty boxes.
+- **Right-to-left text:** set `ctx.direction = "rtl"` and `ctx.textAlign` carefully, and test mixed text.
+- **Text does not wrap or resize itself.** Longer translations may overflow, so measure with `measureText` and adjust.
+- **Be kind to slow devices.** Many visitors use older, low-power phones. Test at a low frame rate, offer a simpler or paused version, and keep the bitmap small.
+- **Do not rely on colour meanings** that differ between cultures, and add labels or shapes as well.
+
+## Common Mistakes to Avoid
+
+1. **Setting the size with CSS only,** so the bitmap is stretched and blurry.
+2. **Forgetting `beginPath()`,** so shapes join and redraw.
+3. **Using click coordinates directly,** with no scaling.
+4. **Not clearing the canvas** between frames.
+5. **Moving a fixed amount per frame,** so speed changes with the screen.
+6. **A canvas with no name or text alternative.**
+7. **Painting buttons, menus, or paragraphs** that should be HTML.
+8. **No keyboard alternative** for pointer actions.
+9. **Animation with no pause button,** or ignoring reduced motion.
+10. **Never stopping the animation loop.**
+11. **Blurry drawing on high-resolution screens.**
+12. **Drawing cross-origin images, then reading the pixels,** and getting a security error.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Create a `300 by 150` canvas, and fill it with a coloured rectangle.
+2. Draw a circle with `arc`, and a triangle with `moveTo` and `lineTo`.
+3. Write your name with `fillText`, and measure its width with `measureText`.
+4. Draw a shape with `save()`, a changed style, and `restore()`, and see that later shapes are unaffected.
+5. Animate a square across the canvas with `requestAnimationFrame` and `dt`.
+6. Add a Pause button, and honour `prefers-reduced-motion`.
+7. Make the drawing sharp on a high-resolution screen with `devicePixelRatio`.
+8. Show the canvas larger with CSS, and make clicks land correctly.
+9. Add radio buttons that do the same job as clicking, with a `role="status"` message.
+10. Bonus: draw a bar chart, and put the same numbers in a table underneath.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between the canvas `width` attribute and the CSS width?</summary>
+
+The attribute sets the bitmap size (how many pixels you can draw on). CSS sets the displayed size. If they differ, the bitmap is stretched, which causes blur and wrong click positions.
+
+</details>
+
+<details>
+<summary>2. Why use `requestAnimationFrame` instead of `setInterval`?</summary>
+
+It runs just before each screen repaint, matches the display's refresh rate, and pauses in hidden tabs. Combined with time-based movement, the animation runs at the same speed on any screen.
+
+</details>
+
+<details>
+<summary>3. How do you keep canvas drawings sharp on high-resolution screens?</summary>
+
+Multiply the bitmap size by `window.devicePixelRatio`, keep the CSS size the same, and scale the context so you can still draw in CSS units.
+
+</details>
+
+<details>
+<summary>4. How do you make canvas accessible?</summary>
+
+Give it a name, add fallback content and a text alternative (such as a data table), provide real keyboard-friendly controls and status messages next to it, respect reduced motion, and keep text-heavy interfaces in HTML.
+
+</details>
+
+<details>
+<summary>5. What does a "tainted" canvas mean?</summary>
+
+Drawing a cross-origin image without CORS permission marks the canvas as tainted, and the browser blocks reading its pixels (`toDataURL`, `getImageData`) to protect private content.
+
+</details>
+
+<details>
+<summary>6. When should you choose SVG over canvas?</summary>
+
+When the graphic has a manageable number of shapes, needs to stay sharp at any size, or needs built-in accessibility and events: icons, logos, charts, and diagrams. Choose canvas for games, effects, and very large numbers of moving objects.
+
+</details>
+
+## Key Takeaways
+
+- `<canvas>` is a **bitmap** you paint with JavaScript, through `getContext("2d")`.
+- Set the **bitmap size with attributes**, the display size with CSS, and use **`devicePixelRatio`** for sharpness.
+- Use **`beginPath()`** for each shape, and **`save()`/`restore()`** to protect styles.
+- Animate with **`requestAnimationFrame`** and **time-based movement**, with a pause button and reduced-motion support.
+- Convert pointer positions into **canvas units** before testing what was hit.
+- Canvas is **not accessible by default**: add a name, fallback content, text alternatives, and real controls.
+- Keep text-heavy UI in HTML, and use SVG when it can do the job.
+- Cross-origin images taint the canvas, and canvas can be used for fingerprinting, so be careful with both.
+
+Next, show people where something is with [Maps](./maps), or return to the [Embedded Content overview](../embedded-content).

@@ -1,15 +1,442 @@
 ---
-id: maps
-title: "Embedding Interactive Maps: Google Maps and OpenStreetMap"
-sidebar_label: "Embedding Maps"
+id: html-maps
+title: "HTML Maps"
+sidebar_label: "Maps"
 sidebar_position: 7
 slug: /html/embedded-content/maps
-description: "Learn best practices for embedding responsive, interactive geographic maps using iframe endpoints from Google Maps and OpenStreetMap."
+description: "Learn how to add maps to an HTML page: map links, static images, iframe embeds and interactive libraries, building an OpenStreetMap embed from coordinates, click-to-load for privacy, text alternatives with address and directions, keys and terms, accessibility, responsive sizing, and common mistakes, with live demos."
 keywords:
-  - embed Google Maps HTML
-  - OpenStreetMap integration
-  - responsive map embed
-  - interactive map HTML
+  - HTML map embed
+  - embed OpenStreetMap iframe
+  - embed Google Maps iframe
+  - map link geo URI
+  - accessible map HTML
+  - click to load map privacy
+  - map iframe responsive
+  - address element map
+  - latitude longitude bbox
+  - map API key restrictions
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, maps, embedded-content, responsive]
+tags: [html, web-development, beginner, maps, iframe, embedded-content, privacy, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function MapBuilder() {
+  const [lat, setLat] = useState("28.6139");
+  const [lon, setLon] = useState("77.2090");
+  const [zoom, setZoom] = useState(15);
+  const [label, setLabel] = useState("Example Café");
+  const [loaded, setLoaded] = useState(false);
+  const latN = Number(lat);
+  const lonN = Number(lon);
+  const valid = lat.trim() !== "" && lon.trim() !== "" && isFinite(latN) && isFinite(lonN) && Math.abs(latN) <= 90 && Math.abs(lonN) <= 180;
+  let message = "";
+  if (!valid) message = "Latitude must be between -90 and 90, and longitude between -180 and 180. Use a dot for decimals, with no commas.";
+  const lonSpan = (360 / Math.pow(2, zoom)) * (600 / 256);
+  const latSpan = (360 / Math.pow(2, zoom)) * (400 / 256) * Math.cos((latN * Math.PI) / 180);
+  const fix = (value) => value.toFixed(5);
+  const bbox = valid ? [fix(lonN - lonSpan / 2), fix(latN - latSpan / 2), fix(lonN + lonSpan / 2), fix(latN + latSpan / 2)] : [];
+  const src = valid ? "https://www.openstreetmap.org/export/embed.html?bbox=" + bbox.join("%2C") + "&layer=mapnik&marker=" + fix(latN) + "%2C" + fix(lonN) : "";
+  const links = valid ? [
+    {name: "OpenStreetMap", href: "https://www.openstreetmap.org/?mlat=" + latN + "&mlon=" + lonN + "#map=" + zoom + "/" + latN + "/" + lonN},
+    {name: "Google Maps", href: "https://www.google.com/maps/search/?api=1&query=" + latN + "%2C" + lonN},
+    {name: "Apple Maps", href: "https://maps.apple.com/?ll=" + latN + "%2C" + lonN + "&q=" + encodeURIComponent(label)},
+    {name: "Phone map app (geo link)", href: "geo:" + latN + "," + lonN + "?q=" + latN + "," + lonN + "(" + encodeURIComponent(label) + ")"},
+  ] : [];
+  const code = valid
+    ? '<iframe\n  title="Map of ' + label + '"\n  src="' + src + '"\n  loading="lazy"\n  referrerpolicy="strict-origin-when-cross-origin"\n  style="width:100%;aspect-ratio:3 / 2;border:0"></iframe>\n\n<p><a href="' + links[0].href + '">Open the map in a new tab</a></p>'
+    : "";
+  return (
+    <div>
+      <form onSubmit={(event) => event.preventDefault()}>
+        <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+          <label>Latitude <input type="text" inputMode="decimal" value={lat} onChange={(event) => { setLat(event.target.value); setLoaded(false); }} style={{width: "8rem"}} /></label>
+          <label>Longitude <input type="text" inputMode="decimal" value={lon} onChange={(event) => { setLon(event.target.value); setLoaded(false); }} style={{width: "8rem"}} /></label>
+          <label>Zoom <input type="range" min="3" max="18" value={zoom} onChange={(event) => { setZoom(Number(event.target.value)); setLoaded(false); }} aria-valuetext={"zoom level " + zoom} /> {zoom}</label>
+        </p>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label>Place name <input type="text" value={label} onChange={(event) => setLabel(event.target.value)} style={{width: "14rem", maxWidth: "100%"}} /></label>
+        </p>
+      </form>
+      <p role="status" style={{margin: "0 0 0.5rem", color: "#b91c1c"}}>{message}</p>
+      {valid && (
+        <div>
+          <div style={{width: "100%", maxWidth: "36rem", aspectRatio: "3 / 2", border: "1px solid #94a3b8", borderRadius: "6px", overflow: "hidden", background: "#e2e8f0", display: "grid", placeItems: "center"}}>
+            {loaded ? (
+              <iframe
+                title={"Map of " + label}
+                src={src}
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+                style={{width: "100%", height: "100%", border: 0}}
+              />
+            ) : (
+              <div style={{textAlign: "center", padding: "1rem"}}>
+                <p style={{margin: "0 0 0.5rem"}}>The map is not loaded yet, so nothing has been sent to the map provider.</p>
+                <button type="button" onClick={() => setLoaded(true)}>Load the map (contacts openstreetmap.org)</button>
+              </div>
+            )}
+          </div>
+          <p style={{margin: "0.6rem 0 0.3rem"}}><strong>Links to the same place:</strong></p>
+          <ul style={{margin: 0, paddingLeft: "1.25rem"}}>
+            {links.map((item) => (
+              <li key={item.name}><a href={item.href} target="_blank" rel="noopener noreferrer">{item.name}</a></li>
+            ))}
+          </ul>
+          <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+        </div>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The area shown is calculated approximately from the zoom level. The map loads only after you press the button, which is the privacy-friendly pattern covered below.
+      </p>
+    </div>
+  );
+}
+
+export function FailureDemo() {
+  const [blocked, setBlocked] = useState(false);
+  const [withText, setWithText] = useState(true);
+  return (
+    <div>
+      <p style={{display: "flex", gap: "1.5rem", flexWrap: "wrap", margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={blocked} onChange={(event) => setBlocked(event.target.checked)} /> Pretend the map cannot load (offline, blocked, or a privacy tool)</label>
+        <label><input type="checkbox" checked={withText} onChange={(event) => setWithText(event.target.checked)} /> Provide a text alternative</label>
+      </p>
+      <section aria-labelledby="fd-title" style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.75rem"}}>
+        <h4 id="fd-title" style={{margin: "0 0 0.5rem"}}>Find us</h4>
+        <div
+          aria-hidden="true"
+          style={{aspectRatio: "3 / 1", maxWidth: "30rem", borderRadius: "6px", display: "grid", placeItems: "center", background: blocked ? "repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 10px,#f1f5f9 10px,#f1f5f9 20px)" : "linear-gradient(135deg,#bbf7d0,#bae6fd)", color: "#0f172a", fontSize: "0.9em"}}
+        >
+          {blocked ? "(the map did not load)" : "(the map would be here)"}
+        </div>
+        {withText ? (
+          <div style={{marginTop: "0.6rem"}}>
+            <address style={{fontStyle: "normal", margin: "0 0 0.4rem"}}>
+              Example Café<br />
+              12 Garden Road, Example Town 110001
+            </address>
+            <ul style={{margin: 0, paddingLeft: "1.25rem"}}>
+              <li><strong>By bus:</strong> routes 14 and 22 stop outside, at Garden Road.</li>
+              <li><strong>On foot:</strong> 5 minutes from the main station. Leave by the north exit and turn left.</li>
+              <li><strong>Step-free:</strong> level entrance on the side street.</li>
+              <li><a href="#map" onClick={(event) => event.preventDefault()}>Open in your map app</a></li>
+            </ul>
+          </div>
+        ) : (
+          <p style={{margin: "0.6rem 0 0", color: "#b91c1c"}}>
+            There is no address and no directions in the page. If the map is missing, or cannot be used, the visitor has no way to find the place.
+          </p>
+        )}
+      </section>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {blocked && !withText ? "The visitor sees nothing useful." : withText ? "Whatever happens to the map, the visitor can still find you." : "The map works, but only for people who can see and use it."}
+      </p>
+    </div>
+  );
+}
+
+A map answers the question every visitor to a shop, school, clinic, or event asks first: **where is it?** HTML has no `<map>` element for geography (the `<map>` element is for clickable image regions, which is a different thing). So adding a map means using the tools you have already met: **links, images, and iframes**, plus, for advanced needs, a mapping library.
+
+This lesson shows the options, how to build an embed, and, more importantly, how to make sure the visitor can find you even if the map cannot be used, or should not be loaded.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Four ways to show a place: a link, a static image, an embedded map, and an interactive library
+- Building a map embed from coordinates
+- Click-to-load maps, for privacy and speed
+- Always giving a text alternative: address and directions
+- Keys, terms, and attribution
+- Accessibility, responsive sizing, and common mistakes
+
+## Four Ways to Show a Place
+
+| Way | What it is | Good for | Costs |
+| :-- | :-- | :-- | :-- |
+| **A link** | A link that opens a map app or site | Everything. The simplest and most reliable | Nothing to load |
+| **A static image** | A picture of a map, with `alt` text | A small, fast, fixed view | Needs an image source, often with a key and usage limits |
+| **An iframe embed** | A live map from a provider, in a frame | A place visitors can pan and zoom | Third-party code, tracking, and weight |
+| **A map library** | Your own JavaScript map (such as Leaflet or MapLibre) with map tiles | Many markers, custom layers, your own data | More code, tile terms, and accessibility work |
+
+Start from the **top of the table** and go down only as far as you need. Most "Contact us" pages only need a link and an address, and perhaps one embedded map.
+
+## The Basics: A Map with a Text Alternative
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<section aria-labelledby="find-title">
+  <h2 id="find-title">Find us</h2>
+
+  <iframe
+    title="Map of Example Café"
+    src="https://www.openstreetmap.org/export/embed.html?bbox=77.2040%2C28.6100%2C77.2140%2C28.6170&layer=mapnik&marker=28.6139%2C77.2090"
+    loading="lazy"
+    referrerpolicy="strict-origin-when-cross-origin"
+    style="width:100%;aspect-ratio:3 / 2;border:0"
+  ></iframe>
+
+  <address>
+    Example Café<br>
+    12 Garden Road, Example Town 110001
+  </address>
+
+  <ul>
+    <li>By bus: routes 14 and 22 stop outside.</li>
+    <li>On foot: 5 minutes from the main station.</li>
+    <li><a href="https://www.openstreetmap.org/?mlat=28.6139&mlon=77.2090#map=16/28.6139/77.2090">Open in a map site</a></li>
+  </ul>
+</section>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FailureDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Tick and untick the boxes in the demo. The **map is only half the page.** The address, the plain-language directions, and the link are what make it usable if the map is blocked, slow, too small to read, or unusable with a keyboard or screen reader. Use [`<address>`](/tutorials/html/semantic-html/address) for the contact details of the place.
+
+## Building a Map Embed from Coordinates
+
+A place can be described by **latitude** and **longitude** in decimal degrees:
+
+- **Latitude:** from -90 (south) to 90 (north).
+- **Longitude:** from -180 (west) to 180 (east).
+- Use a **dot** for decimals, and negative numbers for south and west.
+
+Most providers let you **copy an embed code** from their site (look for "Share" or "Embed a map"). Some also let you build the address yourself. For example, the OpenStreetMap embed takes a **bounding box** (west, south, east, north) and an optional marker.
+
+### Try It: Build a Map and Its Links
+
+Change the coordinates, zoom, and place name. The tool writes the iframe and the links. The map itself loads **only when you press the button.**
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<iframe
+  title="Map of Example Café"
+  src="https://www.openstreetmap.org/export/embed.html?bbox=WEST%2CSOUTH%2CEAST%2CNORTH&layer=mapnik&marker=LAT%2CLON"
+  loading="lazy"
+  style="width:100%;aspect-ratio:3 / 2;border:0"></iframe>
+
+<!-- Links that work without any embed -->
+<a href="https://www.openstreetmap.org/?mlat=LAT&mlon=LON#map=16/LAT/LON">OpenStreetMap</a>
+<a href="https://www.google.com/maps/search/?api=1&query=LAT%2CLON">Google Maps</a>
+<a href="geo:LAT,LON?q=LAT,LON(Example%20Caf%C3%A9)">Phone map app</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MapBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A few notes on the link formats:
+
+- **Web links** to map sites (OpenStreetMap, Google Maps, Apple Maps) work in every browser. They open the site, or the app if one is installed.
+- A **`geo:` link** opens the default map app on many phones. It does nothing useful on many desktop computers, so offer it **alongside** a web link, never instead of one.
+- The exact link formats belong to each provider, and can change. Check the provider's current documentation before relying on one.
+
+## Click-to-Load: Privacy and Speed
+
+An embedded map loads a lot: scripts, tiles, fonts, and trackers. And the provider learns that **this visitor** opened **this page**, even if they never touch the map.
+
+A **click-to-load** (or "facade") pattern avoids that. Show a placeholder, with the address and a link, and create the iframe only when the visitor asks for it.
+
+```html
+<div id="map-slot">
+  <p>The map is not loaded, so nothing has been sent to the map provider.</p>
+  <button type="button" id="load-map">Load the map</button>
+</div>
+```
+
+```js
+document.getElementById("load-map").addEventListener("click", () => {
+  const frame = document.createElement("iframe");
+  frame.title = "Map of Example Café";
+  frame.src = "https://www.openstreetmap.org/export/embed.html?bbox=…&marker=…";
+  frame.loading = "lazy";
+  frame.referrerPolicy = "strict-origin-when-cross-origin";
+  frame.style.cssText = "width:100%;aspect-ratio:3/2;border:0";
+
+  document.getElementById("map-slot").replaceChildren(frame);
+});
+```
+
+This helps in three ways: **privacy** (no contact until the visitor chooses), **speed** (the page is light until the map is needed), and **legal compliance** (many places require consent before loading third-party trackers).
+
+## Keys, Terms, and Attribution
+
+- **Many map services need an account and an API key.** Without one, an embed may fail or show a watermark.
+- **Never expose an unrestricted key.** A key in your page can be copied. Restrict it in the provider's console to your own website addresses (and to the services you use), and set usage limits.
+- **Read the terms.** Providers set rules about usage limits, caching, commercial use, and how to display the map. Public tile servers in particular are often **not** meant for heavy traffic.
+- **Show the attribution.** OpenStreetMap-based maps require a credit such as "© OpenStreetMap contributors". Do not hide or crop it.
+- **Watch the cost.** Some services charge per load. A map on a busy page can cost real money, which is another reason to use click-to-load.
+
+## Responsive Maps
+
+A map needs room. Too small, and it cannot be used. Too tall on a phone, and it traps the scroll.
+
+```css
+.map {
+  display: block;
+  width: 100%;
+  max-width: 48rem;
+  aspect-ratio: 3 / 2;     /* roomy on phones */
+  border: 0;
+}
+
+@media (min-width: 48rem) {
+  .map { aspect-ratio: 16 / 9; }
+}
+```
+
+- Use `aspect-ratio`, as you saw in [Iframe](./iframe) and [Responsive Video](/tutorials/html/audio-video/responsive-video), so the page does not jump while it loads.
+- On touch screens, a map that fills the whole screen makes it hard to scroll past. Leave a margin of page around it, or a visible gap.
+- Check the map at 200% zoom.
+
+## Accessibility at a Glance
+
+- **Give the iframe a `title`** such as "Map of Example Café".
+- **Always provide the address as real text,** and **directions in words** (transport, landmarks, step-free access, parking).
+- **Provide links** to open the place in a map app, which has its own accessible controls.
+- **Do not put important information only on the map,** such as opening hours or a note in a marker. Say it in the page.
+- **Do not trap the keyboard.** Test that Tab can enter and leave the map. If you cannot control an embed, offer a "Skip the map" link before it.
+- **Check zoom and touch.** Interactive maps are hard to use with a keyboard, a screen reader, or limited dexterity. Treat them as a convenience, not the only route to the information.
+- **For a library map,** give markers real text, make marker lists available as normal HTML (a list or table), and support keyboard operation.
+- **Do not rely on colour** to show meaning on a map you control.
+- **Keep text readable** on top of map tiles, with strong contrast.
+
+## Security and Privacy Notes
+
+- **An embedded map is third-party content.** It can set cookies and track visitors. Use click-to-load, `referrerpolicy`, and `loading="lazy"`, and ask for consent where the law requires.
+- **Do not grant `allow="geolocation"` unless you need it.** An embed that asks for the visitor's location is asking for very personal data. If you have a "find the nearest store" feature, ask only after the visitor presses a button, and explain why.
+- **Never request the location automatically** when the page loads.
+- **Protect your API key** with restrictions, as above.
+- **Be careful whose location you publish.** Do not put a **private person's home address** on a map without their clear consent. A map pin and a name can cause real harm.
+- **Do not build the `src` from visitor input** without checking it. Allow only your known map host, and encode every value with `encodeURIComponent`.
+- **Treat coordinates as data.** Check that they are numbers in range before you put them into a link or an address.
+- For the full defences, see [Third-Party Content Security](./third-party-content-security).
+
+## Global Audience Notes
+
+- **Some map services are blocked or slow in some countries.** Offer **more than one** link (for example, a global service and the one most used locally), and always give the address in text.
+- **Map labels appear in different languages.** Many providers let you choose the language of the labels, or show local names. Check that your visitors can read the map.
+- **Address formats differ widely.** Some countries put the number before the street, some after. Some have no street numbers. Give extra help: a landmark, a nearby station, or a short plain-language description.
+- **Write the address in the local script,** and, where it helps visitors, a second version in a widely read script, such as the Latin alphabet.
+- **Use decimal coordinates with a dot,** even if your own language uses a comma, and do not put spaces or degree symbols in links.
+- **Right-to-left pages:** the map itself is not mirrored, but your text, buttons, and layout should be.
+- **Heavy maps hurt on slow and metered connections.** Click-to-load, and a link, make the page work for everyone.
+- **Think about time:** opening hours, time zones, and holidays differ. Give them as text, with the time zone where needed.
+
+## Common Mistakes to Avoid
+
+1. **A map with no address or directions in text.**
+2. **No `title` on the iframe.**
+3. **Loading the map immediately,** with no consent or click.
+4. **An unrestricted API key** in the page.
+5. **Hiding the attribution.**
+6. **Granting location access for no reason,** or asking for it on load.
+7. **A map too small to use,** or so tall it traps the scroll.
+8. **Putting opening hours or notes only inside the map.**
+9. **Only a `geo:` link,** which does nothing on many desktops.
+10. **Only one map provider,** where it may be blocked.
+11. **Wrong coordinates** (latitude and longitude swapped, or a comma in the numbers).
+12. **Publishing a private person's address.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Write the address of a place as text, inside an `<address>` element.
+2. Add directions in words: by bus, on foot, and step-free access.
+3. Add a link to open the place in a map site.
+4. Add an `<iframe>` map with a `title` and `aspect-ratio`.
+5. Swap the latitude and longitude, and see where the pin lands.
+6. Replace the iframe with a click-to-load button that creates it.
+7. Add a `geo:` link, and test it on a phone and on a computer.
+8. Check the page with the map blocked (for example, with a privacy extension), and see what visitors would see.
+9. Tab through the page, and make sure you can get past the map.
+10. Bonus: write the whole "Find us" section for a place you know, and ask a friend to find it using only your text.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Is there an HTML element for maps?</summary>
+
+No. The `<map>` element is for clickable regions on an image. To show a geographic map, you use a link, a static image, an `iframe` embed, or a JavaScript mapping library.
+
+</details>
+
+<details>
+<summary>2. What should always accompany an embedded map?</summary>
+
+The address as real text, directions in words, and a link to open the place in a map app. They help when the map is blocked, slow, or hard to use.
+
+</details>
+
+<details>
+<summary>3. What is click-to-load, and why use it?</summary>
+
+A placeholder with a button that creates the `iframe` only when the visitor asks. Nothing is sent to the map provider until then, so it protects privacy, speeds up the page, and helps meet consent rules.
+
+</details>
+
+<details>
+<summary>4. How should you protect a map API key?</summary>
+
+Restrict it in the provider's console to your website addresses and the services you use, set usage limits, and never use an unrestricted key in public pages.
+
+</details>
+
+<details>
+<summary>5. What are the valid ranges for coordinates?</summary>
+
+Latitude from -90 to 90, and longitude from -180 to 180, as decimal numbers with a dot. Swapping them is a common mistake.
+
+</details>
+
+<details>
+<summary>6. Why offer more than one map link?</summary>
+
+Some services are blocked or slow in some countries, and different people prefer different apps. A global link, a local one, and a `geo:` link for phones cover more visitors.
+
+</details>
+
+## Key Takeaways
+
+- HTML has no geographic map element. Use **links, static images, `iframe` embeds, or a map library**, starting with the simplest.
+- Always give **the address, directions in words, and a link** as text, so the page works without the map.
+- Give the iframe a **`title`**, a **shape** with `aspect-ratio`, and `loading="lazy"`.
+- Use **click-to-load** to protect privacy and speed, and never ask for location automatically.
+- **Restrict API keys,** read the terms, and keep the **attribution** visible.
+- Test with the **keyboard**, at **200% zoom**, and with the map **blocked**.
+- Offer **more than one provider**, write addresses clearly, and use decimal coordinates with a dot.
+- Never publish a private person's address on a map without clear consent.
+
+Next, the most important lesson of the section: staying safe with everything you embed, in [Third-Party Content Security](./third-party-content-security), or return to the [Embedded Content overview](../embedded-content).

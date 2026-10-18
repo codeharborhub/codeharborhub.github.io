@@ -1,15 +1,367 @@
 ---
 id: embedded-content-overview
-title: "Working with Embedded Content in HTML"
+title: "HTML Embedded Content"
 sidebar_label: "Embedded Content"
 sidebar_position: 1
 slug: /html/embedded-content
-description: "Master embedded content in HTML5, including inline frames, external objects, dynamic graphics, vector artwork, and third-party security with CodeHarborHub."
+description: "Start learning HTML embedded content: iframe, embed, object, SVG, canvas, and maps. See what each element is for, how they differ, how to choose between them, and why third-party content needs security care, with a live sampler of four embedding methods."
 keywords:
-  - HTML embedded content overview
-  - HTML embedded elements
-  - external media HTML
-  - web embedding tutorial
+  - HTML embedded content
+  - iframe embed object difference
+  - HTML SVG canvas difference
+  - embed map in HTML
+  - embed YouTube iframe
+  - third party content security
+  - iframe sandbox
+  - inline SVG vs canvas
+  - HTML5 embedding elements
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, embedded-content, media, beginner]
+tags: [html, web-development, beginner, embedded-content, iframe, svg, canvas, security, frontend]
 ---
+
+import {useEffect, useRef, useState} from 'react';
+
+export function SamplerDemo() {
+  const [kind, setKind] = useState("iframe");
+  const canvasRef = useRef(null);
+  const svgMarkup = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80"><rect width="200" height="80" rx="8" fill="#fef9c3"/><circle cx="40" cy="40" r="24" fill="#f97316"/><text x="80" y="46" font-family="sans-serif" font-size="16" fill="#0f172a">I am an SVG</text></svg>';
+  const objectUri = "data:image/svg+xml," + encodeURIComponent(svgMarkup);
+  const framePage = "<!doctype html><html><body style='font-family:sans-serif;margin:0;padding:1rem;background:#e0f2fe;color:#0f172a'><h3 style='margin:0 0 .3rem'>I am another page</h3><p style='margin:0'>I live inside an iframe, with my own document.</p></body></html>";
+  useEffect(() => {
+    if (kind !== "canvas" || !canvasRef.current) return;
+    const context = canvasRef.current.getContext("2d");
+    context.fillStyle = "#dcfce7";
+    context.fillRect(0, 0, 200, 80);
+    context.fillStyle = "#16a34a";
+    context.beginPath();
+    context.arc(40, 40, 24, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#0f172a";
+    context.font = "16px sans-serif";
+    context.fillText("I am a canvas", 80, 46);
+  }, [kind]);
+  const options = [
+    {key: "iframe", label: "iframe"},
+    {key: "object", label: "object"},
+    {key: "svg", label: "inline SVG"},
+    {key: "canvas", label: "canvas"},
+  ];
+  const facts = {
+    iframe: [
+      ["Has its own document?", "Yes: a whole separate page"],
+      ["Can your CSS and scripts reach inside?", "No, when it comes from another site"],
+      ["Text and links readable by assistive technology?", "Yes, inside the frame. The frame needs a title"],
+      ["Best for", "Other pages, video players, maps, widgets"],
+      ["Main risk", "You are showing someone else's page and code"],
+    ],
+    object: [
+      ["Has its own document?", "Yes, for SVG, HTML and PDF files"],
+      ["Can your CSS and scripts reach inside?", "No for the inner document, though the object box itself can be styled"],
+      ["Text and links readable by assistive technology?", "Yes, inside it. Give the object a label"],
+      ["Best for", "Older uses such as PDFs, and SVG with a fallback"],
+      ["Main risk", "Behaviour is less consistent than iframe, and plug-ins are gone"],
+    ],
+    svg: [
+      ["Has its own document?", "No: it is part of your page"],
+      ["Can your CSS and scripts reach inside?", "Yes, every shape is an element"],
+      ["Text and links readable by assistive technology?", "Yes, with title and desc"],
+      ["Best for", "Icons, logos, charts, diagrams, illustrations"],
+      ["Main risk", "Very complex drawings get heavy"],
+    ],
+    canvas: [
+      ["Has its own document?", "No: it is one element with a bitmap"],
+      ["Can your CSS and scripts reach inside?", "You draw into it with script, but there are no shapes to select afterwards"],
+      ["Text and links readable by assistive technology?", "No, unless you provide fallback content and your own text alternative"],
+      ["Best for", "Games, animation, image effects, fast drawing"],
+      ["Main risk", "Inaccessible by default"],
+    ],
+  };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Pick an embedding method</legend>
+        {options.map((item) => (
+          <label key={item.key} style={{display: "inline-block", marginRight: "1rem"}}>
+            <input type="radio" name="sampler-kind" checked={kind === item.key} onChange={() => setKind(item.key)} /> {item.label}
+          </label>
+        ))}
+      </fieldset>
+      <div style={{marginBottom: "0.6rem"}}>
+        {kind === "iframe" && (
+          <iframe title="A tiny embedded page" sandbox="" srcDoc={framePage} style={{width: "100%", maxWidth: "26rem", height: "7rem", border: "1px solid #94a3b8"}} />
+        )}
+        {kind === "object" && (
+          <object data={objectUri} type="image/svg+xml" width="200" height="80" aria-label="An orange circle and the words I am an SVG">
+            Your browser could not show this graphic.
+          </object>
+        )}
+        {kind === "svg" && (
+          <svg viewBox="0 0 200 80" width="200" height="80" role="img" aria-labelledby="sampler-svg-title">
+            <title id="sampler-svg-title">An orange circle and the words I am an SVG</title>
+            <rect width="200" height="80" rx="8" fill="#fef9c3" />
+            <circle cx="40" cy="40" r="24" fill="#f97316" />
+            <text x="80" y="46" fontFamily="sans-serif" fontSize="16" fill="#0f172a">I am an SVG</text>
+          </svg>
+        )}
+        {kind === "canvas" && (
+          <canvas ref={canvasRef} width="200" height="80" role="img" aria-label="A green circle and the words I am a canvas">
+            A green circle and the words I am a canvas.
+          </canvas>
+        )}
+      </div>
+      <table>
+        <caption>{options.find((item) => item.key === kind).label}: key facts</caption>
+        <tbody>
+          {facts[kind].map((row) => (
+            <tr key={row[0]}><th scope="row" style={{textAlign: "start"}}>{row[0]}</th><td>{row[1]}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        All four are real elements on this page. The iframe uses <code>srcdoc</code> and an empty <code>sandbox</code>, so the page inside it cannot run scripts.
+      </p>
+    </div>
+  );
+}
+
+export function ChooserDemo() {
+  const [need, setNeed] = useState("page");
+  const choices = [
+    {key: "page", label: "Show another web page, a video player, or a widget", tag: "iframe", lesson: "Iframe", code: '<iframe src="https://example.com/embed"\n        title="Describe the content"\n        loading="lazy"\n        sandbox="allow-scripts allow-same-origin"></iframe>'},
+    {key: "map", label: "Show a map with a location", tag: "iframe", lesson: "Maps", code: '<iframe src="https://maps.example.com/embed?q=Town+Hall"\n        title="Map of the Town Hall"\n        loading="lazy"></iframe>'},
+    {key: "pdf", label: "Show a PDF or an older kind of file inline", tag: "object", lesson: "Object", code: '<object data="guide.pdf" type="application/pdf" width="600" height="400">\n  <a href="guide.pdf">Download the guide (PDF)</a>\n</object>'},
+    {key: "plain", label: "Embed a resource and keep it simple", tag: "embed", lesson: "Embed", code: '<embed src="diagram.svg" type="image/svg+xml" width="300" height="200">'},
+    {key: "graphic", label: "Draw an icon, a logo, a chart, or a diagram", tag: "svg", lesson: "SVG", code: '<svg viewBox="0 0 100 100" role="img" aria-labelledby="t">\n  <title id="t">A blue circle</title>\n  <circle cx="50" cy="50" r="40" fill="#2563eb"/>\n</svg>'},
+    {key: "pixels", label: "Make a game, an animation, or an image effect", tag: "canvas", lesson: "Canvas", code: '<canvas id="stage" width="400" height="300">\n  A description of what the canvas shows.\n</canvas>'},
+  ];
+  const current = choices.find((item) => item.key === need);
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>What do you want to put on the page?</legend>
+        {choices.map((item) => (
+          <p key={item.key} style={{margin: "0.2rem 0"}}>
+            <label><input type="radio" name="chooser-need" checked={need === item.key} onChange={() => setNeed(item.key)} /> {item.label}</label>
+          </p>
+        ))}
+      </fieldset>
+      <p role="status" style={{margin: "0 0 0.3rem"}}>
+        Reach for <strong>{current.tag}</strong>. Learn it in the <strong>{current.lesson}</strong> lesson.
+      </p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{current.code}</code></pre>
+    </div>
+  );
+}
+
+Most of a web page is your own text, images, and links. But a lot of the best parts of the web are **made by someone else, or made differently**: a map of your shop, a video player, a payment form, a live chart, a game, a PDF guide, a drawn diagram.
+
+**Embedded content** is any such content that you place inside your page. HTML gives you a few elements for it, and each one has a different job, a different level of trust, and different effects on speed, accessibility, and security.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn in This Section
+
+- Showing another page inside yours with `<iframe>`
+- Where `<embed>` and `<object>` fit today
+- Drawing sharp, scalable graphics with **SVG**
+- Drawing pixels with **canvas**
+- Adding **maps** to a page
+- Keeping your visitors safe when you embed **third-party content**
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Another page, inside yours -->
+<iframe src="https://example.com/widget" title="Booking widget" loading="lazy"></iframe>
+
+<!-- A graphic that is part of your page -->
+<svg viewBox="0 0 100 100" role="img" aria-labelledby="t">
+  <title id="t">A blue circle</title>
+  <circle cx="50" cy="50" r="40" fill="#2563eb"/>
+</svg>
+
+<!-- A drawing surface for scripts -->
+<canvas id="stage" width="400" height="300">A short description.</canvas>
+
+<!-- An older way to embed a file -->
+<object data="guide.pdf" type="application/pdf" width="600" height="400">
+  <a href="guide.pdf">Download the guide (PDF)</a>
+</object>
+```
+
+</TabItem>
+<TabItem value="output" label="Try Four Methods">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SamplerDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Pick each method above, and read the table underneath. The most important difference is the first row: **does the content have its own separate document?**
+
+- A **separate document** (iframe, object) works like a window onto another page. It keeps its own styles and scripts, and you cannot easily reach inside it. That makes it good for isolation, and a risk if you do not trust it.
+- Content that is **part of your page** (inline SVG, canvas) is yours to style and script, but it is also yours to make accessible.
+
+## Which Element Should I Use?
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A map, a player, a widget -->
+<iframe src="…" title="…" loading="lazy"></iframe>
+
+<!-- An icon or diagram -->
+<svg viewBox="0 0 24 24" role="img" aria-labelledby="t">…</svg>
+
+<!-- A game or image effect -->
+<canvas width="400" height="300">…</canvas>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ChooserDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Is in This Section
+
+<DocCardList />
+
+## Good Habits from the Start
+
+Four ideas that return in every lesson:
+
+1. **Give it a name.** An `iframe` needs a `title`, an `svg` needs a `title`, and a `canvas` needs fallback text or a label. Unnamed embeds are invisible to assistive technology.
+2. **Give it a shape.** Set a size or `aspect-ratio`, so the page does not jump while the content loads.
+3. **Load it lazily.** Embeds are heavy. Use `loading="lazy"` on iframes, and do not load what nobody has asked for.
+4. **Trust no one by default.** Content from another site can run code, set cookies, and track your visitors. Restrict what it may do.
+
+:::warning An embed is a promise
+When you embed someone else's page, **your visitors cannot tell where your page ends and theirs begins.** If that page is hacked, changed, or tracks people, it looks like it comes from you. Embed only what you trust, and limit what it can do. The last lesson in this section is all about this.
+:::
+
+## Accessibility at a Glance
+
+- **Title every `iframe`,** and give SVG and canvas a text alternative.
+- **Keep keyboard users able to get in and out** of every embedded player. Never trap the keyboard.
+- **Provide a link or text version** for important content: a map's address, a chart's data table, a PDF's download link.
+- **Do not rely on a picture of text** inside an embed.
+- **Make embeds work at 200% zoom** and on narrow screens.
+- **Avoid embeds that autoplay** or flash.
+
+## Security and Privacy Notes
+
+- **Embedded third-party content can track visitors,** even before they click on it. Load it after consent where the law requires it.
+- **Use `sandbox`** to remove permissions you do not need, and `referrerpolicy` to limit what the other site learns.
+- **Use HTTPS** for everything you embed.
+- **Do not let visitors choose the address** an `iframe` loads, without checking it against an allow-list.
+- **Remember your own page can be framed by others.** Use `Content-Security-Policy: frame-ancestors` to control that.
+- **Do not put secrets in the page source,** including the source of embeds, maps, and SVG.
+
+## Global Audience Notes
+
+- **Embeds are heavy for slow and metered connections.** Use lazy loading, and a lightweight **click-to-load** placeholder for big players and maps.
+- **Some services are blocked in some countries,** or slow there. Offer a plain link or text alternative as a fallback.
+- **Check the language of embedded content** and whether it supports your visitors' languages.
+- **Use logical CSS properties** and test right-to-left pages for embedded widgets.
+- **Cookie and privacy laws differ** by region. A consent pattern that works in one country may not be enough in another.
+
+## Common Mistakes to Avoid
+
+1. **An `iframe` with no `title`.**
+2. **No size or aspect ratio,** so the page jumps.
+3. **Loading every embed immediately,** so the page is slow.
+4. **Embedding a page you do not trust,** with no `sandbox`.
+5. **A canvas with nothing for screen readers.**
+6. **An SVG with no title,** when it carries meaning.
+7. **Using `embed` or `object` for things an `iframe` or `img` does better.**
+8. **Embedding content that cannot be reached by keyboard.**
+9. **Giving the only copy of important information to a third party** (a map with no address in text).
+10. **Forgetting HTTPS,** so the embed is blocked.
+11. **Forgetting that the embed can see and set cookies.**
+12. **No fallback** when the embed fails to load.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add an `iframe` with a `srcdoc` page and a `title`.
+2. Add `sandbox=""` to it, and see what stops working.
+3. Add a small inline SVG with a `title`.
+4. Draw a rectangle on a `canvas`, with fallback text inside it.
+5. Put a PDF in an `object`, with a download link as a fallback.
+6. Give the iframe a fixed `aspect-ratio`, and check that the page does not jump.
+7. Add `loading="lazy"`, and see when the file is requested.
+8. Tab through the page, and check that you can get past every embed.
+9. Turn off images and scripts, and see what each embed leaves behind.
+10. Bonus: list every third-party host your own site loads from, and ask whether you need each one.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is embedded content?</summary>
+
+Content placed inside your page that is made by someone else, or in another format: pages, players, maps, PDFs, drawings, and canvases.
+
+</details>
+
+<details>
+<summary>2. What is the main difference between an `iframe` and an inline SVG?</summary>
+
+An `iframe` is a separate document with its own styles and scripts, so it is isolated from your page. Inline SVG is part of your page, so your CSS and scripts can reach every shape.
+
+</details>
+
+<details>
+<summary>3. Which element suits a game or image effect?</summary>
+
+`canvas`, because you draw pixels with JavaScript. It is not accessible by default, so you must add fallback content and your own text alternative.
+
+</details>
+
+<details>
+<summary>4. Why give every embed a name?</summary>
+
+Assistive technology lists embeds by name. A frame with no `title`, or an SVG or canvas with no text alternative, is just an unnamed object, so users cannot tell what it is.
+
+</details>
+
+<details>
+<summary>5. Why is third-party content a security concern?</summary>
+
+It runs code from someone else on your visitors' devices, can set cookies, and can track them, yet it looks like part of your site. Restrict it with `sandbox`, limit what it learns, and ask for consent where needed.
+
+</details>
+
+## Key Takeaways
+
+- **Embedded content** brings pages, players, maps, files, and drawings into your page.
+- **`iframe`** embeds other pages, **`object` and `embed`** are older ways to embed files, **SVG** draws scalable graphics, and **canvas** draws pixels with script.
+- Separate documents are **isolated**, and part-of-page content is **yours to make accessible**.
+- Always **name, size, and lazy-load** your embeds.
+- **Never trust embedded content by default.** Use `sandbox`, HTTPS, and limits, and plan for failure.
+- Give important information a **text version**: an address, a data table, or a download link.
+- Plan for slow connections, blocked services, many languages, and different privacy laws.
+
+Ready to start? Begin with [Iframe](./embedded-content/iframe), the most common way to embed content.

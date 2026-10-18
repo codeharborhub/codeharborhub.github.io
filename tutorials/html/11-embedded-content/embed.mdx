@@ -1,15 +1,380 @@
 ---
-id: embed-element
-title: "External Application Containers: The embed Element"
-sidebar_label: "Embed (<embed>)"
+id: html-embed
+title: "HTML Embed Element"
+sidebar_label: "Embed"
 sidebar_position: 3
 slug: /html/embedded-content/embed
-description: "Discover how to integrate interactive external content, browser plugins, and multimedia resources using the void embed element."
+description: "Learn the HTML embed element: what it was built for, how src, type, width and height work, why it has no fallback content, how it compares with object, iframe and img, accessibility and security limits, and when to choose something else, with live demos."
 keywords:
+  - HTML embed element
   - HTML embed tag
-  - external plugin container
-  - void embed element
-  - interactive content HTML
+  - embed vs object vs iframe
+  - embed PDF in HTML
+  - embed SVG HTML
+  - embed type attribute
+  - legacy plugins Flash
+  - navigator.pdfViewerEnabled
+  - embedded content accessibility
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, embed, embedded-content, elements]
+tags: [html, web-development, beginner, embed, embedded-content, security, accessibility, frontend]
 ---
+
+import {useEffect, useState} from 'react';
+
+export function EmbedLab() {
+  const [width, setWidth] = useState(240);
+  const [goodType, setGoodType] = useState(true);
+  const [pdfSupport, setPdfSupport] = useState("checking…");
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80"><rect width="200" height="80" rx="8" fill="#ede9fe"/><circle cx="40" cy="40" r="24" fill="#7c3aed"/><text x="80" y="46" font-family="sans-serif" font-size="16" fill="#0f172a">An SVG file</text></svg>';
+  const uri = "data:image/svg+xml," + encodeURIComponent(svg);
+  const type = goodType ? "image/svg+xml" : "application/x-unknown-type";
+  const height = Math.round(width * 0.4);
+  useEffect(() => {
+    if (typeof navigator.pdfViewerEnabled === "boolean") {
+      setPdfSupport(navigator.pdfViewerEnabled ? "yes, this browser has a built-in PDF viewer" : "no, PDFs here are usually downloaded");
+    } else {
+      setPdfSupport("this browser does not say");
+    }
+  }, []);
+  const code = '<embed src="graphic.svg"\n       type="' + type + '"\n       width="' + width + '" height="' + height + '">';
+  return (
+    <div>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", margin: "0 0 0.6rem"}}>
+        <label>
+          width: <strong>{width} px</strong>{" "}
+          <input type="range" min="120" max="400" step="10" value={width} onChange={(event) => setWidth(Number(event.target.value))} aria-valuetext={width + " pixels"} />
+        </label>
+        <label>
+          <input type="checkbox" checked={goodType} onChange={(event) => setGoodType(event.target.checked)} /> a correct <code>type</code>
+        </label>
+      </p>
+      <div style={{border: "1px dashed #94a3b8", display: "inline-block", maxWidth: "100%", overflow: "auto", minWidth: "6rem", minHeight: "2rem"}}>
+        <embed key={type + width} src={uri} type={type} width={width} height={height} title="An SVG with a purple circle and the words An SVG file" />
+      </div>
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+      <p role="status" style={{margin: "0.4rem 0 0", color: goodType ? "inherit" : "#b91c1c"}}>
+        {goodType
+          ? "The browser recognises the type and shows the file."
+          : "With a type the browser does not know, most browsers show an empty box and give no message. There is no fallback content to rescue the visitor."}
+      </p>
+      <p style={{margin: "0.4rem 0 0"}}><strong>Built-in PDF viewer?</strong> {pdfSupport}</p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a real <code>embed</code> element. Results can differ a little from browser to browser, which is part of the lesson.
+      </p>
+    </div>
+  );
+}
+
+export function WhichDemo() {
+  const [what, setWhat] = useState("pdf");
+  const rows = {
+    pdf: {label: "A PDF document", use: "object (or an iframe), plus a visible download link", okForEmbed: "Works on desktop, but gives you no fallback if the viewer is missing", code: '<object data="guide.pdf" type="application/pdf" width="600" height="400">\n  <a href="guide.pdf">Download the guide (PDF, 1.2 MB)</a>\n</object>'},
+    svg: {label: "A vector graphic file", use: "img for pictures, or inline svg when you need to style or script it", okForEmbed: "Works, but img is simpler and safer", code: '<img src="logo.svg" alt="CodeHarborHub logo" width="120" height="40">'},
+    page: {label: "Another web page or widget", use: "iframe, with a title, sandbox and lazy loading", okForEmbed: "Do not use embed for this", code: '<iframe src="https://example.com/widget"\n        title="Booking widget"\n        loading="lazy"\n        sandbox="allow-scripts allow-forms"></iframe>'},
+    image: {label: "A normal picture", use: "img, or picture for several versions", okForEmbed: "Never. img gives you alt text and lazy loading", code: '<img src="photo.jpg" alt="A loaf of bread cooling on a rack" width="600" height="400" loading="lazy">'},
+    video: {label: "Video or sound", use: "video or audio, with source and track", okForEmbed: "Do not use embed for this", code: '<video controls src="lesson.mp4" width="640" height="360"></video>'},
+    plugin: {label: "Flash, Java applets or similar plug-ins", use: "Nothing. These are gone from modern browsers", okForEmbed: "No browser will run them, so rebuild the content with HTML, SVG, canvas, or video", code: "<!-- No longer possible. Rebuild it with open web technology. -->"},
+  };
+  const current = rows[what];
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>What do you want to put on the page?</legend>
+        {Object.keys(rows).map((key) => (
+          <p key={key} style={{margin: "0.2rem 0"}}>
+            <label><input type="radio" name="which-embed" checked={what === key} onChange={() => setWhat(key)} /> {rows[key].label}</label>
+          </p>
+        ))}
+      </fieldset>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>Better choice:</strong> {current.use}</p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>And <code>embed</code>?</strong> {current.okForEmbed}</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{current.code}</code></pre>
+    </div>
+  );
+}
+
+For a long time, the web could not do everything by itself. To show an animation, a rich game, or a special document, a page needed a **plug-in**: a separate program that the visitor had to install. The **`<embed>`** element was invented to hand a rectangle of the page to such a plug-in.
+
+Those plug-ins have now disappeared from modern browsers. But the `<embed>` element is still part of HTML, still works for some files such as PDFs and SVG, and you will meet it in older code. This lesson explains what it does, what it cannot do, and **why you will usually choose something else.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<embed>` is, and where it came from
+- Its few attributes: `src`, `type`, `width`, `height`
+- Why it has **no fallback content**
+- How it compares with `<object>`, `<iframe>`, and `<img>`
+- Accessibility and security limits
+- Better choices for most jobs
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<embed
+  src="graphic.svg"
+  type="image/svg+xml"
+  width="240"
+  height="96"
+>
+
+<embed
+  src="guide.pdf"
+  type="application/pdf"
+  width="600"
+  height="400"
+>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EmbedLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Drag the width, and turn the **type** off. The element is real, and the result shows its biggest weakness: when the browser cannot show the file, you get an **empty box** and no message.
+
+`<embed>` is a **void element**: it has no closing tag and **no content**. There is nowhere to put fallback text or a download link inside it.
+
+## Attributes
+
+| Attribute | What it does | Notes |
+| :-- | :-- | :-- |
+| `src` | The address of the file to embed | Use `https://` |
+| `type` | The MIME type of the file, such as `application/pdf` or `image/svg+xml` | Helps the browser choose how to show it |
+| `width`, `height` | Size in pixels, with no units | Set both, or use CSS |
+
+That is the whole official list. Any **other attributes** are passed along to whatever program handles the file. In the days of plug-ins, that is how you configured them. Today, there is almost nothing to pass to.
+
+There is also **no `alt`**, no `loading`, no `sandbox`, and no `referrerpolicy`. You can add a `title` or an `aria-label` as a name for assistive technology, and CSS works on the element's box, but you cannot ask the browser to restrict what is inside.
+
+### Do Not Trust `type` Alone
+
+`type` is a hint. The browser also looks at the **`Content-Type` header** the server sends for the file. If they disagree, or if the file is something the browser will not show, you get an empty box. Make sure your server sends the right type for each file.
+
+## `embed` vs `object` vs `iframe` vs `img`
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A picture: use img -->
+<img src="logo.svg" alt="CodeHarborHub logo" width="120" height="40">
+
+<!-- A PDF, with a fallback: use object -->
+<object data="guide.pdf" type="application/pdf" width="600" height="400">
+  <a href="guide.pdf">Download the guide (PDF)</a>
+</object>
+
+<!-- A web page or widget: use iframe -->
+<iframe src="https://example.com/widget" title="Widget" loading="lazy"></iframe>
+
+<!-- embed: no fallback, no sandbox, no alt -->
+<embed src="guide.pdf" type="application/pdf" width="600" height="400">
+```
+
+</TabItem>
+<TabItem value="output" label="Which Should I Use?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<WhichDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+| | `img` | `object` | `iframe` | `embed` |
+| :-- | :-- | :-- | :-- | :-- |
+| Fallback content | `alt` text | **Yes**, inside the element | Text inside (rarely shown) | **None** |
+| Text alternative | `alt` | Fallback content | `title` | Only `title` or `aria-label` |
+| Can show a web page | No | Yes | **Yes, built for it** | Not intended |
+| Lazy loading | `loading="lazy"` | No | `loading="lazy"` | No |
+| Sandbox | n/a | No | **Yes** | **No** |
+| Best for | Pictures, SVG used as a picture | PDFs and older embedded files | Pages, players, maps, widgets | Rarely; older code |
+
+The honest summary: **in new code, you rarely need `<embed>`.** For a graphic, use `<img>` or inline SVG. For a PDF, `<object>` gives you a fallback link. For another page, `<iframe>` gives you `title`, lazy loading, and `sandbox`.
+
+## Embedding a PDF
+
+A PDF is the most common use today. Desktop browsers usually have a built-in viewer, so this works:
+
+```html
+<embed src="guide.pdf" type="application/pdf" width="600" height="400">
+```
+
+But think about the visitors for whom it does not:
+
+- **Many phones and tablets** show nothing, or only a small preview, or just offer a download.
+- Some browsers have **no built-in viewer** and download the file.
+- A visitor with a **screen reader** or only a keyboard may find the viewer hard to use, and may get stuck inside it.
+- You get **no fallback** for any of them.
+
+You can ask the browser whether it has a viewer, on the supported browsers:
+
+```js
+if (navigator.pdfViewerEnabled) {
+  // safe to show an inline viewer
+} else {
+  // show a plain download link instead
+}
+```
+
+The simplest, kindest pattern is always: **a visible link to the PDF, with its size, next to or instead of the viewer.**
+
+```html
+<p><a href="guide.pdf">Download the guide (PDF, 1.2 MB)</a></p>
+```
+
+And if the content matters, offer an **HTML version** too. HTML is easier to search, translate, read on a phone, and use with assistive technology than most PDFs.
+
+## Embedding SVG
+
+An SVG file shown through `<embed>` is displayed as a separate document. Scripts inside the SVG can run, and the SVG can load other things. That is rarely what you want.
+
+- For a **picture**, use `<img src="logo.svg" alt="…">`. It is safe (scripts do not run), cacheable, and has `alt`.
+- For a graphic you want to **style or animate with your page's CSS and JavaScript**, use **inline SVG** (see [SVG](./svg)).
+
+## A Note on Old Code
+
+You may see older pages that wrap an `<embed>` inside an `<object>`, so that one works if the other does not, usually for Flash:
+
+```html
+<object data="movie.swf" type="application/x-shockwave-flash">
+  <embed src="movie.swf" type="application/x-shockwave-flash">
+</object>
+```
+
+Flash, Java applets, and similar plug-ins **no longer run in any current browser.** If you find code like this, the content must be rebuilt with video, SVG, canvas, or JavaScript. Do not try to bring plug-ins back.
+
+## Accessibility at a Glance
+
+- **Prefer elements with a text alternative:** `img` with `alt`, `object` with fallback content, `iframe` with `title`.
+- **If you do use `embed`,** add a `title` or `aria-label`, and put a **visible text link** to the file next to it.
+- **Give a text version** of anything important: an HTML page for a PDF, a data table for a chart.
+- **Test with the keyboard.** A viewer inside the page can trap keyboard focus. Make sure a visitor can Tab out.
+- **Make PDFs accessible** if you must publish them: tagged, with a title, language, headings, and alternative text for images.
+- **Do not put essential information only in the embedded file.**
+- **Set a size** so the page does not jump.
+
+## Security and Privacy Notes
+
+- **`<embed>` has no `sandbox`.** You cannot lock down what runs inside it. For anything you do not fully trust, use an `<iframe>` with `sandbox`.
+- **Embedded files can carry active content.** An SVG can contain scripts, and a PDF can contain links and actions. Never embed a file uploaded by a visitor without checking it.
+- **Serve the right headers.** Send the correct `Content-Type`, and add `X-Content-Type-Options: nosniff` so the browser does not guess a file's type.
+- **Use `https://`.** An insecure embedded file in a secure page is blocked, or can be swapped by someone on the network.
+- **Do not build `src` from user input.** A visitor could make your page show a harmful or private file. Use a fixed list of allowed files.
+- **Remember that the file is public.** Anyone who sees the page can fetch the PDF or SVG directly.
+- **Third-party embedded files** may report back to the other site (through the referrer, for example). See [Third-Party Content Security](./third-party-content-security).
+
+## Global Audience Notes
+
+- **Do not assume every device has a PDF viewer.** Many phones in many regions do not. A plain download link works everywhere.
+- **PDFs are heavy.** Show the size ("1.2 MB") so visitors on slow or metered connections can choose.
+- **Offer content in HTML,** which can be translated by the browser and read in right-to-left languages without special viewers.
+- **Embedded PDF text may not follow the page's language settings.** Mark the language in the file, and name it in your link ("Guide (PDF, English)").
+- **Make files available in more than one language** where you can, and name them clearly.
+
+## Common Mistakes to Avoid
+
+1. **Using `embed` where `img`, `object`, `iframe`, or `video` would do.**
+2. **No visible link** to the file, so visitors with no viewer get an empty box.
+3. **No `type`, or a wrong `type`,** so the browser does not know what to do.
+4. **A wrong `Content-Type` header on the server.**
+5. **No size,** so the page jumps.
+6. **Expecting fallback content,** which `embed` does not have.
+7. **Trying to bring back Flash or Java.**
+8. **Embedding files from users, or from addresses you do not control,** without checks.
+9. **Giving the only copy of important information** to a PDF.
+10. **Forgetting a `title` or `aria-label`.**
+11. **Trapping keyboard users** inside a viewer.
+12. **Building `src` from user input.**
+
+## Practice Time
+
+Try these in your editor, with a small SVG and a small PDF you have:
+
+1. Embed an SVG with `<embed>`, and set `type`.
+2. Change the `type` to a wrong value, and see what the browser does.
+3. Embed a PDF, and check it on your computer and on your phone.
+4. Add a visible download link next to it, with the file size.
+5. Rewrite the PDF as an `<object>` with fallback text.
+6. Replace the SVG `<embed>` with an `<img>` that has `alt`.
+7. Try to add `sandbox` to an `<embed>`, and note that nothing happens.
+8. Use `navigator.pdfViewerEnabled` to choose between a viewer and a link.
+9. Set the wrong `Content-Type` on your local server for the PDF, and see what changes.
+10. Bonus: write the plain HTML version of a short PDF, and compare how each works with a screen reader.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What was `embed` originally for?</summary>
+
+It handed a rectangle of the page to a browser plug-in, such as Flash or a Java applet. Those plug-ins have been removed from modern browsers.
+
+</details>
+
+<details>
+<summary>2. What attributes does `embed` have?</summary>
+
+`src`, `type`, `width`, and `height`. Other attributes were once passed to plug-ins, but that is rarely useful today.
+
+</details>
+
+<details>
+<summary>3. Why is the lack of fallback content a problem?</summary>
+
+`embed` is a void element with no content. If the browser cannot show the file, the visitor sees an empty box and no message, unless you add a link beside it.
+
+</details>
+
+<details>
+<summary>4. Which element is a better choice for a PDF, and why?</summary>
+
+`object`, because it can hold fallback content such as a download link. A visible link to the file is a good idea whichever element you use.
+
+</details>
+
+<details>
+<summary>5. Can you sandbox an `embed`?</summary>
+
+No. There is no `sandbox` attribute on `embed`. For content you do not trust, use an `iframe` with `sandbox`.
+
+</details>
+
+<details>
+<summary>6. What should you use instead of `embed` for a picture?</summary>
+
+`img`, with `alt` text and lazy loading. For a graphic you need to style or script, use inline SVG.
+
+</details>
+
+## Key Takeaways
+
+- `<embed>` is a **void element** with `src`, `type`, `width`, and `height`, and **no fallback content**.
+- It came from the **plug-in era.** Flash, Java applets, and similar plug-ins no longer run.
+- Today it can still show **PDFs and SVG files**, but better elements usually exist.
+- Use **`img`** for pictures, **`object`** for PDFs with a fallback, **`iframe`** for pages and widgets, and **`video`** or **`audio`** for media.
+- Always provide a **visible link** and a **text version** of important content.
+- `embed` has **no sandbox, no `alt`, and no lazy loading.** Treat what it loads with care.
+- Send the right `Content-Type`, use HTTPS, and never build `src` from user input.
+- Do not assume a PDF viewer on every device.
+
+Next, learn the element that gives embedded files a proper fallback, in [Object](./object), or return to the [Embedded Content overview](../embedded-content).

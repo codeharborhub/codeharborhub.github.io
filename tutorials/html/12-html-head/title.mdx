@@ -1,15 +1,493 @@
 ---
-id: title-element
-title: "Document Title: The title Element for Browser Tabs and SEO"
-sidebar_label: "Document Title (<title>)"
+id: html-title
+title: "The HTML Title Element"
+sidebar_label: "Title"
 sidebar_position: 4
 slug: /html/html-head/title
-description: "Master writing effective title tags that appear on browser tabs, search engine results pages (SERPs), and social bookmarks."
+description: "Learn how to write great HTML page titles: where the title shows up, how long it should be, how to structure it for search results and screen readers, what characters are safe, and how to update it in single-page apps. Includes a live tab and search-result preview."
 keywords:
   - HTML title tag
-  - document title SEO
-  - browser tab title
   - page title best practices
+  - title element
+  - document.title
+  - SEO title length
+  - WCAG page titled
+  - accessible page title
+  - title tag in Docusaurus
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, title, seo]
+tags: [html, web-development, beginner, title, seo, accessibility, head, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+
+export function TitlePreview() {
+  const [title, setTitle] = useState("Sourdough for Beginners | The Bread Bin");
+  const [description, setDescription] = useState("A gentle, step-by-step guide to baking your first sourdough loaf, with no special equipment.");
+  const [pixels, setPixels] = useState(null);
+  useEffect(() => {
+    try {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      context.font = "20px Arial, sans-serif";
+      setPixels(Math.round(context.measureText(title).width));
+    } catch (error) {
+      setPixels(null);
+    }
+  }, [title]);
+  const clean = title.trim();
+  const tooLong = clean.length > 60 || (pixels !== null && pixels > 600);
+  const tooShort = clean.length > 0 && clean.length < 15;
+  const shownTitle = clean.length > 60 ? clean.slice(0, 57).trimEnd() + "…" : clean;
+  const shownTab = clean.length > 28 ? clean.slice(0, 27).trimEnd() + "…" : clean;
+  const shownDescription = description.length > 155 ? description.slice(0, 152).trimEnd() + "…" : description;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label htmlFor="title-input">Page title</label><br />
+        <input id="title-input" type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="desc-input">Description (for the search result)</label><br />
+        <input id="desc-input" type="text" value={description} onChange={(event) => setDescription(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <div aria-hidden="true" style={{display: "inline-block", maxWidth: "100%", padding: "0.3rem 0.8rem", border: "1px solid #cbd5e1", borderRadius: "8px 8px 0 0", background: "#f1f5f9", fontSize: "0.85em", marginBottom: "0.6rem"}}>
+        {"▪ "}{shownTab || "(untitled)"}
+      </div>
+      <div aria-hidden="true" style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.6rem 0.8rem"}}>
+        <div style={{fontSize: "0.8em", color: "#475569"}}>example.com › sourdough</div>
+        <div style={{fontSize: "1.1em", color: "#1d4ed8", textDecoration: "underline"}}>{shownTitle || "(untitled)"}</div>
+        <div style={{fontSize: "0.9em"}}>{shownDescription || "(no description, so the search engine will pick text from the page)"}</div>
+      </div>
+      <ul role="status" style={{margin: "0.6rem 0 0"}}>
+        <li>Length: <strong>{clean.length}</strong> characters{pixels !== null ? <span>, about <strong>{pixels}</strong> px wide at 20px Arial</span> : null}.</li>
+        {clean.length === 0 ? <li>A page without a title is a basic accessibility failure.</li> : null}
+        {tooLong ? <li>This is long, and may be cut off in search results and tabs.</li> : null}
+        {tooShort ? <li>This is very short. A more descriptive title usually helps.</li> : null}
+        {!tooLong && !tooShort && clean.length > 0 ? <li>This length is in a comfortable range.</li> : null}
+        {clean.length > 0 && !clean.includes("|") && !clean.includes("-") && !clean.includes("–") ? <li>Tip: add the site name after a separator, such as <code>Page | Site</code>.</li> : null}
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Search engines decide what they show, and may rewrite titles and descriptions. The 60-character and 600-pixel figures are common guidelines, not fixed rules, and the pixel width depends on your fonts.
+      </p>
+    </div>
+  );
+}
+
+export function LiveTitleLab() {
+  const [original, setOriginal] = useState(null);
+  const [current, setCurrent] = useState("");
+  const [log, setLog] = useState([]);
+  useEffect(() => {
+    const start = document.title;
+    setOriginal(start);
+    setCurrent(start);
+    return () => {
+      document.title = start;
+    };
+  }, []);
+  const apply = (value) => {
+    document.title = value;
+    setCurrent(document.title);
+    setLog((previous) => [document.title].concat(previous).slice(0, 4));
+  };
+  const pages = ["Home", "Products", "Cart (2 items)", "Checkout"];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        Pretend this is a single-page app. Each button changes the page without a full reload, and sets <code>document.title</code>. Look at your real browser tab.
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {pages.map((name) => (
+          <button key={name} type="button" onClick={() => apply(name + " | Demo Shop")} style={{marginRight: "0.4rem"}}>{name}</button>
+        ))}
+        <button type="button" onClick={() => original !== null && apply(original)}>Restore</button>
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}>
+        Current <code>document.title</code>: <strong>{current}</strong>
+      </p>
+      {log.length > 0 ? (
+        <div>
+          <strong>Recent changes</strong>
+          <ol style={{margin: "0.2rem 0 0"}}>
+            {log.map((entry, index) => (<li key={index}>{entry}</li>))}
+          </ol>
+        </div>
+      ) : null}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This really changes the title of this documentation page while you are here, and puts it back when you leave. In a real single-page app, you would also move focus or announce the change, because screen readers do not always notice a title change by itself.
+      </p>
+    </div>
+  );
+}
+
+export function EscapeDemo() {
+  const [text, setText] = useState("Tom & Jerry <Episode 1>");
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const wrong = "<title>" + text + "</title>";
+  const right = "<title>" + escaped + "</title>";
+  const parse = (markup) => {
+    const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><head>" + markup + "</head><body></body></html>", "text/html");
+    return doc.title;
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="esc-input">Title text</label><br />
+        <input id="esc-input" type="text" value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <table>
+        <thead>
+          <tr><th scope="col">Version</th><th scope="col">What you write</th><th scope="col">What the browser reads as the title</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row" style={{textAlign: "start"}}>Not escaped</th><td><code>{wrong}</code></td><td>{parse(wrong)}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Escaped</th><td><code>{right}</code></td><td>{parse(right)}</td></tr>
+        </tbody>
+      </table>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Inside a <code>title</code>, the browser treats tags as plain text. An ampersand followed by text that looks like a character reference can still be misread, so escape <code>&amp;</code> and <code>&lt;</code> to be safe.
+      </p>
+    </div>
+  );
+}
+
+When someone has twenty tabs open, what helps them find your page? When a search engine lists ten results, what makes someone click yours? When a screen reader opens a new page, what does it say first? The answer to all three is the same: the **title**.
+
+The `<title>` element is small, but it may be the **most important single line** on your page. In this lesson you will learn how to write a good one, how to keep it safe, and how to keep it correct in modern single-page apps.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Where the title appears, and who reads it
+- How to **write** a clear, useful title
+- A good **title structure** for sites with many pages
+- How long a title should be
+- Which characters need **escaping**
+- Changing the title with JavaScript (`document.title`)
+- Setting titles in Docusaurus
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>Sourdough for Beginners | The Bread Bin</title>
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Tab and Search Preview">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TitlePreview />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Edit the title and watch the tab and the search result change. Try a very long one, and an empty one.
+
+## Where the Title Appears
+
+| Place | Who benefits |
+| :-- | :-- |
+| **Browser tab** | Everyone with many tabs open |
+| **Bookmarks and favourites** | Visitors saving your page. The title is the default name |
+| **Browser history** | Visitors finding it again later |
+| **Search results** | Search engines usually use it as the clickable headline |
+| **Window switcher and taskbar** | People who switch between windows |
+| **Screen readers** | Announced first when a page loads, so users know where they are |
+| **Link previews** | Used by many chat apps and social sites when no other title is given |
+| **Browser "back" menu and tab search** | Helping people navigate |
+
+A title is also required: every HTML document must have **exactly one `<title>`** with some text in it.
+
+## Writing a Good Title
+
+A good title is **specific, unique, and useful out of context.** Imagine it as the only thing someone sees in a list of fifty tabs.
+
+| Weak title | Better title | Why |
+| :-- | :-- | :-- |
+| `Home` | `The Bread Bin \| Easy Baking Recipes` | Says what the site is |
+| `Untitled` | `Sourdough for Beginners \| The Bread Bin` | Describes the page |
+| `Page 2` | `Baking Tools, Page 2 \| The Bread Bin` | Keeps the topic |
+| `Welcome!!! Best Site Ever!!!` | `Contact the Bread Bin Team` | No shouting, just information |
+| `Products` | `Cast Iron Pans \| The Bread Bin Shop` | Tells which products |
+
+### A Reliable Pattern
+
+```
+Specific page name | Site name
+```
+
+Put the **most useful words first.** In a narrow tab, only the first few words are visible, and screen reader users hear the start first.
+
+For pages that are steps in a process, add the step:
+
+```
+Shipping details (step 2 of 3) | Checkout | The Bread Bin
+```
+
+For pages with errors, say so in the title:
+
+```
+Error: please enter your email | Sign Up | The Bread Bin
+```
+
+## How Long Should a Title Be?
+
+There is no limit in HTML, but practical limits exist:
+
+- **Tabs** show only the first 20 to 30 characters or so.
+- **Search results** usually cut off after about 50 to 60 characters, or roughly 600 pixels, though this varies by device and by search engine.
+
+So, **front-load** the important part, and aim for **about 50 to 60 characters.** Do not pad your title with keywords. It does not help, and it hurts readability.
+
+:::note Search engines may rewrite titles
+A search engine can show a different title than the one you wrote, if it thinks another is a better match for the query. Write a good title anyway. It is still the main source it uses.
+:::
+
+## Characters and Escaping
+
+The browser treats the text inside `<title>` as **plain text**. Tags inside it are not tags. That is why you cannot style a title or put a link in it.
+
+```html
+<title>Tom &amp; Jerry &lt;Episode 1&gt;</title>
+```
+
+Rules to remember:
+
+- Use `&amp;` for an ampersand, and `&lt;` for a less-than sign, to be safe.
+- Emoji and non-English letters are fine, as long as your page uses UTF-8.
+- Do not put line breaks and many spaces in the title. The browser collapses them.
+- Do not put a `</title>` inside the text.
+
+Try it below. The table shows what the browser reads from escaped and unescaped text.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="escaping.html"
+<!-- Written safely -->
+<title>Tom &amp; Jerry &lt;Episode 1&gt;</title>
+
+<!-- Risky when the text comes from a visitor or a database -->
+<title>Tom & Jerry <Episode 1></title>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EscapeDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Changing the Title with JavaScript
+
+The title is available as `document.title`, which you can both read and write:
+
+```js
+console.log(document.title);              // read it
+document.title = "Cart (2 items) | Shop"; // change it
+```
+
+This is essential in **single-page apps,** where moving between "pages" does not reload the document. If you forget to update the title, every screen has the same name, and a screen reader user cannot tell that anything changed.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="spa-title.html"
+<button type="button" id="next">Go to checkout</button>
+
+<script>
+  document.getElementById("next").addEventListener("click", () => {
+    // ... show the checkout screen ...
+    document.title = "Checkout | Demo Shop";
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LiveTitleLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::tip A title is not enough in a single-page app
+Updating the title is the minimum. Also move keyboard focus to the new page's main heading, or announce the change in a live region, so that screen reader users know the view changed.
+:::
+
+## Titles in Docusaurus
+
+On this site, you usually do not write `<title>` yourself:
+
+- **Per page:** the `title` in the frontmatter becomes the page title. The site name is added after it automatically, using the `titleDelimiter` set in `docusaurus.config.js` (by default, a vertical bar).
+- **Site-wide:** the `title` in `docusaurus.config.js` is the site name.
+- **Special cases:** `@docusaurus/Head` lets a component set its own `<title>`.
+
+That means the frontmatter `title` of each lesson matters twice: it names the page in the tab and in search, and Docusaurus usually also uses it as the heading. Write it for both uses.
+
+## The Title Is Not the Heading
+
+Do not confuse these:
+
+| | `<title>` | `<h1>` |
+| :-- | :-- | :-- |
+| Where | In the head (not shown on the page) | In the body (shown on the page) |
+| Seen | In tabs, history, and results | On the page itself |
+| Style | Plain text, with the site name | Can be styled, and is often shorter |
+
+They should say **similar things,** but they do not have to match exactly. A good pair:
+
+```html
+<title>Sourdough for Beginners | The Bread Bin</title>
+...
+<h1>Sourdough for Beginners</h1>
+```
+
+## Good Habits
+
+1. **Give every page a unique title.**
+2. **Put the specific part first,** and the site name last.
+3. **Keep it to roughly 50 to 60 characters.**
+4. **Write for people,** not for search engines.
+5. **Use plain text:** no tags, no emoji spam, no all caps.
+6. **Update `document.title`** when a single-page app changes view.
+7. **Mention errors and steps** in the title of form pages.
+8. **Escape titles built from data.**
+
+## Accessibility Checklist
+
+- [ ] The page has a `<title>` (this is a requirement of the Web Content Accessibility Guidelines, "Page Titled").
+- [ ] The title **describes the topic or purpose** of the page.
+- [ ] The title is **different** from other pages on the site.
+- [ ] The most useful words come first.
+- [ ] Error states and process steps are visible in the title.
+- [ ] Single-page apps update the title, **and** manage focus.
+- [ ] The title is in the same **language** as the page.
+
+## Security and Privacy Notes
+
+- **Escape anything dynamic.** If a server or script puts visitor-supplied text in the title, encode it. Otherwise it can break the page structure.
+- **Do not put private data in titles.** Names, emails, order numbers, or health details can end up in browser history, bookmarks, shared screens, synced devices, and analytics tools.
+- **Titles leak to other places:** the browser's history sync, screen recordings, and tab-sharing in video calls. A title such as "Results for your medical test" can reveal more than you intend.
+- **Use `document.title` assignment, not `innerHTML`,** when changing it from script. The assignment treats your value as text.
+
+## Global Audience Notes
+
+- **Write the title in the page's language,** and match the `lang` attribute.
+- **Different scripts take different widths.** Chinese, Japanese, and Korean characters are wider, so you may need fewer of them. Arabic and Hebrew titles read right to left. Test them.
+- **Avoid slang, jokes, and idioms** that do not translate well.
+- **Put the site name last** if it is long, so the specific part is not cut off.
+- **Mixed-direction titles** (for example, an English brand in an Arabic title) are handled by the browser, but check the result.
+- **Translated pages** need translated titles. Do not leave the original language.
+
+## Common Mistakes to Avoid
+
+1. **No title,** or an empty one.
+2. **The same title on every page.**
+3. **A generic title,** such as "Home", "Untitled", or "Document".
+4. **A title that is far too long,** or stuffed with keywords.
+5. **Putting the site name first,** so the useful part is cut off.
+6. **Using all caps and exclamation marks.**
+7. **Tags inside `<title>`.** They show as text.
+8. **An unclosed `</title>`.**
+9. **Forgetting to update the title in a single-page app.**
+10. **Private data in the title.**
+11. **Not escaping `&` and `<`.**
+12. **A title in a different language from the page.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add a title to a page, and open it in two tabs with different titles.
+2. Write titles for five pages of an imaginary shop, using `Page | Site`.
+3. Use the preview above with a 100-character title, and see where it is cut.
+4. Write a title for a form page that shows a validation error.
+5. Add a title with `&` and `<` in it, escaped and unescaped, and compare.
+6. Change `document.title` from a button click.
+7. Bookmark a page, and see what name the browser suggests.
+8. Use a screen reader (or your system's built-in one) to hear the title announced.
+9. In Docusaurus, change a page's frontmatter `title`, and see where it appears.
+10. Bonus: audit three pages of any site, and rewrite their titles to be unique and descriptive.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How many `title` elements can a page have?</summary>
+
+Exactly one, in the head, with text inside it.
+
+</details>
+
+<details>
+<summary>2. Where does the title appear?</summary>
+
+In browser tabs, bookmarks, history, search results, window lists, link previews, and it is announced by screen readers.
+
+</details>
+
+<details>
+<summary>3. What is a good title pattern?</summary>
+
+`Specific page name | Site name`, with the most useful words first, and about 50 to 60 characters in total.
+
+</details>
+
+<details>
+<summary>4. Can you put a link or bold text in a title?</summary>
+
+No. The content of `<title>` is plain text. Tags inside it are shown as text.
+
+</details>
+
+<details>
+<summary>5. How do you change the title with JavaScript?</summary>
+
+Assign to `document.title`, for example `document.title = "Checkout | Shop"`. In a single-page app, also manage focus or announce the change.
+
+</details>
+
+<details>
+<summary>6. Is the title the same as the `h1`?</summary>
+
+No. The title is in the head and appears in tabs and results. The `h1` is in the body and is the visible heading. They should say similar things, but need not match exactly.
+
+</details>
+
+## Key Takeaways
+
+- Every page needs **one unique, descriptive `<title>`**.
+- Put the **specific part first** and the site name last: `Page | Site`.
+- Aim for about **50 to 60 characters**, and write for people.
+- Titles are **plain text**, so escape `&` and `<`.
+- Update **`document.title`** in single-page apps, and manage focus too.
+- Keep private data out of titles, because it travels to history, bookmarks, and shared screens.
+- In Docusaurus, the frontmatter `title` and the site's `titleDelimiter` build it for you.
+
+Next, describe your page to search engines and browsers with the [Meta](./meta) element.

