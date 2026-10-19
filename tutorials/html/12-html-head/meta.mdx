@@ -20,166 +20,6 @@ keywords:
 tags: [html, web-development, beginner, meta, seo, open-graph, accessibility, head, frontend]
 ---
 
-import {useState} from 'react';
-
-export const metaSample = [
-  '<meta charset="utf-8">',
-  '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">',
-  '<meta name="description" content="Short.">',
-  '<meta name="keywords" content="bread, sourdough, baking">',
-  '<meta name="robots" content="noindex">',
-  '<meta http-equiv="refresh" content="5; url=/new-page">',
-  '<meta property="og:title" content="Sourdough for Beginners">',
-  '<meta name="theme-color">',
-].join("\n");
-
-export function MetaChecker() {
-  const [source, setSource] = useState(metaSample);
-  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><head>" + source + "</head><body></body></html>", "text/html");
-  const metas = Array.from(doc.head.querySelectorAll("meta"));
-  const rows = metas.map((meta) => {
-    const name = (meta.getAttribute("name") || "").toLowerCase();
-    const equiv = (meta.getAttribute("http-equiv") || "").toLowerCase();
-    const property = meta.getAttribute("property") || "";
-    const content = meta.getAttribute("content");
-    let kind = "unknown";
-    let note = "This form is not one this lesson covers.";
-    let level = "info";
-    if (meta.hasAttribute("charset")) {
-      kind = "charset";
-      const value = meta.getAttribute("charset").toLowerCase();
-      note = value === "utf-8" ? "Good. UTF-8 is the right choice." : "Use utf-8 unless you have a very specific reason.";
-      level = value === "utf-8" ? "ok" : "warn";
-    } else if (equiv) {
-      kind = "http-equiv: " + equiv;
-      if (equiv === "refresh") { note = "Automatic refresh or redirect. It can disorient people and break assistive technology. Prefer a server redirect."; level = "warn"; }
-      else if (equiv === "content-security-policy") { note = "Works, but a response header is stronger. Some directives (such as frame-ancestors) are ignored here."; level = "info"; }
-      else if (equiv === "x-ua-compatible") { note = "Obsolete. Remove it."; level = "warn"; }
-      else if (equiv === "content-type") { note = "Legacy form. Use meta charset instead."; level = "warn"; }
-      else { note = "Rarely needed. Prefer a real HTTP header if you control the server."; }
-    } else if (property) {
-      kind = "property: " + property;
-      note = property.indexOf("og:") === 0 ? "An Open Graph tag, used by link previews." : "A property-style tag (for example RDFa).";
-      level = "ok";
-    } else if (name) {
-      kind = "name: " + name;
-      if (content === null || content === "") { note = "This tag has no content, so it does nothing."; level = "warn"; }
-      else if (name === "viewport") {
-        const bad = /user-scalable\s*=\s*(no|0)/i.test(content) || /maximum-scale\s*=\s*1(\.0)?(\s|,|$)/i.test(content);
-        note = bad ? "This blocks pinch zoom. Remove user-scalable=no and maximum-scale=1." : "Looks fine.";
-        level = bad ? "warn" : "ok";
-      } else if (name === "description") {
-        const length = content.length;
-        note = length < 50 ? "Very short (" + length + " characters). Search results work better with a real summary." : length > 160 ? "Long (" + length + " characters). It may be cut off." : "Good length (" + length + " characters).";
-        level = length < 50 || length > 160 ? "warn" : "ok";
-      } else if (name === "robots") {
-        const hidden = /noindex|none/i.test(content);
-        note = hidden ? "This asks search engines NOT to list the page. Make sure that is what you want." : "Fine.";
-        level = hidden ? "warn" : "ok";
-      } else if (name === "keywords") { note = "Major search engines ignore it. It does no harm, but you can skip it."; }
-      else if (name === "theme-color") { note = "Suggests a toolbar colour in some browsers."; level = "ok"; }
-      else if (name === "color-scheme") { note = "Tells the browser which colour schemes the page supports."; level = "ok"; }
-      else { note = "A named tag. Make sure something actually reads it."; }
-    }
-    return {code: meta.outerHTML, kind, note, level};
-  });
-  const descriptions = rows.filter((row) => row.kind === "name: description").length;
-  const missing = [];
-  if (!doc.head.querySelector("meta[charset]")) missing.push("meta charset");
-  if (!doc.head.querySelector('meta[name="viewport"]')) missing.push("meta viewport");
-  if (!doc.head.querySelector('meta[name="description"]')) missing.push("meta description");
-  const marker = (level) => (level === "ok" ? "OK" : level === "warn" ? "Check" : "Note");
-  return (
-    <div>
-      <label htmlFor="meta-source">Paste or edit meta tags</label>
-      <textarea id="meta-source" rows={9} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
-      <div role="status" style={{marginTop: "0.4rem"}}>
-        <p style={{margin: "0 0 0.3rem"}}>Found <strong>{rows.length}</strong> meta tag(s).{missing.length > 0 ? " Not found: " + missing.join(", ") + "." : " Charset, viewport and description are all present."}{descriptions > 1 ? " There is more than one description, and only one should be used." : ""}</p>
-      </div>
-      <div style={{maxHeight: "18rem", overflow: "auto"}}>
-        <table style={{width: "100%"}}>
-          <thead>
-            <tr><th scope="col">Tag</th><th scope="col">Kind</th><th scope="col">Result</th><th scope="col">What it means</th></tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index}>
-                <td style={{wordBreak: "break-all"}}><code>{row.code}</code></td>
-                <td>{row.kind}</td>
-                <td><strong>{marker(row.level)}</strong></td>
-                <td>{row.note}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This reads your text with your browser's real HTML parser. Nothing is run, and nothing is sent anywhere. The notes are guidance, not a complete audit.
-      </p>
-    </div>
-  );
-}
-
-export function SocialPreview() {
-  const [title, setTitle] = useState("Sourdough for Beginners");
-  const [description, setDescription] = useState("A gentle, step-by-step guide to your first loaf.");
-  const [site, setSite] = useState("The Bread Bin");
-  const [url, setUrl] = useState("https://example.com/sourdough");
-  const [image, setImage] = useState("https://example.com/images/sourdough-1200x630.jpg");
-  const [card, setCard] = useState("summary_large_image");
-  const esc = (text) => text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-  const lines = [
-    '<meta property="og:type" content="article">',
-    '<meta property="og:title" content="' + esc(title) + '">',
-    '<meta property="og:description" content="' + esc(description) + '">',
-    '<meta property="og:url" content="' + esc(url) + '">',
-    '<meta property="og:site_name" content="' + esc(site) + '">',
-    '<meta property="og:image" content="' + esc(image) + '">',
-    '<meta property="og:image:alt" content="Describe the picture here">',
-    '<meta name="twitter:card" content="' + card + '">',
-  ];
-  const problems = [];
-  if (!title.trim()) problems.push("Add a title.");
-  if (!/^https:\/\//i.test(image)) problems.push("Use a full address that starts with https:// for the image. Relative paths often fail.");
-  if (!/^https:\/\//i.test(url)) problems.push("Use the full https:// address of the page for og:url.");
-  if (description.length > 200) problems.push("The description is long, and may be cut off.");
-  if (problems.length === 0) problems.push("Looks good. Remember to write real alt text in og:image:alt.");
-  let host = "example.com";
-  try { host = new URL(url).hostname; } catch (error) { host = "(invalid address)"; }
-  return (
-    <div>
-      <div style={{display: "grid", gap: "0.4rem", gridTemplateColumns: "repeat(auto-fit, minmax(14rem, 1fr))", marginBottom: "0.6rem"}}>
-        <label>Title<br /><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%"}} /></label>
-        <label>Description<br /><input type="text" value={description} onChange={(event) => setDescription(event.target.value)} style={{width: "100%"}} /></label>
-        <label>Site name<br /><input type="text" value={site} onChange={(event) => setSite(event.target.value)} style={{width: "100%"}} /></label>
-        <label>Page address<br /><input type="url" value={url} onChange={(event) => setUrl(event.target.value)} style={{width: "100%"}} /></label>
-        <label>Image address<br /><input type="url" value={image} onChange={(event) => setImage(event.target.value)} style={{width: "100%"}} /></label>
-        <label>Twitter or X card type<br /><select value={card} onChange={(event) => setCard(event.target.value)} style={{width: "100%"}}>
-          <option value="summary_large_image">summary_large_image</option>
-          <option value="summary">summary</option>
-        </select></label>
-      </div>
-      <div aria-hidden="true" style={{maxWidth: "28rem", border: "1px solid #cbd5e1", borderRadius: "8px", overflow: "hidden"}}>
-        <div style={{height: card === "summary" ? "4rem" : "8rem", background: "#e2e8f0", color: "#475569", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8em", padding: "0 0.5rem", textAlign: "center"}}>
-          Picture would load from your image address (not loaded in this demo)
-        </div>
-        <div style={{padding: "0.5rem 0.7rem"}}>
-          <div style={{fontSize: "0.75em", color: "#64748b", textTransform: "uppercase"}}>{host}</div>
-          <div style={{fontWeight: 600}}>{title || "(no title)"}</div>
-          <div style={{fontSize: "0.85em"}}>{description}</div>
-        </div>
-      </div>
-      <pre style={{margin: "0.6rem 0 0.4rem", fontSize: "0.8em"}}><code>{lines.join("\n")}</code></pre>
-      <ul role="status" style={{margin: 0}}>
-        {problems.map((problem) => (<li key={problem}>{problem}</li>))}
-      </ul>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This is a rough picture. Every app draws link previews in its own way, may cache them for a long time, and may ignore some tags. Test with the sharing debugger tools that the platforms provide.
-      </p>
-    </div>
-  );
-}
-
 A web page is like a **book**. The cover shows the title, but the **back cover** and the **library catalogue card** hold other facts: a short summary, the language, the author, the category, who may borrow it. Visitors rarely see those, but librarians, bookshops, and search systems depend on them.
 
 In HTML, the **`<meta>` element** is that catalogue card. It stores facts **about** the page that no other element covers. In this lesson you will meet its different forms, the most useful tags, and a few that are best avoided.
@@ -199,9 +39,6 @@ In HTML, the **`<meta>` element** is that catalogue card. It stores facts **abou
 
 ## The Big Idea
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="index.html"
 <head>
   <meta charset="utf-8">
@@ -213,18 +50,6 @@ In HTML, the **`<meta>` element** is that catalogue card. It stores facts **abou
   <meta property="og:title" content="Sourdough for Beginners">
 </head>
 ```
-
-</TabItem>
-<TabItem value="output" label="Meta Checker">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<MetaChecker />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 The checker has a sample with deliberate problems: zoom blocked, a very short description, `noindex`, an automatic refresh, and a tag with no content. Fix them one by one, and watch the results change.
 
@@ -371,27 +196,12 @@ Notes:
 
 Try it: change the fields, and see the card and the tags it produces.
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="social.html"
 <meta property="og:title" content="Sourdough for Beginners">
 <meta property="og:description" content="A gentle guide to your first loaf.">
 <meta property="og:image" content="https://example.com/images/sourdough-1200x630.jpg">
 <meta name="twitter:card" content="summary_large_image">
 ```
-
-</TabItem>
-<TabItem value="output" label="Preview Builder">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<SocialPreview />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 ## Other Meta Tags You May See
 
