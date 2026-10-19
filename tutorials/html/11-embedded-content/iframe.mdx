@@ -1,15 +1,576 @@
 ---
-id: iframe-element
-title: "Inline Frames: The iframe Element"
-sidebar_label: "Inline Frames (<iframe>)"
+id: html-iframe
+title: "HTML Iframe Element"
+sidebar_label: "Iframe"
 sidebar_position: 2
 slug: /html/embedded-content/iframe
-description: "Learn how to embed external web pages, videos, and applications using the iframe tag, managing seamless attributes and sandboxing options."
+description: "Learn the HTML iframe element: embedding another page with src and srcdoc, titles for accessibility, size and aspect-ratio, lazy loading, the sandbox attribute, allow and referrerpolicy, why some sites refuse to be framed, and talking to a frame with postMessage, with live demos."
 keywords:
-  - HTML iframe tag
-  - inline frame element
-  - embed external web page
-  - iframe sandbox security
+  - HTML iframe element
+  - iframe sandbox attribute
+  - iframe title accessibility
+  - iframe loading lazy
+  - iframe allow referrerpolicy
+  - responsive iframe aspect-ratio
+  - iframe srcdoc
+  - X-Frame-Options frame-ancestors
+  - iframe postMessage
+  - embed YouTube map iframe
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, iframe, embedded-content, security]
+tags: [html, web-development, beginner, iframe, embedded-content, security, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function SandboxLab() {
+  const [flags, setFlags] = useState({scripts: false, sameOrigin: false});
+  const tokens = [];
+  if (flags.scripts) tokens.push("allow-scripts");
+  if (flags.sameOrigin) tokens.push("allow-same-origin");
+  const sandbox = tokens.join(" ");
+  const inner =
+    "<!doctype html><html><body style=\"font-family:sans-serif;margin:0;padding:0.75rem;background:#f1f5f9;color:#0f172a;font-size:14px\">" +
+    "<strong>The page inside the frame</strong>" +
+    "<ul id=\"o\" style=\"margin:0.4rem 0 0;padding-left:1.1rem\"><li>Scripts: blocked (nothing ran)</li></ul>" +
+    "<script>" +
+    "var out=['Scripts: running'];" +
+    "try{localStorage.setItem('t','1');out.push('Storage: allowed')}catch(e){out.push('Storage: blocked')}" +
+    "try{out.push('Parent page title: '+parent.document.title)}catch(e){out.push('Parent page: cannot be read')}" +
+    "var o=document.getElementById('o');o.textContent='';" +
+    "out.forEach(function(t){var li=document.createElement('li');li.textContent=t;o.appendChild(li)});" +
+    "</" + "script></body></html>";
+  const risky = flags.scripts && flags.sameOrigin;
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Permissions to give the frame</legend>
+        <label style={{display: "block"}}>
+          <input type="checkbox" checked={flags.scripts} onChange={(event) => setFlags((old) => ({...old, scripts: event.target.checked}))} /> <code>allow-scripts</code> (it may run JavaScript)
+        </label>
+        <label style={{display: "block"}}>
+          <input type="checkbox" checked={flags.sameOrigin} onChange={(event) => setFlags((old) => ({...old, sameOrigin: event.target.checked}))} /> <code>allow-same-origin</code> (it keeps its real origin)
+        </label>
+      </fieldset>
+      <iframe
+        key={sandbox + String(flags.scripts) + String(flags.sameOrigin)}
+        title="A small page used to test sandbox permissions"
+        sandbox={sandbox}
+        srcDoc={inner}
+        style={{width: "100%", maxWidth: "30rem", height: "8.5rem", border: "1px solid #94a3b8", background: "#fff"}}
+      />
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{"<iframe sandbox=\"" + sandbox + "\" …></iframe>"}</code></pre>
+      <p role="status" style={{margin: "0.4rem 0 0", color: risky ? "#b91c1c" : "inherit"}}>
+        {risky
+          ? "Both are on, and the page came from the same origin as this one, so it reached into the parent page. Combining these two on content you host yourself lets it remove its own sandbox. Never do this for pages you do not fully control."
+          : "The sandbox removes everything you do not list. Switch the boxes and watch what the frame can and cannot do."}
+      </p>
+    </div>
+  );
+}
+
+export function EmbedBuilder() {
+  const [title, setTitle] = useState("Map of the Town Hall");
+  const [src, setSrc] = useState("https://maps.example.com/embed?q=Town+Hall");
+  const [ratio, setRatio] = useState("16 / 9");
+  const [lazy, setLazy] = useState(true);
+  const [trust, setTrust] = useState("partner");
+  const [preset, setPreset] = useState("widget");
+  const sandboxValues = {
+    none: null,
+    strict: "",
+    widget: "allow-scripts allow-same-origin allow-forms allow-popups",
+  };
+  const sandbox = sandboxValues[preset];
+  const lines = ["<iframe", '  src="' + src + '"', '  title="' + title + '"'];
+  lines.push('  style="width:100%;aspect-ratio:' + ratio + ';border:0"');
+  if (lazy) lines.push('  loading="lazy"');
+  if (sandbox !== null) lines.push('  sandbox="' + sandbox + '"');
+  lines.push('  referrerpolicy="strict-origin-when-cross-origin"');
+  lines.push("></iframe>");
+  const warnings = [];
+  if (!title.trim()) warnings.push({bad: true, text: "No title. Screen reader users will only hear “frame”."});
+  if (title.trim().length > 0 && title.trim().length < 6) warnings.push({bad: true, text: "A very short title. Say what the frame holds."});
+  if (!/^https:\/\//.test(src)) warnings.push({bad: true, text: "The address does not start with https://. An insecure frame is blocked or unsafe on a secure page."});
+  if (trust === "unknown" && sandbox === null) warnings.push({bad: true, text: "Content you do not trust, with no sandbox. Add one, and give back only the permissions it truly needs."});
+  if (trust === "own" && preset === "widget") warnings.push({bad: true, text: "A page from your own site with allow-scripts and allow-same-origin together can remove its own sandbox, so this sandbox gives no protection."});
+  if (!lazy) warnings.push({bad: false, text: "Without loading=\"lazy\", the frame downloads at once, even if it is far down the page."});
+  if (warnings.length === 0) warnings.push({bad: false, text: "A named, sized, lazy, restricted frame: a good pattern."});
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label htmlFor="eb-title">title (what the frame holds)</label><br />
+        <input id="eb-title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%", maxWidth: "26rem"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label htmlFor="eb-src">src</label><br />
+        <input id="eb-src" type="text" value={src} onChange={(event) => setSrc(event.target.value)} style={{width: "100%", maxWidth: "26rem"}} />
+      </p>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.4rem"}}>
+        <label>Shape{" "}
+          <select value={ratio} onChange={(event) => setRatio(event.target.value)}>
+            <option>16 / 9</option>
+            <option>4 / 3</option>
+            <option>1 / 1</option>
+          </select>
+        </label>
+        <label>Who made it?{" "}
+          <select value={trust} onChange={(event) => setTrust(event.target.value)}>
+            <option value="own">my own site</option>
+            <option value="partner">a trusted partner</option>
+            <option value="unknown">someone I do not know</option>
+          </select>
+        </label>
+        <label>Sandbox{" "}
+          <select value={preset} onChange={(event) => setPreset(event.target.value)}>
+            <option value="none">none</option>
+            <option value="strict">strict (empty)</option>
+            <option value="widget">typical widget</option>
+          </select>
+        </label>
+        <label><input type="checkbox" checked={lazy} onChange={(event) => setLazy(event.target.checked)} /> lazy loading</label>
+      </p>
+      <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{lines.join("\n")}</code></pre>
+      <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+        {warnings.map((entry) => (<li key={entry.text} style={{color: entry.bad ? "#b91c1c" : "#15803d"}}>{entry.text}</li>))}
+      </ul>
+    </form>
+  );
+}
+
+Think of a window in a house. Through it you see a garden that is not part of the house, and that you do not own, but you can look at it, and it appears right where you want it.
+
+The **`<iframe>`** (inline frame) is that window for the web. It shows a **whole other web page inside your page**: a map, a video player, a payment form, a booking widget, a code demo, or even another section of your own site.
+
+It is the most common embedding tool, and also the one that needs the most care, because the page in the window is not yours.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Embedding a page with `src`, and writing a page inline with `srcdoc`
+- Naming and sizing frames, and making them responsive
+- Lazy loading, `allow`, and `referrerpolicy`
+- The `sandbox` attribute, step by step
+- Why some pages refuse to be framed
+- Talking to a frame with `postMessage`
+- Accessibility, performance, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<iframe
+  src="https://example.com/booking"
+  title="Book a table"
+  width="600"
+  height="400"
+  loading="lazy"
+></iframe>
+
+<!-- Or write the small page directly with srcdoc -->
+<iframe
+  title="A greeting"
+  srcdoc="<h3>Hello from inside the frame</h3><p>I am a separate page.</p>"
+  sandbox
+></iframe>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<iframe
+  title="A greeting"
+  sandbox=""
+  srcDoc="<h3 style='font-family:sans-serif;margin:0 0 0.3rem'>Hello from inside the frame</h3><p style='font-family:sans-serif;margin:0'>I am a separate page.</p>"
+  style={{width: "100%", maxWidth: "30rem", height: "6rem", border: "1px solid #94a3b8"}}
+/>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+An `<iframe>` has its **own document**: its own HTML, CSS, JavaScript, and history. Your CSS does not leak in, and its CSS does not leak out. That is the great strength of frames, and the reason they are used for third-party widgets.
+
+## Attributes
+
+| Attribute | What it does | Advice |
+| :-- | :-- | :-- |
+| `src` | The address of the page to show | Use `https://` |
+| `srcdoc` | HTML written right in the attribute, shown instead of `src` | Good for demos and tiny pages |
+| `title` | A name for the frame | **Always add it** |
+| `width`, `height` | Size, in pixels, with no units | Or use CSS |
+| `loading` | `lazy` waits until the frame is near the screen | Use `lazy` for anything below the first screen |
+| `sandbox` | Removes permissions from the framed page | Use it for anything you do not fully control |
+| `allow` | Grants features such as fullscreen or camera | Grant only what is needed |
+| `allowfullscreen` | Lets the frame go full screen | Common for video players |
+| `referrerpolicy` | What address the framed site is told you came from | Limit it for privacy |
+| `name` | A name that links and forms can target | Rarely needed |
+
+Text or elements **inside** the `<iframe>` tags are shown only by browsers that cannot display frames, which today is almost none. You can put a fallback link there, but do not depend on it:
+
+```html
+<iframe src="https://example.com/booking" title="Book a table">
+  <a href="https://example.com/booking">Open the booking page</a>
+</iframe>
+```
+
+## Name Every Frame
+
+A **`title`** is required for accessibility. Screen reader users often move through a page by listing its frames, and an untitled frame is announced only as "frame".
+
+```html
+<!-- Bad -->
+<iframe src="https://player.example.com/embed/42"></iframe>
+
+<!-- Good -->
+<iframe src="https://player.example.com/embed/42"
+        title="Interview with a baker (video, 12 minutes)"></iframe>
+```
+
+A good title says **what it holds**, and for media, the **kind and length**. Keep it short. It is the name of the frame, not a replacement for a text alternative.
+
+## Size and Responsive Frames
+
+A frame with no size gets a small default, and you may need to set both width and height. For a fluid layout, give it a **shape** in CSS:
+
+```css
+iframe {
+  display: block;
+  width: 100%;
+  max-width: 48rem;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+```
+
+This is the same technique you saw for video in [Responsive Video](/tutorials/html/audio-video/responsive-video). It also stops the page jumping while the frame loads.
+
+Tips:
+
+- **Use `border: 0`** (or `style="border:0"`) to remove the default frame border.
+- **Do not rely on a fixed height** for content that changes, such as a form. It may show a scroll bar *inside* the frame, which is hard to use. Either make the frame tall enough, or let the framed page tell you its height with `postMessage` (see below).
+- **At 200% zoom and on phones,** check that the framed content is readable without sideways scrolling inside the frame.
+
+## Lazy Loading
+
+Each frame loads a whole page, with its own scripts and styles. A page with three embeds can easily double in weight.
+
+```html
+<iframe src="…" title="…" loading="lazy"></iframe>
+```
+
+`loading="lazy"` tells the browser to wait until the visitor scrolls near the frame. Do **not** use it on a frame that is visible at the top of the page.
+
+For the heaviest players, use a **click-to-load** pattern (sometimes called a facade): show a lightweight picture and a button, and create the `iframe` only when the visitor clicks.
+
+```html
+<button type="button" id="load-map">Show the map</button>
+<div id="map-slot"></div>
+```
+
+```js
+document.getElementById("load-map").addEventListener("click", () => {
+  const frame = document.createElement("iframe");
+  frame.src = "https://maps.example.com/embed?q=Town+Hall";
+  frame.title = "Map of the Town Hall";
+  frame.loading = "lazy";
+  frame.style.cssText = "width:100%;aspect-ratio:16/9;border:0";
+  document.getElementById("map-slot").append(frame);
+});
+```
+
+This also protects your visitors' privacy, because nothing is requested from the third party until they ask for it.
+
+## The Sandbox
+
+The **`sandbox`** attribute is the most important safety tool. With a plain `sandbox` (empty), the framed page is **locked down**: it cannot run scripts, submit forms, open pop-ups, use storage, or reach your page. You then **add back** only what it needs, with space-separated keywords.
+
+| Keyword | Gives back |
+| :-- | :-- |
+| `allow-scripts` | Running JavaScript |
+| `allow-same-origin` | Treated as its real origin (so storage and cookies work) instead of an anonymous one |
+| `allow-forms` | Submitting forms |
+| `allow-popups` | Opening new windows with `window.open` or `target="_blank"` links |
+| `allow-popups-to-escape-sandbox` | Pop-ups that are not themselves sandboxed |
+| `allow-modals` | `alert`, `confirm`, and `print` |
+| `allow-top-navigation-by-user-activation` | Navigating your whole page, but only after a click |
+| `allow-downloads` | Starting downloads |
+
+### Try It: See What a Sandbox Does
+
+This frame holds a small page that tries three things: running a script, using storage, and reading **this** page's title. Turn the permissions on and off.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Locked down: nothing runs -->
+<iframe src="/page.html" title="Locked down" sandbox></iframe>
+
+<!-- Scripts allowed, but kept in an anonymous origin -->
+<iframe src="/page.html" title="Scripts only" sandbox="allow-scripts"></iframe>
+
+<!-- A typical widget from a company you trust -->
+<iframe
+  src="https://widget.example.com/"
+  title="Support chat"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+></iframe>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SandboxLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::danger Do not combine the two on your own content
+`allow-scripts` together with `allow-same-origin`, on a page from **your own origin**, lets that page reach into its parent and **remove the sandbox attribute**. The sandbox then does nothing. Use both only for content hosted on a **different** origin that you have chosen to trust, such as a widget from a vendor. The demo above shows the reason: with both on, the framed page can read this page.
+:::
+
+## `allow` and `referrerpolicy`
+
+### `allow`
+
+Powerful features such as the camera, microphone, geolocation, and fullscreen are **off by default** inside a frame from another site. Grant the ones the embed really needs:
+
+```html
+<iframe
+  src="https://player.example.com/embed/42"
+  title="Interview with a baker"
+  allow="fullscreen; picture-in-picture"
+></iframe>
+```
+
+Never write `allow="camera; microphone; geolocation"` out of habit. Each permission is also a risk for your visitors.
+
+### `referrerpolicy`
+
+When a frame loads, the other site normally learns the address of the page that embedded it. Limit that:
+
+```html
+<iframe src="…" title="…" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+```
+
+Use `no-referrer` when the other site does not need to know at all. See [Third-Party Content Security](./third-party-content-security).
+
+## When a Site Refuses to Be Framed
+
+Many sites **forbid** being shown in a frame, to stop "clickjacking" (tricking people into clicking something hidden under a harmless-looking page). They send a header such as:
+
+```text
+X-Frame-Options: DENY
+Content-Security-Policy: frame-ancestors 'self'
+```
+
+If you try to embed such a page, you will see an error such as "refused to connect", or a blank box. You cannot override this from your side. Use the site's **official embed address** or widget (many services publish one), or link to the page instead.
+
+The reverse is also true: **you can protect your own pages** from being framed by other sites:
+
+```text
+Content-Security-Policy: frame-ancestors 'self' https://partner.example.com
+```
+
+## Talking to a Frame: `postMessage`
+
+A frame from another origin is **sealed**: your scripts cannot read it, and it cannot read yours. But the two sides can send each other **messages**, which is how a widget can tell your page its height, or that a form was submitted.
+
+```js title="In your page"
+const frame = document.querySelector("iframe");
+const trusted = "https://widget.example.com";
+
+window.addEventListener("message", (event) => {
+  if (event.origin !== trusted) return;          // ignore everyone else
+  if (event.data && event.data.type === "height") {
+    frame.style.height = Number(event.data.value) + "px";
+  }
+});
+
+frame.contentWindow.postMessage({type: "hello"}, trusted);
+```
+
+```js title="Inside the framed page"
+window.parent.postMessage(
+  {type: "height", value: document.documentElement.scrollHeight},
+  "https://yourshop.example.com"
+);
+```
+
+The two rules that keep this safe:
+
+1. **Always check `event.origin`** before trusting a message.
+2. **Always name the target origin** in `postMessage` (never `"*"` for anything private).
+
+## Accessibility at a Glance
+
+- **Give every frame a `title`** that says what it holds.
+- **Make sure keyboard users can Tab in and out.** Do not trap focus. Test with the embed.
+- **Avoid scroll bars inside frames** when you can. Size the frame to the content.
+- **Check zoom and small screens:** the framed content needs to reflow, and you cannot fix its CSS.
+- **Provide a text alternative or link** to the content outside the frame (an address for a map, a transcript for a video, a booking link).
+- **Do not hide essential information** in a frame that may fail to load or be blocked.
+- **Do not nest frames** inside frames inside frames. Screen reader users get lost.
+- **Respect the embedded page's own accessibility:** you inherit its problems.
+
+## Performance Notes
+
+- **Each frame is a whole page.** It costs a connection, scripts, styles, and memory.
+- **Use `loading="lazy"`,** and click-to-load for heavy players.
+- **Fewer frames is better.** Combine widgets where you can, and remove those no one uses.
+- **Set a size** so the layout does not jump.
+- **Test on slow connections and old phones.**
+
+## Security and Privacy Notes
+
+- **A frame is someone else's page in your page.** It can run code, set cookies, and track visitors. Restrict it with `sandbox`, `allow`, and `referrerpolicy`.
+- **Use `https://`** for every frame. An insecure frame in a secure page is blocked, or can be tampered with.
+- **Never put user input straight into `src` or `srcdoc`.** A visitor could point your frame at a harmful address, or inject markup. Use an allow-list of addresses, and build `srcdoc` only from trusted text.
+- **Defend your own pages** with `frame-ancestors` (or `X-Frame-Options`) so no one can frame them for clickjacking.
+- **Check `event.origin`** on every `postMessage`.
+- **Ask for consent** before loading trackers, in places where the law requires it. Click-to-load helps.
+- **Never put secrets,** such as API keys, in a frame's address or in `srcdoc`.
+- The full set of defences is in [Third-Party Content Security](./third-party-content-security).
+
+## Global Audience Notes
+
+- **Frames are heavy for slow or metered connections.** Use lazy loading and click-to-load.
+- **Some services are blocked or slow in some countries.** Always offer a plain link or a text alternative.
+- **Check that the embedded content supports your visitors' languages,** and pass a language where the service allows it (many embeds take a parameter such as `hl` or `lang`).
+- **Right-to-left pages:** check that the framed content mirrors correctly, and use logical CSS properties around it.
+- **Privacy and cookie laws differ** by region. Load third-party frames only after consent where it is required.
+- **Do not assume a fixed width.** Phones in many regions are small, and zoom is common.
+
+## Common Mistakes to Avoid
+
+1. **No `title`.**
+2. **No size or `aspect-ratio`,** so the page jumps, or the frame is tiny.
+3. **No `loading="lazy"`** on frames below the fold.
+4. **No `sandbox`** on content you do not control.
+5. **`allow-scripts` and `allow-same-origin` together** on your own content.
+6. **Granting `allow` permissions** the embed does not need.
+7. **Using `http://` addresses.**
+8. **Trying to embed a site that forbids framing,** and not providing a fallback link.
+9. **Trusting any `postMessage` without checking `event.origin`.**
+10. **Building `src` from user input.**
+11. **Nested frames,** and scroll bars inside scroll bars.
+12. **Putting the only copy of important information** inside a third-party frame.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Embed a small page with `srcdoc`, and give the frame a `title`.
+2. Add `sandbox` (empty), and put a `script` in the page. See that it does not run.
+3. Add `allow-scripts`, and see that it runs.
+4. Add `allow-same-origin`, and read the parent's title from the framed script. Then remove it again.
+5. Give the frame an `aspect-ratio`, and resize your window.
+6. Add `loading="lazy"`, and check the network panel while scrolling.
+7. Build a click-to-load button that creates the frame.
+8. Try to embed a site that forbids framing, and read the console error.
+9. Send a `postMessage` from the frame to the parent, and check `event.origin`.
+10. Bonus: use the builder above to produce the tag for a trusted widget, and compare it with what you wrote by hand.
+
+## Try It: Build a Safe Frame
+
+Fill in the details, and the tool writes the tag and checks it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<iframe
+  src="https://maps.example.com/embed?q=Town+Hall"
+  title="Map of the Town Hall"
+  style="width:100%;aspect-ratio:16 / 9;border:0"
+  loading="lazy"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+  referrerpolicy="strict-origin-when-cross-origin"
+></iframe>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EmbedBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does an `iframe` do?</summary>
+
+It shows a whole other web page inside your page, with its own document, styles, and scripts.
+
+</details>
+
+<details>
+<summary>2. Why must every `iframe` have a `title`?</summary>
+
+Screen readers list frames by name. Without a title, the frame is announced only as "frame", and users cannot tell what it holds.
+
+</details>
+
+<details>
+<summary>3. What does an empty `sandbox` attribute do?</summary>
+
+It locks the framed page down: no scripts, forms, pop-ups, storage, or access to your page. You then add back only the permissions it needs.
+
+</details>
+
+<details>
+<summary>4. Why is `allow-scripts` plus `allow-same-origin` dangerous?</summary>
+
+On a page from your own origin, the page can reach into its parent and remove its own `sandbox` attribute, so the sandbox protects nothing. Use both only for content from a different origin that you trust.
+
+</details>
+
+<details>
+<summary>5. Why does a site sometimes show "refused to connect" in a frame?</summary>
+
+The site sends `X-Frame-Options` or a `frame-ancestors` policy that forbids being framed, to prevent clickjacking. You cannot override it. Use the site's official embed, or link to it.
+
+</details>
+
+<details>
+<summary>6. How can a page and a cross-origin frame communicate safely?</summary>
+
+With `postMessage`. Always name the target origin when sending, and always check `event.origin` when receiving.
+
+</details>
+
+## Key Takeaways
+
+- `<iframe>` shows **another page inside yours**, with its own document, styles, and scripts.
+- Always give it a **`title`**, a **size or `aspect-ratio`**, and usually **`loading="lazy"`**.
+- Use **`sandbox`** for anything you do not control, and give back only what it needs.
+- Never combine `allow-scripts` and `allow-same-origin` on content from your **own** origin.
+- Grant `allow` permissions sparingly, and limit what the other site learns with `referrerpolicy`.
+- Some sites **forbid framing**. Use their official embed or a link, and protect your own pages with `frame-ancestors`.
+- Use `postMessage` with origin checks to talk to frames.
+- Give important information a **text version**, load heavy frames on click, and plan for slow connections and blocked services.
+
+Next, learn about an older embedding element in [Embed](./embed), or return to the [Embedded Content overview](../embedded-content).

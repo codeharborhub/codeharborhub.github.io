@@ -1,15 +1,506 @@
 ---
 id: html-head-overview
-title: "Document Metadata and the HTML Head Element"
+title: "HTML Head and Metadata"
 sidebar_label: "HTML Head"
 sidebar_position: 1
 slug: /html/html-head
-description: "Master document metadata, character encodings, viewport settings, external asset linking, and head optimizations with CodeHarborHub."
+description: "Start learning the HTML head: what goes inside it, how html, head, title, meta, charset, viewport, link, favicon, style, script and base work together, who reads each tag, and a live look at the head of a real page, with a clickable map of every head element."
 keywords:
-  - HTML head overview
-  - HTML metadata guide
-  - head element tutorial
-  - document head configuration
+  - HTML head element
+  - HTML metadata
+  - HTML head tags explained
+  - meta charset viewport title
+  - link style script base
+  - favicon HTML
+  - SEO meta tags HTML
+  - document head best practices
+  - HTML head template
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, metadata, beginner]
+tags: [html, web-development, beginner, head, metadata, seo, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export const headParts = [
+  {
+    key: "charset",
+    code: '<meta charset="utf-8">',
+    does: "Tells the browser how to turn the bytes of the file into letters.",
+    who: "Browsers",
+    missing: "Accented letters, symbols, and non-English text can turn into garbage characters.",
+    lesson: "Charset",
+  },
+  {
+    key: "viewport",
+    code: '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    does: "Tells phones to use the real screen width, instead of pretending to be a wide desktop screen.",
+    who: "Mobile browsers",
+    missing: "Phones show a tiny, zoomed-out copy of your desktop layout.",
+    lesson: "Viewport",
+  },
+  {
+    key: "title",
+    code: "<title>Sourdough for Beginners | The Bread Bin</title>",
+    does: "Names the page.",
+    who: "Browser tabs, bookmarks, history, search results, screen readers, shared links",
+    missing: "Tabs and results show the web address, or “Untitled”. It is also a basic accessibility failure.",
+    lesson: "Title",
+  },
+  {
+    key: "description",
+    code: '<meta name="description" content="A gentle, step-by-step guide to your first sourdough loaf.">',
+    does: "Offers a short summary of the page.",
+    who: "Search engines (which may use it, or write their own)",
+    missing: "The search engine chooses a snippet from your text instead.",
+    lesson: "Meta",
+  },
+  {
+    key: "canonical",
+    code: '<link rel="canonical" href="https://example.com/sourdough">',
+    does: "Names the preferred address when the same page can be reached in several ways.",
+    who: "Search engines",
+    missing: "Search engines may treat copies of the page as separate pages, and split their ranking.",
+    lesson: "Link",
+  },
+  {
+    key: "icon",
+    code: '<link rel="icon" href="/favicon.svg" type="image/svg+xml">',
+    does: "Points to the small picture shown in the tab and in bookmarks.",
+    who: "Browsers, bookmarks, search results",
+    missing: "Browsers ask for a default file, show a blank icon, and add an error to your server log.",
+    lesson: "Favicon",
+  },
+  {
+    key: "stylesheet",
+    code: '<link rel="stylesheet" href="/css/site.css">',
+    does: "Loads an external CSS file.",
+    who: "Browsers",
+    missing: "The page shows with only the browser's plain default styling.",
+    lesson: "Link and Style",
+  },
+  {
+    key: "style",
+    code: "<style>body { margin: 0; }</style>",
+    does: "Holds CSS directly in the page.",
+    who: "Browsers",
+    missing: "Nothing breaks, but you lose styles you wrote inline.",
+    lesson: "Style",
+  },
+  {
+    key: "script",
+    code: '<script src="/js/app.js" defer></script>',
+    does: "Loads JavaScript without stopping the page from showing.",
+    who: "Browsers",
+    missing: "The interactive parts of the page do not work.",
+    lesson: "Script",
+  },
+  {
+    key: "base",
+    code: '<base href="https://example.com/docs/">',
+    does: "Sets the starting address for every relative link and file on the page.",
+    who: "Browsers",
+    missing: "Relative links start from the page's own address, which is usually what you want.",
+    lesson: "Base",
+  },
+  {
+    key: "og",
+    code: '<meta property="og:title" content="Sourdough for Beginners">',
+    does: "Describes the page for link previews (the card you see when a link is shared).",
+    who: "Social networks and messaging apps",
+    missing: "The preview may show only a plain address, or guess a title and picture.",
+    lesson: "Metadata Best Practices",
+  },
+  {
+    key: "theme",
+    code: '<meta name="theme-color" content="#1d4ed8">',
+    does: "Suggests a colour for the browser's own toolbar.",
+    who: "Some mobile browsers",
+    missing: "The browser uses its normal toolbar colour.",
+    lesson: "Meta",
+  },
+];
+
+export function HeadExplorer() {
+  const [key, setKey] = useState("title");
+  const current = headParts.find((part) => part.key === key);
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Pick something from the head</legend>
+        {headParts.map((part) => (
+          <label key={part.key} style={{display: "inline-block", marginRight: "0.9rem", marginBottom: "0.2rem"}}>
+            <input type="radio" name="head-part" checked={key === part.key} onChange={() => setKey(part.key)} /> <code>{part.key}</code>
+          </label>
+        ))}
+      </fieldset>
+      <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{current.code}</code></pre>
+      <table>
+        <tbody>
+          <tr><th scope="row" style={{textAlign: "start"}}>What it does</th><td>{current.does}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Who reads it</th><td>{current.who}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>If it is missing</th><td>{current.missing}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Lesson</th><td>{current.lesson}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function HeadPeek() {
+  const [data, setData] = useState(null);
+  const short = (text) => {
+    const clean = (text || "").replace(/\s+/g, " ").trim();
+    return clean.length > 70 ? clean.slice(0, 67) + "…" : clean;
+  };
+  const read = () => {
+    const children = Array.from(document.head.children);
+    const rows = children.slice(0, 40).map((element) => {
+      const tag = element.tagName.toLowerCase();
+      const label = element.getAttribute("name") || element.getAttribute("property") || element.getAttribute("rel") || element.getAttribute("http-equiv") || (element.hasAttribute("charset") ? "charset" : "");
+      let detail = "";
+      if (tag === "title") detail = element.textContent;
+      else if (tag === "style") detail = "(inline CSS)";
+      else if (tag === "script") detail = element.getAttribute("src") || "(inline script)";
+      else if (tag === "link") detail = element.getAttribute("href");
+      else detail = element.getAttribute("content") || element.getAttribute("charset");
+      return {tag, label, detail: short(detail)};
+    });
+    const viewport = document.querySelector('meta[name="viewport"]');
+    setData({
+      total: children.length,
+      shown: rows.length,
+      rows,
+      facts: [
+        ["document.title", document.title],
+        ["lang on the html element", document.documentElement.lang || "(not set)"],
+        ["Character encoding", document.characterSet],
+        ["Rendering mode", document.compatMode === "CSS1Compat" ? "standards mode (good)" : "quirks mode (a problem)"],
+        ["Viewport setting", viewport ? viewport.getAttribute("content") : "(none found)"],
+      ],
+    });
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={read}>Read the head of this page</button>
+      </p>
+      {data === null ? (
+        <p role="status" style={{margin: 0}}>Press the button, and the page will list what is in its own head.</p>
+      ) : (
+        <div>
+          <table>
+            <caption>Facts the browser reads from this page</caption>
+            <tbody>
+              {data.facts.map((fact) => (
+                <tr key={fact[0]}><th scope="row" style={{textAlign: "start"}}>{fact[0]}</th><td>{fact[1]}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          <p role="status" style={{margin: "0.6rem 0 0.3rem"}}>
+            This page's head has <strong>{data.total}</strong> elements{data.total > data.shown ? ", and the first " + data.shown + " are listed" : ""}.
+          </p>
+          <div style={{maxHeight: "16rem", overflow: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}>
+            <table style={{margin: 0, width: "100%"}}>
+              <thead>
+                <tr><th scope="col">Tag</th><th scope="col">Name or rel</th><th scope="col">Value</th></tr>
+              </thead>
+              <tbody>
+                {data.rows.map((row, index) => (
+                  <tr key={index}><td><code>{row.tag}</code></td><td>{row.label}</td><td style={{wordBreak: "break-all"}}>{row.detail}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        What you see is whatever this documentation site puts in its head. Tools such as Docusaurus add many tags for you. Your own pages can be much smaller.
+      </p>
+    </div>
+  );
+}
+
+Open any web page, and you see its **body**: the headings, pictures, and links. But every page also has a part you **never see**, called the **head**. It is the page's control room. It holds the title that appears in the browser tab, the instructions that tell the browser which letters to use, which stylesheets to load, and which summary a search engine or a chat app should show when someone shares your page.
+
+The information stored there is called **metadata**: data **about** the page, as opposed to the content **of** the page. A well-made head makes a page load correctly, look right on a phone, rank sensibly in search results, preview nicely when shared, and work for everyone.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn in This Section
+
+- How an HTML document is organised: the `<html>` and `<head>` elements
+- Naming a page with `<title>`
+- Describing a page with `<meta>`, and getting the **character set** and **viewport** right
+- Adding a **favicon**
+- Connecting stylesheets, scripts, and other files with `<link>`, `<style>`, `<script>`, and `<base>`
+- Metadata best practices for search, sharing, and accessibility
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sourdough for Beginners | The Bread Bin</title>
+  <meta name="description" content="A gentle, step-by-step guide to your first sourdough loaf.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/site.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <h1>Sourdough for Beginners</h1>
+  <p>Welcome!</p>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Explore the Head">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HeadExplorer />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Click through the elements above. For each one, ask three questions: **What does it do? Who reads it? What goes wrong if it is missing?** These three questions are the key to the whole section.
+
+A very important point: **almost nothing in the head is shown on the page itself.** The head works behind the scenes, and its readers are not just people. They are **browsers, search engines, social networks, screen readers, and operating systems.**
+
+## Try It: Read the Head of This Page
+
+The page you are reading right now has a head. Press the button, and the page will read its own `document.head`, and show you what is inside.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```js title="script.js"
+// Everything in the head is available to JavaScript
+console.log(document.title);                         // the page title
+console.log(document.documentElement.lang);          // the lang attribute
+console.log(document.characterSet);                  // the character encoding
+
+for (const element of document.head.children) {
+  console.log(element.tagName, element.getAttribute("name") || element.getAttribute("rel"));
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HeadPeek />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can do the same on **any** web page: right-click, choose "View page source" or "Inspect", and look at the `<head>`. It is one of the best ways to learn: see how well-made sites set theirs up.
+
+## The Smallest Valid Head
+
+Every HTML document needs at least these three things in its head:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>A page title</title>
+</head>
+<body>
+  <p>Hello</p>
+</body>
+</html>
+```
+
+| Part | Why it is needed |
+| :-- | :-- |
+| `<!DOCTYPE html>` | Switches the browser into **standards mode**, so it follows the modern rules |
+| `<html lang="en">` | Names the language, for translation, pronunciation, and spelling |
+| `<meta charset="utf-8">` | Tells the browser how to read the letters |
+| `<title>` | Names the page. Required in every document |
+
+For a page that will be used on phones (that is, almost every page), also add the **viewport** line. Together, these make a good **starting template**:
+
+```html
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page title | Site name</title>
+```
+
+## What Goes Where
+
+Order matters a little in the head. A good habit:
+
+1. **`<meta charset>` first,** within the first 1024 bytes of the file, so the browser knows how to read everything after it.
+2. **`<meta name="viewport">` and `<title>`** next.
+3. **Other `<meta>` and `<link>` tags:** description, canonical address, icons, social previews.
+4. **Stylesheets,** so the page can be styled as early as possible.
+5. **Scripts,** usually with `defer`, so they do not block the page from appearing.
+
+You will learn the reasons for each choice in the lessons that follow.
+
+## What Is in This Section
+
+<DocCardList />
+
+## What Can Go in the Head?
+
+Only a short list of elements is allowed in `<head>`:
+
+| Element | Purpose |
+| :-- | :-- |
+| `<title>` | The page name (required) |
+| `<meta>` | Information about the page |
+| `<link>` | A relationship with another file, such as a stylesheet or icon |
+| `<style>` | CSS inside the page |
+| `<script>` | JavaScript (or data) |
+| `<base>` | The base address for relative links |
+| `<noscript>` | What to show when scripts are off (limited use in the head) |
+| `<template>` | A fragment that is not shown until script uses it |
+
+If you put something else in the head, such as a `<div>` or a `<p>`, the browser **closes the head early** and starts the body. Everything after that point is treated as body content, including any `<meta>` or `<link>` tags that follow. That is a common cause of "my tags do nothing" bugs.
+
+## Good Habits from the Start
+
+1. **Always include `lang`, `charset`, `viewport`, and `title`.** The four basics.
+2. **Give every page its own title and description.** Copy-pasted ones help no one.
+3. **Do not block the page.** Load scripts with `defer`, and keep the head light.
+4. **Never disable zoom.** People with low vision rely on it.
+5. **Do not trust any value that comes from a visitor** when you build a head on a server. Escape it.
+
+:::warning The head is public
+Everything in the head, including comments, is visible to anyone who views the page source. Never put passwords, private notes, internal server names, or unreleased plans in it.
+:::
+
+## Accessibility at a Glance
+
+- **`lang` on `<html>`** lets screen readers choose the right pronunciation, and browsers offer correct translation and spell checking.
+- **A unique, descriptive `<title>`** is the first thing a screen reader announces on every new page, and the label in the browser's tab list and history.
+- **A correct `viewport`,** without `user-scalable=no`, lets people zoom.
+- **`charset`** keeps text readable in every language, including text read aloud.
+- **A stylesheet that loads reliably** keeps contrast, focus rings, and layout intact.
+- **Scripts that load without blocking** keep the page usable quickly, including with assistive technology.
+
+## Security and Privacy Notes
+
+- **Anything in the head is public.** Do not put secrets there, not even in comments or hidden `meta` tags.
+- **Scripts and styles from other sites run with full power** on your page. Load only what you trust, pin versions, and use Subresource Integrity where you can. See [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security).
+- **A `<base>` tag changes every relative link and form address.** An attacker who can inject one can redirect your visitors. Keep it out unless you need it, and put it carefully.
+- **If a server builds the head from visitor input** (for example, a title that includes a search term), **escape it**, so no one can inject extra tags.
+- **A Content-Security-Policy in a `<meta>` tag** helps, but a response header is stronger.
+- **Metadata can reveal more than you think:** editor names in comments, internal paths in script addresses, and draft notes. Review the source before publishing.
+
+## Global Audience Notes
+
+- **Set `lang`,** and use language codes that match your content (`en`, `hi`, `ar`, `pt-BR`). For right-to-left languages, also set `dir="rtl"`.
+- **Always use UTF-8** (`<meta charset="utf-8">`), which covers every language. Save your files in UTF-8 as well.
+- **Write the title and description in the language of the page,** and keep titles short enough that translations do not become too long.
+- **Tell search engines about other language versions** with `<link rel="alternate" hreflang="…">`.
+- **Think about slow connections:** a lean head, deferred scripts, and a small stylesheet help most where the network is weakest.
+- **Use the viewport tag,** because in many regions, most visitors use phones.
+
+## Common Mistakes to Avoid
+
+1. **No `<title>`,** or one title for the whole site.
+2. **No `charset`,** so accents and symbols break.
+3. **No `viewport`,** so phones show a tiny desktop page.
+4. **Disabling zoom** with `user-scalable=no` or `maximum-scale=1`.
+5. **Putting `<div>` or text in the head,** which ends the head early.
+6. **Blocking scripts in the head** with no `defer`.
+7. **Forgetting `lang` on `<html>`.**
+8. **Missing doctype,** so the browser enters quirks mode.
+9. **Duplicate or conflicting tags** (two titles, two viewports).
+10. **Secrets in comments** or metadata.
+11. **A `<base>` tag added without thinking,** breaking every relative link.
+12. **Copying one head to every page,** with the same title and description.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Write the smallest valid HTML document, with a `lang`, `charset`, and `title`.
+2. Add the `viewport` meta tag, and open the page on a phone, or in your browser's phone view.
+3. Remove the `charset`, add some accented letters and an emoji, and see what happens.
+4. Add a description, and a link to an icon.
+5. Open any website, view the source, and list five things in its head.
+6. Use the button above to read this page's head, and find its `viewport` and `lang`.
+7. Put a `<p>` in the head, and look at the page in your browser's inspector to see what the browser did.
+8. Add a stylesheet with `<link>`, and a script with `defer`.
+9. Give three different pages three different titles and descriptions.
+10. Bonus: use a free online checker for your page's metadata, and fix the first three problems it finds.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the head of an HTML page?</summary>
+
+The part that holds information about the page (metadata) and links to the files it needs. It is not shown on the page itself, except for things like the title in the tab and the icon.
+
+</details>
+
+<details>
+<summary>2. Which four things should every page's head include?</summary>
+
+A `lang` attribute on `<html>`, `<meta charset="utf-8">`, a `viewport` meta tag, and a unique `<title>`.
+
+</details>
+
+<details>
+<summary>3. Who reads the head?</summary>
+
+Browsers, search engines, social networks and messaging apps, screen readers, and operating systems. People mostly see only its effects.
+
+</details>
+
+<details>
+<summary>4. Why must `<meta charset>` come early?</summary>
+
+The browser needs to know how to read the letters before it reads the rest of the file. It should appear within the first 1024 bytes.
+
+</details>
+
+<details>
+<summary>5. What happens if you put a `<div>` in the head?</summary>
+
+The browser closes the head and starts the body at that point. Any `<meta>` or `<link>` after it is then in the body, and may not work as intended.
+
+</details>
+
+<details>
+<summary>6. Is the head private?</summary>
+
+No. Anyone can view the page source, so never put secrets, private notes, or internal details in the head.
+
+</details>
+
+## Key Takeaways
+
+- The **head** holds **metadata**: information about the page, for browsers, search engines, social apps, and assistive technology.
+- Every page needs a **doctype, `lang`, `charset`, and `title`**, and nearly every page needs a **viewport** tag.
+- Put `charset` first, then the viewport and title, then other `meta` and `link` tags, then styles, and then scripts with `defer`.
+- Only `title`, `meta`, `link`, `style`, `script`, `base`, `noscript`, and `template` belong in the head.
+- Give **each page its own title and description**.
+- **Never disable zoom,** and never hide secrets in the head.
+- Treat third-party files and server-built values with care.
+- Use UTF-8 and `lang`, write for your audience's language, and keep the head light for slow connections.
+
+Ready to start? Begin with [HTML](./html-head/html), the root element that holds everything.

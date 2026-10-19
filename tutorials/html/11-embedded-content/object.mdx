@@ -1,15 +1,436 @@
 ---
-id: object-element
-title: "Generic Resource Embedding: The object Element"
-sidebar_label: "Object (<object>)"
+id: html-object
+title: "HTML Object Element"
+sidebar_label: "Object"
 sidebar_position: 4
 slug: /html/embedded-content/object
-description: "Master the object tag to embed PDFs, flash legacy assets, external images, and fallback content cleanly into HTML documents."
+description: "Learn the HTML object element: embedding PDFs, SVG and other files with data and type, fallback content that appears when a file cannot be shown, nested fallback chains, sizing, scripting a same-origin SVG, accessibility and security limits, and when to use iframe or img instead, with live demos."
 keywords:
+  - HTML object element
   - HTML object tag
-  - generic resource embedding
-  - embed PDF HTML
-  - object fallback content
+  - object data type fallback
+  - embed PDF object HTML
+  - object vs embed vs iframe
+  - nested object fallback
+  - object contentDocument SVG
+  - object accessibility
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, object, embedded-content, fallback]
+tags: [html, web-development, beginner, object, embedded-content, fallback, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function FallbackLab() {
+  const [mode, setMode] = useState("ok");
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80"><rect width="200" height="80" rx="8" fill="#ffe4e6"/><circle cx="40" cy="40" r="24" fill="#e11d48"/><text x="80" y="46" font-family="sans-serif" font-size="16" fill="#0f172a">An SVG file</text></svg>';
+  const uri = "data:image/svg+xml," + encodeURIComponent(svg);
+  const modes = [
+    {key: "ok", label: "The file can be shown"},
+    {key: "bad", label: "The file type cannot be shown"},
+    {key: "chain", label: "Two failures, then a last resort"},
+  ];
+  const code = {
+    ok: '<object data="graphic.svg" type="image/svg+xml"\n        width="240" height="96">\n  <p>This graphic could not be shown.</p>\n</object>',
+    bad: '<object data="report.xyz" type="application/x-unknown"\n        width="240" height="96">\n  <p>This file type cannot be shown here.\n     <a href="report.xyz">Download it</a>.</p>\n</object>',
+    chain: '<object data="a.xyz" type="application/x-unknown">\n  <object data="b.xyz" type="application/x-other">\n    <img src="graphic.svg" alt="A red circle and the words An SVG file">\n  </object>\n</object>',
+  }[mode];
+  const note = {
+    ok: "The browser handles the type, so it shows the file. The fallback inside stays hidden.",
+    bad: "No handler for this type, so the browser shows what is inside the object instead. In most browsers, this works the same way for a file that fails to load.",
+    chain: "The first object fails, so the browser tries the object inside it. That fails too, so the image at the end is shown.",
+  }[mode];
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>What happens to the file?</legend>
+        {modes.map((item) => (
+          <label key={item.key} style={{display: "block"}}>
+            <input type="radio" name="fl-mode" checked={mode === item.key} onChange={() => setMode(item.key)} /> {item.label}
+          </label>
+        ))}
+      </fieldset>
+      <div style={{border: "1px dashed #94a3b8", padding: "0.5rem", marginBottom: "0.5rem"}}>
+        {mode === "ok" && (
+          <object key="ok" data={uri} type="image/svg+xml" width="240" height="96" aria-label="A red circle and the words An SVG file">
+            <p style={{margin: 0}}>This graphic could not be shown.</p>
+          </object>
+        )}
+        {mode === "bad" && (
+          <object key="bad" data="data:application/x-unknown,hello" type="application/x-unknown" width="240" height="96">
+            <p style={{margin: 0}}>
+              This file type cannot be shown here.{" "}
+              <a href="#download" onClick={(event) => event.preventDefault()}>Download it</a>.
+            </p>
+          </object>
+        )}
+        {mode === "chain" && (
+          <object key="chain" data="data:application/x-unknown,a" type="application/x-unknown">
+            <object data="data:application/x-other,b" type="application/x-other">
+              <img src={uri} alt="A red circle and the words An SVG file" width="200" height="80" />
+            </object>
+          </object>
+        )}
+      </div>
+      <pre style={{margin: "0 0 0.4rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+      <p role="status" style={{margin: 0}}>{note}</p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are real <code>object</code> elements. Fallback behaviour can differ a little between browsers, so always test the file types you use.
+      </p>
+    </div>
+  );
+}
+
+export function ObjectBuilder() {
+  const kinds = {
+    pdf: {label: "A PDF document", type: "application/pdf", data: "guide.pdf", w: 600, h: 400, fallback: '<a href="guide.pdf">Download the guide (PDF, 1.2 MB)</a>'},
+    svg: {label: "An SVG graphic", type: "image/svg+xml", data: "diagram.svg", w: 300, h: 200, fallback: '<img src="diagram.png" alt="Diagram of the checkout steps">'},
+    html: {label: "An HTML page", type: "text/html", data: "page.html", w: 600, h: 300, fallback: '<a href="page.html">Open the page</a>'},
+    image: {label: "A picture", type: "image/png", data: "photo.png", w: 400, h: 300, fallback: '<p>A loaf of bread on a rack</p>'},
+  };
+  const [kind, setKind] = useState("pdf");
+  const [withType, setWithType] = useState(true);
+  const [withFallback, setWithFallback] = useState(true);
+  const [label, setLabel] = useState("User guide");
+  const current = kinds[kind];
+  const lines = ['<object data="' + current.data + '"'];
+  if (withType) lines.push('        type="' + current.type + '"');
+  lines.push('        width="' + current.w + '" height="' + current.h + '"');
+  if (label.trim()) lines.push('        aria-label="' + label + '">');
+  else lines[lines.length - 1] += ">";
+  if (withFallback) lines.push("  " + current.fallback);
+  lines.push("</object>");
+  const warnings = [];
+  if (!withType) warnings.push({bad: true, text: "No type. The browser has to guess, and may download a file it cannot show."});
+  if (!withFallback) warnings.push({bad: true, text: "No fallback content. Visitors whose browser cannot show the file see an empty box."});
+  if (!label.trim()) warnings.push({bad: true, text: "No accessible name. When the file loads, the fallback is hidden, so the object may have no name at all."});
+  if (kind === "html") warnings.push({bad: true, text: "For an HTML page, iframe is the better element: it has title, lazy loading and sandbox."});
+  if (kind === "image") warnings.push({bad: true, text: "For a picture, use img with alt text and lazy loading."});
+  if (kind === "pdf") warnings.push({bad: false, text: "Keep a visible download link on the page as well. Many phones do not show a PDF inline."});
+  if (kind === "svg") warnings.push({bad: false, text: "If the SVG is only a picture, img is simpler. If you need to style it with your CSS, use inline SVG."});
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <label>What are you embedding?{" "}
+          <select value={kind} onChange={(event) => setKind(event.target.value)}>
+            {Object.keys(kinds).map((key) => (<option key={key} value={key}>{kinds[key].label}</option>))}
+          </select>
+        </label>
+        <label><input type="checkbox" checked={withType} onChange={(event) => setWithType(event.target.checked)} /> type</label>
+        <label><input type="checkbox" checked={withFallback} onChange={(event) => setWithFallback(event.target.checked)} /> fallback content</label>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="ob-label">aria-label (a name for the object)</label><br />
+        <input id="ob-label" type="text" value={label} onChange={(event) => setLabel(event.target.value)} style={{width: "100%", maxWidth: "22rem"}} />
+      </p>
+      <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{lines.join("\n")}</code></pre>
+      <ul role="status" style={{margin: 0, paddingLeft: "1.25rem"}}>
+        {warnings.map((entry) => (<li key={entry.text} style={{color: entry.bad ? "#b91c1c" : "#15803d"}}>{entry.text}</li>))}
+      </ul>
+    </form>
+  );
+}
+
+The `<embed>` element had one big weakness: when the file could not be shown, the visitor got an empty box. The **`<object>`** element fixes that. It does the same job (show an external resource in a rectangle of your page), but it has a feature `embed` lacks: **fallback content.** Whatever you put between the tags is shown when the resource cannot be displayed.
+
+It also lets you build a **chain of fallbacks**: try this, then this, and as a last resort show this text or image.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Using `<object>` with `data` and `type`
+- Fallback content, and nested fallback chains
+- Sizing, naming, and scripting an object
+- How `object` compares with `embed`, `iframe`, and `img`
+- Accessibility and security limits
+- When not to use it
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<object
+  data="guide.pdf"
+  type="application/pdf"
+  width="600"
+  height="400"
+  aria-label="User guide"
+>
+  <p>
+    Your browser cannot show this PDF.
+    <a href="guide.pdf">Download the guide (PDF, 1.2 MB)</a>.
+  </p>
+</object>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FallbackLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch between the three cases above. They are all real `<object>` elements. In the first, the file is shown. In the second, the browser cannot handle the type, so the fallback paragraph appears. In the third, the browser tries a chain of objects, and ends with an image.
+
+## Attributes
+
+| Attribute | What it does | Notes |
+| :-- | :-- | :-- |
+| `data` | The address of the resource | This is `data`, not `src`. (Easy to mix up with `embed`) |
+| `type` | The MIME type of the resource | Always add it. It lets the browser choose without downloading |
+| `width`, `height` | Size, in pixels | Set both, or use CSS. Without them, the box is small by default |
+| `name` | A name that links and forms can target | Rarely needed |
+| `form` | Associates the object with a form | Rare |
+| `usemap` | Links an image map | Old and rare |
+
+Inside the element, you may also meet **`<param>`** elements, which passed settings to plug-ins:
+
+```html
+<object data="movie.swf">
+  <param name="quality" value="high">
+</object>
+```
+
+Plug-ins no longer exist in browsers, so `<param>` is almost never useful now. You will see it only in old code.
+
+## Fallback Content
+
+Whatever you put inside `<object>` is shown **only if the resource cannot be displayed**, either because the browser has no handler for the `type`, or because the file fails to load (in most browsers).
+
+Good fallbacks:
+
+| Resource | A good fallback |
+| :-- | :-- |
+| A PDF | A paragraph with a **download link**, with the file size |
+| An SVG chart | An `<img>` of the chart with `alt`, or a link to a data table |
+| A video file | A link to the video, and a transcript |
+| An HTML page | A link that opens the page |
+
+### A Chain of Fallbacks
+
+You can **nest** objects. The browser tries the outer one first, and moves inward only if it fails. End with something that always works, such as an `<img>` or plain text:
+
+```html
+<object data="chart.svg" type="image/svg+xml">
+  <object data="chart.png" type="image/png">
+    <p>
+      Sales rose from 40 to 65 units between January and June.
+      <a href="chart-data.html">See the data table</a>.
+    </p>
+  </object>
+</object>
+```
+
+This pattern was popular when browsers differed widely. Today, a single `<object>` with one good fallback is usually enough.
+
+### Try It: Build an Object Tag
+
+Pick what you are embedding, and the tool writes the tag. Turn off the type, the fallback, or the name, and see what it warns you about.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<object data="diagram.svg" type="image/svg+xml" width="300" height="200"
+        aria-label="Checkout steps">
+  <img src="diagram.png" alt="Diagram of the checkout steps">
+</object>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ObjectBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## `object` vs the Others
+
+| | `img` | `object` | `iframe` | `embed` |
+| :-- | :-- | :-- | :-- | :-- |
+| Fallback | `alt` text | **Content inside, and it can nest** | Rarely shown | None |
+| Shows | Images (and SVG as a picture) | PDFs, SVG, HTML, images | Other web pages | The same files, but with no fallback |
+| Lazy loading | Yes | No | Yes | No |
+| Sandbox | n/a | No | **Yes** | No |
+| Scripts in an SVG | Do **not** run | Run | Run | Run |
+| Best for | Pictures | **PDFs with a fallback**, SVG you must script from outside | Pages, players, maps | Rarely |
+
+A simple way to choose:
+
+1. **A picture?** Use `img`.
+2. **A graphic you want to style or animate with your page's CSS and JavaScript?** Use inline SVG. See [SVG](./svg).
+3. **A web page, player, or widget?** Use [`iframe`](./iframe).
+4. **A PDF, or a file where you need fallback content?** Use `object`.
+
+## Reaching Inside an Object
+
+When the file is an **SVG or HTML page from the same origin** as your page, your script can read and change its document:
+
+```js
+const object = document.querySelector("object");
+
+object.addEventListener("load", () => {
+  const doc = object.contentDocument;        // null for another origin
+  if (!doc) return;
+
+  const circle = doc.querySelector("circle");
+  circle.setAttribute("fill", "#16a34a");
+});
+```
+
+Notes:
+
+- Wait for the object's **`load`** event first.
+- `contentDocument` is `null` when the file comes from **another origin**. That is a security rule, not a bug.
+- If the SVG file is only a picture, you do not need any of this. Use `img`. If you need to control it from your CSS and scripts, **inline SVG** is simpler.
+
+## Sizing
+
+- **Set `width` and `height`.** Without them, the object gets a small default size, and your content may be cut off or the page may jump.
+- **For a fluid layout,** use CSS:
+
+```css
+object {
+  display: block;
+  width: 100%;
+  max-width: 48rem;
+  aspect-ratio: 4 / 3;
+}
+```
+
+- **A PDF viewer** needs a generous height (at least 400 pixels). A short box makes it unusable.
+
+## Accessibility at a Glance
+
+- **Write real fallback content,** not "Your browser does not support this". Say what it is and how to get it.
+- **Give the object a name** with `aria-label` or `title`, because when the file loads, the fallback is hidden, and an object with no name is hard to identify.
+- **Always provide a visible link** to the file, such as a PDF, outside the object.
+- **Offer a text version** of anything important, such as an HTML page for a PDF, or a data table for a chart.
+- **Test with the keyboard,** since a viewer inside an object can trap focus. A visitor must be able to Tab out.
+- **For an SVG,** put a `<title>` and `<desc>` inside it, so it has a name of its own.
+- **Keep the size reasonable** on small screens, and check that the layout does not need sideways scrolling.
+
+## Security and Privacy Notes
+
+- **`object` has no `sandbox`.** Nothing restricts what is inside. For content you do not trust, use an `iframe` with `sandbox`.
+- **Scripts inside an SVG or HTML page run.** And when the file is from your **own origin**, it can reach your page too. Never put an untrusted file in an `object` on your own origin.
+- **Use `img` for SVG files from visitors,** because scripts do not run in an `img`. Better still, sanitise uploads on the server.
+- **Send the right headers.** Use the correct `Content-Type`, and add `X-Content-Type-Options: nosniff`.
+- **Use `https://`.** An insecure resource inside a secure page is blocked.
+- **Do not build `data` from user input.** Use a fixed list of allowed files.
+- **The file is public.** Anyone who can see the page can fetch it directly. Do not embed files that should be private.
+- **Third-party resources** may learn which page embeds them. See [Third-Party Content Security](./third-party-content-security).
+
+## Global Audience Notes
+
+- **Do not assume a PDF viewer.** Many phones do not show one. Always give a download link, with the file size and language, such as "Guide (PDF, 1.2 MB, English)".
+- **Fallbacks should be in the page's language,** and translated with the rest of the page.
+- **Offer an HTML version** for important documents. Browsers can translate HTML, and it works better in right-to-left languages and on small screens.
+- **Heavy files hurt on slow and metered connections.** Show the size, and do not load big documents until asked. For example, create the object after a click.
+- **Name files clearly,** using simple letters and digits, so links and servers handle them in every region.
+
+## Common Mistakes to Avoid
+
+1. **Writing `src` instead of `data`.**
+2. **No `type`,** so the browser guesses.
+3. **No fallback content,** or a useless one ("Not supported").
+4. **No size,** so the box is tiny.
+5. **No accessible name** for the object.
+6. **No visible download link** for a PDF.
+7. **Using `object` for pictures or web pages,** where `img` or `iframe` is better.
+8. **Putting an untrusted SVG or HTML file in an `object` on your own origin.**
+9. **Wrong server `Content-Type`.**
+10. **Trying to run Flash or Java through `object`.**
+11. **Reading `contentDocument` before the `load` event,** or for another origin.
+12. **Trapping keyboard users** in an embedded viewer.
+
+## Practice Time
+
+Try these in your editor, with a small PDF and a small SVG:
+
+1. Embed an SVG with `<object data="…" type="image/svg+xml">`.
+2. Add a fallback `img` with `alt`, and break the `data` address to see it appear.
+3. Embed a PDF with a download link as the fallback.
+4. Set the wrong `type` on purpose, and see which content shows.
+5. Build a nested chain of two objects with a last-resort paragraph.
+6. Give the object an `aria-label`, and check it in the accessibility panel.
+7. Use `contentDocument` to change the colour of a shape inside a same-origin SVG.
+8. Check what `contentDocument` returns for a file from another origin.
+9. Replace the SVG object with an `img`, and compare what you lose and gain.
+10. Bonus: replace the PDF object with an `iframe`, and compare the fallback options.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the main advantage of `object` over `embed`?</summary>
+
+It has fallback content. If the resource cannot be shown, the browser displays what you put between the tags, and you can nest objects to build a chain of fallbacks.
+
+</details>
+
+<details>
+<summary>2. Which attribute holds the address in an `object`?</summary>
+
+`data`, not `src`. It is paired with `type`, which gives the MIME type.
+
+</details>
+
+<details>
+<summary>3. What makes a good fallback?</summary>
+
+A clear sentence that says what the file is, with a visible download link (and size), or an image with `alt`, or a data table, depending on the content.
+
+</details>
+
+<details>
+<summary>4. When can a script read inside an object?</summary>
+
+When the file is an SVG or HTML page from the same origin, and after the `load` event, through `contentDocument`. For other origins, it is `null`.
+
+</details>
+
+<details>
+<summary>5. Is `object` safe for untrusted files?</summary>
+
+No. It has no `sandbox`, scripts inside SVG and HTML run, and a same-origin file can reach your page. Use an `iframe` with `sandbox`, or an `img` for SVG pictures.
+
+</details>
+
+<details>
+<summary>6. What should you use for a plain picture?</summary>
+
+`img`, with `alt` text, a size, and `loading="lazy"`.
+
+</details>
+
+## Key Takeaways
+
+- `<object>` embeds a resource with `data` and `type`, and shows **fallback content** when it cannot.
+- Objects can be **nested** to build a chain of fallbacks that ends in something that always works.
+- It is a good fit for **PDFs** with a download link, but a visible link outside the object is still wise.
+- Always set `type`, a **size**, and an **accessible name**.
+- Same-origin SVG and HTML files can be scripted through `contentDocument`, after `load`.
+- `object` has **no sandbox**, so never put untrusted files in it. Prefer `img` for pictures, inline SVG for scripted graphics, and `iframe` for pages.
+- Plug-ins and `<param>` belong to the past.
+- Provide text versions, plan for slow connections, and send the right headers.
+
+Next, draw graphics that scale to any size with [SVG](./svg), or return to the [Embedded Content overview](../embedded-content).

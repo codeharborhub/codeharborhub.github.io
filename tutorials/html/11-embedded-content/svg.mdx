@@ -1,15 +1,653 @@
 ---
-id: svg-element
-title: "Scalable Vector Graphics: Inline SVG in HTML"
-sidebar_label: "Inline SVG (<svg>)"
-sidebar_position: 6
+id: html-svg
+title: "HTML SVG"
+sidebar_label: "SVG"
+sidebar_position: 5
 slug: /html/embedded-content/svg
-description: "Embed resolution-independent vector graphics directly into HTML using inline SVG, enabling CSS styling and JavaScript interactivity."
+description: "Learn SVG in HTML: drawing scalable graphics with shapes, paths and text, understanding viewBox, styling with CSS and currentColor, reusing shapes with symbol and use, choosing between inline SVG, img and object, making SVG accessible with title and desc, animation and reduced motion, and security for SVG files, with live demos."
 keywords:
-  - HTML inline SVG
-  - scalable vector graphics HTML
-  - vector graphics rendering
-  - SVG styling CSS
+  - HTML SVG tutorial
+  - inline SVG
+  - SVG viewBox explained
+  - SVG shapes circle rect path
+  - SVG currentColor icons
+  - SVG accessibility title desc
+  - SVG symbol use sprite
+  - SVG vs canvas
+  - SVG img object inline
+  - SVG animation prefers-reduced-motion
+  - SVG security sanitize
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, svg, graphics, vectors]
+tags: [html, web-development, beginner, svg, graphics, embedded-content, accessibility, frontend]
 ---
+
+import {useState} from 'react';
+
+export function ShapePlayground() {
+  const [kind, setKind] = useState("circle");
+  const [x, setX] = useState(60);
+  const [y, setY] = useState(40);
+  const [size, setSize] = useState(30);
+  const [fill, setFill] = useState("#38bdf8");
+  const [stroke, setStroke] = useState("#0f172a");
+  const [width, setWidth] = useState(3);
+  const r1 = (value) => Math.round(value * 10) / 10;
+  const defs = {
+    circle: {tag: "circle", attrs: {cx: x, cy: y, r: r1(size / 2)}},
+    rect: {tag: "rect", attrs: {x: x, y: y, width: size * 2, height: size, rx: 8}},
+    ellipse: {tag: "ellipse", attrs: {cx: x, cy: y, rx: size, ry: r1(size / 2)}},
+    line: {tag: "line", attrs: {x1: x, y1: y, x2: x + size * 2, y2: y + size}},
+    polygon: {tag: "polygon", attrs: {points: x + "," + (y + size) + " " + (x + size * 2) + "," + (y + size) + " " + (x + size) + "," + y}},
+    path: {tag: "path", attrs: {d: "M " + x + " " + y + " Q " + (x + size) + " " + (y + size * 1.2) + " " + (x + size * 2) + " " + y}},
+  };
+  const current = defs[kind];
+  const attrText = Object.keys(current.attrs).map((name) => name + '="' + current.attrs[name] + '"').join(" ");
+  const code = '<svg viewBox="0 0 200 100">\n  <' + current.tag + " " + attrText + '\n    fill="' + (kind === "line" ? "none" : fill) + '" stroke="' + stroke + '" stroke-width="' + width + '"' + (kind === "path" ? ' stroke-linecap="round"' : "") + " />\n</svg>";
+  const Shape = current.tag;
+  const shapeProps = {...current.attrs, fill: kind === "line" || kind === "path" ? "none" : fill, stroke, strokeWidth: width};
+  if (kind === "path") shapeProps.strokeLinecap = "round";
+  return (
+    <div>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <label>Shape{" "}
+          <select value={kind} onChange={(event) => setKind(event.target.value)}>
+            <option value="circle">circle</option>
+            <option value="rect">rect</option>
+            <option value="ellipse">ellipse</option>
+            <option value="line">line</option>
+            <option value="polygon">polygon</option>
+            <option value="path">path</option>
+          </select>
+        </label>
+        <label>Fill <input type="color" value={fill} onChange={(event) => setFill(event.target.value)} disabled={kind === "line" || kind === "path"} /></label>
+        <label>Stroke <input type="color" value={stroke} onChange={(event) => setStroke(event.target.value)} /></label>
+      </p>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <label>x <input type="range" min="10" max="110" value={x} onChange={(event) => setX(Number(event.target.value))} aria-valuetext={"x " + x} /></label>
+        <label>y <input type="range" min="10" max="60" value={y} onChange={(event) => setY(Number(event.target.value))} aria-valuetext={"y " + y} /></label>
+        <label>size <input type="range" min="10" max="45" value={size} onChange={(event) => setSize(Number(event.target.value))} aria-valuetext={"size " + size} /></label>
+        <label>stroke width <input type="range" min="0" max="10" value={width} onChange={(event) => setWidth(Number(event.target.value))} aria-valuetext={width + " units"} /></label>
+      </p>
+      <svg viewBox="0 0 200 100" role="img" aria-label={"A " + kind + " drawn on a light grid"} style={{width: "100%", maxWidth: "28rem", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", display: "block"}}>
+        <path d="M0 50H200M100 0V100" stroke="#e2e8f0" strokeWidth="1" />
+        <Shape {...shapeProps} />
+      </svg>
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+    </div>
+  );
+}
+
+export function ViewBoxDemo() {
+  const [vbx, setVbx] = useState(0);
+  const [vby, setVby] = useState(0);
+  const [vbw, setVbw] = useState(200);
+  const [fit, setFit] = useState("xMidYMid meet");
+  const vbh = vbw / 2;
+  return (
+    <div>
+      <p style={{display: "flex", gap: "1rem", flexWrap: "wrap", margin: "0 0 0.5rem"}}>
+        <label>min-x <input type="range" min="-50" max="150" step="5" value={vbx} onChange={(event) => setVbx(Number(event.target.value))} aria-valuetext={"min-x " + vbx} /></label>
+        <label>min-y <input type="range" min="-25" max="75" step="5" value={vby} onChange={(event) => setVby(Number(event.target.value))} aria-valuetext={"min-y " + vby} /></label>
+        <label>viewBox width <input type="range" min="50" max="300" step="10" value={vbw} onChange={(event) => setVbw(Number(event.target.value))} aria-valuetext={"width " + vbw} /></label>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label>preserveAspectRatio{" "}
+          <select value={fit} onChange={(event) => setFit(event.target.value)}>
+            <option value="xMidYMid meet">xMidYMid meet (fit, keep shape)</option>
+            <option value="xMidYMid slice">xMidYMid slice (fill, crop)</option>
+            <option value="none">none (stretch)</option>
+          </select>
+        </label>
+      </p>
+      <svg
+        width="280"
+        height="160"
+        viewBox={vbx + " " + vby + " " + vbw + " " + vbh}
+        preserveAspectRatio={fit}
+        role="img"
+        aria-label="A small house on a hill under a yellow sun"
+        style={{border: "2px dashed #94a3b8", background: "#fff", display: "block", maxWidth: "100%"}}
+      >
+        <rect x="-100" y="-50" width="400" height="200" fill="#e0f2fe" />
+        <circle cx="160" cy="22" r="14" fill="#facc15" />
+        <path d="M-50 100 Q 50 50 150 90 T 300 80 V150 H-50 Z" fill="#86efac" />
+        <rect x="60" y="55" width="40" height="30" fill="#f97316" />
+        <polygon points="55,55 80,35 105,55" fill="#b91c1c" />
+        <rect x="75" y="68" width="10" height="17" fill="#fff7ed" />
+      </svg>
+      <pre style={{margin: "0.6rem 0 0", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{'<svg width="280" height="160"\n     viewBox="' + vbx + " " + vby + " " + vbw + " " + vbh + '"\n     preserveAspectRatio="' + fit + '">'}</code></pre>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The picture is always drawn in the same coordinates. The <code>viewBox</code> chooses which part of that space the 280 by 160 box shows, like a camera frame.
+      </p>
+    </div>
+  );
+}
+
+export function SvgA11yDemo() {
+  const [mode, setMode] = useState("none");
+  const modes = {
+    none: {label: "No text alternative", says: "Nothing helpful. Depending on the screen reader, it may be skipped, or announced as just “graphic” or “image” with no name, or its numbers may be read one by one.", good: false},
+    title: {label: "role=img with a title", says: "“Sales rose 25 percent in June, image.”", good: true},
+    desc: {label: "title plus a longer description", says: "“Sales chart, image.”, then the description: “Bars for April, May and June: 40, 48 and 60 units.”", good: true},
+    hidden: {label: "Decorative (aria-hidden)", says: "Nothing. It is skipped, which is right for a picture that adds no information.", good: true},
+  };
+  const common = {viewBox: "0 0 120 60", width: "240", height: "120", style: {border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", display: "block"}};
+  const bars = (
+    <g fill="#2563eb">
+      <rect x="15" y="30" width="20" height="25" />
+      <rect x="50" y="24" width="20" height="31" fill="#1d4ed8" />
+      <rect x="85" y="10" width="20" height="45" fill="#1e40af" />
+    </g>
+  );
+  const code = {
+    none: '<svg viewBox="0 0 120 60">\n  <rect …/> <rect …/> <rect …/>\n</svg>',
+    title: '<svg viewBox="0 0 120 60" role="img" aria-labelledby="t">\n  <title id="t">Sales rose 25 percent in June</title>\n  <rect …/> <rect …/> <rect …/>\n</svg>',
+    desc: '<svg viewBox="0 0 120 60" role="img"\n     aria-labelledby="t" aria-describedby="d">\n  <title id="t">Sales chart</title>\n  <desc id="d">Bars for April, May and June: 40, 48 and 60 units.</desc>\n  <rect …/> <rect …/> <rect …/>\n</svg>',
+    hidden: '<svg viewBox="0 0 120 60" aria-hidden="true" focusable="false">\n  <rect …/> <rect …/> <rect …/>\n</svg>',
+  }[mode];
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>How is the chart labelled?</legend>
+        {Object.keys(modes).map((key) => (
+          <label key={key} style={{display: "block"}}>
+            <input type="radio" name="svg-a11y" checked={mode === key} onChange={() => setMode(key)} /> {modes[key].label}
+          </label>
+        ))}
+      </fieldset>
+      {mode === "none" && (<svg {...common}>{bars}</svg>)}
+      {mode === "title" && (
+        <svg {...common} role="img" aria-labelledby="sa-t1">
+          <title id="sa-t1">Sales rose 25 percent in June</title>
+          {bars}
+        </svg>
+      )}
+      {mode === "desc" && (
+        <svg {...common} role="img" aria-labelledby="sa-t2" aria-describedby="sa-d2">
+          <title id="sa-t2">Sales chart</title>
+          <desc id="sa-d2">Bars for April, May and June: 40, 48 and 60 units.</desc>
+          {bars}
+        </svg>
+      )}
+      {mode === "hidden" && (<svg {...common} aria-hidden="true" focusable="false">{bars}</svg>)}
+      <pre style={{margin: "0.6rem 0 0.4rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{code}</code></pre>
+      <p role="status" style={{margin: 0, color: modes[mode].good ? "#15803d" : "#b91c1c"}}>
+        <strong>A screen reader user may hear:</strong> {modes[mode].says}
+      </p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Exact announcements differ between screen readers and browsers, so test with the ones your visitors use. For an important chart, also give a data table.
+      </p>
+    </div>
+  );
+}
+
+A photograph is made of **pixels**. Zoom in far enough, and it turns into squares. An **SVG** (Scalable Vector Graphics) is different: it is a **list of instructions**. "Draw a circle here, this big, in this colour." Zoom in as far as you like, and the circle stays perfectly sharp, because the computer simply draws it again.
+
+SVG is written in **markup that looks like HTML**, can be placed right inside your page, can be styled with CSS, and can be changed with JavaScript. It is the best choice for icons, logos, charts, diagrams, and illustrations.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Writing an SVG, and the `viewBox` that controls its scale
+- Basic shapes, paths, text, groups, and gradients
+- Styling with CSS and `currentColor`
+- Reusing shapes with `symbol` and `use`
+- Four ways to include SVG, and which to choose
+- Making SVG accessible
+- Animation, performance, security, and common mistakes
+
+## The Basics
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<svg viewBox="0 0 200 100" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">A blue circle beside the word Hello</title>
+  <circle cx="50" cy="50" r="30" fill="#2563eb" />
+  <text x="95" y="58" font-size="24" fill="#0f172a">Hello</text>
+</svg>
+```
+
+```css title="style.css"
+svg {
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<svg viewBox="0 0 200 100" role="img" aria-labelledby="svg-basic-title" style={{width: "100%", maxWidth: "20rem", height: "auto", display: "block"}}>
+  <title id="svg-basic-title">A blue circle beside the word Hello</title>
+  <circle cx="50" cy="50" r="30" fill="#2563eb" />
+  <text x="95" y="58" fontSize="24" fill="#0f172a">Hello</text>
+</svg>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+An `<svg>` element is a **canvas of its own** with its own coordinates. The shapes inside it (`circle`, `rect`, `text`, and so on) are real elements, so CSS and JavaScript can reach every one.
+
+## Coordinates and `viewBox`
+
+Inside an SVG, the **top-left corner is (0, 0)**. The x value grows to the right, and the **y value grows downwards**, which is the opposite of a school graph.
+
+The **`viewBox`** attribute is the most important one. It has four numbers: `min-x min-y width height`. It defines the **private coordinate space** you draw in, and the browser **scales** that space to fit the real size of the `<svg>` element.
+
+```html
+<svg viewBox="0 0 200 100" width="400">   <!-- shown twice as big, but nothing is redrawn by you -->
+```
+
+That is why SVG is "scalable": you draw once, in convenient numbers, and CSS decides the final size.
+
+### Try It: Move the Camera
+
+Change the `viewBox` numbers and see which part of the drawing is shown. Then change `preserveAspectRatio`, and watch how the picture fits a box of a different shape.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- The whole picture -->
+<svg width="280" height="160" viewBox="0 0 200 100">…</svg>
+
+<!-- Zoomed in on the house -->
+<svg width="280" height="160" viewBox="50 30 80 40">…</svg>
+
+<!-- Fill the box and crop, instead of leaving gaps -->
+<svg width="280" height="160" viewBox="0 0 200 100"
+     preserveAspectRatio="xMidYMid slice">…</svg>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ViewBoxDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Remember:
+
+- **Always set a `viewBox`.** Without one, the SVG will not scale with its box.
+- A smaller `viewBox` width means **zooming in**. A larger one means zooming out.
+- **`preserveAspectRatio`** decides what happens when the box and the `viewBox` have different shapes: `meet` (fit it all, keep the shape), `slice` (fill the box, crop the edges), or `none` (stretch, which distorts).
+- For a fluid layout, set `width: 100%; height: auto;` in CSS, as with images.
+
+## Basic Shapes
+
+| Element | Draws | Main attributes |
+| :-- | :-- | :-- |
+| `rect` | A rectangle | `x`, `y`, `width`, `height`, `rx` (rounded corners) |
+| `circle` | A circle | `cx`, `cy` (centre), `r` (radius) |
+| `ellipse` | An oval | `cx`, `cy`, `rx`, `ry` |
+| `line` | A straight line | `x1`, `y1`, `x2`, `y2` (needs a `stroke`) |
+| `polyline` | Connected lines (open) | `points` |
+| `polygon` | Connected lines (closed) | `points` |
+| `path` | **Anything** | `d` (a list of drawing commands) |
+| `text` | Text | `x`, `y`, `font-size` |
+
+### Try It: Draw a Shape
+
+Pick a shape, move its position and size, and read the code it writes.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<svg viewBox="0 0 200 100">
+  <circle cx="60" cy="40" r="15" fill="#38bdf8" stroke="#0f172a" stroke-width="3" />
+  <rect x="100" y="25" width="60" height="30" rx="8" fill="#f97316" />
+  <line x1="20" y1="85" x2="180" y2="85" stroke="#0f172a" stroke-width="2" />
+</svg>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ShapePlayground />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Paths
+
+A `<path>` draws with a list of **commands** in its `d` attribute. Each is a letter followed by numbers:
+
+| Command | Meaning |
+| :-- | :-- |
+| `M x y` | **Move** to a point, without drawing |
+| `L x y` | Draw a **line** to a point |
+| `H x`, `V y` | Draw a horizontal or vertical line |
+| `Q cx cy x y` | A **quadratic curve** with one control point |
+| `C c1x c1y c2x c2y x y` | A **cubic curve** with two control points |
+| `A rx ry rotation large sweep x y` | An **arc** |
+| `Z` | **Close** the shape |
+
+An **uppercase** letter uses absolute coordinates. A **lowercase** letter is relative to the current point (`l 10 0` means "10 to the right").
+
+```html
+<path d="M 20 80 Q 60 10 100 80 T 180 80" fill="none" stroke="#2563eb" stroke-width="4" />
+```
+
+You rarely write long paths by hand. Draw in a design tool, export the SVG, and then **tidy it** (see Performance below).
+
+## Styling SVG
+
+Shapes take their look from **presentation attributes**, such as `fill` and `stroke`, **or from CSS**. CSS wins when both are present.
+
+```html
+<svg viewBox="0 0 100 100" class="badge">
+  <circle cx="50" cy="50" r="40" />
+</svg>
+```
+
+```css
+.badge circle {
+  fill: #2563eb;
+  stroke: #1e3a8a;
+  stroke-width: 4;
+}
+
+.badge circle:hover {
+  fill: #1d4ed8;
+}
+```
+
+Useful properties: `fill`, `stroke`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`, `opacity`, `transform`, `font-family`, `font-size`.
+
+### `currentColor`: Icons That Follow Your Text
+
+Set `fill="currentColor"` (or `stroke="currentColor"`), and the shape uses the **text colour** of its parent. Then one icon works in every theme, including dark mode and hover states.
+
+```html
+<button class="icon-button">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <path fill="currentColor" d="M12 2 2 7l10 5 10-5-10-5Z" />
+  </svg>
+  <span>Layers</span>
+</button>
+```
+
+```css
+.icon-button { color: #1d4ed8; }
+.icon-button:hover { color: #1e3a8a; }   /* the icon changes with the text */
+```
+
+## Grouping and Reuse
+
+- **`<g>`** groups shapes, so you can style or move them together: `<g fill="#f97316" transform="translate(20 10)">…</g>`.
+- **`<defs>`** holds things you define but do not draw directly (gradients, patterns, symbols).
+- **`<symbol>` and `<use>`** let you draw a shape once and **reuse** it many times, like a stamp:
+
+```html
+<svg style="display:none">
+  <symbol id="icon-star" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 2l3 7 7 .6-5.3 4.7L18.2 22 12 18l-6.2 4 1.5-7.7L2 9.6 9 9z" />
+  </symbol>
+</svg>
+
+<svg class="icon" width="24" height="24" aria-hidden="true"><use href="#icon-star" /></svg>
+<svg class="icon" width="48" height="48" aria-hidden="true"><use href="#icon-star" /></svg>
+```
+
+Using `<use href>` to point at a symbol **in the same page** is simple and dependable. Pointing at a separate `.svg` file has more rules (it must be from the same origin, and some older browsers differ), so test it, or inline the sprite.
+
+Use `display:none` carefully on the sprite: some tools hide gradients and masks inside it. Hiding it with `width="0" height="0" style="position:absolute"` is a safer alternative.
+
+### Gradients
+
+```html
+<svg viewBox="0 0 200 60">
+  <defs>
+    <linearGradient id="sunset" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f97316" />
+      <stop offset="1" stop-color="#be123c" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="60" rx="10" fill="url(#sunset)" />
+</svg>
+```
+
+Check the **text contrast** over a gradient at its lightest point.
+
+## Text in SVG
+
+```html
+<text x="10" y="30" font-size="20" fill="#0f172a">Revenue</text>
+```
+
+- SVG text is **real text**: it can be selected, searched, and read by screen readers, and it scales with the drawing. Prefer it to text converted into outlines.
+- **There is no automatic line wrapping.** Break lines yourself with `<tspan>`, or place the text in HTML next to the SVG.
+- Use `text-anchor="middle"` to centre text on a point, and `dominant-baseline` to adjust vertical alignment.
+- Text scales with the SVG, so a small SVG on a phone can make the text tiny. Check readability at every size.
+
+## Four Ways to Include SVG
+
+| Way | Example | Scripts and CSS from your page | Good for |
+| :-- | :-- | :-- | :-- |
+| **Inline** | `<svg>…</svg>` in the HTML | **Yes**, fully | Icons, charts, anything you style or animate |
+| **`img`** | `<img src="logo.svg" alt="…">` | No. Scripts inside do not run | Logos and illustrations that are just pictures. Safe and cacheable |
+| **`object`** | `<object data="logo.svg" type="image/svg+xml">` | Only from the same origin, through `contentDocument` | When you need a fallback and a separate file |
+| **CSS background** | `background: url(logo.svg)` | No | Decoration |
+
+A simple rule: **use `img` for pictures, and inline SVG for anything interactive or themed.** See [Object](./object) for the third option, and [Embed](./embed) for why `embed` is rarely the right choice.
+
+## Accessibility
+
+An SVG is not automatically understood by assistive technology. You must decide what it **is**.
+
+| The SVG is… | Do this |
+| :-- | :-- |
+| A **meaningful** image (a logo, a simple chart) | `role="img"`, with `<title>` and `aria-labelledby` |
+| A **complex** image (a detailed chart or diagram) | A title, a `<desc>` (`aria-describedby`), and a **data table or text version** on the page |
+| **Decorative** | `aria-hidden="true"` (and `focusable="false"` for older browsers) |
+| An **icon inside a button or link** | Hide the icon with `aria-hidden="true"`, and give the button visible text or an `aria-label` |
+| **Interactive** (clickable parts) | Use real `<a>` or `<button>` elements, or give shapes `tabindex`, a role, and keyboard handlers |
+
+### Try It: Label an SVG
+
+Try each way of labelling the same chart, and see what a screen reader might say.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<svg viewBox="0 0 120 60" role="img"
+     aria-labelledby="t" aria-describedby="d">
+  <title id="t">Sales chart</title>
+  <desc id="d">Bars for April, May and June: 40, 48 and 60 units.</desc>
+  <rect x="15" y="30" width="20" height="25" />
+  <rect x="50" y="24" width="20" height="31" />
+  <rect x="85" y="10" width="20" height="45" />
+</svg>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SvgA11yDemo />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+More points:
+
+- **Put the `<title>` first inside the SVG,** and connect it with `aria-labelledby`. Relying on the title alone (without the ARIA attributes) is less dependable across screen readers.
+- **Do not use a tooltip alone** to give information. The `<title>` also shows a tooltip in some browsers, but touch and keyboard users never see it.
+- **Do not rely on colour alone** in charts. Add labels, patterns, or shapes.
+- **Keep contrast high:** at least 3 to 1 for graphics that carry meaning, and 4.5 to 1 for text.
+- **Keep focus visible** on any interactive part of the graphic.
+
+## Animation and Motion
+
+SVG can be animated with **CSS** (the simplest), JavaScript, or SVG's own animation elements.
+
+```css
+.spinner {
+  transform-origin: 50% 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
+```
+
+Always provide a way to **pause** anything that moves for more than about 5 seconds, avoid flashing more than three times a second, and respect `prefers-reduced-motion`. See [Accessible Media](/tutorials/html/audio-video/accessible-media).
+
+## Performance
+
+- **SVG is small for simple graphics,** but a detailed illustration or map with thousands of points can be heavy.
+- **Clean up exported files.** Design tools add comments, metadata, and extra precision. A tool such as **SVGO** can often cut the size by half with no visible change.
+- **Reduce path precision** (two decimal places are usually plenty).
+- **Do not inline huge SVGs** in your HTML many times. Use a sprite, or load a file with `img`.
+- **For very large numbers of moving objects** (thousands of particles), [canvas](./canvas) may be faster.
+- **Compress with gzip or Brotli** on the server. SVG is text, so it compresses very well.
+
+## SVG or Canvas?
+
+| | SVG | Canvas |
+| :-- | :-- | :-- |
+| Made of | Elements you can select, style, and listen to | One bitmap you draw into |
+| Sharp at any size | **Yes** | Only if you redraw at the right resolution |
+| Accessibility | Natural: text and structure exist | You must supply everything |
+| Best for | Icons, logos, charts, diagrams, UI | Games, effects, thousands of moving objects |
+
+## Security and Privacy Notes
+
+- **SVG can contain scripts and links.** An uploaded SVG file is not a harmless picture. It can run JavaScript if opened directly, or inline, or in an `object` or `iframe`.
+- **Never put an untrusted SVG inline** in your page, and never put one in an `object` on your own origin.
+- **Show user-supplied SVG with `img`,** where scripts do not run, **and sanitise uploads on the server** (strip `script`, event attributes such as `onload`, `foreignObject`, and external references).
+- **Serve SVG with the right type** (`image/svg+xml`), and add `X-Content-Type-Options: nosniff`.
+- **Build SVG text with `textContent`,** not by pasting visitors' words into markup, so they cannot inject elements.
+- **Watch for external references.** An SVG that loads fonts, images, or styles from other sites can reveal who is viewing it.
+- **Do not hide secrets in SVG.** Comments, metadata, and hidden layers are all public. Remove editor metadata (author names, file paths) before publishing.
+
+## Global Audience Notes
+
+- **Keep text as real text** so it can be translated and read in any language, and avoid text converted to outlines.
+- **Leave room for longer text.** Translations can be much longer, and SVG does not wrap lines.
+- **Right-to-left languages:** set `direction` and `text-anchor="start"`/`end` carefully, and test mirrored layouts. Icons that show direction (arrows, back buttons) may need to flip.
+- **Use fonts that cover the scripts you need,** or a system font stack.
+- **Do not rely on colour meanings** that differ between cultures, and add labels as well.
+- **SVG is light,** which helps on slow connections and old phones. Prefer it to large PNG files for line art.
+
+## Common Mistakes to Avoid
+
+1. **No `viewBox`,** so the graphic does not scale.
+2. **A fixed `width` and `height` only,** so it overflows small screens.
+3. **No accessible name** on a meaningful SVG, or no `aria-hidden` on a decorative one.
+4. **Relying on `<title>` alone** for important information.
+5. **Putting an untrusted SVG inline or in an `object`.**
+6. **Converting text to outlines,** so it cannot be translated or read.
+7. **Forgetting `stroke` on a `line`,** so nothing appears.
+8. **Using the wrong y direction** (y grows down).
+9. **Duplicate `id` values** across several inline SVGs, which breaks gradients and `aria-labelledby`.
+10. **Huge, unoptimised exports.**
+11. **Animating with no pause and no reduced-motion rule.**
+12. **Icon-only buttons with no name.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Draw a circle, a rectangle, and a line inside an `<svg viewBox="0 0 200 100">`.
+2. Change the `viewBox` to zoom in on one shape.
+3. Make the SVG fill its container with `width: 100%; height: auto;`.
+4. Draw a triangle with `polygon`, and a curve with `path`.
+5. Style a shape with CSS, and add a `:hover` colour.
+6. Make an icon with `fill="currentColor"`, and change the text colour around it.
+7. Define a `symbol` once, and `use` it three times at different sizes.
+8. Add a `linearGradient` background to a rectangle.
+9. Add `role="img"`, a `<title>`, and `aria-labelledby`, then check the name in the accessibility panel.
+10. Bonus: animate a shape with CSS, and add a `prefers-reduced-motion` rule.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `viewBox` do?</summary>
+
+It defines the private coordinate space you draw in (`min-x min-y width height`), and the browser scales it to fit the SVG's real size. It is what makes SVG scalable.
+
+</details>
+
+<details>
+<summary>2. Which direction does y grow in SVG?</summary>
+
+Downwards. The point (0, 0) is the top-left corner.
+
+</details>
+
+<details>
+<summary>3. Why use `fill="currentColor"` on icons?</summary>
+
+The icon takes the surrounding text colour, so it follows hover states and themes (including dark mode) with no extra CSS.
+
+</details>
+
+<details>
+<summary>4. How should you label a meaningful SVG?</summary>
+
+Give it `role="img"`, a `<title>`, and `aria-labelledby`. For complex graphics, add a `<desc>` with `aria-describedby`, and a data table or text version. Hide decorative ones with `aria-hidden="true"`.
+
+</details>
+
+<details>
+<summary>5. When should you use `img` instead of inline SVG?</summary>
+
+When the SVG is just a picture. Scripts inside an `img` do not run, so it is safer, and it is simple to cache. Use inline SVG when you need to style, animate, or script it from your page.
+
+</details>
+
+<details>
+<summary>6. Why is an uploaded SVG file risky?</summary>
+
+SVG can contain scripts and external references. Show untrusted SVG with `img`, and sanitise uploads on the server. Never put them inline or in an `object` on your own origin.
+
+</details>
+
+## Key Takeaways
+
+- **SVG** is a list of drawing instructions in markup. It stays **sharp at any size**.
+- Always set a **`viewBox`**, and let CSS control the final size.
+- Use basic shapes and **`path`** for everything else, and remember that **y grows down**.
+- Style with CSS, and use **`currentColor`** so icons follow your text colour.
+- Reuse shapes with **`symbol` and `use`**, and keep ids unique.
+- Use **`img`** for pictures, **inline SVG** for anything you style or script.
+- Make SVG accessible: `role="img"` with `title`, `desc` for complex graphics, `aria-hidden` for decoration, and a text version of important data.
+- Treat untrusted SVG as code: sanitise it, and show it with `img`.
+- Respect reduced motion, optimise exported files, and keep text as real text.
+
+Next, draw with pixels and script in [Canvas](./canvas), or return to the [Embedded Content overview](../embedded-content).
