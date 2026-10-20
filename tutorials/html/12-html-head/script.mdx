@@ -20,159 +20,6 @@ keywords:
 tags: [html, web-development, beginner, script, javascript, performance, security, head, frontend]
 ---
 
-import {useState, useEffect, useRef} from 'react';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import AdsComponent from '@site/src/components/AdsComponent';
-import BrowserWindow from '@site/src/components/BrowserWindow';
-
-export const loadModes = [
-  {key: "classic", label: "Classic (no attribute)", attrs: ""},
-  {key: "defer", label: "defer", attrs: " defer"},
-  {key: "async", label: "async", attrs: " async"},
-  {key: "module", label: 'type="module"', attrs: ' type="module"'},
-];
-
-export function OrderLab() {
-  const [mode, setMode] = useState("classic");
-  const [log, setLog] = useState([]);
-  const frame = useRef(null);
-  const current = loadModes.find((item) => item.key === mode);
-  useEffect(() => {
-    const handler = (event) => {
-      if (!frame.current || event.source !== frame.current.contentWindow) return;
-      if (event.data && typeof event.data.order === "string") {
-        setLog((previous) => previous.concat(event.data.order));
-      }
-    };
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, []);
-  const external = encodeURIComponent("log('B: external script (" + current.label + ")')");
-  const page = "<!DOCTYPE html><html><head><script>function log(m){parent.postMessage({order:m},'*')}document.addEventListener('DOMContentLoaded',function(){log('DOMContentLoaded fired')});addEventListener('load',function(){log('load fired')});log('A: inline script in the head')</script>"
-    + "<script" + current.attrs + " src=\"data:text/javascript," + external + "\"></script>"
-    + "</head><body><p>Hello</p><script>log('C: inline script, start of body')</script><p>More content</p><script>log('D: inline script, end of body')</script></body></html>";
-  const explain = {
-    classic: "A classic script stops the parser. B runs right where it is written, before the body is even read.",
-    defer: "A deferred script downloads without stopping the parser, and runs after the page is read, just before DOMContentLoaded.",
-    async: "An async script runs as soon as it has arrived, so it can land anywhere. With a tiny inline address like this one, it is usually early. On a real network, it could be much later.",
-    module: "A module script is deferred by default. It runs after the page is read, in order, just before DOMContentLoaded.",
-  };
-  return (
-    <div>
-      <fieldset style={{margin: "0 0 0.6rem"}}>
-        <legend>How script B is loaded (it sits in the head)</legend>
-        {loadModes.map((item) => (
-          <label key={item.key} style={{display: "inline-block", marginRight: "1rem"}}>
-            <input type="radio" name="load-mode-lab" checked={mode === item.key} onChange={() => { setMode(item.key); setLog([]); }} /> <code>{item.label}</code>
-          </label>
-        ))}
-      </fieldset>
-      <iframe ref={frame} key={mode} title="A real page running scripts" srcDoc={page} sandbox="allow-scripts" style={{width: "100%", height: "5rem", border: "1px solid #94a3b8"}} />
-      <p style={{margin: "0.5rem 0 0.2rem"}}><strong>The order in which things really happened:</strong></p>
-      <ol role="status" style={{margin: 0}}>
-        {log.length === 0 ? <li>(waiting for the page to run)</li> : log.map((entry, index) => (<li key={index}>{entry}</li>))}
-      </ol>
-      <p style={{margin: "0.5rem 0 0"}}>{explain[mode]}</p>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This is a real page that really runs scripts, inside a sandboxed frame, and it reports back with messages. Script B is supplied as a tiny inline address so no files are needed. Real files take longer to arrive, which makes the difference between the modes bigger. If this documentation site restricts scripts, the log may stay empty.
-      </p>
-    </div>
-  );
-}
-
-export const scriptSample = [
-  '<script src="/js/app.js"></script>',
-  '<script src="/js/both.js" defer async></script>',
-  '<script src="https://cdn.example.com/lib.js" integrity="sha384-abc"></script>',
-  '<script src="http://example.com/old.js" defer></script>',
-  '<script type="text/javascript">document.write("hi")</script>',
-  '<script defer>console.log("inline")</script>',
-  '<script src="/js/ok.js" defer></script>',
-  '<script type="module" src="/js/main.js"></script>',
-  '<script type="application/ld+json">{"@type":"Article"}</script>',
-].join("\n");
-
-export function ScriptChecker() {
-  const [source, setSource] = useState(scriptSample);
-  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><head>" + source + "</head><body></body></html>", "text/html");
-  const scripts = Array.from(doc.head.querySelectorAll("script"));
-  const rows = scripts.map((script) => {
-    const src = script.getAttribute("src");
-    const type = (script.getAttribute("type") || "").toLowerCase();
-    const isModule = type === "module";
-    const isData = type !== "" && type !== "module" && type !== "text/javascript" && type !== "application/javascript";
-    const notes = [];
-    if (isData) {
-      notes.push("A data block (" + type + "). The browser does not run it, which is correct for JSON-LD or other data.");
-    } else {
-      if (src && !isModule && !script.hasAttribute("defer") && !script.hasAttribute("async")) notes.push("Blocks the page while it downloads and runs. Add defer, or use type=module.");
-      if (script.hasAttribute("defer") && script.hasAttribute("async")) notes.push("Both defer and async are set. Where async is supported, it wins. Choose one.");
-      if (!src && script.hasAttribute("defer")) notes.push("defer does nothing on an inline classic script.");
-      if (!src && script.hasAttribute("async") && !isModule) notes.push("async does nothing on an inline classic script.");
-      if (src && /^http:\/\//i.test(src)) notes.push("Loads over plain http. Use https, or the script can be changed on the way.");
-      if (src && script.hasAttribute("integrity") && !script.hasAttribute("crossorigin") && /^https?:\/\//i.test(src)) notes.push("integrity on a script from another site needs crossorigin too.");
-      if (src && /^https?:\/\//i.test(src) && !script.hasAttribute("integrity")) notes.push("A script from another site with no integrity check. Make sure you trust it.");
-      if (/document\.write/.test(script.textContent)) notes.push("document.write is discouraged. It blocks the parser and can fail in some situations.");
-      if (type === "text/javascript" || type === "application/javascript") notes.push("The type attribute is not needed for JavaScript.");
-      if (!src && script.textContent.trim() === "") notes.push("Empty script.");
-    }
-    return {code: script.outerHTML, notes};
-  });
-  const total = rows.reduce((sum, row) => sum + row.notes.length, 0);
-  return (
-    <div>
-      <label htmlFor="script-source">Paste or edit script tags</label>
-      <textarea id="script-source" rows={9} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
-      <p role="status" style={{margin: "0.4rem 0"}}>Found <strong>{rows.length}</strong> script tag(s) and <strong>{total}</strong> note(s).</p>
-      <div style={{maxHeight: "18rem", overflow: "auto"}}>
-        <table style={{width: "100%"}}>
-          <thead>
-            <tr><th scope="col">Tag</th><th scope="col">Notes</th></tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={index}>
-                <td style={{wordBreak: "break-all"}}><code>{row.code}</code></td>
-                <td>{row.notes.length === 0 ? "Looks fine." : (<ul style={{margin: 0}}>{row.notes.map((note) => (<li key={note}>{note}</li>))}</ul>)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This reads your text with the browser's real HTML parser. Nothing you type is run or loaded. The notes are guidance, not a full audit.
-      </p>
-    </div>
-  );
-}
-
-export function DataBlockDemo() {
-  const [text, setText] = useState('{\n  "@context": "https://schema.org",\n  "@type": "Article",\n  "headline": "Sourdough for Beginners",\n  "author": { "@type": "Person", "name": "Ravi" }\n}');
-  let parsed = null;
-  let error = "";
-  try {
-    parsed = JSON.parse(text);
-  } catch (problem) {
-    error = String(problem.message);
-  }
-  const safe = parsed === null ? "" : JSON.stringify(parsed, null, 2).replace(/</g, "\\u003c");
-  const tag = '<script type="application/ld+json">\n' + safe + "\n<\/script>";
-  return (
-    <div>
-      <label htmlFor="data-json">JSON data</label>
-      <textarea id="data-json" rows={7} value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
-      <p role="status" style={{margin: "0.4rem 0"}}>
-        {parsed === null ? "This is not valid JSON: " + error : "Valid JSON. A script block with a data type is never run. Your own code (or a search engine) reads it as text."}
-      </p>
-      {parsed !== null ? (<pre style={{margin: 0, fontSize: "0.8em"}}><code>{tag}</code></pre>) : null}
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        Notice that every less-than sign in the data is written as a code. That stops text such as a closing script tag, inside a value, from ending the block early. Whenever a server builds this block from user data, it must do the same.
-      </p>
-    </div>
-  );
-}
-
 HTML builds the **structure** of a page and CSS gives it **style**. But to make a page **do** things (react to clicks, check a form, load fresh data, draw a chart), you need **JavaScript**. And JavaScript enters an HTML page through one element: **`<script>`**.
 
 It is also the **most powerful, and most dangerous,** element you will meet in the head. A script can do anything the page can do. So in this lesson you will learn not only how to add scripts, but how to load them **fast** and **safely**.
@@ -191,9 +38,6 @@ It is also the **most powerful, and most dangerous,** element you will meet in t
 - Making sure your page still **works** when a script fails
 
 ## The Big Idea
-
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
 
 ```html title="index.html"
 <!DOCTYPE html>
@@ -217,18 +61,6 @@ It is also the **most powerful, and most dangerous,** element you will meet in t
 </body>
 </html>
 ```
-
-</TabItem>
-<TabItem value="output" label="Loading Order Lab">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<OrderLab />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 Switch between the four loading styles, and watch the **real** order in which things happen.
 
@@ -334,27 +166,12 @@ An **import map** can give short names to module addresses:
 
 The checker below reads your script tags with the browser's real parser, and shows the usual problems: blocking scripts, `defer` plus `async`, `http` addresses, `integrity` without `crossorigin`, and more.
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="scripts.html"
 <script src="/js/app.js" defer></script>
 <script src="https://cdn.example.com/lib.js"
         integrity="sha384-…" crossorigin="anonymous" defer></script>
 <script type="module" src="/js/main.js"></script>
 ```
-
-</TabItem>
-<TabItem value="output" label="Browser Output">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<ScriptChecker />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 ## Data Blocks: Scripts That Are Not Scripts
 
@@ -378,26 +195,11 @@ const data = JSON.parse(document.getElementById("page-data").textContent);
 
 The demo shows why data blocks must be built carefully:
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="data-block.html"
 <script type="application/json" id="page-data">
   { "user": "Ravi", "items": 3 }
 </script>
 ```
-
-</TabItem>
-<TabItem value="output" label="Browser Output">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<DataBlockDemo />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 ## `<noscript>`: When JavaScript Is Off
 
