@@ -19,139 +19,6 @@ keywords:
 tags: [html, web-development, beginner, title, seo, accessibility, head, frontend]
 ---
 
-import {useState, useEffect} from 'react';
-
-export function TitlePreview() {
-  const [title, setTitle] = useState("Sourdough for Beginners | The Bread Bin");
-  const [description, setDescription] = useState("A gentle, step-by-step guide to baking your first sourdough loaf, with no special equipment.");
-  const [pixels, setPixels] = useState(null);
-  useEffect(() => {
-    try {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      context.font = "20px Arial, sans-serif";
-      setPixels(Math.round(context.measureText(title).width));
-    } catch (error) {
-      setPixels(null);
-    }
-  }, [title]);
-  const clean = title.trim();
-  const tooLong = clean.length > 60 || (pixels !== null && pixels > 600);
-  const tooShort = clean.length > 0 && clean.length < 15;
-  const shownTitle = clean.length > 60 ? clean.slice(0, 57).trimEnd() + "…" : clean;
-  const shownTab = clean.length > 28 ? clean.slice(0, 27).trimEnd() + "…" : clean;
-  const shownDescription = description.length > 155 ? description.slice(0, 152).trimEnd() + "…" : description;
-  return (
-    <div>
-      <p style={{margin: "0 0 0.4rem"}}>
-        <label htmlFor="title-input">Page title</label><br />
-        <input id="title-input" type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%"}} />
-      </p>
-      <p style={{margin: "0 0 0.6rem"}}>
-        <label htmlFor="desc-input">Description (for the search result)</label><br />
-        <input id="desc-input" type="text" value={description} onChange={(event) => setDescription(event.target.value)} style={{width: "100%"}} />
-      </p>
-      <div aria-hidden="true" style={{display: "inline-block", maxWidth: "100%", padding: "0.3rem 0.8rem", border: "1px solid #cbd5e1", borderRadius: "8px 8px 0 0", background: "#f1f5f9", fontSize: "0.85em", marginBottom: "0.6rem"}}>
-        {"▪ "}{shownTab || "(untitled)"}
-      </div>
-      <div aria-hidden="true" style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.6rem 0.8rem"}}>
-        <div style={{fontSize: "0.8em", color: "#475569"}}>example.com › sourdough</div>
-        <div style={{fontSize: "1.1em", color: "#1d4ed8", textDecoration: "underline"}}>{shownTitle || "(untitled)"}</div>
-        <div style={{fontSize: "0.9em"}}>{shownDescription || "(no description, so the search engine will pick text from the page)"}</div>
-      </div>
-      <ul role="status" style={{margin: "0.6rem 0 0"}}>
-        <li>Length: <strong>{clean.length}</strong> characters{pixels !== null ? <span>, about <strong>{pixels}</strong> px wide at 20px Arial</span> : null}.</li>
-        {clean.length === 0 ? <li>A page without a title is a basic accessibility failure.</li> : null}
-        {tooLong ? <li>This is long, and may be cut off in search results and tabs.</li> : null}
-        {tooShort ? <li>This is very short. A more descriptive title usually helps.</li> : null}
-        {!tooLong && !tooShort && clean.length > 0 ? <li>This length is in a comfortable range.</li> : null}
-        {clean.length > 0 && !clean.includes("|") && !clean.includes("-") && !clean.includes("–") ? <li>Tip: add the site name after a separator, such as <code>Page | Site</code>.</li> : null}
-      </ul>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        Search engines decide what they show, and may rewrite titles and descriptions. The 60-character and 600-pixel figures are common guidelines, not fixed rules, and the pixel width depends on your fonts.
-      </p>
-    </div>
-  );
-}
-
-export function LiveTitleLab() {
-  const [original, setOriginal] = useState(null);
-  const [current, setCurrent] = useState("");
-  const [log, setLog] = useState([]);
-  useEffect(() => {
-    const start = document.title;
-    setOriginal(start);
-    setCurrent(start);
-    return () => {
-      document.title = start;
-    };
-  }, []);
-  const apply = (value) => {
-    document.title = value;
-    setCurrent(document.title);
-    setLog((previous) => [document.title].concat(previous).slice(0, 4));
-  };
-  const pages = ["Home", "Products", "Cart (2 items)", "Checkout"];
-  return (
-    <div>
-      <p style={{margin: "0 0 0.4rem"}}>
-        Pretend this is a single-page app. Each button changes the page without a full reload, and sets <code>document.title</code>. Look at your real browser tab.
-      </p>
-      <p style={{margin: "0 0 0.5rem"}}>
-        {pages.map((name) => (
-          <button key={name} type="button" onClick={() => apply(name + " | Demo Shop")} style={{marginRight: "0.4rem"}}>{name}</button>
-        ))}
-        <button type="button" onClick={() => original !== null && apply(original)}>Restore</button>
-      </p>
-      <p role="status" style={{margin: "0 0 0.4rem"}}>
-        Current <code>document.title</code>: <strong>{current}</strong>
-      </p>
-      {log.length > 0 ? (
-        <div>
-          <strong>Recent changes</strong>
-          <ol style={{margin: "0.2rem 0 0"}}>
-            {log.map((entry, index) => (<li key={index}>{entry}</li>))}
-          </ol>
-        </div>
-      ) : null}
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This really changes the title of this documentation page while you are here, and puts it back when you leave. In a real single-page app, you would also move focus or announce the change, because screen readers do not always notice a title change by itself.
-      </p>
-    </div>
-  );
-}
-
-export function EscapeDemo() {
-  const [text, setText] = useState("Tom & Jerry <Episode 1>");
-  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const wrong = "<title>" + text + "</title>";
-  const right = "<title>" + escaped + "</title>";
-  const parse = (markup) => {
-    const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><head>" + markup + "</head><body></body></html>", "text/html");
-    return doc.title;
-  };
-  return (
-    <div>
-      <p style={{margin: "0 0 0.5rem"}}>
-        <label htmlFor="esc-input">Title text</label><br />
-        <input id="esc-input" type="text" value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%"}} />
-      </p>
-      <table>
-        <thead>
-          <tr><th scope="col">Version</th><th scope="col">What you write</th><th scope="col">What the browser reads as the title</th></tr>
-        </thead>
-        <tbody>
-          <tr><th scope="row" style={{textAlign: "start"}}>Not escaped</th><td><code>{wrong}</code></td><td>{parse(wrong)}</td></tr>
-          <tr><th scope="row" style={{textAlign: "start"}}>Escaped</th><td><code>{right}</code></td><td>{parse(right)}</td></tr>
-        </tbody>
-      </table>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        Inside a <code>title</code>, the browser treats tags as plain text. An ampersand followed by text that looks like a character reference can still be misread, so escape <code>&amp;</code> and <code>&lt;</code> to be safe.
-      </p>
-    </div>
-  );
-}
-
 When someone has twenty tabs open, what helps them find your page? When a search engine lists ten results, what makes someone click yours? When a screen reader opens a new page, what does it say first? The answer to all three is the same: the **title**.
 
 The `<title>` element is small, but it may be the **most important single line** on your page. In this lesson you will learn how to write a good one, how to keep it safe, and how to keep it correct in modern single-page apps.
@@ -171,27 +38,12 @@ The `<title>` element is small, but it may be the **most important single line**
 
 ## The Big Idea
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="index.html"
 <head>
   <meta charset="utf-8">
   <title>Sourdough for Beginners | The Bread Bin</title>
 </head>
 ```
-
-</TabItem>
-<TabItem value="output" label="Tab and Search Preview">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<TitlePreview />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 Edit the title and watch the tab and the search result change. Try a very long one, and an empty one.
 
@@ -272,9 +124,6 @@ Rules to remember:
 
 Try it below. The table shows what the browser reads from escaped and unescaped text.
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="escaping.html"
 <!-- Written safely -->
 <title>Tom &amp; Jerry &lt;Episode 1&gt;</title>
@@ -282,18 +131,6 @@ Try it below. The table shows what the browser reads from escaped and unescaped 
 <!-- Risky when the text comes from a visitor or a database -->
 <title>Tom & Jerry <Episode 1></title>
 ```
-
-</TabItem>
-<TabItem value="output" label="Browser Output">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<EscapeDemo />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 ## Changing the Title with JavaScript
 
@@ -306,9 +143,6 @@ document.title = "Cart (2 items) | Shop"; // change it
 
 This is essential in **single-page apps,** where moving between "pages" does not reload the document. If you forget to update the title, every screen has the same name, and a screen reader user cannot tell that anything changed.
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="spa-title.html"
 <button type="button" id="next">Go to checkout</button>
 
@@ -319,18 +153,6 @@ This is essential in **single-page apps,** where moving between "pages" does not
   });
 </script>
 ```
-
-</TabItem>
-<TabItem value="output" label="Browser Output">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<LiveTitleLab />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 :::tip A title is not enough in a single-page app
 Updating the title is the minimum. Also move keyboard focus to the new page's main heading, or announce the change in a live region, so that screen reader users know the view changed.

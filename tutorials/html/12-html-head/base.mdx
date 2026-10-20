@@ -1,15 +1,445 @@
 ---
-id: base-element
-title: "Specifying Document Base URLs: The base Element"
-sidebar_label: "Base Element (<base>)"
+id: html-base
+title: "The HTML Base Element"
+sidebar_label: "Base"
 sidebar_position: 12
 slug: /html/html-head/base
-description: "Understand how the base element sets default base URLs and target window behaviors for all relative links across a webpage."
+description: "Learn the HTML base element: how it changes the starting address of every relative link, image and form, how it affects fragment links like #top, how base target works, why it is risky, and what to use instead. Includes a live URL resolver and a base tag checker."
 keywords:
   - HTML base tag
-  - document base URL
-  - relative path base element
-  - target link base HTML
+  - base href
+  - base target
+  - relative URL resolution
+  - document.baseURI
+  - base-uri CSP
+  - base tag injection
+  - fragment links base tag
+  - HTML relative links
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, base, urls]
+tags: [html, web-development, beginner, base, urls, links, security, head, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const baseItems = [
+  {label: "Link to a file in the same folder", html: (v) => '<a href="' + v + '">link</a>', value: "about.html", prop: "href"},
+  {label: "Link from the site root", html: (v) => '<a href="' + v + '">link</a>', value: "/contact", prop: "href"},
+  {label: "Link up one folder", html: (v) => '<a href="' + v + '">link</a>', value: "../up.html", prop: "href"},
+  {label: "Link to a place on this page", html: (v) => '<a href="' + v + '">link</a>', value: "#top", prop: "href"},
+  {label: "A full address", html: (v) => '<a href="' + v + '">link</a>', value: "https://other.example/page", prop: "href"},
+  {label: "An image", html: (v) => '<img src="' + v + '" alt="">', value: "images/logo.png", prop: "src"},
+  {label: "A form", html: (v) => '<form action="' + v + '"></form>', value: "submit", prop: "action"},
+];
+
+export const escapeAttr = (text) => text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+export function BaseLab() {
+  const [useBase, setUseBase] = useState(true);
+  const [baseHref, setBaseHref] = useState("https://example.com/blog/");
+  const [pageUrl, setPageUrl] = useState("");
+  useEffect(() => {
+    setPageUrl(window.location.href);
+  }, []);
+  const baseTag = useBase && baseHref.trim() ? '<base href="' + escapeAttr(baseHref.trim()) + '">' : "";
+  const markup = "<!DOCTYPE html><html><head>" + baseTag + "</head><body>" + baseItems.map((item) => item.html(escapeAttr(item.value))).join("") + "</body></html>";
+  const doc = new DOMParser().parseFromString(markup, "text/html");
+  const elements = Array.from(doc.body.children);
+  const rows = baseItems.map((item, index) => {
+    const element = elements[index];
+    let withBase = "";
+    if (element) withBase = item.prop === "href" ? element.href : item.prop === "src" ? element.src : element.action;
+    let without = "";
+    try {
+      without = new URL(item.value, pageUrl || "http://localhost/").href;
+    } catch (error) {
+      without = "(invalid)";
+    }
+    return {label: item.label, value: item.value, withBase, without};
+  });
+  const presets = ["https://example.com/blog/", "https://example.com/blog/2026/", "https://cdn.example.org/"];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label><input type="checkbox" checked={useBase} onChange={(event) => setUseBase(event.target.checked)} /> Include a base element</label>
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label htmlFor="base-href">Base address</label><br />
+        <input id="base-href" type="text" value={baseHref} onChange={(event) => setBaseHref(event.target.value)} style={{width: "100%"}} disabled={!useBase} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {presets.map((preset) => (<button key={preset} type="button" onClick={() => setBaseHref(preset)} style={{marginRight: "0.4rem", marginBottom: "0.3rem"}}>{preset}</button>))}
+      </p>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.85em", whiteSpace: "pre-wrap"}}><code>{baseTag || "(no base element)"}</code></pre>
+      <p style={{margin: "0 0 0.4rem"}}>Base address the browser used for this test page: <code style={{wordBreak: "break-all"}}>{doc.baseURI}</code></p>
+      <div style={{overflow: "auto"}}>
+        <table style={{width: "100%"}}>
+          <thead>
+            <tr><th scope="col">What you wrote</th><th scope="col">Where it goes without a base</th><th scope="col">Where it goes with the base</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.label}>
+                <td><code>{row.value}</code><br /><span style={{fontSize: "0.8em"}}>{row.label}</span></td>
+                <td style={{wordBreak: "break-all", fontSize: "0.85em"}}>{row.without}</td>
+                <td style={{wordBreak: "break-all", fontSize: "0.85em"}}>{row.withBase}{useBase && row.value.charAt(0) === "#" && row.withBase !== row.without ? " ← no longer stays on this page!" : ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The browser's own parser works out these addresses, and nothing is loaded or opened. The "without a base" column uses the address of the documentation page you are reading now. Watch the link to <code>#top</code>: with a base element, it points to the base address, and not to the top of this page.
+      </p>
+    </div>
+  );
+}
+
+export const baseSample = [
+  '<link rel="stylesheet" href="css/site.css">',
+  '<base href="/docs/">',
+  '<base target="_blank">',
+  '<base>',
+  '<base href="https://example.com/app/">',
+].join("\n");
+
+export function BaseChecker() {
+  const [source, setSource] = useState(baseSample);
+  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><head>" + source + "</head><body></body></html>", "text/html");
+  const bases = Array.from(doc.querySelectorAll("base"));
+  const notes = [];
+  if (bases.length === 0) notes.push("No base element found. That is usually the right choice.");
+  if (bases.length > 1) notes.push("There are " + bases.length + " base elements. Only the first one with an href is used for addresses, and only the first with a target is used for targets. Keep one.");
+  const first = bases.find((base) => base.hasAttribute("href"));
+  if (first) {
+    const children = Array.from(doc.head.children);
+    const baseIndex = children.indexOf(first);
+    const before = children.slice(0, baseIndex).filter((element) => element.hasAttribute("href") || element.hasAttribute("src"));
+    if (before.length > 0) notes.push(before.length + " element(s) with an address come before the base element. They may be resolved without it, so put the base as early as possible.");
+    const value = first.getAttribute("href");
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(value)) notes.push("The base href is relative (" + value + "). It is resolved against the page address, which is allowed, but harder to reason about. A full address is clearer.");
+    notes.push("Every relative address on the page, including #fragment links, is now measured from: " + first.href);
+  }
+  bases.forEach((base) => {
+    if (!base.hasAttribute("href") && !base.hasAttribute("target")) notes.push("A base element with neither href nor target does nothing. It is not valid.");
+    if (base.getAttribute("target") === "_blank") notes.push("target=\"_blank\" on a base makes every link open a new tab, which is disorienting and can hurt accessibility. Use it on individual links where it makes sense.");
+  });
+  return (
+    <div>
+      <label htmlFor="base-source">Paste or edit your head</label>
+      <textarea id="base-source" rows={6} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <ul role="status" style={{margin: "0.5rem 0 0"}}>
+        {notes.map((note, index) => (<li key={index}>{note}</li>))}
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This uses your browser's real HTML parser, and nothing is loaded. The notes are guidance, not a full audit.
+      </p>
+    </div>
+  );
+}
+
+Imagine a letter that says "meet me at the café on the corner". Which corner? It depends where you are standing. A web address works in the same way: a **relative** address such as `about.html` only makes sense **from somewhere**. By default, that somewhere is the address of the page it is written on.
+
+The **`<base>`** element changes that starting point for the **whole page**. It is a tiny element with big effects, and, as you will see, with big risks. Many experienced developers avoid it. Understanding why will make you better at both URLs and security.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How **relative addresses** are worked out
+- What **`<base href>`** does, and which things it affects
+- The classic trap: **`#fragment` links** stop working
+- What **`<base target>`** does
+- The rules for using `<base>`
+- Why it is a **security risk**, and how to limit that
+- **Safer alternatives**
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <base href="https://example.com/blog/">
+  <title>Base demo</title>
+</head>
+<body>
+  <a href="about.html">About</a>        <!-- https://example.com/blog/about.html -->
+  <a href="/contact">Contact</a>        <!-- https://example.com/contact -->
+  <a href="#top">Back to top</a>        <!-- https://example.com/blog/#top (!) -->
+  <img src="images/logo.png" alt="Logo"> <!-- https://example.com/blog/images/logo.png -->
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="URL Resolver">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BrowserOnly>{() => <BaseLab />}</BrowserOnly>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch the base element on and off, and watch each address change. Look carefully at the `#top` row.
+
+## Relative and Absolute Addresses
+
+| Kind | Example | Meaning |
+| :-- | :-- | :-- |
+| **Absolute** | `https://example.com/page` | A complete address. Works from anywhere |
+| **Root-relative** | `/contact` | Starts from the root of the same site |
+| **Relative** | `about.html`, `../up.html`, `images/a.png` | Starts from the **base address** |
+| **Fragment** | `#top` | A place inside the base address's page |
+
+Without a `<base>` element, the **base address** is the page's own address. With one, it is whatever `href` the `<base>` says. Every relative address on the page then starts from there.
+
+## The `<base>` Element
+
+```html
+<base href="https://example.com/docs/">
+```
+
+| Attribute | Meaning |
+| :-- | :-- |
+| `href` | The new base address for **relative addresses** on the page |
+| `target` | The default `target` for links and forms, such as `_blank` or `_self` |
+
+At least one of the two must be present.
+
+### What It Affects
+
+- Links (`<a href>`) and image maps
+- Images, audio, video, and other media with `src`
+- Scripts (`<script src>`) and stylesheets (`<link href>`)
+- Form addresses (`<form action>`)
+- Anything else that reads a relative address from HTML
+- The value of `document.baseURI` in JavaScript
+
+### What It Does Not Affect
+
+- **Absolute addresses.** They are already complete.
+- **Addresses inside a CSS file,** such as `url(images/bg.png)`. These are relative to the **stylesheet's own address**.
+- **`@import` inside a CSS file,** for the same reason.
+- The address of the **page itself**, so the address bar does not change.
+
+## The Trap: Fragment Links
+
+Take a look at this ordinary link, which jumps to the top of the page:
+
+```html
+<a href="#top">Back to top</a>
+```
+
+Without `<base>`, it means "the top of **this** page". With `<base href="https://example.com/blog/">`, the browser works out the address as `https://example.com/blog/#top`, and so it **leaves the page** and goes to a different one. The same happens with skip links (`#main`), tables of contents, tabs that use fragments, and SVG references that point to ids.
+
+This is the most common reason for `<base>` bugs. If you must use a base element, you need to write same-page links as full addresses, or handle them with script. That is a strong reason not to use it.
+
+## `<base target>`
+
+```html
+<base target="_blank">
+```
+
+This sets the default **target** for all links and forms that do not set their own. `_blank` opens every link in a **new tab**.
+
+- It is convenient for one small situation: a page that shows an external list, such as an embedded widget or an email preview.
+- For a normal page, it is **disorienting and harmful**: many new tabs, and a lost back button. People using screen readers and those with cognitive disabilities find unexpected new windows especially difficult.
+- Links can still override it: `<a href="…" target="_self">`.
+- Browsers treat `target="_blank"` links as `rel="noopener"` by default today, but it is still good practice to write `rel="noopener"` on external links yourself, as older browsers do not.
+
+## Rules for Using `<base>`
+
+1. **At most one** `<base>` element per page. If there are several, only the first with `href` (and the first with `target`) counts.
+2. It must be in the **`<head>`**.
+3. Put it **before** any element that uses an address, such as `<link>` and `<script>`, or those earlier addresses may be worked out without it.
+4. The `href` can be absolute (best) or relative.
+5. It has **no content** and no closing tag.
+
+Try the checker, which uses the browser's real parser:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="base-order.html"
+<head>
+  <meta charset="utf-8">
+  <base href="https://example.com/app/">    <!-- first, before anything with an address -->
+  <link rel="stylesheet" href="css/site.css">
+  <script src="js/app.js" defer></script>
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BrowserOnly>{() => <BaseChecker />}</BrowserOnly>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## When Is `<base>` Actually Useful?
+
+Honestly, rarely. Reasonable cases:
+
+- A **static page served from many different places** (such as an offline copy or a preview tool) where you cannot change its internal addresses, and want them all measured from one place.
+- A **quick prototype** of a page, saved in one folder but using files from another.
+- **Embedded or generated HTML,** such as a saved email or a rendered note, where relative addresses need a known base.
+- A site hosted under a **sub-folder** (for example `/my-project/`), where you want relative addresses to start there. Most tools solve this in a safer way (see below).
+
+## Better Alternatives
+
+| Need | Better choice |
+| :-- | :-- |
+| Site under a sub-folder | Use root-relative addresses with the folder prefix, or the build tool's setting for its base path |
+| Same addresses on every page | Use root-relative addresses (`/css/site.css`) |
+| Links open in a new tab | Add `target="_blank" rel="noopener"` to **those links only** |
+| Load assets from a CDN | Write full CDN addresses, or let your build tool add them |
+
+### In Docusaurus
+
+Docusaurus does not rely on a `<base>` element. Instead, it has a **`baseUrl`** setting in `docusaurus.config.js` (for example `/my-project/` when hosted on GitHub Pages), and it adds that prefix to the addresses it generates. If your site works with `baseUrl` set correctly, you do not need a base element, and adding one could break your links.
+
+## Good Habits
+
+1. **Avoid `<base>` unless you have a clear reason.**
+2. **If you use it, use one,** early in the head, with a full address.
+3. **Remember that `#fragment` links change meaning.**
+4. **Do not use `target="_blank"` as a site-wide default.**
+5. **Prefer root-relative addresses,** or your build tool's base-path setting.
+6. **Test every kind of link** (relative, root, fragment, form) after adding a base.
+7. **Block injected base elements** with a `base-uri` rule (see below).
+
+## Accessibility Checklist
+
+- [ ] **Skip links** and **in-page links** (`#main`, a table of contents) still stay on the page.
+- [ ] No unexpected **new tabs** are opened. If a link does open one, say so in the link text.
+- [ ] **Same-page navigation** still works with the keyboard.
+- [ ] Forms still submit to the right place.
+- [ ] Images and media still load, so their alternative text is not the only thing left.
+- [ ] Anchors used by **tabs, accordions, and tables of contents** still work.
+
+## Security and Privacy Notes
+
+- **Base tag injection is a real attack.** If an attacker can add a `<base href="https://evil.example/">` to your page (through a comment, a profile field, or any place that lets some markup through), then every **relative** link, form, and script address on the page is measured from their server. A relative `<script src="js/app.js">` could now load **their** code, and a relative form could send passwords to them.
+- **Defend with a `base-uri` rule** in your Content-Security-Policy, for example `base-uri 'self'` (or `'none'` if you never use a base element). The browser then refuses base elements that break the rule. Send the policy in a **header**, because a policy in a meta tag does not cover this reliably.
+- **Escape all user-provided text,** so no one can add markup to your page.
+- **Use absolute addresses for critical scripts and forms,** so that even a hijacked base cannot redirect them.
+- **A base element can hide where links really go.** A reader who hovers over a link sees the final address, but a developer reviewing the source may be misled. Keep it obvious.
+- **A base with `target="_blank"`** can expose your page to the pages it opens, in older browsers, if `rel="noopener"` is missing.
+
+:::danger Always limit base elements
+If your site never needs `<base>`, add `base-uri 'none'` to your Content-Security-Policy. It closes a whole class of attacks for free.
+:::
+
+## Global Audience Notes
+
+- **Different regions may reach your site through different hosts** (a regional copy, a mirror, or a translated version). Absolute base addresses can accidentally send everyone to one server, so check them.
+- **Offline and low-connectivity use:** a page saved for offline reading can break when its base points to a faraway server. Keep important files relative to the page, or host them with it.
+- **Translated versions** often sit in language folders (`/hi/`, `/es/`). A base element that points to the wrong language folder sends people to the wrong version.
+- **Do not use `target="_blank"` as a default.** On small phones with limited memory, many tabs make pages reload, and slow down the device.
+- **Addresses with non-ASCII characters** are converted to `%` codes. Test links in your own language.
+
+## Common Mistakes to Avoid
+
+1. **Adding `<base>` "just in case".**
+2. **Forgetting that `#fragment` links change.**
+3. **More than one `<base>` element.**
+4. **Putting `<base>` after the links and scripts it should affect.**
+5. **A base element with no `href` or `target`.**
+6. **Using `target="_blank"` for the whole site.**
+7. **A relative `href` in the base,** which is confusing.
+8. **Expecting CSS `url()` to follow the base.** It does not.
+9. **Not setting `base-uri`** in your security policy.
+10. **Putting `<base>` in the body.**
+11. **Copying a base from a template** that points to someone else's server.
+12. **Not testing links after the change.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Write a page with five relative links, and open it. Note each address (hover to see it).
+2. Add `<base href="https://example.com/blog/">`, and compare the addresses.
+3. Add a `#top` link, and see where it goes with and without the base.
+4. Read `document.baseURI` in the console, with and without a base.
+5. Add `target="_blank"` to a base, then override one link with `_self`.
+6. Add two base elements, and read which one is used.
+7. Move a `<link>` above the base, and use the Network tab to see its address.
+8. Write a Content-Security-Policy header with `base-uri 'none'`, and test that a base is blocked.
+9. Rewrite your page without a base, using root-relative addresses.
+10. Bonus: read the base setting of a static site hosting service, and compare it with using a base element.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `base href` do?</summary>
+
+It changes the address from which every relative address on the page is worked out, including links, images, scripts, stylesheets, and forms.
+
+</details>
+
+<details>
+<summary>2. Why can `#top` links break with a base element?</summary>
+
+A fragment link is measured from the base address, so `#top` points to the top of the base address's page, not the current page. The visitor leaves the page.
+
+</details>
+
+<details>
+<summary>3. How many base elements can a page have?</summary>
+
+At most one is meant to be used. If there are several, only the first with `href` (and the first with `target`) counts.
+
+</details>
+
+<details>
+<summary>4. Does the base element change addresses inside CSS files?</summary>
+
+No. Addresses in a CSS file are relative to that file's own address.
+
+</details>
+
+<details>
+<summary>5. Why is the base element a security risk?</summary>
+
+If an attacker can inject one, every relative script, link, and form on the page is redirected to their server. Add `base-uri` to your Content-Security-Policy to block this.
+
+</details>
+
+<details>
+<summary>6. What is a safer alternative?</summary>
+
+Use root-relative or absolute addresses, or your build tool's base-path setting (such as `baseUrl` in Docusaurus).
+
+</details>
+
+## Key Takeaways
+
+- **`<base href>`** sets the starting point for **all relative addresses** on the page.
+- It breaks **`#fragment` links** in a way that surprises many developers.
+- **`<base target>`** sets a default target for links and forms. Do not use `_blank` site-wide.
+- Use **at most one,** early in the **head**, with a **full address**.
+- It does **not** change addresses inside CSS files.
+- An injected base element can hijack scripts and forms. Add **`base-uri`** to your CSP.
+- Prefer **root-relative addresses** or your tool's base-path setting, such as Docusaurus's `baseUrl`.
+
+You have now met every element of the head. Bring it all together with [Metadata Best Practices](./metadata-best-practices).
