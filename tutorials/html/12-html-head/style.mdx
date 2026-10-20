@@ -1,15 +1,517 @@
 ---
-id: style-element
-title: "Document-Level CSS: The style Element"
-sidebar_label: "Style Element (<style>)"
+id: html-style
+title: "The HTML Style Element"
+sidebar_label: "Style"
 sidebar_position: 10
 slug: /html/html-head/style
-description: "Embed critical CSS directly into the document head using the style tag to eliminate render-blocking stylesheet requests."
+description: "Learn the HTML style element: how to write CSS directly inside your page, when that is better than an external file, how the order of rules decides which one wins, and how a Content-Security-Policy can block inline styles. Includes a live CSS editor, a cascade-order lab, and a real CSP experiment."
 keywords:
   - HTML style tag
-  - internal CSS style element
-  - critical CSS head
-  - inline stylesheet HTML
+  - inline CSS
+  - internal stylesheet
+  - style element in head
+  - CSS cascade order
+  - critical CSS
+  - Content-Security-Policy style-src
+  - style nonce
+  - style attribute vs style element
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, style, css]
+tags: [html, web-development, beginner, style, css, csp, head, frontend]
 ---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const cssPresets = {
+  plain: "",
+  card: "body { font-family: sans-serif; padding: 12px; }\n.card { border: 2px solid #1d4ed8; border-radius: 10px; padding: 12px; background: #eff6ff; }\nh2 { margin: 0 0 6px; color: #1d4ed8; }\nbutton { background: #1d4ed8; color: #fff; border: 0; padding: 8px 14px; border-radius: 6px; font-size: 16px; }",
+  dark: "body { font-family: sans-serif; padding: 12px; background: #0b1220; color: #e2e8f0; }\n.card { border: 2px solid #93c5fd; border-radius: 10px; padding: 12px; background: #111a2e; }\nh2 { margin: 0 0 6px; color: #93c5fd; }\nbutton { background: #93c5fd; color: #0b1220; border: 0; padding: 8px 14px; border-radius: 6px; font-size: 16px; }",
+};
+
+export function StyleLab() {
+  const [css, setCss] = useState(cssPresets.card);
+  const breakout = /<\/style/i.test(css);
+  const page = "<!DOCTYPE html><html><head><style>" + css + "</style></head><body><div class=\"card\"><h2>Fresh Bread</h2><p>Baked every morning.</p><button type=\"button\">Order</button></div></body></html>";
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setCss(cssPresets.plain)}>No CSS</button>{" "}
+        <button type="button" onClick={() => setCss(cssPresets.card)}>Blue card</button>{" "}
+        <button type="button" onClick={() => setCss(cssPresets.dark)}>Dark card</button>
+      </p>
+      <label htmlFor="style-css">CSS inside the style element (edit it)</label>
+      <textarea id="style-css" rows={8} value={css} onChange={(event) => setCss(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <iframe title="A real page styled by a style element" srcDoc={page} sandbox="" style={{width: "100%", height: "11rem", border: "1px solid #94a3b8", marginTop: "0.5rem"}} />
+      {breakout ? (
+        <p role="status" style={{margin: "0.5rem 0 0"}}>You typed a closing style tag. The browser ends the style element there, and treats the rest as page content. That is the same reason you must never put untrusted text inside a style element.</p>
+      ) : (
+        <p role="status" style={{margin: "0.5rem 0 0"}}>The browser reads everything between the opening and closing tags as CSS.</p>
+      )}
+    </div>
+  );
+}
+
+export function CascadeLab() {
+  const [classFirst, setClassFirst] = useState(false);
+  const [important, setImportant] = useState(false);
+  const [firstA, setFirstA] = useState(true);
+  const ruleAText = (classFirst ? ".title" : "h2") + " { color: crimson" + (important ? " !important" : "") + "; }";
+  const ruleB = "h2 { color: seagreen; }";
+  const first = firstA ? ruleAText : ruleB;
+  const second = firstA ? ruleB : ruleAText;
+  let winner = "";
+  if (important) winner = "Block A (crimson) wins, because !important beats normal rules.";
+  else if (classFirst) winner = "Block A (crimson) wins, because a class selector is more specific than an element selector. Order does not matter here.";
+  else winner = firstA ? "Block B (seagreen) wins. The selectors are equally specific, so the later rule wins." : "Block A (crimson) wins. The selectors are equally specific, so the later rule wins.";
+  const page = "<!DOCTYPE html><html><head><style>" + first + "</style><style>" + second + "</style></head><body style=\"font-family:sans-serif\"><h2 class=\"title\" style=\"margin:8px\">Which colour am I?</h2></body></html>";
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Two style blocks</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={firstA} onChange={(event) => setFirstA(event.target.checked)} /> Block A comes first (untick to put it second)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={classFirst} onChange={(event) => setClassFirst(event.target.checked)} /> Block A uses a class selector</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={important} onChange={(event) => setImportant(event.target.checked)} /> Block A uses !important</label>
+      </fieldset>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.85em", whiteSpace: "pre-wrap"}}><code>{"<style>" + first + "</style>\n<style>" + second + "</style>"}</code></pre>
+      <iframe title="A real page with two style blocks" srcDoc={page} sandbox="" style={{width: "100%", height: "4rem", border: "1px solid #94a3b8"}} />
+      <p role="status" style={{margin: "0.5rem 0 0"}}>{winner}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The frame is a real page, so the colour you see is the browser's own decision. The sentence above explains why.
+      </p>
+    </div>
+  );
+}
+
+export const policies = [
+  {key: "none", label: "No policy", meta: "", nonce: ""},
+  {key: "block", label: "style-src 'none'", meta: "style-src 'none'", nonce: ""},
+  {key: "nonce-ok", label: "style-src 'nonce-abc123', and the style element has that nonce", meta: "style-src 'nonce-abc123'", nonce: "abc123"},
+  {key: "nonce-bad", label: "style-src 'nonce-abc123', but the style element has a different nonce", meta: "style-src 'nonce-abc123'", nonce: "wrong"},
+  {key: "unsafe", label: "style-src 'unsafe-inline'", meta: "style-src 'unsafe-inline'", nonce: ""},
+];
+
+export function CspStyleLab() {
+  const [key, setKey] = useState("block");
+  const [result, setResult] = useState(null);
+  const policy = policies.find((item) => item.key === key);
+  const metaTag = policy.meta ? '<meta http-equiv="Content-Security-Policy" content="' + policy.meta + '">' : "";
+  const styleTag = "<style" + (policy.nonce ? ' nonce="' + policy.nonce + '"' : "") + ">#a { color: rgb(0, 128, 0); }</style>";
+  const page = "<!DOCTYPE html><html><head>" + metaTag + styleTag + "</head><body><p id=\"a\">Paragraph A: styled by a style element</p><p id=\"b\" style=\"color: rgb(200, 0, 0)\">Paragraph B: styled by a style attribute</p></body></html>";
+  const onLoad = (event) => {
+    try {
+      const doc = event.target.contentDocument;
+      const win = event.target.contentWindow;
+      const a = win.getComputedStyle(doc.getElementById("a")).color;
+      const b = win.getComputedStyle(doc.getElementById("b")).color;
+      setResult({a: a !== "rgb(0, 0, 0)", b: b !== "rgb(0, 0, 0)"});
+    } catch (error) {
+      setResult(null);
+    }
+  };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Content-Security-Policy for the page</legend>
+        {policies.map((item) => (
+          <label key={item.key} style={{display: "block"}}>
+            <input type="radio" name="csp-style" checked={key === item.key} onChange={() => { setKey(item.key); setResult(null); }} /> {item.label}
+          </label>
+        ))}
+      </fieldset>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.8em", whiteSpace: "pre-wrap"}}><code>{(metaTag ? metaTag + "\n" : "") + styleTag + '\n<p id="b" style="color: rgb(200, 0, 0)">…'}</code></pre>
+      <iframe title="A real page under a style policy" srcDoc={page} sandbox="allow-same-origin" onLoad={onLoad} style={{width: "100%", height: "5rem", border: "1px solid #94a3b8"}} />
+      <div role="status" style={{marginTop: "0.5rem"}}>
+        {result === null ? (
+          <p style={{margin: 0}}>Reading the result…</p>
+        ) : (
+          <ul style={{margin: 0}}>
+            <li>The <strong>style element</strong> was {result.a ? "applied (green text)." : "blocked (plain black text)."}</li>
+            <li>The <strong>style attribute</strong> was {result.b ? "applied (red text)." : "blocked (plain black text)."}</li>
+          </ul>
+        )}
+      </div>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This uses a policy in a meta tag, inside a small real page. If this documentation site has its own policy, that can change what you see. A nonce in a real site must be a fresh random value on every response, never a fixed one like this demo.
+      </p>
+    </div>
+  );
+}
+
+CSS is how you make a page **look** good. Most of the time, you keep CSS in a separate file and connect it with a `<link>`. But sometimes you want the CSS to travel **inside the page itself**. For that, HTML has the **`<style>`** element.
+
+It is a small element with a few important details: where it goes, how it competes with other styles, and how modern security rules treat it. In this lesson you will learn all three.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<style>` is, and what goes inside it
+- Three ways to add CSS: **`<link>`**, **`<style>`**, and the **`style` attribute**
+- When an internal style block is a **good idea**, and when it is not
+- How the **order of rules** and **specificity** decide who wins
+- Using `media` and `nonce` on `<style>`
+- How a **Content-Security-Policy** can block inline styles
+- Adding styles with JavaScript
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Styled in the page</title>
+  <style>
+    body { font-family: sans-serif; padding: 12px; }
+    .card { border: 2px solid #1d4ed8; border-radius: 10px; padding: 12px; background: #eff6ff; }
+    h2 { margin: 0 0 6px; color: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Fresh Bread</h2>
+    <p>Baked every morning.</p>
+  </div>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Live CSS Editor">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StyleLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Change the CSS and watch the page. Try the presets, or write your own rules.
+
+## What Is Inside `<style>`?
+
+Everything between `<style>` and `</style>` is read as **CSS**, not HTML. That means:
+
+- You write normal CSS rules: selectors and declarations.
+- You do **not** write HTML tags inside it.
+- You do **not** need to escape characters such as `>` or `&`. Child selectors such as `ul > li` work as written.
+- The only thing that ends it is the text **`</style>`**.
+
+```html
+<style>
+  /* This is a CSS comment, not an HTML comment */
+  nav > a { color: navy; }
+  a[href^="https"]::after { content: " ↗"; }
+</style>
+```
+
+## Three Ways to Add CSS
+
+| Way | Example | Good for | Not good for |
+| :-- | :-- | :-- | :-- |
+| **External file** with `<link>` | `<link rel="stylesheet" href="site.css">` | Most real sites: shared by every page, cached by the browser | Pages that must work as one single file |
+| **Internal block** with `<style>` | `<style>h1 { color: navy; }</style>` | Small pages, demos, per-page rules, critical CSS | Big shared styles repeated on every page |
+| **Inline attribute** with `style` | `<p style="color: red">` | One-off values set by script, or quick tests | Anything you will maintain. It is the hardest to override |
+
+### When `<style>` Is the Right Choice
+
+1. **A single-file page,** such as a demo, an email template (with some limits), or a small tool.
+2. **Rules that belong to one page only,** which no other page needs.
+3. **Critical CSS:** the few rules needed to draw the top of the page, placed inline so the first display does not wait for a file. The rest loads from a `<link>`.
+4. **Learning and experiments,** because everything is in one place.
+
+### When to Choose a File Instead
+
+- The same rules are used on **many pages.** A file is downloaded once, then cached. An inline block is downloaded again with every page.
+- **Many people edit the CSS.** One file is easier to find and review.
+- Your **security policy** forbids inline styles (see below).
+
+:::tip A good default
+Use an **external file** for your main styles. Use a small **`<style>`** block only for critical CSS or rules unique to a page.
+:::
+
+## Where to Put It
+
+Put `<style>` **in the `<head>`**, not in the body.
+
+```html
+<head>
+  <link rel="stylesheet" href="/css/site.css">
+  <style>
+    /* Page-specific rules, after the shared file */
+  </style>
+</head>
+```
+
+A `<style>` in the body works in browsers, but it is not valid HTML in that position, and the page may flash unstyled while the browser reads down to it. Keep it in the head, near the other styles.
+
+## Who Wins? Order and Specificity
+
+Several rules can target the same element. The browser decides in this order:
+
+1. **Importance:** `!important` rules beat normal ones.
+2. **Specificity:** a more specific selector wins. An `id` beats a class, and a class beats an element name.
+3. **Order:** if importance and specificity are equal, the **later** rule wins.
+
+This is the **cascade**, the "C" in CSS. Style blocks and linked files all take part, in the order they appear in the page. Try it:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="cascade.html"
+<style>
+  h2 { color: crimson; }   /* block A */
+</style>
+<style>
+  h2 { color: seagreen; }  /* block B, later, so it wins */
+</style>
+```
+
+</TabItem>
+<TabItem value="output" label="Cascade Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CascadeLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Advice that keeps your CSS calm:
+
+- **Avoid `!important`.** It is a last resort, and leads to more `!important`.
+- **Prefer classes** over ids and over very long selectors.
+- **Put page-specific `<style>` after shared `<link>` files,** so it can override them when needed.
+- Modern CSS also has **cascade layers** (`@layer`) for organising which group of rules wins. You will meet them in the CSS lessons.
+
+## Attributes of `<style>`
+
+| Attribute | Use |
+| :-- | :-- |
+| `media` | Apply the whole block only when a condition is true, such as `media="print"` |
+| `nonce` | A one-time value that lets a strict security policy allow this block (see below) |
+| `blocking` | Advanced: control whether the block holds back rendering |
+| `type` | Not needed. CSS is the default. Old pages wrote `type="text/css"` |
+| `title` | Rarely used, for alternate stylesheets |
+
+```html
+<style media="print">
+  nav, footer, .ads { display: none; }
+  body { font-size: 12pt; color: #000; background: #fff; }
+</style>
+```
+
+## Styles and Security: Content-Security-Policy
+
+A **Content-Security-Policy (CSP)** is a set of rules, usually sent by the server, that says what a page may load and run. Its `style-src` rule controls CSS.
+
+A strict policy such as `style-src 'self'` **blocks all inline styles:** both `<style>` blocks and `style` attributes, unless you give them permission. That protects against some attacks, but it means your inline CSS stops working.
+
+Ways to allow inline CSS safely:
+
+| Method | How it works | Notes |
+| :-- | :-- | :-- |
+| **Nonce** | The policy names a random value (`'nonce-abc123'`). Only `<style nonce="abc123">` blocks run | The value must be new and unguessable on every response |
+| **Hash** | The policy lists a fingerprint of the exact CSS text | Any change to the text needs a new hash |
+| **`'unsafe-inline'`** | Allows all inline styles | Simple, but weakens the protection |
+| **External file** | Allow your own origin with `'self'` | Often the simplest answer |
+
+Experiment below. A small page has two paragraphs: one styled by a `<style>` block, one by a `style` attribute. See which rules each policy lets through.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="csp-style.html"
+<meta http-equiv="Content-Security-Policy" content="style-src 'nonce-abc123'">
+
+<!-- Allowed: the nonce matches -->
+<style nonce="abc123">
+  #a { color: green; }
+</style>
+
+<!-- Blocked: a nonce does not cover style attributes -->
+<p style="color: red">Hello</p>
+```
+
+</TabItem>
+<TabItem value="output" label="CSP Experiment">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CspStyleLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can see a good lesson in the results: a nonce can allow a `<style>` **block,** but the inline **attribute** stays blocked. That is why many sites move one-off styles into classes.
+
+## Adding Styles with JavaScript
+
+Sometimes styles come from script. A few options, from simplest to most modern:
+
+```js
+// 1. Change one element's inline style (blocked by a strict policy)
+element.style.color = "crimson";
+
+// 2. Toggle a class, and keep the CSS in your stylesheet (usually best)
+element.classList.add("is-active");
+
+// 3. Set a CSS variable, and let your stylesheet use it
+document.documentElement.style.setProperty("--brand", "#1d4ed8");
+
+// 4. Create a constructable stylesheet (works with strict policies)
+const sheet = new CSSStyleSheet();
+sheet.replaceSync("h2 { color: seagreen; }");
+document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+```
+
+Toggling a **class** is usually the cleanest choice, because the CSS stays in one place, and it works with strict security policies. Support for constructable stylesheets is good in modern browsers, but check the browsers you need.
+
+## Styles in Docusaurus
+
+In this documentation site, you normally style with `src/css/custom.css` and CSS modules, and write `style={{}}` objects in React components, like the demos on these pages. Those become real styles in the built site. If you need a raw `<style>` block in a page, put it inside `@docusaurus/Head` or use a component, since MDX handles curly braces in its own way.
+
+## Good Habits
+
+1. **Keep the main CSS in an external file.**
+2. **Use `<style>` for critical or page-only rules.**
+3. **Put it in the head,** after shared stylesheets.
+4. **Prefer classes** to inline `style` attributes.
+5. **Avoid `!important`.**
+6. **Keep inline blocks small,** because they are re-downloaded with every page.
+7. **Use `media`** for print and other special cases.
+8. **Plan for a strict CSP,** with nonces or an external file.
+9. **Never put untrusted text inside a style element.**
+
+## Accessibility Checklist
+
+- [ ] Your styles never **remove focus outlines** without a clear replacement.
+- [ ] **Text contrast** meets the guidelines (at least 4.5 to 1 for normal text).
+- [ ] The page still works if the user **overrides colours or fonts** (high-contrast mode, custom styles).
+- [ ] Sizes use **relative units** (`rem`, `em`), so text zooms properly.
+- [ ] `prefers-reduced-motion` is respected for animations.
+- [ ] A **print stylesheet** keeps text readable on paper.
+- [ ] `display: none` and `visibility: hidden` are not used to hide content that should stay available to screen readers.
+
+## Security and Privacy Notes
+
+- **Never put user-supplied text inside `<style>`.** A visitor who can add `</style><script>…` can break out. Even without scripts, CSS can be used to hide or rearrange parts of a page, or, in some attacks, to leak data.
+- **A strict CSP blocks inline styles for a reason.** Use nonces, hashes, or an external file instead of `'unsafe-inline'`.
+- **Nonces must be random, secret until the response, and different every time.** A fixed or guessable nonce gives no protection.
+- **Do not let inline CSS load private resources** (a `url()` that includes a token or personal data), because the request goes in plain sight in network logs.
+- **CSS can fetch files** (`url()`, `@import`, fonts) from other sites, which reveals visits. Host files yourself when privacy matters.
+- **Comments in CSS are public.** Remove notes about internal tools or unreleased features.
+
+## Global Audience Notes
+
+- **Use logical properties** (`margin-inline-start`, `padding-block`) so layouts work in both left-to-right and right-to-left languages.
+- **Choose font stacks that cover your audience's scripts,** and test long words and translations.
+- **Do not set fixed widths on text boxes.** Translated text can be 30 percent longer.
+- **Keep inline CSS small:** every byte is downloaded again on each page, which matters on slow or expensive connections.
+- **Respect `prefers-color-scheme`, `prefers-reduced-motion`, and `prefers-contrast`.** They are personal settings, and apply everywhere.
+- **Print and paper sizes** differ (A4 and Letter), so test your print styles with both.
+
+## Common Mistakes to Avoid
+
+1. **Putting HTML tags inside `<style>`.**
+2. **Putting `<style>` in the body.**
+3. **Repeating a big stylesheet in every page.**
+4. **Using `!important` to win arguments** between rules.
+5. **Forgetting that order matters** between blocks and linked files.
+6. **Relying on inline `style` attributes everywhere.**
+7. **Breaking a strict CSP** with inline styles, and not knowing why.
+8. **A fixed or reused nonce.**
+9. **Putting untrusted text in a style element.**
+10. **Leaving `type="text/css"`** everywhere (it does no harm, but is not needed).
+11. **Removing focus outlines.**
+12. **Not testing print styles.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add a `<style>` block with three rules to a plain page.
+2. Move the rules to an external file, and link it. Compare the result.
+3. Write two conflicting rules, and swap their order to see who wins.
+4. Make a class rule beat an element rule, then try `!important`, and then remove it.
+5. Add a `media="print"` style block, and use print preview.
+6. Replace one inline `style` attribute with a class.
+7. Add a Content-Security-Policy meta tag, and see which of your styles stop working.
+8. Fix them with a nonce, then try moving them to a file.
+9. Create a constructable stylesheet with JavaScript.
+10. Bonus: split a page's CSS into critical (inline) and the rest (linked), and measure the difference in developer tools.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What goes inside a `style` element?</summary>
+
+CSS rules, and nothing else. The browser reads everything up to the closing `</style>` as CSS, not HTML.
+
+</details>
+
+<details>
+<summary>2. When is `style` better than a linked file?</summary>
+
+For single-file pages, critical CSS, and rules that belong to just one page. For shared styles across many pages, a cached external file is better.
+
+</details>
+
+<details>
+<summary>3. If two rules have the same importance and specificity, which wins?</summary>
+
+The one that appears later in the page.
+
+</details>
+
+<details>
+<summary>4. Where should `style` go?</summary>
+
+In the head, after any linked shared stylesheets.
+
+</details>
+
+<details>
+<summary>5. What does a strict `style-src` policy do to inline CSS?</summary>
+
+It blocks both `style` blocks and `style` attributes, unless you allow them with a nonce, a hash, or `'unsafe-inline'`. A nonce covers blocks, not attributes.
+
+</details>
+
+<details>
+<summary>6. Why is toggling a class often better than setting `element.style`?</summary>
+
+The CSS stays in your stylesheet, it is easier to maintain, and it works with strict security policies.
+
+</details>
+
+## Key Takeaways
+
+- **`<style>`** holds CSS inside the page. Put it in the **head**.
+- Use **external files** for shared styles, and **`<style>`** for critical or page-only rules.
+- The **cascade** decides: importance, then specificity, then order.
+- A strict **Content-Security-Policy** blocks inline styles. Use **nonces,** hashes, or files.
+- Avoid **`!important`** and many inline `style` attributes.
+- Never place untrusted text inside a style element.
+- Keep styles accessible: contrast, focus outlines, relative units, and respect for user preferences.
+
+Next, add behaviour to your page with the [Script](./script) element.

@@ -1,15 +1,624 @@
 ---
-id: metadata-best-practices
-title: "Document Head Metadata Best Practices, SEO, and Social Cards"
+id: html-metadata-best-practices
+title: "HTML Metadata Best Practices"
 sidebar_label: "Metadata Best Practices"
 sidebar_position: 13
 slug: /html/html-head/metadata-best-practices
-description: "Integrate Open Graph, Twitter Cards, SEO standards, and performance configurations for complete production-ready document headers."
+description: "Bring the whole HTML head together: a complete, correctly ordered head template, a checklist for essentials, search, sharing, performance, accessibility, security and global audiences, and tools to test it. Includes a live head auditor that scores your page, and a head generator that builds a complete head for you."
 keywords:
-  - Open Graph meta tags
-  - Twitter Card metadata
-  - HTML head SEO best practices
-  - head performance optimization
+  - HTML metadata best practices
+  - HTML head template
+  - SEO meta tags checklist
+  - open graph checklist
+  - head tag order
+  - HTML head audit
+  - accessible page head
+  - document head security
+  - hreflang canonical viewport charset
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, metadata, seo, performance]
+tags: [html, web-development, beginner, metadata, best-practices, seo, accessibility, head, frontend]
 ---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const auditSample = [
+  "<!DOCTYPE html>",
+  "<html>",
+  "<head>",
+  "  <title>Sourdough</title>",
+  '  <meta charset="utf-8">',
+  '  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">',
+  '  <meta name="description" content="Bread.">',
+  '  <link rel="stylesheet" href="/css/site.css">',
+  '  <script src="/js/app.js"></script>',
+  "</head>",
+  "<body><h1>Sourdough</h1></body>",
+  "</html>",
+].join("\n");
+
+export function HeadAuditor() {
+  const [source, setSource] = useState(auditSample);
+  const doc = new DOMParser().parseFromString(source, "text/html");
+  const head = doc.head;
+  const items = [];
+  const add = (group, label, status, note) => items.push({group, label, status, note});
+  const hasDoctype = /^\s*<!doctype\s+html\s*>/i.test(source);
+  add("Essentials", "Doctype", hasDoctype ? "pass" : "fail", hasDoctype ? "The page starts with the HTML doctype." : "No doctype at the very start. Browsers may use quirks mode.");
+  const lang = doc.documentElement.getAttribute("lang");
+  add("Essentials", "Language", lang ? "pass" : "fail", lang ? "lang is " + lang + "." : "No lang on the html element.");
+  const charsets = head.querySelectorAll("meta[charset]");
+  const charsetAt = source.search(/<meta[^>]*charset/i);
+  if (charsets.length === 0) add("Essentials", "Character set", "fail", "No meta charset found.");
+  else if (charsets.length > 1) add("Essentials", "Character set", "fail", "More than one charset declaration.");
+  else if (charsets[0].getAttribute("charset").toLowerCase() !== "utf-8") add("Essentials", "Character set", "warn", "The charset is not utf-8.");
+  else if (charsetAt > 1024) add("Essentials", "Character set", "fail", "The charset appears after the first 1024 characters.");
+  else add("Essentials", "Character set", "pass", "utf-8, declared early.");
+  const titles = doc.querySelectorAll("title");
+  if (titles.length === 0) add("Essentials", "Title", "fail", "No title element.");
+  else if (titles.length > 1) add("Essentials", "Title", "fail", "More than one title element.");
+  else {
+    const text = titles[0].textContent.trim();
+    add("Essentials", "Title", text.length === 0 ? "fail" : text.length < 15 || text.length > 65 ? "warn" : "pass", text.length === 0 ? "The title is empty." : "The title has " + text.length + " characters" + (text.length < 15 ? ", which is very short." : text.length > 65 ? ", which may be cut off in results." : "."));
+  }
+  const viewport = head.querySelector('meta[name="viewport"]');
+  if (!viewport) add("Essentials", "Viewport", "fail", "No viewport meta tag.");
+  else {
+    const content = viewport.getAttribute("content") || "";
+    const blocks = /user-scalable\s*=\s*(no|0)/i.test(content) || /maximum-scale\s*=\s*1(\.0)?(\s|,|$)/i.test(content);
+    if (blocks) add("Accessibility", "Zoom", "fail", "The viewport blocks zooming.");
+    else if (!/width\s*=\s*device-width/i.test(content)) add("Essentials", "Viewport", "warn", "The viewport does not use width=device-width.");
+    else add("Essentials", "Viewport", "pass", "Responsive viewport, with zoom allowed.");
+  }
+  const description = head.querySelector('meta[name="description"]');
+  if (!description) add("Search", "Description", "warn", "No meta description.");
+  else {
+    const length = (description.getAttribute("content") || "").length;
+    add("Search", "Description", length < 50 || length > 160 ? "warn" : "pass", "The description has " + length + " characters" + (length < 50 ? ", which is short." : length > 160 ? ", which may be cut off." : "."));
+  }
+  const canonical = head.querySelector('link[rel="canonical"]');
+  if (!canonical) add("Search", "Canonical address", "warn", "No canonical link. This is fine for simple pages, and useful when the same page has several addresses.");
+  else add("Search", "Canonical address", /^https?:\/\//i.test(canonical.getAttribute("href") || "") ? "pass" : "fail", /^https?:\/\//i.test(canonical.getAttribute("href") || "") ? "A full canonical address." : "The canonical address is not a full address.");
+  const robots = head.querySelector('meta[name="robots"]');
+  if (robots && /noindex|none/i.test(robots.getAttribute("content") || "")) add("Search", "Indexing", "warn", "This page asks not to be listed in search results. Make sure that is intended.");
+  else add("Search", "Indexing", "pass", "Nothing blocks indexing.");
+  add("Sharing", "Favicon", head.querySelector('link[rel~="icon"]') ? "pass" : "warn", head.querySelector('link[rel~="icon"]') ? "An icon is linked." : "No icon link. Browsers will request /favicon.ico by themselves.");
+  const ogTitle = head.querySelector('meta[property="og:title"]');
+  const ogImage = head.querySelector('meta[property="og:image"]');
+  add("Sharing", "Link preview", ogTitle && ogImage ? "pass" : ogTitle || ogImage ? "warn" : "warn", ogTitle && ogImage ? "Open Graph title and image are present." : "Open Graph title and image are not both present. Shared links may look plain.");
+  if (ogImage && !/^https:\/\//i.test(ogImage.getAttribute("content") || "")) add("Sharing", "Preview image address", "fail", "og:image should be a full https address.");
+  const scripts = Array.from(head.querySelectorAll("script[src]"));
+  const blocking = scripts.filter((script) => !script.hasAttribute("defer") && !script.hasAttribute("async") && script.getAttribute("type") !== "module");
+  add("Performance", "Scripts", blocking.length === 0 ? "pass" : "fail", blocking.length === 0 ? "No script blocks the page." : blocking.length + " script(s) in the head have no defer, async or module, so they block the page.");
+  const children = Array.from(head.children);
+  const lastStyle = Math.max.apply(null, [-1].concat(children.map((element, index) => (element.tagName === "LINK" && (element.getAttribute("rel") || "") === "stylesheet") || element.tagName === "STYLE" ? index : -1)));
+  const firstScript = children.findIndex((element) => element.tagName === "SCRIPT");
+  if (lastStyle !== -1 && firstScript !== -1) add("Performance", "Order", firstScript < lastStyle ? "warn" : "pass", firstScript < lastStyle ? "A script comes before a stylesheet. Put styles first." : "Styles come before scripts.");
+  const strays = Array.from(doc.body.querySelectorAll("meta, link[rel], title, base"));
+  add("Structure", "Head elements in the body", strays.length === 0 ? "pass" : "fail", strays.length === 0 ? "Nothing misplaced." : strays.length + " head element(s) ended up in the body. Look for something invalid in the head.");
+  const bases = doc.querySelectorAll("base");
+  add("Security", "Base element", bases.length === 0 ? "pass" : "warn", bases.length === 0 ? "No base element." : "A base element changes every relative address. Make sure you need it, and consider base-uri in your policy.");
+  const external = scripts.concat(Array.from(head.querySelectorAll('link[rel="stylesheet"]'))).filter((element) => /^https?:\/\//i.test(element.getAttribute("src") || element.getAttribute("href") || ""));
+  const unchecked = external.filter((element) => !element.hasAttribute("integrity"));
+  add("Security", "Files from other sites", external.length === 0 ? "pass" : unchecked.length === 0 ? "pass" : "warn", external.length === 0 ? "All files come from your own site." : unchecked.length === 0 ? "External files have integrity checks." : unchecked.length + " external file(s) without an integrity check.");
+  const score = items.reduce((sum, item) => sum + (item.status === "pass" ? 1 : item.status === "warn" ? 0.5 : 0), 0);
+  const percent = Math.round((score / items.length) * 100);
+  const label = (status) => (status === "pass" ? "Pass" : status === "warn" ? "Check" : "Fix");
+  return (
+    <div>
+      <label htmlFor="audit-source">Paste a whole page, or just its head</label>
+      <textarea id="audit-source" rows={12} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <p role="status" style={{margin: "0.5rem 0 0.3rem"}}>Head score: <strong>{percent}%</strong> ({items.filter((item) => item.status === "pass").length} pass, {items.filter((item) => item.status === "warn").length} to check, {items.filter((item) => item.status === "fail").length} to fix)</p>
+      <div style={{maxHeight: "20rem", overflow: "auto"}}>
+        <table style={{width: "100%"}}>
+          <thead>
+            <tr><th scope="col">Area</th><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Note</th></tr>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={index}>
+                <td>{item.group}</td>
+                <td>{item.label}</td>
+                <td><strong>{label(item.status)}</strong></td>
+                <td>{item.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads your text with the browser's real HTML parser. Nothing you paste is run or sent anywhere. The score is only a learning aid. It does not test your live site, and it cannot judge whether your title and description are actually good. Use real tools too (see below).
+      </p>
+    </div>
+  );
+}
+
+export function HeadGenerator() {
+  const [title, setTitle] = useState("Sourdough for Beginners");
+  const [site, setSite] = useState("The Bread Bin");
+  const [description, setDescription] = useState("A gentle, step-by-step guide to baking your first sourdough loaf.");
+  const [lang, setLang] = useState("en");
+  const [url, setUrl] = useState("https://example.com/sourdough");
+  const [image, setImage] = useState("https://example.com/images/sourdough-1200x630.jpg");
+  const [color, setColor] = useState("#1d4ed8");
+  const [social, setSocial] = useState(true);
+  const [canonical, setCanonical] = useState(true);
+  const [icons, setIcons] = useState(true);
+  const [scheme, setScheme] = useState(true);
+  const [copied, setCopied] = useState("");
+  const esc = (text) => text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const rtl = ["ar", "he", "fa", "ur"].indexOf(lang.toLowerCase().split("-")[0]) !== -1;
+  const fullTitle = site.trim() ? title.trim() + " | " + site.trim() : title.trim();
+  const lines = [
+    "<!DOCTYPE html>",
+    '<html lang="' + esc(lang) + '"' + (rtl ? ' dir="rtl"' : "") + ">",
+    "<head>",
+    '  <meta charset="utf-8">',
+    '  <meta name="viewport" content="width=device-width, initial-scale=1">',
+    "  <title>" + esc(fullTitle) + "</title>",
+    '  <meta name="description" content="' + esc(description) + '">',
+  ];
+  if (canonical) lines.push('  <link rel="canonical" href="' + esc(url) + '">');
+  lines.push('  <meta name="theme-color" content="' + esc(color) + '">');
+  if (scheme) lines.push('  <meta name="color-scheme" content="light dark">');
+  if (social) {
+    lines.push('  <meta property="og:type" content="article">');
+    lines.push('  <meta property="og:title" content="' + esc(title.trim()) + '">');
+    lines.push('  <meta property="og:description" content="' + esc(description) + '">');
+    lines.push('  <meta property="og:url" content="' + esc(url) + '">');
+    if (site.trim()) lines.push('  <meta property="og:site_name" content="' + esc(site.trim()) + '">');
+    lines.push('  <meta property="og:image" content="' + esc(image) + '">');
+    lines.push('  <meta property="og:image:alt" content="Describe the picture here">');
+    lines.push('  <meta name="twitter:card" content="summary_large_image">');
+  }
+  if (icons) {
+    lines.push('  <link rel="icon" href="/favicon.ico" sizes="32x32">');
+    lines.push('  <link rel="icon" href="/icon.svg" type="image/svg+xml">');
+    lines.push('  <link rel="apple-touch-icon" href="/apple-touch-icon.png">');
+    lines.push('  <link rel="manifest" href="/manifest.webmanifest">');
+  }
+  lines.push('  <link rel="stylesheet" href="/css/site.css">');
+  lines.push('  <script src="/js/app.js" defer></script>');
+  lines.push("</head>");
+  lines.push("<body>");
+  lines.push("  <!-- Your page goes here -->");
+  lines.push("</body>");
+  lines.push("</html>");
+  const output = lines.join("\n");
+  const copy = () => {
+    try {
+      navigator.clipboard.writeText(output).then(() => setCopied("Copied to your clipboard."), () => setCopied("Your browser did not allow copying. Select the code and copy it by hand."));
+    } catch (error) {
+      setCopied("Your browser did not allow copying. Select the code and copy it by hand.");
+    }
+  };
+  return (
+    <div>
+      <div style={{display: "grid", gap: "0.4rem", gridTemplateColumns: "repeat(auto-fit, minmax(14rem, 1fr))", marginBottom: "0.6rem"}}>
+        <label>Page title<br /><input type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%"}} /></label>
+        <label>Site name<br /><input type="text" value={site} onChange={(event) => setSite(event.target.value)} style={{width: "100%"}} /></label>
+        <label>Description<br /><input type="text" value={description} onChange={(event) => setDescription(event.target.value)} style={{width: "100%"}} /></label>
+        <label>Language code<br /><input type="text" value={lang} onChange={(event) => setLang(event.target.value)} style={{width: "100%"}} /></label>
+        <label>Page address<br /><input type="url" value={url} onChange={(event) => setUrl(event.target.value)} style={{width: "100%"}} /></label>
+        <label>Share image address<br /><input type="url" value={image} onChange={(event) => setImage(event.target.value)} style={{width: "100%"}} /></label>
+        <label>Theme colour<br /><input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
+      </div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Include</legend>
+        <label style={{marginRight: "1rem"}}><input type="checkbox" checked={canonical} onChange={(event) => setCanonical(event.target.checked)} /> canonical link</label>
+        <label style={{marginRight: "1rem"}}><input type="checkbox" checked={social} onChange={(event) => setSocial(event.target.checked)} /> link-preview tags</label>
+        <label style={{marginRight: "1rem"}}><input type="checkbox" checked={icons} onChange={(event) => setIcons(event.target.checked)} /> icons and manifest</label>
+        <label><input type="checkbox" checked={scheme} onChange={(event) => setScheme(event.target.checked)} /> color-scheme</label>
+      </fieldset>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.8em", maxHeight: "20rem", overflow: "auto"}}><code>{output}</code></pre>
+      <p style={{margin: 0}}>
+        <button type="button" onClick={copy}>Copy this head</button>
+      </p>
+      <p role="status" style={{margin: "0.4rem 0 0"}}>{copied || "Edit the fields above, then copy the result."}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a starting point. The file names for the icons, manifest, stylesheet and script are examples, so change them to match your own files, and write real alternative text for the share image.
+      </p>
+    </div>
+  );
+}
+
+You have now met every element that lives in the head. Each one is small. The skill is in putting them **together**: in the right order, with the right values, and without the mistakes that quietly cost a site its visitors.
+
+This lesson is your **capstone for the section**. It gives you a complete template you can reuse, a checklist to review any page, and the tools to test the result. Keep it close, and use it every time you start a new site.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- A **complete head template**, in a sensible order
+- A **checklist** by area: essentials, search, sharing, performance, accessibility, security, and global audiences
+- What belongs **site-wide**, and what must be **different on every page**
+- Common **conflicts and duplicates**
+- **Tools** to test your head, and how to keep it correct over time
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- 1. Encoding and viewport -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- 2. Title and description, unique on every page -->
+  <title>Sourdough for Beginners | The Bread Bin</title>
+  <meta name="description" content="A gentle, step-by-step guide to baking your first sourdough loaf.">
+  <link rel="canonical" href="https://example.com/sourdough">
+
+  <!-- 3. Browser hints -->
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="color-scheme" content="light dark">
+
+  <!-- 4. Link previews -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Sourdough for Beginners">
+  <meta property="og:description" content="A gentle guide to your first loaf.">
+  <meta property="og:url" content="https://example.com/sourdough">
+  <meta property="og:image" content="https://example.com/images/sourdough-1200x630.jpg">
+  <meta property="og:image:alt" content="A golden loaf on a wooden board">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- 5. Icons and manifest -->
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- 6. Styles first, then scripts -->
+  <link rel="stylesheet" href="/css/site.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <h1>Sourdough for Beginners</h1>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Head Generator">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HeadGenerator />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use the generator to create a head for your own page, and paste it in as a starting point.
+
+## The Order, and Why
+
+| Step | What | Why here |
+| :-- | :-- | :-- |
+| 1 | `charset`, `viewport` | The browser needs the encoding before it reads text, and the width before it lays anything out |
+| 2 | `title`, `description`, `canonical` | The most important facts about the page, near the top |
+| 3 | `theme-color`, `color-scheme` | Hints the browser can use early, to avoid flashes of the wrong colour |
+| 4 | Link-preview tags | Read by apps that often only scan the start of the page |
+| 5 | Icons and manifest | Not urgent, but grouped together |
+| 6 | Stylesheets, then scripts with `defer` | Styles first, so the page is painted once. Scripts last, so they do not hold it up |
+
+If you have a `<base>` element, it goes **very early**, before anything that uses a relative address. If you have preconnect hints, put them **before** the files that will use those connections.
+
+## Site-Wide and Page-Specific
+
+Some metadata is the **same** on every page. Some **must be different.**
+
+| Same on every page | Different on every page |
+| :-- | :-- |
+| `charset`, `viewport` | `title` |
+| `lang` (for a single-language site) | `description` |
+| Icons, manifest | `canonical` address |
+| Stylesheets and scripts | Link-preview title, description, and image |
+| `theme-color`, `color-scheme` | `lang` and `hreflang` links for translated pages |
+
+Build your **layout template** once with the shared parts, and give each page its own values for the second column. That is how every well-built site stays consistent.
+
+## The Master Checklist
+
+### Essentials
+
+- [ ] `<!DOCTYPE html>` is the very first thing
+- [ ] `<html lang="…">` matches the real language (and `dir="rtl"` where needed)
+- [ ] `<meta charset="utf-8">` is within the first 1024 bytes
+- [ ] A responsive `viewport` tag
+- [ ] One `<title>` per page
+- [ ] Every element in the head is one that is allowed there
+
+### Search
+
+- [ ] A **unique, descriptive title,** with the specific part first (about 50 to 60 characters)
+- [ ] A **unique description,** written for people (about 120 to 160 characters)
+- [ ] A **full-address `canonical`** link when the same page has several addresses
+- [ ] No accidental **`noindex`**
+- [ ] `hreflang` links, reciprocal and with `x-default`, for translated pages
+- [ ] Structured data (JSON-LD) where it fits, built safely
+
+### Sharing
+
+- [ ] Open Graph title, description, URL, and image, with **full `https` addresses**
+- [ ] A share image of a suitable size (about 1200 by 630 pixels is a common recommendation), with alt text
+- [ ] A favicon set: SVG, ICO, Apple touch icon, and manifest icons
+
+### Performance
+
+- [ ] Styles linked **before** scripts
+- [ ] Scripts use **`defer`**, **`async`**, or **`type="module"`**
+- [ ] Only a few **`preload`** and **`preconnect`** hints, each measured
+- [ ] Critical CSS is small. No `@import` chains
+- [ ] No unused or duplicate files
+
+### Accessibility
+
+- [ ] Zoom is **never blocked**
+- [ ] `lang` is correct, including on passages in other languages
+- [ ] The title **describes** the page, and changes with each view in a single-page app
+- [ ] No automatic **`refresh`**
+- [ ] `color-scheme` and `prefers-*` settings are respected
+- [ ] The page works if a stylesheet or script fails to load
+
+### Security and Privacy
+
+- [ ] **No secrets** in comments, meta tags, or scripts
+- [ ] External files use **`https`, `integrity`, and `crossorigin`**
+- [ ] A **Content-Security-Policy** (preferably a header), including `base-uri`
+- [ ] No unneeded **`<base>`** element
+- [ ] Everything dynamic is **escaped**
+- [ ] A considered **`referrer`** policy
+- [ ] Consent is handled before loading tracking scripts, where the law requires it. This is not legal advice
+
+### Global Audiences
+
+- [ ] UTF-8 throughout, and a font that covers your scripts
+- [ ] Titles and descriptions are **written in the page's language**
+- [ ] A visible **language switcher,** with `hreflang` links behind it
+- [ ] A lean head for slow connections
+- [ ] Previews, titles, and images tested in more than one language
+
+## Audit a Page
+
+Paste any page (or just its head) into the auditor. It checks many of the items above, using the browser's real HTML parser, and gives each a result. The starting sample has several deliberate problems. Fix them one at a time, and watch the score rise.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="audit-me.html"
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sourdough</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="description" content="Bread.">
+  <link rel="stylesheet" href="/css/site.css">
+  <script src="/js/app.js"></script>
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Head Auditor">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BrowserOnly>{() => <HeadAuditor />}</BrowserOnly>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Common Conflicts and Duplicates
+
+| Problem | What happens | Fix |
+| :-- | :-- | :-- |
+| Two `<title>` elements | Only the first is used | Keep one |
+| Two descriptions | Search engines pick one, unpredictably | Keep one |
+| `title` and `og:title` disagree | The tab and the share card say different things | Make them similar, even if not identical |
+| `canonical` points to another page | The page may drop out of search results | Point it to itself, or to the true original |
+| `noindex` plus a `canonical` | Mixed signals | Choose one purpose |
+| Two viewports | Behaviour depends on the browser | Keep one |
+| A header charset differs from the meta charset | The header usually wins | Make them match |
+| Something invalid in the head | The head ends early, and later tags land in the body | Remove it |
+| Tags added by script **and** written by hand | Duplicates | Choose one source |
+
+## Structured Data
+
+Structured data tells search engines exactly what your page **is**: an article, a product, an event, a recipe. The usual format is **JSON-LD** in a data script block:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Sourdough for Beginners",
+  "datePublished": "2026-10-20",
+  "author": { "@type": "Person", "name": "Ravi" }
+}
+</script>
+```
+
+Rules: describe only **what is really visible on the page,** keep the values **accurate,** and encode `<` as `<` when a server builds it from data. Search engines decide whether to use it, and what to show.
+
+## Test, Do Not Guess
+
+You can see most problems in minutes if you use the right tools:
+
+| Need | Tool |
+| :-- | :-- |
+| See what the browser really received | **View source,** and the **Elements** and **Network** panels in developer tools |
+| Check that the HTML is valid | The **W3C validator** |
+| Check speed, accessibility, and basic search readiness | **Lighthouse** (built into Chrome's developer tools) |
+| Check how search engines see a live page | The search engine's **webmaster tools** (for example, Google Search Console), and their **inspect-a-URL** features |
+| Check structured data | The search engines' **structured data testing tools** |
+| Check link previews | The platforms' **sharing debuggers** (they also let you clear a cached preview) |
+| Check on real devices | A real phone, a slow connection setting, and a screen reader |
+| Catch problems before launch | **Automated checks** in your build (HTML linters, Lighthouse in continuous integration) |
+
+Tool names and addresses change, so search for the current official one when you need it.
+
+## Keeping It Correct Over Time
+
+- **Generate the head from one template,** instead of copying it to each page.
+- **Store page values** (title, description, image) with the page's content, such as in frontmatter, so writers cannot forget them.
+- **Review the head** whenever you redesign, move domains, or add a language.
+- **Check live pages** after each release for a leftover `noindex`, a staging address in `canonical`, or a missing title.
+- **Add automated checks** so a mistake fails the build, rather than reaching visitors.
+
+### In Docusaurus
+
+Most of this is already wired up for you:
+
+| You want | Where it comes from |
+| :-- | :-- |
+| Title and description | The page's frontmatter `title` and `description` |
+| Keywords | Frontmatter `keywords` (search engines largely ignore them, but they are harmless) |
+| Share image | Frontmatter `image`, and `themeConfig.image` for a site-wide default |
+| Favicon | `favicon` in `docusaurus.config.js` |
+| Extra tags | `headTags`, `stylesheets`, `scripts`, or `@docusaurus/Head` |
+| Language and translations | The `i18n` settings |
+| Canonical and `hreflang` | Generated by Docusaurus from your `url`, `baseUrl`, and locales |
+
+Always open a **built** page's source to confirm what was produced, instead of trusting the configuration alone.
+
+## Good Habits
+
+1. **Start every project from the same, reviewed head template.**
+2. **Write unique titles and descriptions** for every page.
+3. **Never block zoom,** never use `refresh`, and never leave a stray `noindex`.
+4. **Put styles before scripts, and defer your scripts.**
+5. **Use full `https` addresses** for canonical, `hreflang`, and share images.
+6. **Add `integrity`, a CSP, and `base-uri`.**
+7. **Test with real tools** and on real devices.
+8. **Automate the checks,** and review after every big change.
+
+## Accessibility Checklist
+
+- [ ] The title identifies the page, and is **unique** within the site.
+- [ ] `lang` is set and correct, including `dir="rtl"` where needed.
+- [ ] The viewport allows **zoom.**
+- [ ] No automatic redirects or refreshes without the user's control.
+- [ ] Share images have **alt text.**
+- [ ] Icons and `theme-color` keep **good contrast.**
+- [ ] The page remains usable if scripts or styles fail.
+- [ ] You have tested with a **screen reader** and the **keyboard.**
+
+## Security and Privacy Notes
+
+- **Review the head as public code.** Anyone can read it, and so can automated scanners. Remove anything that should not be public.
+- **Prefer a Content-Security-Policy sent as a header,** with `script-src`, `style-src`, and `base-uri`. A meta tag is a weaker second choice.
+- **Treat every external file as a trust decision.** Pin versions, use `integrity`, and host important files yourself.
+- **Early connections (`preconnect`, `prefetch`) and third-party fonts and scripts can reveal visits** to other companies. Choose them with care.
+- **Be careful with fingerprinting.** Do not collect screen sizes, fonts, and other details without a reason.
+- **Do not publish staging metadata.** A staging site that is not blocked by a login and has no `noindex` can be indexed and leak unreleased work.
+- **`noindex` is not security.** Use real authentication for private pages.
+
+## Global Audience Notes
+
+- **One language, one set of tags.** Each language version has its own title, description, preview text, `lang`, and `hreflang` links.
+- **Test with long and short languages.** Titles in German or Finnish can be much longer than in English, and Chinese, Japanese, or Korean ones can be much shorter, but wider per character.
+- **Check right-to-left pages** end to end, including previews and icons.
+- **Do not guess a visitor's language from their country.** Offer a switcher.
+- **Make the head light.** Most visitors worldwide use mid-range phones on variable networks.
+- **Use images and colours that work across cultures,** and give every image real alternative text in the page's language.
+
+## Common Mistakes to Avoid
+
+1. **A different-looking head on every page,** because it was copied by hand.
+2. **The same title and description everywhere.**
+3. **A staging `noindex` or staging `canonical` that reaches production.**
+4. **Relative addresses in canonical, `hreflang`, and share tags.**
+5. **Blocking zoom.**
+6. **Scripts before styles, with no `defer`.**
+7. **Stuffing keywords.**
+8. **Trusting a score instead of reading the real result.**
+9. **Forgetting to retest after a redesign.**
+10. **Secrets in comments or in metadata.**
+11. **Conflicting signals,** such as `noindex` plus `canonical`.
+12. **Leaving everything to a plugin,** and never reading the output.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Use the generator to make a head for a page of your own, and save it as a template.
+2. Paste your real site's head into the auditor, and fix the first three problems.
+3. Open View Source on your three favourite sites, and compare their heads with the template.
+4. Run Lighthouse on one of your pages, and read each metadata-related message.
+5. Check your page with the W3C validator, and fix every error.
+6. Test a link to your page in a chat app, and then change the image and see how the preview updates.
+7. Add JSON-LD to an article page, and check it with a structured data test.
+8. Add a Content-Security-Policy header with `base-uri`, and see what breaks.
+9. Make a translated copy of a page with `lang`, `hreflang`, and a translated title and description.
+10. Bonus: write a short script or build step that fails if a page has no title, no description, or a `noindex`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What goes first in the head, and why?</summary>
+
+`charset` and `viewport`: the browser needs the encoding before it reads text, and the width before it lays the page out. Then the title, description, and other metadata, then styles, then deferred scripts.
+
+</details>
+
+<details>
+<summary>2. Which metadata must be different on every page?</summary>
+
+The title, the description, the canonical address, and the link-preview tags (and, for translations, `lang` and `hreflang`).
+
+</details>
+
+<details>
+<summary>3. Name three accessibility rules for the head.</summary>
+
+Never block zoom, set a correct `lang`, and give every page a unique, descriptive title. Also avoid automatic `refresh`, and keep the page usable if a script or style fails.
+
+</details>
+
+<details>
+<summary>4. How do you reduce the risk of a hijacked base element?</summary>
+
+Avoid using `<base>`, and add `base-uri` to your Content-Security-Policy, ideally sent as a header.
+
+</details>
+
+<details>
+<summary>5. Why test with real tools?</summary>
+
+A checklist or score cannot tell if your title is helpful, if a preview looks right, or how real search engines and devices behave. View source, validators, Lighthouse, sharing debuggers, and real phones show what visitors get.
+
+</details>
+
+<details>
+<summary>6. What is the best way to keep heads consistent?</summary>
+
+Generate them from one template, store each page's own title, description, and image with its content, and add automated checks to your build.
+
+</details>
+
+## Key Takeaways
+
+- A good head is **complete, ordered, and specific to each page.**
+- The order: **charset and viewport, title and description, hints, previews, icons, styles, then deferred scripts.**
+- **Share** the common parts through a template, and give each page its own title, description, canonical address, and preview.
+- Work through the checklist for **essentials, search, sharing, performance, accessibility, security, and global audiences.**
+- **Never block zoom,** never leave a stray `noindex`, and keep secrets and untrusted files out.
+- **Test with real tools** and on real devices, and automate the checks so mistakes cannot reach visitors.
+
+Congratulations. You have finished the HTML Head section. You can now read any page's head, build a strong one from scratch, and spot the mistakes that quietly hurt visitors, search results, and security. Continue with the next section in the sidebar, and keep the master checklist handy for every project.

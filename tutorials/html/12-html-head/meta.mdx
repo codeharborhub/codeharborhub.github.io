@@ -19,3 +19,327 @@ keywords:
   - CodeHarborHub HTML
 tags: [html, web-development, beginner, meta, seo, open-graph, accessibility, head, frontend]
 ---
+
+A web page is like a **book**. The cover shows the title, but the **back cover** and the **library catalogue card** hold other facts: a short summary, the language, the author, the category, who may borrow it. Visitors rarely see those, but librarians, bookshops, and search systems depend on them.
+
+In HTML, the **`<meta>` element** is that catalogue card. It stores facts **about** the page that no other element covers. In this lesson you will meet its different forms, the most useful tags, and a few that are best avoided.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<meta>` is, and its **four forms**
+- Writing a good **description**
+- Controlling search engines with **`robots`**
+- `theme-color` and `color-scheme`
+- What **`http-equiv`** does, and why `refresh` is risky
+- **Open Graph** tags for link previews
+- Meta tags that are **outdated** and can be skipped
+
+## The Big Idea
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A gentle guide to your first sourdough loaf.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1d4ed8">
+  <meta name="color-scheme" content="light dark">
+  <meta property="og:title" content="Sourdough for Beginners">
+</head>
+```
+
+The checker has a sample with deliberate problems: zoom blocked, a very short description, `noindex`, an automatic refresh, and a tag with no content. Fix them one by one, and watch the results change.
+
+## The Anatomy of a Meta Tag
+
+`<meta>` is a **void element**: it has no content and no closing tag. Everything is in its attributes. It comes in a few forms:
+
+| Form | Example | Used for |
+| :-- | :-- | :-- |
+| **charset** | `<meta charset="utf-8">` | How to read the file |
+| **name and content** | `<meta name="description" content="…">` | Named facts about the page |
+| **http-equiv and content** | `<meta http-equiv="refresh" content="…">` | A few instructions that act like HTTP headers |
+| **property and content** | `<meta property="og:title" content="…">` | Link previews (Open Graph) and similar |
+
+A tag in the **name** form needs both attributes. Without `content`, it does nothing.
+
+:::note Other forms exist
+There are also `itemprop` (for microdata) and `media` (used with `theme-color`). You will rarely need them at this stage.
+:::
+
+## Charset and Viewport
+
+Two meta tags belong on **every** page. They have their own lessons, so here is a quick summary:
+
+```html
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+```
+
+- **Charset** lets the browser read your letters correctly. See [Charset](./charset).
+- **Viewport** makes the page fit phones. See [Viewport](./viewport).
+
+## The Description
+
+```html
+<meta name="description" content="A gentle, step-by-step guide to baking your first sourdough loaf.">
+```
+
+A short summary of the page. Search engines **may** show it under your title. They often choose text from the page instead, if it fits the search better, so treat it as a strong suggestion, not a command.
+
+How to write a good one:
+
+- **One or two sentences,** around 120 to 160 characters.
+- **Unique for each page.** Copied descriptions give no information.
+- **Written for people:** say what the visitor will get.
+- **Honest.** Do not promise what the page does not deliver.
+- **No keyword lists.**
+
+| Weak | Better |
+| :-- | :-- |
+| `Bread.` | `A gentle, step-by-step guide to baking your first sourdough loaf, with no special equipment.` |
+| `bread, bake, sourdough, loaf, cheap, best` | `Learn how to feed a starter, shape the dough, and bake a crusty loaf at home.` |
+
+## Telling Search Engines What to Do: robots
+
+```html
+<meta name="robots" content="index, follow">
+```
+
+| Value | Meaning |
+| :-- | :-- |
+| `index` | The page may be listed (the default) |
+| `noindex` | Please do **not** list this page |
+| `follow` | Links on the page may be followed (the default) |
+| `nofollow` | Do not follow links on this page |
+| `noindex, nofollow` | Neither list the page nor follow its links |
+
+Use `noindex` for pages that should not appear in search results: thank-you pages, internal search results, or drafts.
+
+:::danger Two big warnings about robots
+1. **`noindex` is a request, not security.** Well-behaved search engines respect it, but anyone with the link can still open the page. Protect private pages with a login.
+2. **A single `noindex` left on by accident can remove a whole site from search results.** It is a common launch-day mistake. Check your live pages.
+:::
+
+## Colour Hints
+
+### theme-color
+
+```html
+<meta name="theme-color" content="#1d4ed8">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+```
+
+Some mobile browsers use this colour for their toolbar, so the page feels more like an app. Use the `media` attribute to supply different colours for light and dark. Browser support varies, and it is only a hint.
+
+### color-scheme
+
+```html
+<meta name="color-scheme" content="light dark">
+```
+
+This tells the browser your page supports **both** light and dark schemes, so it can draw things like the default page background, form controls, and scrollbars in the right colours **before** your CSS loads. It prevents a white flash on dark pages.
+
+## http-equiv: Header-Like Instructions
+
+`http-equiv` means "equivalent to an HTTP header". It lets a page state a few instructions that a server would normally send:
+
+```html
+<meta http-equiv="content-security-policy" content="default-src 'self'">
+```
+
+| Value | What it does | Advice |
+| :-- | :-- | :-- |
+| `content-security-policy` | Restricts what the page may load | Works, but a real header is stronger. Some directives do not work in a meta tag |
+| `refresh` | Reloads or redirects after some seconds | **Avoid.** See below |
+| `content-type` | Old way to declare the character set | Use `<meta charset>` instead |
+| `x-ua-compatible` | Old Internet Explorer setting | Obsolete. Remove it |
+
+### Why You Should Avoid `refresh`
+
+```html
+<meta http-equiv="refresh" content="5; url=/new-page">
+```
+
+An automatic redirect or reload that a visitor did not ask for causes real problems:
+
+- A screen reader user may be **moved away before they have finished reading.**
+- People who need **more time** to read, or who use switch devices, can be locked out.
+- It breaks the browser's back button in many cases.
+
+Use a **server redirect** (an HTTP 301 or 302) for moved pages. If you must refresh, give a **link** and let the visitor choose. This relates to the accessibility guidance on giving users control over time limits and unexpected changes.
+
+## Open Graph: Link Previews
+
+When you paste a link in a chat or a social app, you often see a **card** with a picture, title, and summary. Many of those apps read **Open Graph** tags:
+
+```html
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sourdough for Beginners">
+<meta property="og:description" content="A gentle guide to your first loaf.">
+<meta property="og:url" content="https://example.com/sourdough">
+<meta property="og:image" content="https://example.com/images/sourdough-1200x630.jpg">
+<meta property="og:image:alt" content="A golden loaf on a wooden board">
+<meta name="twitter:card" content="summary_large_image">
+```
+
+Notes:
+
+- Use **full `https://` addresses**, not relative ones.
+- A **wide image**, roughly 1200 by 630 pixels, is a common recommendation for large cards. Check the platform's current guidance.
+- Always add **alt text** for the image.
+- Apps **cache** previews. After you change tags, you may need the platform's debugging tool to refresh.
+- Not every app uses every tag. Some fall back to the `<title>` and `description`.
+
+Try it: change the fields, and see the card and the tags it produces.
+
+```html title="social.html"
+<meta property="og:title" content="Sourdough for Beginners">
+<meta property="og:description" content="A gentle guide to your first loaf.">
+<meta property="og:image" content="https://example.com/images/sourdough-1200x630.jpg">
+<meta name="twitter:card" content="summary_large_image">
+```
+
+## Other Meta Tags You May See
+
+| Tag | Status |
+| :-- | :-- |
+| `<meta name="author" content="…">` | Allowed, and harmless. Gives a name, which is public |
+| `<meta name="generator" content="…">` | Records which tool made the page. Reveals your software version |
+| `<meta name="referrer" content="strict-origin-when-cross-origin">` | Controls how much of your address is sent to other sites |
+| `<meta name="keywords" content="…">` | **Ignored** by major search engines. Skip it |
+| `<meta name="format-detection" content="telephone=no">` | Stops some mobile browsers turning numbers into phone links |
+| `<meta name="google-site-verification" content="…">` | Proves site ownership to a service. Use the one your service gives you |
+
+## Good Habits
+
+1. **Always include charset and viewport.**
+2. **Write a unique description for each page.**
+3. **Use `robots` carefully,** and check live pages for accidental `noindex`.
+4. **Do not use `refresh`.** Use a server redirect.
+5. **Add `color-scheme`** if your page supports dark mode.
+6. **Include Open Graph tags** on pages people share.
+7. **Do not stuff keywords.**
+8. **Remove obsolete tags** to keep the head light.
+
+## Accessibility Checklist
+
+- [ ] The viewport tag **does not** disable zoom.
+- [ ] There is **no** automatic `refresh` that moves people without warning.
+- [ ] `og:image:alt` (or equivalent) is provided for previews.
+- [ ] `color-scheme` matches the schemes your CSS really supports.
+- [ ] `theme-color` keeps good contrast with the browser's interface.
+- [ ] Descriptions are written in plain language, in the page's language.
+
+## Security and Privacy Notes
+
+- **Meta tags are public.** Never put secrets, tokens, or private notes in them.
+- **`generator` and `author`** can reveal your software, its version, and names. Remove them if that is a concern.
+- **`noindex` does not protect anything.** It only asks search engines to stay away. Use authentication for private pages.
+- **A Content-Security-Policy in a meta tag** is weaker than the header form: it only applies after the browser has read the tag, and it cannot set some directives.
+- **`referrer`** helps keep private paths and search terms from being sent to other sites. Pick a strict value if your addresses contain sensitive data.
+- **Escape dynamic content.** If a meta `content` comes from a database or a visitor, escape quotes and angle brackets, or it can break out of the attribute.
+- **Open Graph tags reveal what you share.** Do not put private details in descriptions that will be shown to anyone who sees a link.
+
+## Global Audience Notes
+
+- **Write the description and Open Graph text in the page's language,** and match `lang` and `og:locale` (for example `og:locale` set to `hi_IN`).
+- **Make a separate set of tags for each language version,** and connect them with `hreflang` links.
+- **Descriptions in languages with wider characters** (such as Chinese, Japanese, and Korean) are shorter in characters but not in width. Test them.
+- **Use `color-scheme` and `theme-color`** to respect people's preferences in every region.
+- **Preview images with text** should be readable in the language of the page, and have alt text.
+- **Do not rely on country-specific services** for verification tags, if your audience is global.
+
+## Common Mistakes to Avoid
+
+1. **No description,** or the same one on every page.
+2. **A keyword list** as the description.
+3. **An accidental `noindex`,** removing the page from search.
+4. **Using `refresh`** for redirects.
+5. **Blocking zoom** in the viewport tag.
+6. **A `name` tag without `content`.**
+7. **Relative addresses in Open Graph tags.**
+8. **A huge or tiny share image.**
+9. **Two descriptions on one page.**
+10. **Relying on `keywords`,** which search engines ignore.
+11. **Secrets in meta tags.**
+12. **Forgetting that apps cache previews.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add a description to a page, and make it about 140 characters.
+2. Paste your meta tags into the checker, and fix every warning.
+3. Add `theme-color`, and open the page in a mobile browser that supports it.
+4. Add `color-scheme` with `light dark`, and check the form controls in dark mode.
+5. Add `noindex` to a test page, and explain who it affects.
+6. Replace an old `refresh` with a link that the visitor can choose to click.
+7. Add Open Graph tags, and test them with a platform's sharing debugger.
+8. View the source of three popular sites, and list their meta tags.
+9. Write two descriptions for the same page, and choose the better one.
+10. Bonus: audit your site for a leftover `noindex`, `keywords`, or `x-ua-compatible` tag.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the main forms of the `meta` element?</summary>
+
+`charset`, `name` with `content`, `http-equiv` with `content`, and `property` with `content` (used for Open Graph).
+
+</details>
+
+<details>
+<summary>2. What is the meta description for?</summary>
+
+A short summary of the page that search engines may show under the title. They can choose other text instead, so it is a suggestion.
+
+</details>
+
+<details>
+<summary>3. Does `noindex` keep a page private?</summary>
+
+No. It only asks search engines not to list the page. Anyone with the link can still open it. Use a login for private pages.
+
+</details>
+
+<details>
+<summary>4. Why avoid `http-equiv="refresh"`?</summary>
+
+It moves or reloads the page without the visitor choosing, which can disorient people and cause problems for assistive technology. Use a server redirect, or give a link.
+
+</details>
+
+<details>
+<summary>5. What does `color-scheme` do?</summary>
+
+It tells the browser the page supports light, dark, or both, so default colours and form controls match before the CSS loads.
+
+</details>
+
+<details>
+<summary>6. Do search engines use `meta name="keywords"`?</summary>
+
+Major search engines ignore it, so you can skip it.
+
+</details>
+
+## Key Takeaways
+
+- `<meta>` stores facts about the page in its attributes. It has **no closing tag**.
+- Every page needs **charset** and **viewport**, and a unique **description** helps.
+- **`robots`** controls listing, but `noindex` is a request, not security.
+- **`theme-color`** and **`color-scheme`** improve how the browser's interface and defaults look.
+- Avoid **`refresh`**, obsolete tags, and keyword lists.
+- **Open Graph** tags make link previews work. Use full addresses, a good image, and alt text.
+- Meta tags are public, so keep secrets out and escape dynamic values.
+
+Next, make sure every letter appears correctly with [Charset](./charset).

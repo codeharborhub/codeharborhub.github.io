@@ -1,15 +1,382 @@
 ---
-id: script-element
-title: "Executing JavaScript: The script Element with async and defer"
-sidebar_label: "Script Element (<script>)"
+id: html-script
+title: "The HTML Script Element"
+sidebar_label: "Script"
 sidebar_position: 11
 slug: /html/html-head/script
-description: "Optimize JavaScript delivery in document headers using the script tag alongside async, defer, and module attributes to prevent parsing delays."
+description: "Learn the HTML script element: inline and external scripts, defer, async and type module, where to place scripts, data blocks like JSON-LD, noscript fallbacks, and how to load JavaScript safely. Includes a live loading-order experiment, a script tag checker, and a JSON data block demo."
 keywords:
   - HTML script tag
-  - script async defer
-  - javascript head loading
-  - non blocking script execution
+  - defer vs async
+  - script type module
+  - JavaScript loading order
+  - script in head or body
+  - JSON-LD script
+  - noscript fallback
+  - script integrity crossorigin
+  - Content-Security-Policy script-src
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, script, performance]
+tags: [html, web-development, beginner, script, javascript, performance, security, head, frontend]
 ---
+
+HTML builds the **structure** of a page and CSS gives it **style**. But to make a page **do** things (react to clicks, check a form, load fresh data, draw a chart), you need **JavaScript**. And JavaScript enters an HTML page through one element: **`<script>`**.
+
+It is also the **most powerful, and most dangerous,** element you will meet in the head. A script can do anything the page can do. So in this lesson you will learn not only how to add scripts, but how to load them **fast** and **safely**.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<script>` is: **inline** and **external** scripts
+- Why scripts can **freeze** a page, and how `defer`, `async`, and `type="module"` fix it
+- Where to place scripts
+- **Data blocks** such as JSON-LD, which are not run
+- `<noscript>`: what to show when JavaScript is off
+- Keeping scripts **safe**: integrity, CSP, and trust
+- Making sure your page still **works** when a script fails
+
+## The Big Idea
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scripts</title>
+
+  <!-- External: downloads in the background, runs after the page is read -->
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <button id="hello" type="button">Say hello</button>
+
+  <!-- Inline: the code is right here -->
+  <script>
+    document.getElementById("hello").addEventListener("click", () => {
+      alert("Hello!");
+    });
+  </script>
+</body>
+</html>
+```
+
+Switch between the four loading styles, and watch the **real** order in which things happen.
+
+## Two Ways to Add a Script
+
+### Inline
+
+```html
+<script>
+  console.log("This code is written inside the page");
+</script>
+```
+
+Handy for small snippets. But it is repeated on every page, it cannot be cached by itself, and it is blocked by a strict security policy unless you use a nonce or a hash.
+
+### External
+
+```html
+<script src="/js/app.js"></script>
+```
+
+The code lives in its own file. It can be **cached** and **shared** between pages, and it works with strict security policies. This is the normal choice for real sites.
+
+:::note A script cannot be both
+If a script element has a `src`, the browser **ignores** anything written between its tags. Use one or the other.
+:::
+
+## The Problem: Scripts Block the Page
+
+The browser reads your HTML from top to bottom, building the page as it goes. When it meets a plain script, it must **stop**, download the file, run it, and only then carry on. If the script is big or the network is slow, the visitor stares at a blank or half-built page.
+
+That is why you will see old advice to "put scripts at the bottom of the body". It works, but there is a better way: tell the browser how to load the script.
+
+## The Fix: `defer`, `async`, and Modules
+
+| Attribute | Downloads | Runs | Order kept? | Best for |
+| :-- | :-- | :-- | :-- | :-- |
+| *(none)* | Stops the parser | Immediately | Yes | Rare. Only when a script must run before anything after it |
+| **`defer`** | In the background | After the page is read, before `DOMContentLoaded` | **Yes** | Most of your own scripts |
+| **`async`** | In the background | As soon as it arrives | **No** | Independent scripts, such as analytics |
+| **`type="module"`** | In the background | Like `defer`, by default | Yes | Modern code with `import` and `export` |
+
+A few details:
+
+- **`defer` and `async` only work on external scripts** (with `src`), not inline classic ones. Module scripts are deferred even when they are inline.
+- If you set **both** `defer` and `async`, browsers that understand `async` use `async`. Choose one.
+- Deferred scripts run **in the order they are written.** Async scripts run in whatever order they finish.
+- A module script runs **once,** even if included twice, and always in **strict mode**.
+
+:::tip A simple rule
+Use **`defer`** (or `type="module"`) for your own scripts. Use **`async`** only for scripts that depend on nothing and that nothing depends on.
+:::
+
+## Where Should the Script Go?
+
+With `defer`, **the head** is the best place. The browser finds the script early, starts downloading at once, and does not block the page.
+
+```html
+<head>
+  <script src="/js/app.js" defer></script>
+</head>
+```
+
+A classic script at the **end of the body** also does not block the content above it, but the browser discovers it later, so it starts downloading later. Prefer `defer` in the head.
+
+Inline scripts that need to see an element must come **after** that element, or wait for the page to be ready:
+
+```js
+document.addEventListener("DOMContentLoaded", () => {
+  // The page is read, so it is safe to find elements here
+});
+```
+
+### Two Useful Events
+
+| Event | Fires when |
+| :-- | :-- |
+| `DOMContentLoaded` | The HTML has been read and the page's structure is ready (images may still be loading) |
+| `load` | Everything, including images and styles, has finished loading |
+
+## Modules
+
+```html
+<script type="module" src="/js/main.js"></script>
+```
+
+```js title="main.js"
+import { greet } from "./greet.js";
+greet("world");
+```
+
+Modules let you split code into files with `import` and `export`. They are deferred, run in strict mode, and each has its own scope, so names do not leak into the global space. For old browsers that do not understand modules, `nomodule` marks a fallback, but modern sites rarely need it today.
+
+An **import map** can give short names to module addresses:
+
+```html
+<script type="importmap">
+  { "imports": { "utils": "/js/utils.js" } }
+</script>
+```
+
+## Check Your Script Tags
+
+The checker below reads your script tags with the browser's real parser, and shows the usual problems: blocking scripts, `defer` plus `async`, `http` addresses, `integrity` without `crossorigin`, and more.
+
+```html title="scripts.html"
+<script src="/js/app.js" defer></script>
+<script src="https://cdn.example.com/lib.js"
+        integrity="sha384-…" crossorigin="anonymous" defer></script>
+<script type="module" src="/js/main.js"></script>
+```
+
+## Data Blocks: Scripts That Are Not Scripts
+
+If you give `<script>` a `type` that is **not JavaScript**, the browser does not run it. It treats the content as **data**, which your code (or a search engine) can read:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Sourdough for Beginners"
+}
+</script>
+```
+
+This is how you add **structured data** (JSON-LD), which can help search engines understand your page. You can also keep your own data in a block like this and read it with JavaScript:
+
+```js
+const data = JSON.parse(document.getElementById("page-data").textContent);
+```
+
+The demo shows why data blocks must be built carefully:
+
+```html title="data-block.html"
+<script type="application/json" id="page-data">
+  { "user": "Ravi", "items": 3 }
+</script>
+```
+
+## `<noscript>`: When JavaScript Is Off
+
+Some visitors have no JavaScript: it may be blocked, it may fail to load, or the device may be too old. The `<noscript>` element shows content only in that case:
+
+```html
+<noscript>
+  <p>This page works best with JavaScript. The main content is below, but
+  the interactive chart is not available.</p>
+</noscript>
+```
+
+In the **body,** `<noscript>` can hold normal content. In the **head,** it can only hold `<link>`, `<style>`, and `<meta>`.
+
+The better approach is **progressive enhancement:** build the page so the core content and links work **without** JavaScript, then use scripts to add extras.
+
+## Common Script Attributes
+
+| Attribute | Use |
+| :-- | :-- |
+| `src` | The address of an external script |
+| `defer`, `async` | Loading behaviour (see above) |
+| `type` | `module`, `importmap`, or a data type. Not needed for ordinary JavaScript |
+| `nomodule` | Runs only in browsers that do not understand modules |
+| `integrity` | A fingerprint, so the browser can detect a changed file |
+| `crossorigin` | How to ask another site for the file. Needed for `integrity` on other sites |
+| `referrerpolicy` | How much of your address to send when fetching the script |
+| `nonce` | Lets a strict Content-Security-Policy allow this one inline script |
+| `fetchpriority` | A hint: `high`, `low`, or `auto` |
+
+## Keeping Scripts Safe
+
+A script has **full power over your page.** It can read what visitors type, change what they see, and send data anywhere. So script safety is the most important security topic in this section.
+
+```html
+<script src="https://cdn.example.com/lib@1.2.3/lib.min.js"
+        integrity="sha384-…"
+        crossorigin="anonymous"
+        defer></script>
+```
+
+- **Only load scripts you trust,** and pin the **exact version.**
+- **Add `integrity` and `crossorigin`,** so a changed file is refused. See [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security).
+- **Use a Content-Security-Policy** with `script-src`, so only approved scripts can run. This limits the damage of injected code.
+- **Never build inline scripts from user input,** and never put user text inside a script block.
+- **Avoid `eval`, `document.write`, and inline event attributes** such as `onclick="…"`. They are hard to protect.
+- **Use `addEventListener`** instead of inline `onclick` attributes.
+
+## Good Habits
+
+1. **Use `defer` for your own scripts,** in the head.
+2. **Use `async` only for independent scripts.**
+3. **Use external files** for real code, and inline scripts for tiny snippets.
+4. **Use modules** for modern code.
+5. **Keep structured data in a `type="application/ld+json"` block.**
+6. **Build the page so it works without JavaScript** where possible.
+7. **Add `integrity`, `crossorigin`, and a CSP.**
+8. **Wait for `DOMContentLoaded`** when you need page elements.
+9. **Keep scripts small,** and remove the ones you do not use.
+
+## Accessibility Checklist
+
+- [ ] **Core content and navigation work without JavaScript,** or have a clear fallback.
+- [ ] Interactive elements are **real buttons and links,** not `div` elements with click handlers.
+- [ ] Everything you can do with a mouse can be done with a **keyboard,** with visible focus.
+- [ ] When script changes the page (new content, errors), assistive technology is told, for example with a **live region** or by moving focus.
+- [ ] Scripts do not **trap focus** unless it is a proper dialog.
+- [ ] Animations respect **`prefers-reduced-motion`**.
+- [ ] Time limits and automatic updates can be **paused or extended.**
+- [ ] A slow or failed script **does not leave the page unusable.**
+
+## Security and Privacy Notes
+
+- **Every third-party script is a trust decision.** A script from another site can see everything your page shows, read form fields, and send it away. Review who you trust, and why.
+- **Cross-site scripting (XSS)** is when an attacker gets their own script into your page. The main defences are **escaping output,** avoiding unsafe methods, and a strict Content-Security-Policy.
+- **Use `integrity`** to detect a changed file, but it does not make an untrusted script safe.
+- **Analytics and advertising scripts** collect personal data. Laws such as GDPR and similar rules elsewhere may require **consent** before loading them. This is not legal advice, so check the rules for your audience.
+- **Do not put secrets in scripts.** Keys, tokens, and passwords in client-side code are public.
+- **Escape data in blocks.** A user value containing a closing script tag can break out and run code, so encode `<` when you build JSON blocks on a server.
+- **Keep dependencies updated,** and remove unused ones.
+
+## Global Audience Notes
+
+- **Many visitors use slow networks and low-cost phones.** Large scripts can make a site unusable. Ship less code, split it, and load only what a page needs.
+- **Parsing and running JavaScript costs more on low-end devices** than downloading it. Test on a slow phone, and not only on your own computer.
+- **Do not depend on services that may be blocked or slow** in some regions. Host critical scripts yourself.
+- **Make your page work without JavaScript** where you can. It helps on poor connections, and when a script fails to load.
+- **Use the browser's own features** (such as native `<dialog>` and `<details>`) in preference to large libraries.
+- **Internationalise text and dates in script** with the `Intl` tools, and not with hard-coded English.
+
+## Common Mistakes to Avoid
+
+1. **A plain script in the head,** blocking the page.
+2. **`defer` or `async` on an inline classic script.** It does nothing.
+3. **Both `defer` and `async` together.**
+4. **Using `async` for scripts that depend on each other.**
+5. **Writing both `src` and inline code** in one element.
+6. **Running code before the elements exist.**
+7. **Putting user text inside a script block.**
+8. **Third-party scripts without `integrity`,** or with no review.
+9. **Inline `onclick` attributes** with a strict policy.
+10. **Secrets in script files.**
+11. **A page that is blank when JavaScript fails.**
+12. **Loading huge libraries** for small jobs.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add an external script with `defer`, and log a message.
+2. Try the same script with no attribute, with `async`, and as a module, and compare the order in the console.
+3. Add an inline script before and after an element, and see which can find it.
+4. Use the lab above, and explain each order to a friend.
+5. Add a JSON-LD data block to a page, and read it with JavaScript.
+6. Write a `<noscript>` message, then turn off JavaScript in developer tools to see it.
+7. Make a page whose main content works with JavaScript off.
+8. Replace an inline `onclick` with `addEventListener`.
+9. Add a Content-Security-Policy that blocks inline scripts, and fix what breaks.
+10. Bonus: open a popular site, and list the third-party scripts it loads, in the Network tab.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between inline and external scripts?</summary>
+
+An inline script has its code written between the tags. An external script loads from a file with `src`. External files can be cached and shared, and work better with strict security policies.
+
+</details>
+
+<details>
+<summary>2. What does `defer` do?</summary>
+
+It downloads the script in the background, and runs it after the page has been read, in the order written, before `DOMContentLoaded`.
+
+</details>
+
+<details>
+<summary>3. How does `async` differ from `defer`?</summary>
+
+`async` runs the script as soon as it arrives, in any order, which can happen before the page is ready. `defer` waits until the page is read and keeps the order.
+
+</details>
+
+<details>
+<summary>4. What is a data block?</summary>
+
+A script element with a `type` that is not JavaScript, such as `application/ld+json`. The browser does not run it, and code or search engines can read its text.
+
+</details>
+
+<details>
+<summary>5. What does `noscript` do?</summary>
+
+It shows its content only when JavaScript is off or unavailable. In the head, it may only contain `link`, `style`, and `meta`.
+
+</details>
+
+<details>
+<summary>6. How can you load a script from another site more safely?</summary>
+
+Use an exact version, `integrity` with `crossorigin`, `https`, and a Content-Security-Policy, and only load code you trust.
+
+</details>
+
+## Key Takeaways
+
+- **`<script>`** adds JavaScript, **inline** or from an **external file**.
+- Plain scripts **block the page.** Use **`defer`** (or **`type="module"`**) for your own code, and **`async`** only for independent scripts.
+- Scripts with a **non-JavaScript type** are **data blocks,** such as JSON-LD, and are never run.
+- Build pages that work **without JavaScript** where possible, and use **`<noscript>`** for fallbacks.
+- A script has **full power** over your page. Use **`integrity`, `crossorigin`, a CSP,** and trusted sources.
+- Never put user text inside a script block without encoding it, and never put secrets in client code.
+- Keep scripts small. Many visitors use slow networks and low-end devices.
+
+Last in the family of connecting elements, learn how to change where links start with the [Base](./base) element.

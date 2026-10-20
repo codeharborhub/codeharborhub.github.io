@@ -1,15 +1,461 @@
 ---
-id: charset
-title: "Character Encoding Declaration: UTF-8 and <meta charset>"
-sidebar_label: "Character Set (UTF-8)"
+id: html-charset
+title: "HTML Character Encoding (meta charset)"
+sidebar_label: "Charset"
 sidebar_position: 6
 slug: /html/html-head/charset
-description: "Learn why declaring UTF-8 character encoding via meta charset inside the first 1024 bytes prevents rendering glitches and security exploits."
+description: "Learn how character encoding works in HTML: what UTF-8 is, how meta charset tells the browser how to read your page, why text turns into garbled symbols, and how to fix it. Includes a live encoding lab with real bytes and a real page rendered with different encodings."
 keywords:
-  - HTML meta charset
-  - UTF-8 character encoding
-  - character set declaration
-  - HTML encoding best practices
+  - HTML charset
+  - meta charset utf-8
+  - character encoding HTML
+  - UTF-8 explained
+  - garbled text mojibake
+  - HTML entities
+  - Unicode for beginners
+  - utf8mb4
+  - accept-charset
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, charset, encoding]
+tags: [html, web-development, beginner, charset, utf-8, unicode, internationalization, head, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+
+export const encodingChoices = [
+  {value: "utf-8", label: "UTF-8 (correct)"},
+  {value: "windows-1252", label: "windows-1252 (Western European)"},
+  {value: "windows-1251", label: "windows-1251 (Cyrillic)"},
+  {value: "shift_jis", label: "Shift_JIS (Japanese)"},
+  {value: "utf-16le", label: "UTF-16 little endian"},
+];
+
+export function EncodingLab() {
+  const [text, setText] = useState("café ₹ 日本 😀");
+  const [encoding, setEncoding] = useState("windows-1252");
+  const bytes = new TextEncoder().encode(text);
+  const hex = Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
+  const chars = Array.from(text).slice(0, 14);
+  let decoded = "";
+  let failed = false;
+  try {
+    decoded = new TextDecoder(encoding).decode(bytes);
+  } catch (error) {
+    failed = true;
+  }
+  const correct = !failed && decoded === text;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="enc-text">Type some text</label><br />
+        <input id="enc-text" type="text" value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="enc-choice">Pretend the browser reads those bytes as</label><br />
+        <select id="enc-choice" value={encoding} onChange={(event) => setEncoding(event.target.value)}>
+          {encodingChoices.map((choice) => (<option key={choice.value} value={choice.value}>{choice.label}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.2rem"}}><strong>The file's real bytes (UTF-8), in hexadecimal</strong> ({bytes.length} bytes for {Array.from(text).length} characters):</p>
+      <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap", fontSize: "0.85em"}}><code>{hex || "(empty)"}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}>
+        <strong>What the browser would show:</strong>{" "}
+        {failed ? "This browser cannot decode that encoding." : <span style={{fontSize: "1.15em"}}>{decoded || "(empty)"}</span>}
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        {correct ? "The reading matches the original text. The encoding is right." : "The text is damaged. This kind of damage is called mojibake. A character shown as � means a byte sequence that could not be read."}
+      </p>
+      <table>
+        <caption>How many bytes each character needs in UTF-8</caption>
+        <thead>
+          <tr><th scope="col">Character</th><th scope="col">Code point</th><th scope="col">UTF-8 bytes</th></tr>
+        </thead>
+        <tbody>
+          {chars.map((char, index) => (
+            <tr key={index}>
+              <td>{char === " " ? "(space)" : char}</td>
+              <td>{"U+" + char.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}</td>
+              <td>{new TextEncoder().encode(char).length}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This uses your browser's real <code>TextEncoder</code> and <code>TextDecoder</code>. Which legacy encodings are available can differ between browsers.
+      </p>
+    </div>
+  );
+}
+
+export function PageLab() {
+  const [text, setText] = useState("Café, ₹100, 日本語, Привет");
+  const [declared, setDeclared] = useState("windows-1252");
+  const [src, setSrc] = useState(null);
+  useEffect(() => {
+    const safe = text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const head = declared === "none" ? "" : '<meta charset="' + declared + '">';
+    const page = "<!DOCTYPE html><html><head>" + head + "<title>Test</title></head><body style=\"font-family:sans-serif;font-size:20px\"><p>" + safe + "</p></body></html>";
+    const blob = new Blob([new TextEncoder().encode(page)], {type: "text/html"});
+    const url = URL.createObjectURL(blob);
+    setSrc(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [text, declared]);
+  const options = [
+    {value: "utf-8", label: 'meta charset="utf-8" (correct)'},
+    {value: "windows-1252", label: 'meta charset="windows-1252" (wrong)'},
+    {value: "windows-1251", label: 'meta charset="windows-1251" (wrong)'},
+    {value: "shift_jis", label: 'meta charset="shift_jis" (wrong)'},
+    {value: "none", label: "no declaration at all (the browser guesses)"},
+  ];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="page-text">Text in the page</label><br />
+        <input id="page-text" type="text" value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="page-decl">What the page declares</label><br />
+        <select id="page-decl" value={declared} onChange={(event) => setDeclared(event.target.value)}>
+          {options.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}
+        </select>
+      </p>
+      {src === null ? (
+        <p role="status" style={{margin: 0}}>Preparing the test page…</p>
+      ) : (
+        <iframe title="A real page read with the chosen encoding" src={src} sandbox="" style={{width: "100%", height: "6rem", border: "1px solid #94a3b8"}} />
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The page's bytes are always UTF-8. Only the declaration changes. With no declaration, browsers use their own guessing, so the result can differ from browser to browser. If your browser does not damage the text with the wrong declarations, it may be treating this in-memory page differently, so try the other options too.
+      </p>
+    </div>
+  );
+}
+
+Have you ever opened a web page and seen text like **cafÃ©** instead of **café**, or rows of **�** and empty boxes? That is a **character encoding** problem, and it is one of the oldest bugs on the web. It happens when the browser reads a page using different rules from the ones used to save it.
+
+The fix is one short line in your head: `<meta charset="utf-8">`. In this lesson you will learn **why** it works, so you can recognise and prevent encoding bugs for good.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a **character encoding** is, and how bytes become letters
+- What **Unicode** and **UTF-8** are
+- How to declare the encoding with **`<meta charset>`**
+- Which source wins when there are several (the **order of priority**)
+- Why text becomes garbled, and how to fix it
+- **HTML entities** as an alternative for special characters
+- Related settings in files, databases, and forms
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Café ₹ 日本 😀</title>
+</head>
+<body>
+  <p>Café, ₹100, 日本語, Привет, مرحبا, 😀</p>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Encoding Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EncodingLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Type your own name, and switch the "pretend" encoding. With **UTF-8** the text is correct. With the others, anything beyond basic English letters is damaged.
+
+## Computers Only Store Numbers
+
+A computer file is a long list of **bytes**: numbers from 0 to 255. Letters are not stored. Instead, there is an agreement: "number 65 means the letter A". The agreement is called a **character encoding**.
+
+Long ago, every region made its own agreement. One encoding for Western Europe, one for Russian, one for Japanese. The same byte meant **different letters** in each of them. A file saved with one agreement and read with another turns into nonsense.
+
+```
+Bytes:  63 61 66 c3 a9
+Read as UTF-8:         café
+Read as windows-1252:  cafÃ©     <- same bytes, wrong agreement
+```
+
+## Unicode and UTF-8
+
+**Unicode** is one big catalogue that gives every character in every writing system its own number, called a **code point**, written like `U+00E9` for é. It covers Latin, Devanagari, Arabic, Chinese, Japanese, Korean, mathematics, emoji, and much more. Unicode says **which number** each character has.
+
+**UTF-8** is the way of **writing those numbers as bytes**. It is the encoding you should use for the web:
+
+| Character type | Bytes in UTF-8 | Example |
+| :-- | :-- | :-- |
+| Basic English letters, digits, punctuation (ASCII) | 1 | `A`, `7`, `?` |
+| Accented letters, Greek, Cyrillic, Hebrew, Arabic | 2 | `é`, `Ж`, `ع` |
+| Most Indian scripts, Thai, Chinese, Japanese, Korean, the rupee sign | 3 | `हि`, `日`, `₹` |
+| Emoji and rare characters | 4 | `😀` |
+
+Why UTF-8 won:
+
+- It can represent **every** character in Unicode.
+- Plain English text looks **identical** to the older ASCII, so old files keep working.
+- It is **compact** for English, and still handles every language.
+- It is the **default recommendation** of the HTML standard, and nearly the whole web uses it.
+
+## Declaring the Encoding: meta charset
+
+```html
+<meta charset="utf-8">
+```
+
+Rules:
+
+1. Put it **inside `<head>`**, as early as possible.
+2. It must appear **within the first 1024 bytes** of the file. A very long comment or script above it can push it out of range.
+3. **Only one** such tag per page.
+4. The value is **not case-sensitive.** `UTF-8` and `utf-8` both work.
+5. It must **match how the file was really saved.** The tag is a label, and a wrong label does not convert anything.
+
+You may see an older form:
+
+```html
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+```
+
+It does the same job but is longer. Use the short form.
+
+## Who Wins? The Order of Priority
+
+A browser can learn the encoding from several places. In order, from strongest to weakest:
+
+1. A **byte order mark (BOM)** at the very start of the file (a few special bytes some editors add)
+2. The **`charset` in the HTTP `Content-Type` header,** sent by the server
+3. The **`<meta charset>`** tag in the page
+4. A **guess** by the browser, based on the bytes and on its language settings
+
+This means that if your **server header says one thing** and your **meta tag says another,** the header usually wins, and your page may break even though the HTML looks right. When you see mojibake, check the server setting, as well as the page.
+
+:::info Always declare it
+If there is no declaration, the browser guesses, and different browsers guess differently. A page may look right on your computer, but wrong for a visitor in another country. Declare the encoding every time.
+:::
+
+## See It Happen: A Real Page, Declared Wrongly
+
+Below, a real page is created in memory with UTF-8 bytes, then loaded into a frame. Only the **declaration** changes. Try each one.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="wrong-charset.html"
+<!-- The file was saved as UTF-8, but the label says something else -->
+<meta charset="windows-1252">
+<p>Café, ₹100, 日本語, Привет</p>
+
+<!-- Result: CafÃ©, â‚¹100, æ—¥æœ¬èªž, ÐŸÑ€Ð¸Ð²ÐµÑ‚ -->
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PageLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice that the wrong label did not change the file, only how the browser **read** it. That is why the fix is always the same: make the **file, the server, and the tag agree on UTF-8.**
+
+## Fixing Garbled Text: A Checklist
+
+When text looks wrong, check these in order:
+
+1. **Is the file really saved as UTF-8?** In your code editor, look at the status bar, or use "Save with Encoding".
+2. **Is `<meta charset="utf-8">` present,** and near the top of the head?
+3. **Does the server send a different `charset`** in its `Content-Type` header? Look in the browser's Network tab.
+4. **Was the text damaged before it reached the page?** Check your database, your import scripts, and your copy-and-paste path.
+5. **Did something convert it twice?** Text such as `Ã©` often means UTF-8 bytes were read as another encoding and then saved again. Once saved like that, you must repair the text, not just the label.
+
+| What you see | Usual cause |
+| :-- | :-- |
+| `Ã©`, `â‚¹`, `Ð¿` in place of normal letters | UTF-8 text read as windows-1252 |
+| `?` in place of letters | Text was converted into an encoding that does not have those characters, and the loss is permanent |
+| `�` | Bytes that are not valid in the encoding being used |
+| Empty boxes | The encoding is right, but **no font** has that character |
+
+The last one is different: the text is correct, but the device has no font with that symbol. It is a **font** problem, not an encoding problem.
+
+## HTML Entities: Another Way to Write Special Characters
+
+You can also write a character as an **entity** that uses only plain ASCII. It survives any encoding:
+
+```html
+<p>&copy; 2026 &mdash; Price: &euro;20, &#8377;1500, &#x1F600;</p>
+```
+
+| Form | Example | Result |
+| :-- | :-- | :-- |
+| Named | `&copy;` | © |
+| Decimal number | `&#8377;` | ₹ |
+| Hexadecimal number | `&#x1F600;` | 😀 |
+
+Entities are essential for the characters that have special meaning in HTML: `&lt;` for `<`, `&gt;` for `>`, `&amp;` for `&`, and `&quot;` for a quote inside an attribute.
+
+But for everyday text, **write the real character and use UTF-8.** It is easier to read and maintain than a page full of numbers.
+
+## Other Places Where Encoding Matters
+
+| Place | What to do |
+| :-- | :-- |
+| **Your editor** | Save files as UTF-8 (without a BOM, if you can choose) |
+| **The web server** | Send `Content-Type: text/html; charset=utf-8` |
+| **CSS files** | Add `@charset "utf-8";` as the very first line if the file has non-ASCII characters and the server does not say |
+| **JavaScript files** | Serve as UTF-8. Modules always read UTF-8 |
+| **Databases** | Use a full UTF-8 setting. In MySQL, that means `utf8mb4`, not the older `utf8`, which cannot store emoji |
+| **Forms** | Browsers send form data as UTF-8 by default. You can check with `accept-charset="utf-8"` on the form |
+| **URLs** | Non-ASCII characters in addresses are converted to `%`-codes based on UTF-8 |
+| **Email, CSV, and other files** | State the encoding, or open the file as UTF-8 explicitly |
+
+## Good Habits
+
+1. **Use UTF-8 for everything:** files, server, database, forms.
+2. **Write `<meta charset="utf-8">` as the first thing in your head.**
+3. **Do not rely on the browser's guess.**
+4. **Check the server header** when the tag looks right but the text is wrong.
+5. **Test with real data** in several scripts: accented, Indic, Arabic, CJK, and emoji.
+6. **Use entities** for `<`, `>`, and `&` in text.
+7. **Keep the tag within the first 1024 bytes.**
+8. **Do not convert text between encodings** in the middle of your pipeline.
+
+## Accessibility Checklist
+
+- [ ] Every character in the page, including the `<title>`, displays correctly.
+- [ ] Screen readers receive real text, not garbled symbols or stand-in question marks.
+- [ ] Symbols used as icons also have a **text** alternative.
+- [ ] Emoji used in headings or buttons are **optional extras,** not the only way to understand the content.
+- [ ] Text in other languages has the right `lang` attribute.
+- [ ] Right-to-left text displays and reads in the right order.
+
+## Security and Privacy Notes
+
+- **Always declare the encoding.** Old attacks used pages with no declared encoding, so a browser would guess an unusual one (such as UTF-7), and read harmless-looking text as active script. A declared UTF-8 page closes that door.
+- **Validate input as UTF-8** on the server. Reject or clean invalid byte sequences, instead of passing them along.
+- **Look-alike characters** from different scripts (for example, a Cyrillic "а" that looks like a Latin "a") can be used for tricks in names and addresses. Be careful when you compare, show, or trust user names and links.
+- **Invisible and direction-control characters** can hide in text and code, and change what a reader sees. Review pasted code and user content, and consider stripping them from fields such as user names.
+- **Do not trust the byte length of a string** as its character length. A limit measured in bytes can cut a character in half and produce invalid text.
+- **Do not use a conversion function on text** that may already be in the target encoding, because double conversion damages it.
+
+## Global Audience Notes
+
+- **UTF-8 is what lets one page serve the world.** There is no good reason to choose a regional encoding for a new site.
+- **Allow real names.** Do not restrict name fields to English letters, because many names include accents, other scripts, apostrophes, and spaces.
+- **Sorting, upper and lower case, and length** differ by language. Do not assume one letter equals one byte, or that every language has upper and lower case.
+- **Fonts matter.** An encoding can be perfect while the font lacks the characters. Use a font stack that covers your audience's scripts, or load a suitable web font.
+- **Emoji look different** on different devices, and new ones may not show on older systems. Do not depend on them for meaning.
+- **Right-to-left text** is stored in logical order, and the browser draws it correctly. Mark the direction with `dir`.
+- **JavaScript string lengths** count UTF-16 units, not visible characters, so `"😀".length` is 2. Use `Array.from(text)` or `Intl.Segmenter` to count what people see.
+
+## Common Mistakes to Avoid
+
+1. **No charset declaration.**
+2. **Saving the file in one encoding but declaring another.**
+3. **Putting `<meta charset>` after a long comment or script** (beyond 1024 bytes).
+4. **A server header that disagrees with the tag.**
+5. **Using MySQL `utf8` instead of `utf8mb4`.**
+6. **Converting text twice,** and creating permanent damage.
+7. **Mistaking a missing font** for an encoding problem.
+8. **Using two charset tags.**
+9. **Limiting names or text to ASCII.**
+10. **Counting bytes when you mean characters.**
+11. **Using entities everywhere** when plain UTF-8 text would be clearer.
+12. **Testing only with English text.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Create a page with accented letters, and open it with and without `<meta charset="utf-8">`.
+2. Save the same file as UTF-8 and as windows-1252 in your editor, and compare the results.
+3. Use the lab above to find the UTF-8 bytes of your own name.
+4. Write a sentence in three different scripts, and check that all of them appear.
+5. Put a 2000-character comment before `<meta charset>`, and read what the validator says.
+6. Check your browser's Network tab for the `Content-Type` header of a page.
+7. Write `&copy;`, `&#8377;`, and `&#x1F600;` on a page, and compare them with the real characters.
+8. Find the encoding of your database, and check that it can store emoji.
+9. Make a form that sends a non-English name, and check what the server receives.
+10. Bonus: write a short script to compare `"😀".length` with `Array.from("😀").length`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `&lt;meta charset="utf-8"&gt;` do?</summary>
+
+It tells the browser that the page's bytes are encoded as UTF-8, so it turns them into the right letters.
+
+</details>
+
+<details>
+<summary>2. What is the difference between Unicode and UTF-8?</summary>
+
+Unicode is the catalogue that gives each character a number. UTF-8 is a way of writing those numbers as bytes.
+
+</details>
+
+<details>
+<summary>3. Where must the charset tag be?</summary>
+
+In the head, as early as possible, and within the first 1024 bytes of the file.
+
+</details>
+
+<details>
+<summary>4. Which wins: the server header or the meta tag?</summary>
+
+The HTTP `Content-Type` header usually wins over the meta tag. A byte order mark wins over both. The browser guesses only when there is nothing declared.
+
+</details>
+
+<details>
+<summary>5. Why do you see `Ã©` instead of `é`?</summary>
+
+UTF-8 bytes were read as another encoding, such as windows-1252. Check that the file, the server, and the tag all say UTF-8.
+
+</details>
+
+<details>
+<summary>6. What is the difference between an encoding problem and a font problem?</summary>
+
+With an encoding problem, the wrong letters appear, or `�`. With a font problem, the text is correct, but the device has no font for it, so empty boxes appear.
+
+</details>
+
+## Key Takeaways
+
+- A **character encoding** is the agreement that turns bytes into letters.
+- **Unicode** numbers every character, and **UTF-8** writes those numbers as bytes. Use it everywhere.
+- Declare it with **`<meta charset="utf-8">`**, first in the head, within the first 1024 bytes.
+- The **BOM, then the server header, then the meta tag, then a guess** decide which encoding is used.
+- Garbled text means the **file, server, and tag disagree**, or the text was damaged earlier.
+- Entities such as `&amp;` are needed for `<`, `>`, `&`, and quotes, but plain UTF-8 text is best for everything else.
+- Always declare the encoding, validate input as UTF-8, and test with many scripts.
+
+Next, make your pages fit every screen with the [Viewport](./viewport) tag.
