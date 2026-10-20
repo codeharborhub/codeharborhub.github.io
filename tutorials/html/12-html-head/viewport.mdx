@@ -1,15 +1,467 @@
 ---
-id: viewport
-title: "Mobile Responsiveness: The Viewport Meta Tag"
-sidebar_label: "Viewport Tag"
+id: html-viewport
+title: "The HTML Viewport Meta Tag"
+sidebar_label: "Viewport"
 sidebar_position: 7
 slug: /html/html-head/viewport
-description: "Configure the meta viewport tag to control layout scaling, viewport dimensions, and pinch-zoom behaviors on mobile devices."
+description: "Learn the viewport meta tag: why phones need it, what width=device-width and initial-scale=1 do, why you should never block zoom, safe-area settings for notched phones, and how it connects to responsive CSS. Includes a live viewport reader and a mobile page simulator."
 keywords:
-  - HTML meta viewport
-  - mobile responsive viewport
-  - initial-scale width device-width
-  - responsive web design head
+  - viewport meta tag
+  - width=device-width initial-scale=1
+  - responsive design HTML
+  - user-scalable no accessibility
+  - viewport-fit cover
+  - safe area inset
+  - mobile friendly HTML
+  - layout viewport visual viewport
+  - dvh units
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, viewport, responsive]
+tags: [html, web-development, beginner, viewport, responsive, mobile, accessibility, head, frontend]
 ---
+
+import {useState, useEffect} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function ViewportReader() {
+  const [info, setInfo] = useState(null);
+  useEffect(() => {
+    const read = () => {
+      const tag = document.querySelector('meta[name="viewport"]');
+      const visual = window.visualViewport;
+      setInfo({
+        meta: tag ? tag.getAttribute("content") : "(none found)",
+        inner: window.innerWidth + " × " + window.innerHeight,
+        visual: visual ? Math.round(visual.width) + " × " + Math.round(visual.height) : "(not available)",
+        scale: visual ? String(Math.round(visual.scale * 100) / 100) : "(not available)",
+        screen: window.screen.width + " × " + window.screen.height,
+        dpr: String(window.devicePixelRatio),
+        touch: window.matchMedia("(pointer: coarse)").matches ? "touch (coarse pointer)" : "mouse or trackpad (fine pointer)",
+        scheme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+        band: window.innerWidth < 576 ? "small phone layout" : window.innerWidth < 997 ? "tablet or large phone layout" : "desktop layout",
+      });
+    };
+    read();
+    window.addEventListener("resize", read);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", read);
+    return () => {
+      window.removeEventListener("resize", read);
+      if (window.visualViewport) window.visualViewport.removeEventListener("resize", read);
+    };
+  }, []);
+  if (info === null) return <p role="status" style={{margin: 0}}>Reading your screen…</p>;
+  return (
+    <div>
+      <table>
+        <caption>What your browser reports right now</caption>
+        <tbody>
+          <tr><th scope="row" style={{textAlign: "start"}}>Viewport meta on this page</th><td><code>{info.meta}</code></td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Layout width × height (CSS pixels)</th><td>{info.inner}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Visual viewport</th><td>{info.visual}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Pinch-zoom level</th><td>{info.scale}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Screen size</th><td>{info.screen}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Pixel ratio</th><td>{info.dpr}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Main pointer</th><td>{info.touch}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Colour scheme</th><td>{info.scheme}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Rough size band</th><td>{info.band}</td></tr>
+        </tbody>
+      </table>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Resize your window, or rotate your phone, and the numbers update. Zoom the page in with your browser, and notice that the layout width gets smaller, because CSS pixels grow. The size band is only this demo's own labelling.
+      </p>
+    </div>
+  );
+}
+
+export const demoPage = [
+  "<!DOCTYPE html><html><head><style>",
+  "body{margin:0;font-family:sans-serif;font-size:16px}",
+  "header{background:#1d4ed8;color:#fff;padding:12px}",
+  "h1{margin:0;font-size:22px}",
+  "main{padding:12px}",
+  "button{font-size:16px;padding:8px 12px}",
+  ".wide{display:block;background:#fef3c7;padding:8px}",
+  ".narrow{display:none;background:#dcfce7;padding:8px}",
+  "@media (max-width:600px){.wide{display:none}.narrow{display:block}}",
+  "</style></head><body>",
+  "<header><h1>The Bread Bin</h1></header>",
+  "<main>",
+  "<p class=\"wide\">Desktop layout (the page is wider than 600px)</p>",
+  "<p class=\"narrow\">Mobile layout (the page is 600px or narrower)</p>",
+  "<p>Welcome! This is a normal paragraph of text at 16px, the size most browsers use by default.</p>",
+  "<button type=\"button\">Order a loaf</button>",
+  "</main></body></html>",
+].join("");
+
+export function MobileSim() {
+  const [device, setDevice] = useState(360);
+  const [hasWidth, setHasWidth] = useState(true);
+  const [hasScale, setHasScale] = useState(true);
+  const [blockZoom, setBlockZoom] = useState(false);
+  const layout = hasWidth ? device : 980;
+  const scale = device / layout;
+  const parts = [];
+  if (hasWidth) parts.push("width=device-width");
+  if (hasScale) parts.push("initial-scale=1");
+  if (blockZoom) parts.push("user-scalable=no");
+  const tag = parts.length > 0 ? '<meta name="viewport" content="' + parts.join(", ") + '">' : "(no viewport tag)";
+  const frameHeight = 300;
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Build the tag</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={hasWidth} onChange={(event) => setHasWidth(event.target.checked)} /> <code>width=device-width</code></label>
+        <label style={{display: "block"}}><input type="checkbox" checked={hasScale} onChange={(event) => setHasScale(event.target.checked)} /> <code>initial-scale=1</code></label>
+        <label style={{display: "block"}}><input type="checkbox" checked={blockZoom} onChange={(event) => setBlockZoom(event.target.checked)} /> <code>user-scalable=no</code> (do not do this)</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label>Phone width (CSS pixels){" "}
+          <select value={device} onChange={(event) => setDevice(Number(event.target.value))}>
+            <option value={320}>320 (small phone)</option>
+            <option value={360}>360 (common Android)</option>
+            <option value={390}>390 (common iPhone)</option>
+            <option value={430}>430 (large phone)</option>
+          </select>
+        </label>
+      </p>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.85em", whiteSpace: "pre-wrap"}}><code>{tag}</code></pre>
+      <div style={{width: device + "px", maxWidth: "100%", height: frameHeight + "px", overflow: "hidden", border: "3px solid #334155", borderRadius: "12px", background: "#fff"}}>
+        <div style={{width: layout + "px", height: Math.round(frameHeight / scale) + "px", transform: "scale(" + scale + ")", transformOrigin: "top left"}}>
+          <iframe title="A page as a phone would lay it out" srcDoc={demoPage} sandbox="" style={{width: layout + "px", height: Math.round(frameHeight / scale) + "px", border: 0}} />
+        </div>
+      </div>
+      <ul role="status" style={{margin: "0.5rem 0 0"}}>
+        <li>The browser lays the page out at <strong>{layout}px</strong> wide, then fits it on a <strong>{device}px</strong> screen{scale < 1 ? ", shrinking everything to " + Math.round(scale * 100) + "% of its size" : " without shrinking"}.</li>
+        <li>{hasWidth ? "The mobile layout is used, because the page is narrower than 600px." : "The desktop layout is used, because the page thinks it is 980px wide. Text and buttons become tiny."}</li>
+        {blockZoom ? <li>Pinch-zoom is blocked in browsers that obey this. People with low vision may not be able to read your page. Do not use it.</li> : null}
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simulation. The page inside the frame is real, but the shrinking is done with a CSS scale, to imitate what a phone does. The 980px default is typical for mobile browsers, but can differ. Real phones may also treat <code>user-scalable=no</code> differently, and many ignore it on purpose.
+      </p>
+    </div>
+  );
+}
+
+Imagine opening a website on your phone, and seeing a tiny copy of the desktop page: text too small to read, and you have to pinch and drag to find anything. That experience is common on pages without the **viewport** tag, and it is the reason this one line of HTML exists.
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1">
+```
+
+In this lesson you will learn what it means, why zooming must always stay on, and how it works together with your CSS.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a **viewport** is, and why phones are different
+- What `width=device-width` and `initial-scale=1` do
+- Why **`user-scalable=no`** and **`maximum-scale=1`** are harmful
+- **Safe areas** and `viewport-fit=cover` for notched phones
+- How the tag works with **media queries** and flexible CSS
+- Testing on real and simulated devices
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mobile-friendly page</title>
+</head>
+<body>
+  <h1>The Bread Bin</h1>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Mobile Simulator">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MobileSim />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Untick `width=device-width` and look at the phone frame: the page is laid out as if the screen were wide, then shrunk until it fits.
+
+## What Is a Viewport?
+
+The **viewport** is the window onto your page: the part of the page you can see right now. On a desktop, it is the browser window. On a phone, there are really two:
+
+| Term | Meaning |
+| :-- | :-- |
+| **Layout viewport** | The width the browser uses to lay out your page. CSS percentages and media queries use this |
+| **Visual viewport** | The part the visitor can currently see. It shrinks when they pinch-zoom in, or when the on-screen keyboard appears |
+
+Early phone browsers faced a problem: most websites were built for wide desktop screens. So phones **pretended** the screen was about **980 pixels wide**, laid out the page that way, then shrank the result to fit. That kept old sites readable-ish, but it makes modern, responsive sites look wrong.
+
+The viewport tag is how you tell the phone: *"This page is built for small screens. Do not pretend."*
+
+## The Two Settings You Need
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1">
+```
+
+| Part | Meaning |
+| :-- | :-- |
+| `width=device-width` | Make the layout width equal to the real screen width, measured in CSS pixels |
+| `initial-scale=1` | Start at normal size, with no zoom in or out |
+
+**CSS pixels** are not the same as the physical dots on the screen. A modern phone may have a 1170-dot-wide screen, and still report about 390 CSS pixels, so that text stays readable. Your CSS works in CSS pixels.
+
+## See What Your Device Reports
+
+Try this on a phone and on a desktop, and compare:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```js title="script.js"
+console.log(window.innerWidth);         // layout width in CSS pixels
+console.log(window.devicePixelRatio);   // physical dots per CSS pixel
+console.log(window.visualViewport.scale); // the current pinch-zoom level
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ViewportReader />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Other Settings (and Which to Avoid)
+
+You can add more properties. Some are useful. Some are harmful.
+
+| Property | Example | Advice |
+| :-- | :-- | :-- |
+| `width` | `device-width` or `600` | Use `device-width`. A fixed number is rarely right |
+| `initial-scale` | `1` | Keep at `1` |
+| `minimum-scale` | `1` | Not needed |
+| `maximum-scale` | `5` | If you must set it, keep it **at least 2 or higher.** Never `1` |
+| `user-scalable` | `no` | **Never.** It blocks zooming |
+| `viewport-fit` | `cover` | Useful for full-screen designs on notched phones, with safe-area padding (see below) |
+| `interactive-widget` | `resizes-content` | Controls how the on-screen keyboard changes the layout. Support is newer and varies, so test |
+
+### Why Blocking Zoom Is Harmful
+
+```html
+<!-- Do not do this -->
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1">
+```
+
+People zoom for many reasons: low vision, small text, a bright screen, a hard-to-read font, or just looking at a photo more closely. Taking that away makes your page **unusable** for some visitors, and it goes against the Web Content Accessibility Guidelines, which expect text to be resizable up to 200 percent without loss of content.
+
+Some browsers now **ignore** attempts to block zoom for this reason, but you cannot rely on that. Simply do not write it.
+
+:::danger Never disable zoom
+Do not add `user-scalable=no`. Do not set `maximum-scale=1`. If a layout "breaks" when zoomed, fix the layout, not the zoom.
+:::
+
+## The Viewport Tag Is Only Half the Job
+
+The tag makes the layout width equal to the screen width. Your **CSS** must then adapt to that width:
+
+```css
+/* Flexible images and media */
+img, video { max-width: 100%; height: auto; }
+
+/* Mobile-first: base styles are for small screens */
+.cards { display: grid; gap: 1rem; }
+
+/* Wider screens get more columns */
+@media (min-width: 600px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
+}
+```
+
+Tips:
+
+- **Design mobile first.** Write the small-screen styles first, then add rules for wider screens with `min-width`.
+- **Use relative units** (`rem`, `%`, `fr`, `ch`) rather than fixed pixel widths.
+- **Avoid horizontal scrolling.** Wide tables, long words, and fixed-width elements are common causes.
+- **Make touch targets big enough:** at least about 44 by 44 CSS pixels is a common guideline for buttons and links.
+- **Use `100dvh`** (dynamic viewport height) instead of `100vh` for full-height sections, because phone address bars appear and disappear, and `100vh` can be taller than what you can see.
+
+## Notches and Safe Areas
+
+Some phones have a notch, rounded corners, or a home bar that covers part of the screen. By default, browsers keep your page inside the **safe area**. If you want content to run edge to edge, opt in:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+```
+
+Then add padding so text never hides behind the notch:
+
+```css
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+```
+
+Only use `viewport-fit=cover` if you are ready to handle those insets.
+
+## Text Size and Zoom on Inputs
+
+A few extra mobile details:
+
+- Keep body text at **16 pixels or larger.** Some mobile browsers zoom in automatically when a visitor taps a form field with text smaller than 16 pixels, which can be disorienting.
+- Use `rem` for font sizes, so the visitor's own text-size setting is respected.
+- Test with the browser's text size set to large.
+
+## The Viewport in Docusaurus
+
+Docusaurus adds a viewport tag to its pages by default, so you rarely need to write one. Still, check the built page's source to see it. If you build custom pages outside Docusaurus, include it yourself.
+
+## Good Habits
+
+1. **Always include `width=device-width, initial-scale=1`.**
+2. **Never block zoom.**
+3. **Build mobile first,** then enhance for larger screens.
+4. **Use relative units and flexible images.**
+5. **Test on a real phone,** and in your browser's device mode.
+6. **Test at 200 percent zoom,** and at about 320 CSS pixels wide.
+7. **Use `dvh` units** for full-height layouts on phones.
+8. **Respect safe areas** if you use `viewport-fit=cover`.
+
+## Accessibility Checklist
+
+- [ ] The viewport tag is present, and **does not** disable zoom.
+- [ ] The page works at **320 CSS pixels** wide without sideways scrolling (except for things like data tables or maps that need two dimensions).
+- [ ] Text can be enlarged to 200 percent without loss of content.
+- [ ] Touch targets are large enough, with space between them.
+- [ ] Fixed or sticky bars do not cover content when zoomed.
+- [ ] The layout still works in both portrait and landscape.
+- [ ] Orientation is not locked without a real need.
+
+## Security and Privacy Notes
+
+- **The viewport tag itself is harmless,** but what it controls is not just visual: a page that blocks zoom makes it harder for people to **read warnings, consent text, and security prompts,** and to notice details in a web address.
+- **Clickjacking and tiny controls:** with a fixed, tiny layout, tapping the wrong thing is easy. Large targets with space between them reduce accidental taps on buttons such as "Delete" or "Pay".
+- **Do not use viewport data to track people.** Combining screen size, pixel ratio, and other values can contribute to **fingerprinting.** Use these values for layout, and avoid collecting them without a reason.
+- **Safe-area use:** make sure important controls, such as a consent button, are not hidden under a notch or home bar.
+
+## Global Audience Notes
+
+- **Many people in the world use phones as their only computer,** often small, older, or low-cost models. The viewport tag is not optional for them.
+- **Test narrow widths,** such as 320 pixels, and with larger system text, which is common among older users.
+- **Right-to-left and long-word languages** may need more room. Use flexible layouts, and let text wrap.
+- **Translations can be 30 percent longer,** which can break fixed-width buttons.
+- **Do not rely on hover.** Touch screens have none.
+- **On slow networks,** a mobile-first page that loads small images first is faster and cheaper to use.
+
+## Common Mistakes to Avoid
+
+1. **No viewport tag,** so phones show a tiny desktop page.
+2. **`user-scalable=no`.**
+3. **`maximum-scale=1`.**
+4. **A fixed pixel width,** such as `width=1024`.
+5. **Forgetting responsive CSS,** so the tag does not help.
+6. **Elements wider than the screen,** causing sideways scrolling.
+7. **Using `100vh`** for full-height sections on phones.
+8. **`viewport-fit=cover` without safe-area padding.**
+9. **Tiny tap targets.**
+10. **Text smaller than 16px in inputs.**
+11. **Testing only on a desktop browser.**
+12. **Two viewport tags** with conflicting values.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Add the viewport tag, then open the page in your browser's device mode.
+2. Remove it, and compare the result on a phone, or in device mode.
+3. Add `max-width: 100%` to images, and check there is no sideways scrolling.
+4. Write a mobile-first stylesheet with one `min-width` media query.
+5. Use the reader above on your phone, and note your layout width.
+6. Zoom a page to 200 percent, and check that all content is still reachable.
+7. Replace `100vh` with `100dvh`, and test on a phone.
+8. Add `viewport-fit=cover` with safe-area padding, and test on a phone with a notch.
+9. Make all buttons at least 44 by 44 pixels.
+10. Bonus: check three popular websites for `user-scalable=no`, and read what their source says.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the viewport tag do?</summary>
+
+It tells mobile browsers to use the real screen width for the layout, and to start at normal zoom, instead of pretending the screen is a wide desktop.
+
+</details>
+
+<details>
+<summary>2. What does `width=device-width` mean?</summary>
+
+The layout width equals the screen's width in CSS pixels.
+
+</details>
+
+<details>
+<summary>3. Why should you never use `user-scalable=no`?</summary>
+
+It blocks pinch-zoom, and people with low vision and others rely on zoom to read. It also conflicts with accessibility guidelines.
+
+</details>
+
+<details>
+<summary>4. Is the viewport tag enough to make a site mobile-friendly?</summary>
+
+No. You also need flexible, responsive CSS: relative units, flexible images, and media queries.
+
+</details>
+
+<details>
+<summary>5. What is `viewport-fit=cover` for?</summary>
+
+It lets the page extend under the notch and rounded corners of some phones. You must then add padding with `env(safe-area-inset-*)`.
+
+</details>
+
+<details>
+<summary>6. What is the difference between the layout viewport and the visual viewport?</summary>
+
+The layout viewport is the width used to lay out the page. The visual viewport is the part currently visible, which changes with pinch-zoom or the on-screen keyboard.
+
+</details>
+
+## Key Takeaways
+
+- Without a viewport tag, phones lay out your page at about **980 pixels** and shrink it.
+- Use **`<meta name="viewport" content="width=device-width, initial-scale=1">`** on every page.
+- **Never block zoom:** no `user-scalable=no`, no `maximum-scale=1`.
+- The tag only sets the width. **Responsive CSS** does the rest.
+- Build **mobile first,** use relative units, and test on real devices at 320 pixels and 200 percent zoom.
+- Use **`dvh`**, safe-area insets, and large touch targets for a good phone experience.
+- Be careful with screen data, to avoid fingerprinting.
+
+Next, connect files to your page with the [Link](./link) element.

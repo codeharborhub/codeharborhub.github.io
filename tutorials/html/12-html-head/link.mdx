@@ -1,15 +1,584 @@
 ---
-id: link-element
-title: "External Resource Linking: The link Element and Resource Hints"
-sidebar_label: "Link Element (<link>)"
-sidebar_position: 9
+id: html-head-link
+title: "The HTML Link Element"
+sidebar_label: "Link"
+sidebar_position: 8
 slug: /html/html-head/link
-description: "Master the link tag for external stylesheets, canonical URLs, preloading, prefetching, and DNS preconnecting optimizations."
+description: "Learn the HTML link element: how it connects your page to stylesheets, icons, canonical addresses, translated versions, feeds, and performance hints like preload and preconnect. Includes a live stylesheet lab, a real link-tag checker, and an hreflang builder."
 keywords:
   - HTML link tag
-  - stylesheet link rel
-  - resource hints preload preconnect
-  - canonical URL HTML
+  - link rel stylesheet
+  - link rel canonical
+  - link rel preload
+  - link rel preconnect
+  - hreflang alternate
+  - link media attribute
+  - rel icon manifest
+  - link element vs a element
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, link, performance]
+tags: [html, web-development, beginner, link, stylesheet, seo, performance, head, frontend]
 ---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const themeCss = "h2{color:#fff;background:#1d4ed8;padding:8px;margin:0 0 8px}body{font-family:sans-serif;font-size:18px;margin:8px}p{border-left:6px solid #1d4ed8;padding-left:8px}";
+
+export function StylesheetLab() {
+  const [attached, setAttached] = useState(true);
+  const [media, setMedia] = useState("all");
+  const [width, setWidth] = useState(600);
+  const isDark = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)").matches : false;
+  const applies = media === "all" ? true : media === "print" ? false : media === "(max-width: 400px)" ? width <= 400 : isDark;
+  const href = "data:text/css," + encodeURIComponent(themeCss);
+  const linkTag = media === "all" ? '<link rel="stylesheet" href="theme.css">' : '<link rel="stylesheet" href="theme.css" media="' + media + '">';
+  const page = "<!DOCTYPE html><html><head>" + (attached ? '<link rel="stylesheet" media="' + media + '" href="' + href + '">' : "") + "</head><body><h2>The Bread Bin</h2><p>This text is styled only if the stylesheet is attached and its media condition matches.</p></body></html>";
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Options</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={attached} onChange={(event) => setAttached(event.target.checked)} /> Include the link element</label>
+        <label style={{display: "block"}}>Media condition{" "}
+          <select value={media} onChange={(event) => setMedia(event.target.value)}>
+            <option value="all">all (always)</option>
+            <option value="print">print (only when printing)</option>
+            <option value="(max-width: 400px)">(max-width: 400px) (narrow screens)</option>
+            <option value="(prefers-color-scheme: dark)">(prefers-color-scheme: dark)</option>
+          </select>
+        </label>
+        <label style={{display: "block"}}>Frame width{" "}
+          <select value={width} onChange={(event) => setWidth(Number(event.target.value))}>
+            <option value={300}>300px</option>
+            <option value={600}>600px</option>
+          </select>
+        </label>
+      </fieldset>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.85em", whiteSpace: "pre-wrap"}}><code>{attached ? linkTag : "(no link element)"}</code></pre>
+      <iframe title="A real page with a linked stylesheet" srcDoc={page} sandbox="" style={{width: width + "px", maxWidth: "100%", height: "8rem", border: "1px solid #94a3b8"}} />
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {!attached ? "No stylesheet is linked, so the browser shows its plain default style." : applies ? "The condition matches here, so the styles are applied." : "The condition does not match here, so the styles are not applied."}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The page in the frame is real, and the browser decides whether to apply the stylesheet. The stylesheet is supplied as a small inline address so that the demo needs no files, and the line under the checkbox shows what you would write with a normal file. The dark condition depends on your system setting.
+      </p>
+    </div>
+  );
+}
+
+export const linkSample = [
+  '<link rel="stylesheet" href="/css/site.css">',
+  '<link rel="stylesheet">',
+  '<link rel="preload" href="/fonts/inter.woff2">',
+  '<link rel="canonical" href="/sourdough">',
+  '<link rel="stylsheet" href="/css/extra.css">',
+  '<link rel="stylesheet" href="https://cdn.example.com/lib.css" integrity="sha384-abc">',
+  '<link rel="alternate" hreflang="hi" href="https://example.com/hi/sourdough">',
+  '<link rel="preconnect" href="https://fonts.example.com">',
+].join("\n");
+
+export const knownRels = ["stylesheet", "icon", "apple-touch-icon", "manifest", "canonical", "alternate", "preload", "modulepreload", "prefetch", "preconnect", "dns-prefetch", "author", "license", "next", "prev", "search", "help", "me", "mask-icon", "shortcut", "pingback"];
+
+export function LinkChecker() {
+  const [source, setSource] = useState(linkSample);
+  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><head>" + source + "</head><body></body></html>", "text/html");
+  const links = Array.from(doc.head.querySelectorAll("link"));
+  const preconnects = links.filter((link) => (link.getAttribute("rel") || "").toLowerCase() === "preconnect").length;
+  const rows = links.map((link) => {
+    const rel = (link.getAttribute("rel") || "").toLowerCase();
+    const href = link.getAttribute("href");
+    const notes = [];
+    if (!rel) notes.push("No rel, so the browser does not know what this link is for.");
+    else rel.split(/\s+/).forEach((word) => { if (knownRels.indexOf(word) === -1) notes.push("Unknown rel value: " + word + ". Check the spelling."); });
+    if (!href && rel !== "") notes.push("No href, so there is nothing to load.");
+    if (rel === "preload") {
+      if (!link.getAttribute("as")) notes.push("preload needs an as attribute (such as font, style, script or image).");
+      if (link.getAttribute("as") === "font" || /\.(woff2?|ttf|otf)(\?|$)/i.test(href || "")) {
+        if (!link.hasAttribute("crossorigin")) notes.push("Fonts are fetched with CORS, so a font preload needs crossorigin.");
+      }
+    }
+    if (link.hasAttribute("integrity") && !link.hasAttribute("crossorigin") && /^https?:\/\//i.test(href || "")) notes.push("integrity on a file from another site needs crossorigin too.");
+    if (rel === "canonical" && href && !/^https?:\/\//i.test(href)) notes.push("Use a full address (starting with https://) for canonical.");
+    if (rel === "alternate" && link.hasAttribute("hreflang") && href && !/^https?:\/\//i.test(href)) notes.push("Use full addresses in hreflang links.");
+    if (rel === "stylesheet" && href && /^http:\/\//i.test(href)) notes.push("This loads over plain http. Use https.");
+    return {code: link.outerHTML, notes};
+  });
+  const globalNotes = [];
+  if (preconnects > 4) globalNotes.push("You have " + preconnects + " preconnect hints. Too many can slow the page. Keep only the most important few.");
+  const hasAlt = links.some((link) => (link.getAttribute("rel") || "").toLowerCase() === "alternate" && link.hasAttribute("hreflang"));
+  const hasSelf = links.some((link) => link.getAttribute("hreflang") === "x-default");
+  if (hasAlt && !hasSelf) globalNotes.push("You list translated versions, but no x-default and no entry for the page itself. Each language version should list all versions, including itself.");
+  const total = rows.reduce((sum, row) => sum + row.notes.length, 0);
+  return (
+    <div>
+      <label htmlFor="link-source">Paste or edit link tags</label>
+      <textarea id="link-source" rows={8} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <p role="status" style={{margin: "0.4rem 0"}}>Found <strong>{rows.length}</strong> link tag(s) and <strong>{total + globalNotes.length}</strong> thing(s) to check.</p>
+      <div style={{maxHeight: "18rem", overflow: "auto"}}>
+        <table style={{width: "100%"}}>
+          <thead>
+            <tr><th scope="col">Tag</th><th scope="col">Result</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={index}>
+                <td style={{wordBreak: "break-all"}}><code>{row.code}</code></td>
+                <td>{row.notes.length === 0 ? "Looks fine." : (<ul style={{margin: 0}}>{row.notes.map((note) => (<li key={note}>{note}</li>))}</ul>)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {globalNotes.length > 0 ? (<ul style={{margin: "0.4rem 0 0"}}>{globalNotes.map((note) => (<li key={note}>{note}</li>))}</ul>) : null}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads your text with the browser's real HTML parser, and nothing is loaded or sent. The checks are a helpful start, not a full audit.
+      </p>
+    </div>
+  );
+}
+
+export const langList = [
+  {code: "en", name: "English"},
+  {code: "hi", name: "Hindi"},
+  {code: "es", name: "Spanish"},
+  {code: "ar", name: "Arabic"},
+  {code: "pt-BR", name: "Portuguese (Brazil)"},
+];
+
+export function HreflangBuilder() {
+  const [chosen, setChosen] = useState(["en", "hi", "es"]);
+  const [base, setBase] = useState("https://example.com");
+  const toggle = (code) => setChosen((previous) => (previous.indexOf(code) === -1 ? previous.concat(code) : previous.filter((item) => item !== code)));
+  const clean = base.replace(/\/+$/, "");
+  const lines = chosen.map((code) => '<link rel="alternate" hreflang="' + code + '" href="' + clean + "/" + code.toLowerCase() + '/sourdough">');
+  if (chosen.length > 0) lines.push('<link rel="alternate" hreflang="x-default" href="' + clean + '/sourdough">');
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which language versions exist?</legend>
+        {langList.map((item) => (
+          <label key={item.code} style={{display: "inline-block", marginRight: "0.9rem"}}>
+            <input type="checkbox" checked={chosen.indexOf(item.code) !== -1} onChange={() => toggle(item.code)} /> {item.name} (<code>{item.code}</code>)
+          </label>
+        ))}
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="hreflang-base">Site address</label><br />
+        <input id="hreflang-base" type="url" value={base} onChange={(event) => setBase(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <pre style={{margin: "0 0 0.4rem", fontSize: "0.8em", whiteSpace: "pre-wrap"}}><code>{lines.length > 0 ? lines.join("\n") : "(choose at least one language)"}</code></pre>
+      <p role="status" style={{margin: 0}}>Put this same set of tags in <strong>every</strong> language version of the page, so each one points to all the others and to itself.</p>
+    </div>
+  );
+}
+
+Your web page is rarely alone. It needs a **stylesheet** to look good, an **icon** for the tab, maybe a **translated version**, a **web app manifest**, and a **canonical address** to tell search engines which copy is the real one. How does the page say all this to the browser?
+
+With the **`<link>`** element. It describes a **relationship** between your page and another file or address. Think of it as a **signpost in the head**: it does not appear on the page, but it tells browsers and search engines where related things live.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What `<link>` is, and how it differs from `<a>`
+- The **`rel`** attribute: the heart of every link tag
+- Linking **stylesheets**, with `media` conditions
+- **Canonical** addresses and **translated versions** (`hreflang`)
+- **Performance hints:** `preload`, `preconnect`, `dns-prefetch`, `prefetch`
+- Security attributes: `integrity`, `crossorigin`, and `referrerpolicy`
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>Sourdough for Beginners</title>
+
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://example.com/sourdough">
+  <link rel="alternate" hreflang="hi" href="https://example.com/hi/sourdough">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.example.com">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Stylesheet Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StylesheetLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try each combination: remove the link, or limit it to print only, or to narrow screens. The browser reads the same tag, and decides whether the styles apply.
+
+## `<link>` Is Not `<a>`
+
+They share a word, but have different jobs:
+
+| | `<link>` | `<a>` |
+| :-- | :-- | :-- |
+| Where | In the **head** | In the **body** |
+| Visible? | No | Yes, and clickable |
+| Purpose | Describes a **relationship** for the browser | Lets a **visitor** travel to another page |
+| Content | None (a void element, with no closing tag) | Link text |
+
+If you want a clickable link, use `<a href="…">`. A `<link>` in the head will never be clickable.
+
+## The Most Important Attribute: `rel`
+
+`rel` is short for **relationship**. It says *what kind of thing* the linked file is. Without it, a link tag does nothing.
+
+```html
+<link rel="stylesheet" href="/css/site.css">
+```
+
+Here, `rel="stylesheet"` says "this is a stylesheet", and `href` says where to find it.
+
+| `rel` value | Meaning |
+| :-- | :-- |
+| `stylesheet` | A CSS file to apply to the page |
+| `icon` | The site's small picture (see [Favicon](./favicon)) |
+| `apple-touch-icon` | An icon for the home screen of Apple devices |
+| `manifest` | A web app manifest (name, icons, colours for installable apps) |
+| `canonical` | The preferred address for this content |
+| `alternate` | Another version of this page: another language, a feed, a print version |
+| `preload` | Fetch this important file early |
+| `preconnect` | Open a connection to another site early |
+| `dns-prefetch` | Look up another site's address early |
+| `prefetch` | Fetch something that a **later** page will probably need |
+| `modulepreload` | Fetch a JavaScript module early |
+| `author`, `license`, `help`, `search` | Describe related resources |
+
+You can combine values with spaces, such as `rel="alternate stylesheet"`. A typo, such as `stylsheet`, makes the browser ignore the tag without any error message.
+
+## Common Attributes
+
+| Attribute | Use |
+| :-- | :-- |
+| `href` | The address of the linked file |
+| `type` | The file type, such as `image/svg+xml` (helps the browser skip unsupported types) |
+| `media` | A condition for when to use the file, such as `print` |
+| `as` | What a **preload** is for: `style`, `script`, `font`, `image` |
+| `crossorigin` | How to ask other sites for the file (needed for fonts and for integrity checks) |
+| `integrity` | A fingerprint to verify the file was not changed |
+| `hreflang` | The language of the linked page (used with `alternate`) |
+| `sizes` | Icon sizes, used with `icon` |
+| `referrerpolicy` | How much of your address to send when fetching the file |
+| `fetchpriority` | A hint: `high`, `low`, or `auto` |
+| `disabled` | Stops a stylesheet from being applied (useful with scripts) |
+
+## Linking Stylesheets
+
+```html
+<link rel="stylesheet" href="/css/site.css">
+```
+
+Things to know:
+
+- A stylesheet link is **render-blocking.** The browser waits for it before showing the page, so that you do not see an unstyled flash. That is good, but it also means a huge or slow stylesheet delays everything. Keep CSS small.
+- You can link **several** stylesheets. They apply in order, so later rules can override earlier ones.
+- If the file cannot be loaded, the page still shows, only without those styles.
+- **Do not use `@import`** inside CSS for important files. It makes the browser discover files one after another. Use separate `<link>` tags instead.
+
+### The `media` Attribute
+
+`media` makes a stylesheet apply only when a condition is true:
+
+```html
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/print.css" media="print">
+<link rel="stylesheet" href="/css/wide.css" media="(min-width: 900px)">
+<link rel="stylesheet" href="/css/dark.css" media="(prefers-color-scheme: dark)">
+```
+
+The browser still **downloads** these files (usually at lower priority), but only applies them when the condition matches. A stylesheet whose condition does not match does not block the first display of the page.
+
+## Try It: Check Your Link Tags
+
+The checker below reads your link tags with the browser's real parser, and points out the usual problems: missing `href`, a misspelt `rel`, a `preload` without `as`, a font without `crossorigin`, and a relative `canonical`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="links.html"
+<!-- Good: complete and correct -->
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="canonical" href="https://example.com/sourdough">
+<link rel="stylesheet" href="https://cdn.example.com/lib.css"
+      integrity="sha384-…" crossorigin="anonymous">
+```
+
+</TabItem>
+<TabItem value="output" label="Browser Output">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Canonical Addresses
+
+The same page can often be reached by several addresses:
+
+```
+https://example.com/sourdough
+https://example.com/sourdough?utm_source=newsletter
+https://www.example.com/sourdough/
+```
+
+Search engines may treat these as separate pages, and split their attention between them. A canonical link names the **preferred** one:
+
+```html
+<link rel="canonical" href="https://example.com/sourdough">
+```
+
+Use a **full** address, and point to a page that really exists. It is a strong hint, not a command. Search engines may choose differently.
+
+## Translated Versions: `hreflang`
+
+If your page exists in several languages, tell search engines about each:
+
+```html
+<link rel="alternate" hreflang="en" href="https://example.com/en/sourdough">
+<link rel="alternate" hreflang="hi" href="https://example.com/hi/sourdough">
+<link rel="alternate" hreflang="x-default" href="https://example.com/sourdough">
+```
+
+Rules:
+
+- **Each version lists all versions, including itself.** The links must be **reciprocal**, or they may be ignored.
+- Use **full addresses.**
+- `x-default` names the page to use when no language matches.
+- Use correct language codes, such as `pt-BR`.
+
+Use the builder to create a set, and then paste it into each version of the page:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="hreflang.html"
+<link rel="alternate" hreflang="en" href="https://example.com/en/sourdough">
+<link rel="alternate" hreflang="es" href="https://example.com/es/sourdough">
+<link rel="alternate" hreflang="x-default" href="https://example.com/sourdough">
+```
+
+</TabItem>
+<TabItem value="output" label="Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HreflangBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Performance Hints
+
+These tell the browser what to do **early**. They are powerful, but each one has a cost, so use them carefully.
+
+### `preload`: "You will definitely need this soon"
+
+```html
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+```
+
+- Use it for a **few** critical files the browser would otherwise find late, such as the main font, or an image at the top of the page.
+- **`as` is required,** so the browser can choose the right priority and settings.
+- **Fonts need `crossorigin`,** even from your own site.
+- If the file is not used soon after, the browser may warn in the console. Preloading too much slows down the files that matter.
+
+### `preconnect`: "Get ready to talk to this site"
+
+```html
+<link rel="preconnect" href="https://fonts.example.com" crossorigin>
+```
+
+It opens the connection early (address lookup, secure handshake), so the first request is faster. Use it for **one to three** other sites that you are sure to use immediately. More than that wastes effort.
+
+### `dns-prefetch` and `prefetch`
+
+```html
+<link rel="dns-prefetch" href="https://analytics.example.com">
+<link rel="prefetch" href="/next-page.html">
+```
+
+- `dns-prefetch` only looks up the address. It is cheap, and a fallback for older browsers.
+- `prefetch` downloads a file that the **next** page will probably need, at low priority. Do not use it on slow or limited connections.
+
+:::tip Measure before you hint
+Performance hints help only when they solve a real delay. Test your page with the browser's developer tools and a speed testing tool before and after, and keep a hint only if it helps.
+:::
+
+## Other Useful Link Tags
+
+```html
+<!-- Web app manifest, for installable apps -->
+<link rel="manifest" href="/site.webmanifest">
+
+<!-- A feed for readers and aggregators -->
+<link rel="alternate" type="application/rss+xml" title="The Bread Bin blog" href="/feed.xml">
+
+<!-- Home-screen icon on Apple devices -->
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<!-- Licence for the content -->
+<link rel="license" href="https://creativecommons.org/licenses/by/4.0/">
+```
+
+Older `rel="next"` and `rel="prev"` links for page sequences are no longer used by major search engines for ranking, though they are harmless.
+
+## Links in Docusaurus
+
+In a Docusaurus site, you rarely write these by hand. The config file has settings for `favicon`, `stylesheets`, and `headTags`, and Docusaurus adds the canonical link and the language alternates when you turn on internationalisation. You can add one yourself in a component with `@docusaurus/Head`. Check the built page's source to see what was produced.
+
+## Good Habits
+
+1. **Always set `rel` and `href`.**
+2. **Use full addresses** for canonical and `hreflang`.
+3. **Keep stylesheets small,** and avoid `@import`.
+4. **Use `media`** for print, wide, and dark-mode styles.
+5. **Preload only a few critical files,** with `as` and `crossorigin` where needed.
+6. **Limit `preconnect` to a few important sites.**
+7. **Add `integrity` and `crossorigin`** for files from other sites.
+8. **Make `hreflang` links reciprocal,** including `x-default`.
+9. **Spell-check `rel` values.**
+10. **Measure the effect** of any hint you add.
+
+## Accessibility Checklist
+
+- [ ] The stylesheet that provides **focus outlines, contrast, and readable text** loads reliably.
+- [ ] A stylesheet failing to load still leaves the page **readable and usable.**
+- [ ] A **print stylesheet** keeps text readable on paper, and shows link addresses if they matter.
+- [ ] Dark and high-contrast styles keep **sufficient contrast.**
+- [ ] Translated versions are connected with `hreflang` and use the matching `lang`.
+- [ ] Feeds have a clear `title`, so people can tell them apart.
+- [ ] Heavy preloading does not slow down the page for people on weak devices.
+
+## Security and Privacy Notes
+
+- **A stylesheet from another site has power over your page.** It can hide, move, or redraw content, and some attacks use CSS to leak data. Link only to sources you trust.
+- **Use Subresource Integrity** with `integrity` and `crossorigin="anonymous"`, to detect changed files. See [Third-Party Content Security](/html/embedded-content/third-party-content-security).
+- **`preconnect`, `prefetch`, and `dns-prefetch` contact other sites** before the visitor clicks anything. That can reveal that someone visited your page, to the other site. Do not use them for sites you would not want to be linked to.
+- **Fonts and styles from public services** may log visitors' addresses. Some privacy laws treat that as personal data, so consider hosting files yourself. This is not legal advice.
+- **Use `referrerpolicy`** to limit what your address reveals when fetching a file.
+- **Never put private addresses in link tags.** They are public.
+- **Escape dynamic values.** If a server writes `href` from user input, a malicious value can load an attacker's file.
+
+## Global Audience Notes
+
+- **Use `hreflang`** so people find the version in their language, and offer a visible language switcher too.
+- **Do not auto-redirect by country.** Use the links and let visitors choose.
+- **Prefetching wastes data** for people who pay by the megabyte. Respect data-saver settings, and use prefetch sparingly.
+- **Hosting files yourself, or from a nearby network,** helps visitors in regions where far-away servers are slow, or where some services are blocked.
+- **Fonts for other scripts** can be large. Load only the scripts you need, and keep a fallback font.
+- **Print stylesheets and paper sizes** differ by region (A4 or Letter), so test both.
+
+## Common Mistakes to Avoid
+
+1. **No `rel`** or a misspelt `rel`.
+2. **No `href`.**
+3. **Using `<link>` when you want a clickable link.**
+4. **A relative canonical address.**
+5. **A `preload` without `as`.**
+6. **A font preload without `crossorigin`.**
+7. **Preloading or preconnecting too many files.**
+8. **`hreflang` that is not reciprocal.**
+9. **`@import` chains** instead of separate links.
+10. **A huge render-blocking stylesheet.**
+11. **A third-party stylesheet with no integrity check.**
+12. **Linking over plain `http`.**
+
+## Practice Time
+
+Try these in your editor:
+
+1. Link a stylesheet, then misspell `rel`, and see what happens.
+2. Add a `print.css` with `media="print"`, and use your browser's print preview.
+3. Add a stylesheet that applies only at `(min-width: 900px)`.
+4. Add a dark-mode stylesheet, and switch your system theme.
+5. Add a canonical link to a page with a query string in its address.
+6. Create `hreflang` links for two languages, with `x-default`.
+7. Preload a font, and look in the Network panel for when it starts.
+8. Add a `preconnect`, and compare the timing with and without it.
+9. Add a manifest link, and check the Application panel in developer tools.
+10. Bonus: paste your live site's link tags into the checker, and fix what it finds.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does the `link` element do?</summary>
+
+It describes a relationship between the page and another resource, such as a stylesheet, an icon, a translation, or a preferred address. It lives in the head and is not visible.
+
+</details>
+
+<details>
+<summary>2. What is the difference between `link` and `a`?</summary>
+
+`link` is in the head, is invisible, and describes a relationship for the browser. `a` is in the body, is visible, and lets the visitor click to travel.
+
+</details>
+
+<details>
+<summary>3. What does the `media` attribute do on a stylesheet link?</summary>
+
+It limits when the stylesheet applies, for example only for print, or only on wide screens, or only in dark mode.
+
+</details>
+
+<details>
+<summary>4. What are the rules for `hreflang`?</summary>
+
+Use full addresses, include every language version and the page itself on each version, add `x-default`, and make the links reciprocal.
+
+</details>
+
+<details>
+<summary>5. What does `preload` need to work properly?</summary>
+
+An `as` attribute that says what kind of file it is, and `crossorigin` for fonts. Use it for only a few critical files.
+
+</details>
+
+<details>
+<summary>6. Why add `integrity` to a link to another site's file?</summary>
+
+It lets the browser check that the file has not been changed, and refuse it if it has. It needs `crossorigin` for files from other sites.
+
+</details>
+
+## Key Takeaways
+
+- **`<link>`** is an invisible signpost in the head. **`rel`** says what the relationship is.
+- Use it for **stylesheets, icons, manifests, canonical addresses, translations, and feeds.**
+- **`media`** applies a stylesheet only when a condition matches.
+- A **canonical** link and **`hreflang`** links need full addresses, and `hreflang` must be reciprocal.
+- **`preload`, `preconnect`,** and friends speed up key files, but too many slow things down.
+- Files from other sites need trust, **`integrity`,** and **`crossorigin`.**
+- Contacting other sites early can reveal visits, so choose them with care.
+
+Next, give your site its little face with the [Favicon](./favicon).

@@ -1,15 +1,535 @@
 ---
-id: favicon
-title: "Site Icons and Favicons: Linking App and Browser Branding"
-sidebar_label: "Favicons & App Icons"
-sidebar_position: 8
+id: html-favicon
+title: "Favicons: Your Site's Little Face"
+sidebar_label: "Favicon"
+sidebar_position: 9
 slug: /html/html-head/favicon
-description: "Implement multi-resolution favicons, SVG icons, and mobile home-screen web app icons using link rel tags."
+description: "Learn how to add a favicon to your website: which files you need (SVG, ICO, Apple touch icon, manifest icons), the link tags to use, how to design an icon that stays readable at 16 pixels, and how to fix caching problems. Includes a live icon designer that changes this page's real tab icon."
 keywords:
-  - HTML favicon link
-  - website icon rel shortcut
-  - apple-touch-icon HTML
-  - SVG favicon setup
+  - favicon HTML
+  - link rel icon
+  - SVG favicon
+  - apple-touch-icon
+  - web app manifest icons
+  - favicon sizes
+  - favicon.ico
+  - favicon not updating
+  - dark mode favicon
+  - learn HTML
   - CodeHarborHub HTML
-tags: [html, head, favicon, branding]
+tags: [html, web-development, beginner, favicon, icons, branding, head, frontend]
 ---
+
+import {useState, useEffect, useRef} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const drawIcon = (size, options) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = options.bg;
+  if (options.shape === "circle") {
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (options.shape === "rounded") {
+    const r = size * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.arcTo(size, 0, size, size, r);
+    ctx.arcTo(size, size, 0, size, r);
+    ctx.arcTo(0, size, 0, 0, r);
+    ctx.arcTo(0, 0, size, 0, r);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    ctx.fillRect(0, 0, size, size);
+  }
+  ctx.fillStyle = options.fg;
+  ctx.font = "bold " + Math.round(size * (options.letters.length > 1 ? 0.5 : 0.64)) + "px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(options.letters, size / 2, size / 2 + size * 0.04);
+  return canvas.toDataURL("image/png");
+};
+
+export const luminance = (hex) => {
+  const value = hex.replace("#", "");
+  const channels = [0, 2, 4].map((index) => {
+    const part = parseInt(value.slice(index, index + 2), 16) / 255;
+    return part <= 0.03928 ? part / 12.92 : Math.pow((part + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+};
+
+export const contrastRatio = (a, b) => {
+  const first = luminance(a);
+  const second = luminance(b);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+};
+
+export function IconDesigner() {
+  const [letters, setLetters] = useState("B");
+  const [bg, setBg] = useState("#1d4ed8");
+  const [fg, setFg] = useState("#ffffff");
+  const [shape, setShape] = useState("rounded");
+  const [urls, setUrls] = useState(null);
+  const [applied, setApplied] = useState(false);
+  const saved = useRef(null);
+  const text = letters.trim().slice(0, 2) || "?";
+  useEffect(() => {
+    const options = {letters: text, bg, fg, shape};
+    setUrls({16: drawIcon(16, options), 32: drawIcon(32, options), 48: drawIcon(48, options), 180: drawIcon(180, options)});
+  }, [text, bg, fg, shape]);
+  const restore = () => {
+    if (saved.current) {
+      saved.current.items.forEach((item) => {
+        item.el.setAttribute("href", item.href);
+        if (item.type === null) item.el.removeAttribute("type"); else item.el.setAttribute("type", item.type);
+        if (item.sizes === null) item.el.removeAttribute("sizes"); else item.el.setAttribute("sizes", item.sizes);
+      });
+      saved.current.created.forEach((el) => el.remove());
+      saved.current = null;
+    }
+    setApplied(false);
+  };
+  useEffect(() => () => {
+    if (saved.current) {
+      saved.current.items.forEach((item) => {
+        item.el.setAttribute("href", item.href);
+        if (item.type === null) item.el.removeAttribute("type"); else item.el.setAttribute("type", item.type);
+        if (item.sizes === null) item.el.removeAttribute("sizes"); else item.el.setAttribute("sizes", item.sizes);
+      });
+      saved.current.created.forEach((el) => el.remove());
+      saved.current = null;
+    }
+  }, []);
+  const apply = () => {
+    if (!urls) return;
+    const links = Array.from(document.querySelectorAll('link[rel~="icon"]'));
+    if (!saved.current) {
+      saved.current = {items: links.map((el) => ({el, href: el.getAttribute("href"), type: el.getAttribute("type"), sizes: el.getAttribute("sizes")})), created: []};
+    }
+    if (links.length === 0) {
+      const el = document.createElement("link");
+      el.setAttribute("rel", "icon");
+      document.head.appendChild(el);
+      saved.current.created.push(el);
+      links.push(el);
+    }
+    links.forEach((el) => {
+      el.setAttribute("href", urls[32]);
+      el.setAttribute("type", "image/png");
+      el.removeAttribute("sizes");
+    });
+    setApplied(true);
+  };
+  const ratio = contrastRatio(bg, fg);
+  const tile = (size, background) => (
+    <span style={{display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.3rem 0.6rem", background, color: background === "#202124" ? "#e8eaed" : "#202124", borderRadius: "6px", border: "1px solid #94a3b8"}}>
+      {urls ? <img src={urls[16]} width="16" height="16" alt="" /> : null}
+      <span style={{fontSize: "0.8em"}}>{size}</span>
+    </span>
+  );
+  return (
+    <div>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "0.8rem", marginBottom: "0.6rem"}}>
+        <label>Letter or two<br /><input type="text" value={letters} maxLength={2} onChange={(event) => setLetters(event.target.value)} style={{width: "5rem"}} /></label>
+        <label>Background<br /><input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
+        <label>Letter colour<br /><input type="color" value={fg} onChange={(event) => setFg(event.target.value)} /></label>
+        <label>Shape<br /><select value={shape} onChange={(event) => setShape(event.target.value)}>
+          <option value="square">Square</option>
+          <option value="rounded">Rounded square</option>
+          <option value="circle">Circle</option>
+        </select></label>
+      </div>
+      {urls ? (
+        <div>
+          <p style={{margin: "0 0 0.3rem"}}><strong>The same icon at four sizes</strong> (real size, then enlarged):</p>
+          <div style={{display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", marginBottom: "0.6rem"}}>
+            {[16, 32, 48, 180].map((size) => (
+              <figure key={size} style={{margin: 0, textAlign: "center"}}>
+                <img src={urls[size]} width={size === 180 ? 90 : size} height={size === 180 ? 90 : size} alt={"Icon at " + size + " pixels"} />
+                <figcaption style={{fontSize: "0.8em"}}>{size}px{size === 180 ? " (shown half size)" : ""}</figcaption>
+              </figure>
+            ))}
+            <figure style={{margin: 0, textAlign: "center"}}>
+              <img src={urls[16]} width="64" height="64" alt="The 16 pixel icon enlarged four times" style={{imageRendering: "pixelated"}} />
+              <figcaption style={{fontSize: "0.8em"}}>16px, enlarged</figcaption>
+            </figure>
+          </div>
+          <p style={{margin: "0 0 0.3rem"}}><strong>In a tab, on light and dark browser themes:</strong></p>
+          <p style={{margin: "0 0 0.6rem", display: "flex", gap: "0.6rem", flexWrap: "wrap"}}>
+            {tile("Bread Bin", "#f1f3f4")}
+            {tile("Bread Bin", "#202124")}
+          </p>
+        </div>
+      ) : (
+        <p role="status" style={{margin: 0}}>Drawing the icon…</p>
+      )}
+      <p role="status" style={{margin: "0 0 0.5rem"}}>
+        Contrast between letter and background: <strong>{ratio.toFixed(1)} : 1</strong>. {ratio >= 4.5 ? "That is strong, and easy to read when small." : ratio >= 3 ? "That is acceptable for a large symbol, but may be hard to read at 16px." : "That is too low. The letter will be hard to see."}
+      </p>
+      <p style={{margin: 0}}>
+        <button type="button" onClick={apply} disabled={!urls}>Use as this page's tab icon</button>{" "}
+        <button type="button" onClick={restore} disabled={!applied}>Put the original back</button>
+      </p>
+      <p role="status" style={{margin: "0.4rem 0 0"}}>{applied ? "Look at your browser tab. The icon on this documentation page has changed, until you leave or restore it." : "The tab icon has not been changed."}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This really edits the icon link of this page while you are here, and restores it when you leave. Some browsers cache tab icons, so the change may be slow to show, or may not show at all in some browsers.
+      </p>
+    </div>
+  );
+}
+
+export function IconAudit() {
+  const [rows, setRows] = useState(null);
+  const run = () => {
+    const links = Array.from(document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"], link[rel="manifest"], link[rel="mask-icon"]'));
+    const initial = links.map((link) => ({rel: link.getAttribute("rel"), href: link.href, type: link.getAttribute("type") || "(not set)", sizes: link.getAttribute("sizes") || "(not set)", status: link.getAttribute("rel") === "manifest" ? "manifest (not tested here)" : "testing…"}));
+    setRows(initial);
+    links.forEach((link, index) => {
+      if (link.getAttribute("rel") === "manifest") return;
+      const image = new Image();
+      const finish = (status) => setRows((previous) => (previous ? previous.map((row, position) => (position === index ? {...row, status} : row)) : previous));
+      image.onload = () => finish("loads (" + image.naturalWidth + " × " + image.naturalHeight + ")");
+      image.onerror = () => finish("could not be loaded as an image");
+      image.src = link.href;
+    });
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}><button type="button" onClick={run}>Audit this page's icon links</button></p>
+      {rows === null ? (
+        <p role="status" style={{margin: 0}}>Press the button to find the icon links in this page's head, and test whether each one loads.</p>
+      ) : rows.length === 0 ? (
+        <p role="status" style={{margin: 0}}>No icon links were found in this page's head.</p>
+      ) : (
+        <div style={{overflow: "auto"}}>
+          <table style={{width: "100%"}}>
+            <thead>
+              <tr><th scope="col">rel</th><th scope="col">Address</th><th scope="col">type</th><th scope="col">sizes</th><th scope="col">Result</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={index}>
+                  <td>{row.rel}</td>
+                  <td style={{wordBreak: "break-all"}}>{row.href}</td>
+                  <td>{row.type}</td>
+                  <td>{row.sizes}</td>
+                  <td>{row.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads whatever this documentation site has in its head, so your own site will show different results. If you changed the icon with the designer above, you will see the changed value.
+      </p>
+    </div>
+  );
+}
+
+Look at your browser tabs right now. Each one has a tiny picture next to its name. That picture is the site's **favicon** (short for "favourite icon"). It is only 16 pixels wide, but it does a big job: it lets people **find your tab among twenty others**, recognise your site in bookmarks and history, and trust that they are in the right place.
+
+In this lesson you will learn which files you need, how to link them, and how to design an icon that still looks good when it is tiny.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a favicon is, and where it appears
+- The **modern set of icon files**, and the link tags for them
+- How to use an **SVG** icon, including a **dark-mode** version
+- Apple touch icons and **web app manifest** icons
+- Designing for **16 pixels**
+- Fixing **caching** problems and the "404 for favicon.ico" log noise
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Icon Designer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<IconDesigner />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Design an icon, and press the button. **Look at the tab of this very page.** The icon really changes, and goes back when you press the restore button or leave the page.
+
+## Where Favicons Appear
+
+| Place | Who sees it |
+| :-- | :-- |
+| **Browser tabs** | Everyone, all day. The most important place |
+| **Bookmarks and favourites** | Visitors who saved your page |
+| **History and address-bar suggestions** | Visitors returning to your site |
+| **Tab search and tab-group lists** | People with many tabs open |
+| **Search results** | On some search engines, mostly on mobile |
+| **Phone home screens** | Visitors who add your site to their home screen |
+| **Installed web apps** | Visitors who install your site as an app |
+
+## What Happens Without One
+
+If you give no icon, browsers **ask your server for `/favicon.ico`** automatically. If the file is missing, they get a "not found" error. Your site then shows a blank or generic icon, and your server log fills with failed requests. So even a tiny site should provide an icon, or at least tell the browser not to ask.
+
+## The Modern Set of Files
+
+There used to be a long list of sizes for every device. Today, a short set covers nearly everything:
+
+| File | Link tag | Purpose |
+| :-- | :-- | :-- |
+| `favicon.ico` (32 by 32) | `<link rel="icon" href="/favicon.ico" sizes="32x32">` | A fallback for older browsers, and anything that still looks for this file |
+| `icon.svg` | `<link rel="icon" href="/icon.svg" type="image/svg+xml">` | Sharp at every size, tiny file, and can adapt to dark mode |
+| `apple-touch-icon.png` (180 by 180) | `<link rel="apple-touch-icon" href="/apple-touch-icon.png">` | The icon for Apple home screens |
+| `icon-192.png` and `icon-512.png` | listed inside the manifest | Icons for installed web apps and Android home screens |
+
+Why `sizes` on the ICO link? Some browsers choose between several icon links, and without a hint they may pick the ICO over your sharper SVG. Adding `sizes="32x32"` to the ICO (and, in some guides, `sizes="any"` to the SVG) helps them choose well. Browser behaviour here has changed over time, so test in the browsers you care about.
+
+### The Manifest
+
+```html
+<link rel="manifest" href="/manifest.webmanifest">
+```
+
+```json title="manifest.webmanifest"
+{
+  "name": "The Bread Bin",
+  "short_name": "Bread Bin",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "theme_color": "#1d4ed8",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
+```
+
+A **maskable** icon keeps its important part in the centre and fills the whole square, so a phone can crop it into a circle or rounded shape without cutting off your logo. Keep the main artwork inside the middle 80 percent or so.
+
+## An SVG Favicon That Adapts to Dark Mode
+
+An SVG icon is a small piece of code, and it can contain a **media query**, so it can change colour when the browser is in dark mode:
+
+```xml title="icon.svg"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .bg { fill: #1d4ed8; }
+    .letter { fill: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #93c5fd; }
+      .letter { fill: #0b1220; }
+    }
+  </style>
+  <rect class="bg" width="32" height="32" rx="7"/>
+  <text class="letter" x="16" y="23" font-size="22" font-weight="700" text-anchor="middle" font-family="sans-serif">B</text>
+</svg>
+```
+
+Notes:
+
+- The colour preference is the **operating system or browser** setting, not your page's own theme toggle.
+- Not every browser supports SVG favicons, which is why the ICO fallback stays.
+- For text in an SVG icon, remember it uses the **viewer's** fonts. For a logo, convert the shapes to paths.
+
+## Designing for 16 Pixels
+
+Your icon will often be shown at **16 by 16 pixels**: a postage stamp. Try the designer above, and look at the enlarged 16px version.
+
+1. **Keep it simple.** One shape, one letter, or one bold symbol. No fine lines or small text.
+2. **Do not shrink a full logo.** Make a simplified mark instead.
+3. **Use strong contrast** between the symbol and its background.
+4. **Fill the space,** with only a small margin.
+5. **Test on light and dark tabs.** A dark icon with a transparent background can vanish on a dark theme.
+6. **Do not rely on colour alone.** Some people cannot tell similar colours apart.
+7. **Make it recognisable** next to your site name.
+8. **Start big** (at least 512 by 512), then export the smaller sizes, and check each.
+
+## Caching: "I Changed It, But Nothing Happened"
+
+Browsers keep favicons for a very long time, and sometimes in a separate cache from normal files. If your new icon does not appear:
+
+1. **Open the icon file's address directly** in a tab, and reload that page.
+2. **Change the file name or add a version:** `href="/icon.svg?v=2"`.
+3. **Close and reopen the tab,** and in stubborn cases the browser.
+4. **Remember search engines** take days or weeks to refresh their copy.
+
+## Stopping the Favicon Request
+
+For a quick prototype or a page you do not want an icon for, you can tell the browser to stop asking:
+
+```html
+<link rel="icon" href="data:,">
+```
+
+That points to an empty inline resource. Browsers then do not request `/favicon.ico`. For a real website, provide a real icon.
+
+## Search Engine Icons
+
+Some search engines show your icon next to your result. Their usual requirements, which can change, are:
+
+- The icon is linked from your **home page** with `<link rel="icon">`.
+- The file is at a **stable address,** and crawlers are **allowed to fetch** it.
+- It is a square, with a size of at least 8 pixels (guidance often suggests a multiple of 48 pixels, such as 48 or 96).
+- It does not show **inappropriate** content.
+
+Check the current guidance from the search engines you care about. It may take a while for changes to appear.
+
+## In Docusaurus
+
+Put your icon in the project's `static` folder, and set the `favicon` option in `docusaurus.config.js`, with a path relative to that folder (for example `img/favicon.ico`). For more icons, add `link` entries with the `headTags` option.
+
+## Good Habits
+
+1. **Always provide an icon,** even for a small site.
+2. **Offer an SVG plus an ICO fallback,** and an Apple touch icon.
+3. **Design for 16 pixels first.**
+4. **Test on light and dark browser themes.**
+5. **Keep the files small,** and served over a stable address.
+6. **Add a manifest** with a maskable icon if people may install your site.
+7. **Version the file name** when you change the icon.
+8. **Keep the artwork simple and recognisable.**
+
+## Accessibility Checklist
+
+- [ ] The icon has **strong contrast** and a simple shape, so low-vision users can find the tab.
+- [ ] It does not **depend on colour alone** to be recognised.
+- [ ] It works on **light and dark** browser themes.
+- [ ] It is never the **only** way to identify the site: the page also has a meaningful `<title>`.
+- [ ] The icon does not **flash or animate** distractingly. Avoid changing it repeatedly with script.
+- [ ] Alerts, such as an unread count in the icon, are also available as text (for example in the title).
+
+## Security and Privacy Notes
+
+- **Favicon requests reveal visits.** If the icon is hosted by another company, they learn who loaded your page. Host it yourself.
+- **Do not point `rel="icon"` at an untrusted address.** Treat it as any other file you load.
+- **Icons can be used to track people** (a technique called favicon fingerprinting uses the browser's cache of icons across sites). You do not need to do anything about it as a site owner, but you should not use it for tracking.
+- **Changing the icon from script** (for example to imitate another site, or to show a fake notification) is a technique used in fake pages. Do not use it to mislead people. Use it only to show real state, such as an unread count.
+- **SVG files can contain script.** Browsers do not run script in an SVG used as an image icon, but you should still serve only SVGs you made or reviewed.
+- **Use `https`** for every icon address.
+
+## Global Audience Notes
+
+- **Choose a symbol that works across cultures.** A hand gesture, an animal, or a colour can mean different things in different places.
+- **Letters in an icon** depend on a script. A Latin "B" means nothing to someone who reads Arabic or Devanagari. Consider a symbol, or use your brand's own letter in the local version.
+- **Keep the file small:** an icon on a slow connection should not be heavy. SVG and a 32-pixel ICO are tiny.
+- **Many visitors use dark mode** at night, in every region. Test both.
+- **Right-to-left sites** can keep the same icon. Avoid icons that point left or right.
+
+## Common Mistakes to Avoid
+
+1. **No favicon,** so the server log fills with errors.
+2. **Shrinking a detailed logo** until it is a blur.
+3. **A transparent dark icon** that disappears on dark tabs.
+4. **Only an ICO,** with no SVG or touch icon.
+5. **A huge file** such as a 2 MB PNG.
+6. **Forgetting the Apple touch icon.**
+7. **A manifest with no 192 and 512 sizes.**
+8. **Not testing after caching.** You see the old icon and think it failed.
+9. **A relative path that breaks on nested pages.** Start paths with `/`.
+10. **Hosting the icon on another company's server.**
+11. **Using only colour to tell apart environments.**
+12. **Rotating the icon with script** to catch attention.
+
+## Practice Time
+
+Try these in your editor:
+
+1. Create a 32 by 32 icon in any image editor, and link it.
+2. Make an SVG icon, and add a dark-mode colour set.
+3. Use the designer above to try three shapes, and compare them at 16px.
+4. Check the contrast of your icon's colours.
+5. Add an Apple touch icon, and add the page to a phone's home screen.
+6. Write a small manifest with a 192 and a 512 icon.
+7. Change the icon, and use `?v=2` to get past the cache.
+8. Open your icon in a dark browser theme and a light one.
+9. Use the audit above to check which icon links a page declares.
+10. Bonus: use developer tools to see the `/favicon.ico` request on a site that has no icon link.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a favicon?</summary>
+
+The small icon shown beside a page's title in tabs, bookmarks, history, and sometimes search results and home screens.
+
+</details>
+
+<details>
+<summary>2. Which files make a good modern set?</summary>
+
+An SVG icon, an ICO fallback, an Apple touch icon of 180 by 180 pixels, and 192 and 512 pixel icons in a manifest.
+
+</details>
+
+<details>
+<summary>3. What happens if you do not link an icon?</summary>
+
+Browsers request `/favicon.ico` by themselves. If it is missing, the visitor sees a blank icon, and your server logs errors.
+
+</details>
+
+<details>
+<summary>4. How can an SVG favicon support dark mode?</summary>
+
+It can contain a CSS `prefers-color-scheme: dark` media query that changes its colours.
+
+</details>
+
+<details>
+<summary>5. Why does my new icon not show?</summary>
+
+Browsers cache icons for a long time. Reload the icon's own address, change its name or add a version query, and reopen the tab.
+
+</details>
+
+<details>
+<summary>6. What is a maskable icon?</summary>
+
+An icon that fills the whole square, with its important artwork in the centre, so a phone can crop it into any shape without cutting it off.
+
+</details>
+
+## Key Takeaways
+
+- A **favicon** is the small picture that helps people find and recognise your site.
+- Use **SVG + ICO + Apple touch icon + manifest icons**, linked with `<link>` tags.
+- Design for **16 pixels:** simple shapes, strong contrast, tested on light and dark themes.
+- An SVG icon can **adapt to dark mode** with `prefers-color-scheme`.
+- Browsers **cache icons heavily.** Version the file name when you change it.
+- Host the icon yourself, over `https`, and never use icon changes to mislead people.
+- In Docusaurus, set `favicon` in the config and add more icons with `headTags`.
+
+Next, style your page directly in the head with the [Style](./style) element.

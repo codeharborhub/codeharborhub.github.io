@@ -19,197 +19,6 @@ keywords:
 tags: [html, web-development, beginner, head, metadata, parsing, performance, frontend]
 ---
 
-import {useState} from 'react';
-
-export const sampleSources = {
-  good: [
-    "<!DOCTYPE html>",
-    '<html lang="en">',
-    "<head>",
-    '  <meta charset="utf-8">',
-    '  <meta name="viewport" content="width=device-width, initial-scale=1">',
-    "  <title>Good Page</title>",
-    '  <link rel="stylesheet" href="site.css">',
-    "</head>",
-    "<body>",
-    "  <h1>Hello</h1>",
-    "</body>",
-    "</html>",
-  ].join("\n"),
-  divInHead: [
-    "<!DOCTYPE html>",
-    '<html lang="en">',
-    "<head>",
-    '  <meta charset="utf-8">',
-    "  <title>Broken Page</title>",
-    "  <div>Oops, content in the head</div>",
-    '  <meta name="description" content="I am too late to count">',
-    '  <link rel="stylesheet" href="site.css">',
-    "</head>",
-    "<body>",
-    "  <h1>Hello</h1>",
-    "</body>",
-    "</html>",
-  ].join("\n"),
-  noHead: [
-    "<!DOCTYPE html>",
-    "<title>No head tag at all</title>",
-    '<meta name="description" content="The browser makes a head for me">',
-    "<p>Hello</p>",
-  ].join("\n"),
-  twoTitles: [
-    "<!DOCTYPE html>",
-    '<html lang="en">',
-    "<head>",
-    "  <title>First title</title>",
-    "  <title>Second title</title>",
-    "</head>",
-    "<body><p>Hello</p></body>",
-    "</html>",
-  ].join("\n"),
-};
-
-export function ParserLab() {
-  const [source, setSource] = useState(sampleSources.divInHead);
-  const doc = new DOMParser().parseFromString(source, "text/html");
-  const describe = (element) => {
-    const tag = element.tagName.toLowerCase();
-    const bits = [];
-    ["name", "charset", "rel", "property"].forEach((attr) => {
-      if (element.hasAttribute(attr)) bits.push(attr + '="' + element.getAttribute(attr) + '"');
-    });
-    if (tag === "title") bits.push('"' + element.textContent + '"');
-    return "<" + tag + (bits.length ? " " + bits.join(" ") : "") + ">";
-  };
-  const headItems = Array.from(doc.head.children).map(describe);
-  const bodyItems = Array.from(doc.body.children).map(describe);
-  const strays = Array.from(doc.body.querySelectorAll("meta, link, title, style, base"));
-  const titles = doc.querySelectorAll("title").length;
-  const warnings = [];
-  if (strays.length > 0) warnings.push(strays.length + " head-type element(s) ended up in the body, so they may not work as intended: " + strays.map(describe).join(", "));
-  if (titles > 1) warnings.push("There are " + titles + " title elements. Only the first counts.");
-  if (!doc.head.querySelector("meta[charset]")) warnings.push("No meta charset was found in the head.");
-  if (!doc.head.querySelector("title") && !doc.querySelector("title")) warnings.push("No title was found.");
-  const load = (key) => setSource(sampleSources[key]);
-  return (
-    <div>
-      <p style={{margin: "0 0 0.4rem"}}>
-        <button type="button" onClick={() => load("good")}>Good page</button>{" "}
-        <button type="button" onClick={() => load("divInHead")}>A div in the head</button>{" "}
-        <button type="button" onClick={() => load("noHead")}>No head tag</button>{" "}
-        <button type="button" onClick={() => load("twoTitles")}>Two titles</button>
-      </p>
-      <label htmlFor="parser-source">HTML to parse (edit it freely)</label>
-      <textarea id="parser-source" rows={11} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
-      <div style={{display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "0.5rem"}}>
-        <div style={{flex: "1 1 14rem"}}>
-          <strong>Browser put in the head ({headItems.length})</strong>
-          <ul style={{margin: "0.3rem 0 0"}}>
-            {headItems.length === 0 ? <li>(nothing)</li> : headItems.map((item, index) => (<li key={index}><code>{item}</code></li>))}
-          </ul>
-        </div>
-        <div style={{flex: "1 1 14rem"}}>
-          <strong>Browser put in the body ({bodyItems.length})</strong>
-          <ul style={{margin: "0.3rem 0 0"}}>
-            {bodyItems.length === 0 ? <li>(nothing)</li> : bodyItems.map((item, index) => (<li key={index}><code>{item}</code></li>))}
-          </ul>
-        </div>
-      </div>
-      <div role="status" style={{marginTop: "0.5rem"}}>
-        {warnings.length === 0 ? (
-          <p style={{margin: 0}}>No structure problems found.</p>
-        ) : (
-          <ul style={{margin: 0}}>
-            {warnings.map((warning) => (<li key={warning}>{warning}</li>))}
-          </ul>
-        )}
-      </div>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This uses your browser's real HTML parser (<code>DOMParser</code>). Nothing you type is run, and scripts are not executed.
-      </p>
-    </div>
-  );
-}
-
-export const loadModes = [
-  {
-    key: "plain",
-    label: "<script src>",
-    note: "Stops the page while it downloads and runs. The visitor waits.",
-    fetchStart: 0,
-    blocks: true,
-  },
-  {
-    key: "defer",
-    label: "<script src defer>",
-    note: "Downloads while the page is read, and runs after the page is parsed, in order.",
-    fetchStart: 0,
-    blocks: false,
-  },
-  {
-    key: "async",
-    label: "<script src async>",
-    note: "Downloads while the page is read, and runs as soon as it arrives, in any order.",
-    fetchStart: 0,
-    blocks: false,
-  },
-  {
-    key: "module",
-    label: '<script type="module">',
-    note: "Behaves like defer by default, and supports import and export.",
-    fetchStart: 0,
-    blocks: false,
-  },
-];
-
-export function LoadSim() {
-  const [key, setKey] = useState("plain");
-  const [speed, setSpeed] = useState(2);
-  const mode = loadModes.find((item) => item.key === key);
-  const download = speed * 20;
-  const parse = 40;
-  const paint = mode.blocks ? download + parse : parse;
-  const runAt = key === "async" ? Math.max(download, 10) : mode.blocks ? download : parse;
-  const total = Math.max(paint, runAt) + 10;
-  const scale = (value) => ((value / (download + parse + 20)) * 100).toFixed(1) + "%";
-  const bar = (start, length, color, text) => (
-    <div style={{position: "relative", height: "1.5rem", marginBottom: "0.3rem", background: "#f1f5f9"}}>
-      <div style={{position: "absolute", left: scale(start), width: scale(length), height: "100%", background: color, color: "#fff", fontSize: "0.75em", overflow: "hidden", whiteSpace: "nowrap", paddingLeft: "0.3rem", lineHeight: "1.5rem"}}>{text}</div>
-    </div>
-  );
-  return (
-    <div>
-      <fieldset style={{margin: "0 0 0.6rem"}}>
-        <legend>Script loading style</legend>
-        {loadModes.map((item) => (
-          <label key={item.key} style={{display: "block"}}>
-            <input type="radio" name="load-mode" checked={key === item.key} onChange={() => setKey(item.key)} /> <code>{item.label}</code>
-          </label>
-        ))}
-      </fieldset>
-      <label>Script size / network: <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-        <option value={1}>Small and fast</option>
-        <option value={2}>Medium</option>
-        <option value={4}>Large or slow connection</option>
-      </select></label>
-      <p style={{margin: "0.6rem 0 0.3rem"}}>{mode.note}</p>
-      <div aria-hidden="true">
-        {bar(0, download, "#b45309", "download script")}
-        {bar(mode.blocks ? download : 0, parse, "#1d4ed8", "read the rest of the page")}
-        {bar(runAt, 10, "#047857", "script runs")}
-      </div>
-      <p role="status" style={{margin: "0.4rem 0 0"}}>
-        {mode.blocks
-          ? "The rest of the page cannot be read until the script has arrived. First content appears about " + paint + " units in."
-          : "The page is read while the script downloads. First content appears about " + paint + " units in."}
-      </p>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        This is a simplified simulation with made-up units, to show the idea. Real timing depends on the network, the browser, and the script itself.
-      </p>
-    </div>
-  );
-}
-
 If `<body>` is the stage where your page performs, then **`<head>`** is **backstage**: the crew room, the lighting plan, the script, and the sound check. The audience never sees it, but without it, the show does not start properly.
 
 The `<head>` element is a container for **metadata** and for **links to the files the page needs**. In this lesson you learn what belongs there, what does not, and (importantly) what the browser quietly does when you get it wrong.
@@ -228,9 +37,6 @@ The `<head>` element is a container for **metadata** and for **links to the file
 
 ## The Big Idea
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="index.html"
 <!DOCTYPE html>
 <html lang="en">
@@ -248,18 +54,6 @@ The `<head>` element is a container for **metadata** and for **links to the file
 </body>
 </html>
 ```
-
-</TabItem>
-<TabItem value="output" label="Parser Lab">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<ParserLab />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 Try the four sample buttons. Notice what the browser's parser does with the "div in the head" example: it **ends the head early**, and the `<meta name="description">` that came after the `<div>` is no longer in the head.
 
@@ -369,9 +163,6 @@ Why this order?
 
 A script in the head can **pause** the page. Try the simulation: choose each loading style, and compare when the first content appears.
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="script-loading.html"
 <!-- Blocks the page while it downloads and runs -->
 <script src="/js/app.js"></script>
@@ -385,18 +176,6 @@ A script in the head can **pause** the page. Try the simulation: choose each loa
 <!-- A module: deferred by default -->
 <script type="module" src="/js/main.js"></script>
 ```
-
-</TabItem>
-<TabItem value="output" label="Loading Simulation">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<LoadSim />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 A rule of thumb: use **`defer`** for scripts that need the page, and **`async`** for independent scripts (such as analytics) that do not depend on anything. The Script lesson explains this in detail.
 

@@ -20,123 +20,6 @@ keywords:
 tags: [html, web-development, beginner, html-element, doctype, lang, accessibility, frontend]
 ---
 
-import {useState, useEffect} from 'react';
-
-export const langOptions = [
-  {code: "en", name: "English", dir: "ltr", sample: "Welcome to my page"},
-  {code: "hi", name: "Hindi", dir: "ltr", sample: "मेरे पेज में आपका स्वागत है"},
-  {code: "ar", name: "Arabic", dir: "rtl", sample: "مرحبًا بكم في صفحتي"},
-  {code: "he", name: "Hebrew", dir: "rtl", sample: "ברוכים הבאים לעמוד שלי"},
-  {code: "ja", name: "Japanese", dir: "ltr", sample: "私のページへようこそ"},
-  {code: "pt-BR", name: "Portuguese (Brazil)", dir: "ltr", sample: "Bem-vindo à minha página"},
-];
-
-export function SkeletonBuilder() {
-  const [code, setCode] = useState("en");
-  const [doctype, setDoctype] = useState(true);
-  const [charset, setCharset] = useState(true);
-  const [viewport, setViewport] = useState(true);
-  const [title, setTitle] = useState("My First Page");
-  const [useLang, setUseLang] = useState(true);
-  const lang = langOptions.find((item) => item.code === code);
-  const lines = [];
-  if (doctype) lines.push("<!DOCTYPE html>");
-  lines.push("<html" + (useLang ? ' lang="' + lang.code + '"' : "") + (useLang && lang.dir === "rtl" ? ' dir="rtl"' : "") + ">");
-  lines.push("<head>");
-  if (charset) lines.push('  <meta charset="utf-8">');
-  if (viewport) lines.push('  <meta name="viewport" content="width=device-width, initial-scale=1">');
-  lines.push("  <title>" + (title.trim() || "Untitled") + "</title>");
-  lines.push("</head>");
-  lines.push("<body>");
-  lines.push("  <p>" + lang.sample + "</p>");
-  lines.push("</body>");
-  lines.push("</html>");
-  const notes = [];
-  if (!doctype) notes.push("No doctype: browsers fall back to quirks mode, and layouts can behave unexpectedly.");
-  if (!useLang) notes.push("No lang: screen readers guess the pronunciation, and translation tools may guess wrong.");
-  if (!charset) notes.push("No charset: some servers send the wrong encoding, and non-English text can turn into garbage.");
-  if (!viewport) notes.push("No viewport: phones show a zoomed-out desktop layout.");
-  if (!title.trim()) notes.push("No title text: the tab and screen readers have nothing meaningful to show.");
-  return (
-    <div>
-      <div style={{display: "flex", flexWrap: "wrap", gap: "0.8rem", marginBottom: "0.6rem"}}>
-        <label>Language <select value={code} onChange={(event) => setCode(event.target.value)}>
-          {langOptions.map((item) => (<option key={item.code} value={item.code}>{item.name} ({item.code})</option>))}
-        </select></label>
-        <label>Title <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-      </div>
-      <fieldset style={{margin: "0 0 0.6rem"}}>
-        <legend>Include these parts</legend>
-        <label style={{marginRight: "0.9rem"}}><input type="checkbox" checked={doctype} onChange={(event) => setDoctype(event.target.checked)} /> doctype</label>
-        <label style={{marginRight: "0.9rem"}}><input type="checkbox" checked={useLang} onChange={(event) => setUseLang(event.target.checked)} /> lang</label>
-        <label style={{marginRight: "0.9rem"}}><input type="checkbox" checked={charset} onChange={(event) => setCharset(event.target.checked)} /> charset</label>
-        <label><input type="checkbox" checked={viewport} onChange={(event) => setViewport(event.target.checked)} /> viewport</label>
-      </fieldset>
-      <pre style={{margin: "0 0 0.5rem", fontSize: "0.85em"}}><code>{lines.join("\n")}</code></pre>
-      <div role="status">
-        {notes.length === 0 ? (
-          <p style={{margin: 0}}>All the basics are in place. This is a good starting skeleton.</p>
-        ) : (
-          <ul style={{margin: 0}}>
-            {notes.map((note) => (<li key={note}>{note}</li>))}
-          </ul>
-        )}
-      </div>
-      <p style={{margin: "0.6rem 0 0"}} lang={lang.code} dir={lang.dir}>{lang.sample}</p>
-    </div>
-  );
-}
-
-export function ModeDemo() {
-  const [info, setInfo] = useState(null);
-  const [htmlLang, setHtmlLang] = useState("");
-  const [htmlDir, setHtmlDir] = useState("");
-  useEffect(() => {
-    setInfo({
-      mode: document.compatMode === "CSS1Compat" ? "Standards mode" : "Quirks mode",
-      ok: document.compatMode === "CSS1Compat",
-      doctype: document.doctype ? document.doctype.name : "(none)",
-      children: Array.from(document.documentElement.children).map((element) => element.tagName.toLowerCase()).join(", "),
-    });
-    setHtmlLang(document.documentElement.lang || "(not set)");
-    setHtmlDir(document.documentElement.dir || "(not set, so left-to-right)");
-  }, []);
-  const quirks = '<html><body><div style="height:100px;border:10px solid red;padding:20px;width:100px"></div><script>document.title=document.compatMode<\/script></body></html>';
-  const standards = "<!DOCTYPE html>" + quirks;
-  return (
-    <div>
-      {info === null ? (
-        <p role="status" style={{margin: 0}}>Reading this page…</p>
-      ) : (
-        <table>
-          <caption>What this very page reports</caption>
-          <tbody>
-            <tr><th scope="row" style={{textAlign: "start"}}>Doctype name</th><td>{info.doctype}</td></tr>
-            <tr><th scope="row" style={{textAlign: "start"}}>Rendering mode</th><td>{info.mode} {info.ok ? "(good)" : "(a problem)"}</td></tr>
-            <tr><th scope="row" style={{textAlign: "start"}}>Children of the html element</th><td>{info.children}</td></tr>
-            <tr><th scope="row" style={{textAlign: "start"}}>lang</th><td>{htmlLang}</td></tr>
-            <tr><th scope="row" style={{textAlign: "start"}}>dir</th><td>{htmlDir}</td></tr>
-          </tbody>
-        </table>
-      )}
-      <p style={{margin: "0.7rem 0 0.3rem"}}>The same page, with and without a doctype. Look at the box sizes:</p>
-      <div style={{display: "flex", flexWrap: "wrap", gap: "0.8rem"}}>
-        <figure style={{margin: 0}}>
-          <iframe title="Page with no doctype (quirks mode)" sandbox="allow-scripts" srcDoc={quirks} style={{width: "200px", height: "190px", border: "1px solid #94a3b8"}} />
-          <figcaption style={{fontSize: "0.85em"}}>No doctype: box is about 100px wide in total</figcaption>
-        </figure>
-        <figure style={{margin: 0}}>
-          <iframe title="Page with a doctype (standards mode)" sandbox="allow-scripts" srcDoc={standards} style={{width: "200px", height: "190px", border: "1px solid #94a3b8"}} />
-          <figcaption style={{fontSize: "0.85em"}}>With doctype: box is about 160px wide in total</figcaption>
-        </figure>
-      </div>
-      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
-        In the first frame the width includes padding and border (an old behaviour). In the second, padding and border are added outside the width. Exact pixel sizes can vary slightly with your browser.
-      </p>
-    </div>
-  );
-}
-
 Every web page, no matter how big, begins the same way: with a **doctype** and one **`<html>`** element. Think of `<html>` as the **cover of a book**. Everything else (the title page, the contents, the chapters) sits inside it. In this lesson you learn what the root element does, why a single attribute, `lang`, matters so much, and what a browser does when you forget these basics.
 
 <AdsComponent />
@@ -153,9 +36,6 @@ Every web page, no matter how big, begins the same way: with a **doctype** and o
 
 ## The Big Idea
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="index.html"
 <!DOCTYPE html>
 <html lang="en">
@@ -169,18 +49,6 @@ Every web page, no matter how big, begins the same way: with a **doctype** and o
 </body>
 </html>
 ```
-
-</TabItem>
-<TabItem value="output" label="Build the Skeleton">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<SkeletonBuilder />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 Switch the parts off one at a time, and read what the page loses. The line-by-line notes below explain why.
 
@@ -209,27 +77,12 @@ Quirks mode changes real things: how box sizes are calculated, how some table an
 
 Try it below. The page at the bottom reports its own mode, and two small frames show the difference in box sizing.
 
-<Tabs>
-<TabItem value="code" label="HTML Code" default>
-
 ```html title="check-mode.html"
 <script>
   // "CSS1Compat" means standards mode. "BackCompat" means quirks mode.
   console.log(document.compatMode);
 </script>
 ```
-
-</TabItem>
-<TabItem value="output" label="Browser Output">
-
-<BrowserWindow url="http://127.0.0.1:5500/index.html">
-<>
-<ModeDemo />
-</>
-</BrowserWindow>
-
-</TabItem>
-</Tabs>
 
 ## Part 2: The `<html>` Element
 
