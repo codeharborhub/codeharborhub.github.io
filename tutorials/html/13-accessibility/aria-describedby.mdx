@@ -1,0 +1,655 @@
+---
+id: html-aria-describedby
+title: "Aria Describedby"
+sidebar_label: "Aria Describedby"
+sidebar_position: 19
+slug: /html/accessibility/aria-describedby
+description: "Learn how aria-describedby adds extra help to a control: form hints and errors, warnings on buttons, dialog text, and accessible tooltips. Understand the difference between a name and a description, why descriptions can be missed, and how to keep them accurate. Includes a description builder lab, a tooltip lab for WCAG 1.4.13, and a live aria-describedby checker."
+keywords:
+  - aria-describedby
+  - accessible description
+  - form hints
+  - error messages
+  - accessible tooltip
+  - WCAG 1.4.13
+  - aria-details
+  - name vs description
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, aria-describedby, forms, tooltips, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const descScenarios = [
+  {
+    id: "password",
+    title: "A password field",
+    role: "password edit text",
+    name: "Password",
+    defaults: ["rule"],
+    pieces: [
+      {key: "rule", text: "At least 12 characters."},
+      {key: "tip", text: "A phrase of four or more words works well."},
+      {key: "err", text: "Error: This password is too short."},
+    ],
+  },
+  {
+    id: "delete",
+    title: "A delete button",
+    role: "button",
+    name: "Delete recipe",
+    defaults: ["warn"],
+    pieces: [
+      {key: "warn", text: "This cannot be undone."},
+      {key: "extra", text: "A copy stays in the trash for 30 days."},
+    ],
+  },
+  {
+    id: "dialog",
+    title: "A dialog",
+    role: "dialog",
+    name: "Delete recipe?",
+    defaults: ["body"],
+    pieces: [
+      {key: "body", text: "This will remove Rye bread for everyone on your team."},
+    ],
+  },
+];
+
+export function DescriptionBuilderLab() {
+  const [index, setIndex] = useState(0);
+  const [ids, setIds] = useState(descScenarios[0].defaults);
+  const [shown, setShown] = useState(true);
+  const [descOff, setDescOff] = useState(false);
+  const scn = descScenarios[index];
+  const full = (key) => "desc-" + scn.id + "-" + key;
+  const attr = ids.length > 0 ? ids.map(full).join(" ") : undefined;
+  const description = ids.map((key) => scn.pieces.find((piece) => piece.key === key)).filter(Boolean).map((piece) => piece.text).join(" ");
+  const choose = (next) => {
+    setIndex(next);
+    setIds(descScenarios[next].defaults);
+  };
+  const toggle = (key) => setIds(ids.indexOf(key) === -1 ? ids.concat(key) : ids.filter((item) => item !== key));
+  const piece = (key) => scn.pieces.find((item) => item.key === key);
+  const pieceStyle = (key) => ({margin: "0.2rem 0", display: shown ? "block" : "none"});
+  const spoken = scn.name + ", " + scn.role + (description && !descOff ? ". " + description : "");
+  const notes = [];
+  if (ids.length === 0) notes.push("No ids are listed, so nothing is described. The control is named, and that is all.");
+  if (descOff && description) notes.push("This screen reader user has descriptions turned off, so none of this help is read. Never put essential information only in a description.");
+  if (!shown && description) notes.push("The help text is hidden on screen. A screen reader still reads it, but sighted people cannot see it. Keep help visible for everyone.");
+  if (ids.indexOf("err") !== -1) notes.push("An error should be linked only while it is showing. Add its id when the error appears, and remove it when the error is fixed.");
+  if (notes.length === 0) notes.push("This works: the name says what it is, and the description adds the extra help.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="desc-scenario">Pick an example</label><br />
+        <select id="desc-scenario" value={index} onChange={(event) => choose(Number(event.target.value))}>
+          {descScenarios.map((item, i) => (<option key={item.id} value={i}>{item.title}</option>))}
+        </select>
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which text should describe it? (It is read in the order you tick.)</legend>
+        {scn.pieces.map((item) => (
+          <label key={item.key} style={{display: "block"}}>
+            <input type="checkbox" checked={ids.indexOf(item.key) !== -1} onChange={() => toggle(item.key)} /> {item.text}
+          </label>
+        ))}
+        <label style={{display: "block", marginTop: "0.3rem"}}><input type="checkbox" checked={shown} onChange={(event) => setShown(event.target.checked)} /> Show the help text on the page</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={descOff} onChange={(event) => setDescOff(event.target.checked)} /> The listener has screen reader descriptions turned off</label>
+      </fieldset>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"}}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>The element:</strong></p>
+        {scn.id === "password" ? (
+          <div>
+            <label htmlFor="desc-pw" style={{display: "block", fontWeight: 600}}>Password</label>
+            <input id="desc-pw" type="password" aria-describedby={attr} autoComplete="new-password" style={{width: "100%", maxWidth: "18rem"}} />
+            {scn.pieces.map((item) => (<p key={item.key} id={full(item.key)} style={pieceStyle(item.key)}>{item.text}</p>))}
+          </div>
+        ) : null}
+        {scn.id === "delete" ? (
+          <div>
+            <button type="button" aria-describedby={attr}>Delete recipe</button>
+            {scn.pieces.map((item) => (<p key={item.key} id={full(item.key)} style={pieceStyle(item.key)}>{item.text}</p>))}
+          </div>
+        ) : null}
+        {scn.id === "dialog" ? (
+          <div role="dialog" aria-labelledby="desc-dlg-title" aria-describedby={attr} style={{border: "2px solid #1d4ed8", borderRadius: "8px", padding: "0.6rem"}}>
+            <h4 id="desc-dlg-title" style={{margin: "0 0 0.3rem"}}>Delete recipe?</h4>
+            {scn.pieces.map((item) => (<p key={item.key} id={full(item.key)} style={pieceStyle(item.key)}>{item.text}</p>))}
+            <button type="button">Delete</button>{" "}
+            <button type="button">Cancel</button>
+          </div>
+        ) : null}
+        <p style={{margin: "0.6rem 0 0.3rem"}}><strong>The attribute:</strong> <code>{attr ? 'aria-describedby="' + attr + '"' : "(none)"}</code></p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{spoken}</code></p>
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {notes.map((note, i) => (<li key={i}>{note}</li>))}
+        </ul>
+      </div>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        Notice the order: first the name, then the role, then the description. The spoken line is a simplified example. Different screen readers word it differently, may pause before the description, and many let people turn descriptions off.
+      </p>
+    </div>
+  );
+}
+
+export function TooltipLab() {
+  const [showOnFocus, setShowOnFocus] = useState(true);
+  const [escapeCloses, setEscapeCloses] = useState(true);
+  const [hoverable, setHoverable] = useState(true);
+  const [hover, setHover] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const visible = !dismissed && (hover || (showOnFocus && focus));
+  const enter = () => setHover(true);
+  const leave = () => {
+    setHover(false);
+    if (!focus) setDismissed(false);
+  };
+  const blur = () => {
+    setFocus(false);
+    if (!hover) setDismissed(false);
+  };
+  const onKey = (event) => {
+    if (event.key === "Escape" && escapeCloses) setDismissed(true);
+  };
+  const wrapperHandlers = hoverable ? {onMouseEnter: enter, onMouseLeave: leave} : {};
+  const buttonHandlers = hoverable ? {} : {onMouseEnter: enter, onMouseLeave: leave};
+  const verdict = (ok) => (ok ? "Yes" : "No");
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Build the tooltip</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={showOnFocus} onChange={(event) => setShowOnFocus(event.target.checked)} /> Also show it when the button has keyboard focus</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={escapeCloses} onChange={(event) => setEscapeCloses(event.target.checked)} /> Esc closes it</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={hoverable} onChange={(event) => setHoverable(event.target.checked)} /> It stays open while the pointer is over the tooltip</label>
+      </fieldset>
+      <div style={{minHeight: "5rem", marginBottom: "0.6rem"}}>
+        <span {...wrapperHandlers} style={{position: "relative", display: "inline-block"}}>
+          <button type="button" aria-describedby="tooltiplab-tip" onFocus={() => setFocus(true)} onBlur={blur} onKeyDown={onKey} {...buttonHandlers}>Help</button>
+          <span role="tooltip" id="tooltiplab-tip" style={{display: visible ? "block" : "none", position: "absolute", top: "100%", left: 0, paddingTop: "6px", zIndex: 2, width: "14rem"}}>
+            <span style={{display: "block", background: "#0f172a", color: "#ffffff", padding: "0.4rem 0.6rem", borderRadius: "6px"}}>Opens the help centre in a new tab.</span>
+          </span>
+        </span>
+      </div>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Does it meet the three rules of WCAG 1.4.13?</strong></p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}}>
+        <li><strong>Dismissible</strong> (a way to close it without moving the pointer or focus): {verdict(escapeCloses)}</li>
+        <li><strong>Hoverable</strong> (the pointer can move onto the tooltip without it vanishing): {verdict(hoverable)}</li>
+        <li><strong>Persistent</strong> (it stays until you move away, press Esc, or the information is no longer valid): Yes</li>
+      </ul>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Can a keyboard user see it?</strong> {verdict(showOnFocus)}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Move the pointer over the button, then Tab to it, then press Esc. The tooltip is in the page all the time, and <code>aria-describedby</code> points to it, so a screen reader reads it as the description whether or not it is showing. Visibility is for sighted people, and the rules above make sure it works for keyboards and for people who need more time. (The three rules are described briefly here. Read the full text of the criterion before you rely on this.)
+      </p>
+    </div>
+  );
+}
+
+export const describedbySamples = {
+  messy: '<label for="pw">Password</label>\n<input id="pw" type="password" aria-describedby="pw-hnit">\n<p id="pw-hint">At least 12 characters.</p>\n<label for="em">Email</label>\n<input id="em" type="email" aria-invalid="true">\n<p class="err">Enter a valid email.</p>\n<button aria-describedby="note">Delete</button>\n<p id="note"></p>\n<button aria-describedby="a">Save</button>\n<div id="a">Save the recipe. <a href="/help">Get help</a></div>\n<label for="n">Name</label>\n<input id="n" aria-describedby="n-l" placeholder="Full name">\n<span id="n-l">Name</span>\n<div role="tooltip" id="orphan">Orphan tip</div>',
+  fixed: '<label for="pw">Password</label>\n<input id="pw" type="password" aria-describedby="pw-hint">\n<p id="pw-hint">At least 12 characters.</p>\n<label for="em">Email</label>\n<input id="em" type="email" aria-invalid="true" aria-describedby="em-err">\n<p id="em-err">Error: Enter an email address that includes an @ sign.</p>\n<button type="button" aria-describedby="del-note">Delete recipe</button>\n<p id="del-note">This cannot be undone.</p>\n<button type="button" aria-describedby="tip">Help</button>\n<div role="tooltip" id="tip">Opens the help centre.</div>',
+};
+
+export function dbText(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  let out = "";
+  node.childNodes.forEach((child) => { out += " " + dbText(child) + " "; });
+  return out;
+}
+
+export function dbNameOf(el, doc) {
+  const clean = (value) => (value || "").replace(/\s+/g, " ").trim();
+  const ids = clean(el.getAttribute("aria-labelledby"));
+  if (ids) return clean(ids.split(" ").map((id) => { const target = doc.getElementById(id); return target ? target.textContent : ""; }).join(" "));
+  if (clean(el.getAttribute("aria-label"))) return clean(el.getAttribute("aria-label"));
+  const id = el.getAttribute("id");
+  if (id) {
+    const found = Array.from(doc.querySelectorAll("label")).find((item) => item.getAttribute("for") === id);
+    if (found) return clean(found.textContent);
+  }
+  const tag = el.tagName.toLowerCase();
+  if (tag === "button" || tag === "a") return clean(dbText(el));
+  return clean(el.getAttribute("title")) || clean(el.getAttribute("placeholder"));
+}
+
+export function DescribedbyCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(describedbySamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const idCounts = {};
+  Array.from(doc.querySelectorAll("[id]")).forEach((el) => { idCounts[el.id] = (idCounts[el.id] || 0) + 1; });
+  const referenced = {};
+  Array.from(doc.querySelectorAll("[aria-describedby]")).forEach((el) => { el.getAttribute("aria-describedby").split(/\s+/).filter(Boolean).forEach((id) => { referenced[id] = true; }); });
+  const rows = [];
+  Array.from(doc.querySelectorAll("[aria-describedby], [aria-invalid='true'], input[placeholder]")).forEach((el) => {
+    const tag = el.tagName.toLowerCase();
+    const raw = (el.getAttribute("aria-describedby") || "").trim();
+    const ids = raw.split(/\s+/).filter(Boolean);
+    const issues = [];
+    const notes = [];
+    const name = dbNameOf(el, doc);
+    const parts = [];
+    if (el.hasAttribute("aria-describedby") && ids.length === 0) issues.push("An empty aria-describedby does nothing.");
+    ids.forEach((id) => {
+      const target = doc.getElementById(id);
+      if (!target) {
+        issues.push("The id \"" + id + "\" does not exist, so it is ignored.");
+        return;
+      }
+      if (idCounts[id] > 1) issues.push("The id \"" + id + "\" is used " + idCounts[id] + " times. Only the first is used.");
+      const text = dbText(target).replace(/\s+/g, " ").trim();
+      if (text === "") issues.push("The element with the id \"" + id + "\" is empty, so there is nothing to read. Fill it, or remove the reference.");
+      else parts.push(text);
+      if (target.querySelector("a[href], button, input, select, textarea")) notes.push("The element \"" + id + "\" contains a link or control. Inside a description it is read as plain text, and cannot be used.");
+      if (name && text && text.toLowerCase() === name.toLowerCase()) notes.push("The description \"" + text + "\" repeats the name. Remove it.");
+      if (text.length > 200) notes.push("The description for \"" + id + "\" is long (" + text.length + " characters). Keep it short.");
+    });
+    if (el.getAttribute("aria-invalid") === "true" && ids.length === 0) issues.push("Marked invalid, but no error message is connected with aria-describedby.");
+    if (tag === "input" && el.hasAttribute("placeholder") && !el.hasAttribute("aria-describedby") && el.getAttribute("aria-invalid") !== "true") notes.push("A placeholder is not a hint. If people need help, put it in text, and connect it with aria-describedby.");
+    if (!el.hasAttribute("aria-describedby") && el.getAttribute("aria-invalid") !== "true" && notes.length === 0) return;
+    rows.push({tag, name, raw, desc: parts.join(" "), issues, notes});
+  });
+  Array.from(doc.querySelectorAll('[role="tooltip"]')).forEach((el) => {
+    if (!el.id || !referenced[el.id]) rows.push({tag: "div role=tooltip", name: "", raw: el.id || "", desc: dbText(el).replace(/\s+/g, " ").trim(), issues: ["A tooltip that nothing points to with aria-describedby. Screen readers will not connect it with any control."], notes: []});
+  });
+  const bad = rows.reduce((sum, row) => sum + row.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(describedbySamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="db-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy descriptions</label>
+        <label><input type="radio" name="db-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="db-html">HTML to check (edit it freely)</label><br />
+        <textarea id="db-html" rows={11} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> items checked, <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + ">"}</code> {row.name ? <span>named <code>{'"' + row.name + '"'}</code></span> : null}{row.desc ? <span>, described <code>{'"' + (row.desc.length > 60 ? row.desc.slice(0, 60) + "..." : row.desc) + '"'}</code></span> : null}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot tell whether a description is helpful or accurate, or how a particular screen reader will announce it. Test the real page.
+      </p>
+    </div>
+  );
+}
+
+export function DescribedbyChecker() {
+  return <BrowserOnly>{() => <DescribedbyCheckerInner />}</BrowserOnly>;
+}
+
+A name tells you **what something is.** Sometimes that is not enough. A password field is "Password," but you also need to know the **rules.** A button is "Delete recipe," but you also need to know it **cannot be undone.** A field has an error, and you need to know **what to fix.**
+
+That extra help is a **description,** and `aria-describedby` is how you attach it. Like `aria-labelledby`, it **points to text that is already on the page.** The difference is what the text is for: not to name the control, but to **give it more help.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The difference between a **name** and a **description**
+- How **`aria-describedby`** works
+- How to use it for **form hints, errors, warnings,** and **dialog text**
+- How to build an **accessible tooltip** (WCAG 1.4.13)
+- Why a description can be **missed,** and what to do about it
+- How to keep descriptions **accurate** when the page changes
+- How to **check** your descriptions
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A hint for a form field -->
+<label for="pw">Password</label>
+<input id="pw" type="password" aria-describedby="pw-hint">
+<p id="pw-hint">At least 12 characters.</p>
+
+<!-- A hint and an error together -->
+<label for="email">Email address</label>
+<input id="email" type="email" aria-invalid="true"
+       aria-describedby="email-hint email-error">
+<p id="email-hint">We only use it to send your receipt.</p>
+<p id="email-error"><strong>Error:</strong> Enter an email address that includes an @ sign.</p>
+
+<!-- A warning for a button -->
+<button type="button" aria-describedby="del-note">Delete recipe</button>
+<p id="del-note">This cannot be undone.</p>
+
+<!-- A dialog with a name and a description -->
+<div role="dialog" aria-labelledby="dlg-title" aria-describedby="dlg-text">
+  <h2 id="dlg-title">Delete recipe?</h2>
+  <p id="dlg-text">This will remove Rye bread for everyone on your team.</p>
+</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Description Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DescriptionBuilderLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Pick each example in the lab. Change which help text is included, and turn off descriptions to hear what happens to people who do not receive them.
+
+## Name or Description?
+
+| | **Name** | **Description** |
+| :-- | :-- | :-- |
+| **Answers** | What is it? | What else should I know? |
+| **Length** | Short: a word or a few | A sentence or two |
+| **Attribute** | `aria-label`, `aria-labelledby`, `label` | `aria-describedby` |
+| **If it is missing** | The control is unlabelled, which is a serious failure | The control still works, but with less help |
+| **Example** | "Password" | "At least 12 characters." |
+| **Heard** | First, with the role | After the name, role, and state |
+
+A good test: **if the text identifies the control, it is a name. If it helps you use the control, it is a description.**
+
+## How It Works
+
+The value of `aria-describedby` is a list of **ids,** separated by spaces, just like `aria-labelledby`. The browser finds each element, takes its text, joins the pieces in the order listed, and passes the result to assistive technology as the **accessible description.**
+
+- **It is read after the name, role, and state.** A screen reader typically says: "Password, edit text, protected. At least 12 characters."
+- **Hidden text counts,** just as it does for names. A referenced element that is hidden is still used. (But see below: hidden help is no help to sighted people.)
+- **Missing ids are ignored,** silently.
+- **The order matters.** List the hint before the error, or the other way round, to suit how you want it read.
+- **Formatting is lost.** A description is read as plain text. **Links, buttons, lists, and bold** inside it are flattened, and cannot be used. Keep descriptions simple.
+- **It is separate from the name.** `aria-describedby` does not change the name. Do not use it to repair a missing name.
+- **Many elements can share one description.** Several fields can point to the same note ("All fields are required").
+
+## Common Uses
+
+### Form hints
+
+Put formats, rules, and examples in a hint, and connect it. Show it **above or beside the field,** so everyone sees it before typing. See [Accessible Forms](./accessible-forms).
+
+### Error messages
+
+Add the error to the field's `aria-describedby`, and set `aria-invalid="true"`. The next time the field is focused, the error is read as part of the description.
+
+### Warnings and consequences
+
+A button that deletes, pays, or sends should say so: "This cannot be undone," "You will be charged 20 dollars."
+
+### Dialog text
+
+A dialog is named by its heading (`aria-labelledby`), and described by its body text (`aria-describedby`). That way, when the dialog opens, the screen reader announces both. For urgent confirmations, use `role="alertdialog"` with the same pair. See [ARIA Roles](./aria-roles).
+
+### Tooltips
+
+A tooltip is a **description,** not a name. Point to it from the control. More on this below.
+
+### Data and complex content
+
+A table or a chart can point to a paragraph that explains it: `aria-describedby="chart-summary"`. For a long, structured description (with headings, lists, and links), look at `aria-details`, which points to **real, navigable content.** Its support in screen readers is more limited, so do not depend on it alone, and always keep the information in the visible page.
+
+## Descriptions Can Be Missed
+
+This is the most important thing to know about `aria-describedby`:
+
+- **Many screen reader users turn descriptions off** or reduce them, because they can be long and repeated.
+- **Descriptions are not read** when you move through a list of links, buttons, or form fields, or when you read a page line by line without focusing a control.
+- **Descriptions can be read late,** after a short pause, and may be cut off when the user presses a key.
+- **Changes may not be re-read.** If the description changes while the control is focused, a screen reader may not announce it again.
+
+So:
+
+1. **Never put essential information only in a description.** If something is required, say so in the label or the visible text ("Password (required)"). Use the description for **extras.**
+2. **Always show the same help on screen.** A description should connect text that **everyone can see,** not hide text that only some people hear.
+3. **For urgent news,** such as an error that appears while someone is typing, use a **live region** (see [ARIA Live Regions](./aria-live)) as well, or move focus, as shown in [Focus Management](./focus-management).
+
+## Keeping Descriptions Up to Date
+
+Descriptions that appear and disappear (errors, character counts) need care:
+
+- **Add the error's id** to `aria-describedby` when the error appears, and **remove it** when it is fixed. Otherwise, a stale reference points at an empty or hidden element.
+- **Or keep the element** in the page, and change its **text.** An empty element gives an empty description.
+- **Use `aria-invalid="true"`** only while the error is real.
+- **Do not point to elements that are removed** from the page. Recreate them with the same id, or update the reference.
+
+```js
+// When an error appears
+input.setAttribute("aria-invalid", "true");
+input.setAttribute("aria-describedby", "email-hint email-error");
+error.textContent = "Error: Enter an email address that includes an @ sign.";
+
+// When it is fixed
+input.removeAttribute("aria-invalid");
+input.setAttribute("aria-describedby", "email-hint");
+error.textContent = "";
+```
+
+## Tooltips and WCAG 1.4.13
+
+A tooltip is a small box of help that appears when you hover over or focus a control. Done badly, it is a trap: it vanishes when you try to reach it, it covers content, and keyboard users never see it. WCAG **1.4.13 (Content on Hover or Focus)** sets three rules:
+
+1. **Dismissible:** there is a way to close it (usually **Esc**) without moving the pointer or the focus.
+2. **Hoverable:** the pointer can move **onto** the tooltip without it disappearing (important for people who magnify the screen).
+3. **Persistent:** it stays until the person moves away, dismisses it, or the information is no longer valid.
+
+And for keyboard users: it must appear on **focus,** not only on hover.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<span class="has-tip">
+  <button type="button" aria-describedby="help-tip">Help</button>
+  <span role="tooltip" id="help-tip">Opens the help centre in a new tab.</span>
+</span>
+
+<script>
+  const wrap = document.querySelector(".has-tip");
+  const tip = document.getElementById("help-tip");
+  tip.hidden = true;
+
+  const show = () => { tip.hidden = false; };
+  const hide = () => { tip.hidden = true; };
+
+  wrap.addEventListener("mouseenter", show);   // hover (the wrapper includes the tooltip)
+  wrap.addEventListener("mouseleave", hide);
+  wrap.addEventListener("focusin", show);      // keyboard focus
+  wrap.addEventListener("focusout", hide);
+  wrap.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hide();        // dismissible
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Tooltip Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TooltipLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Also remember that **touch screens have no hover.** If the help matters, make it visible text in the page, rather than a tooltip. And keep a tooltip to **plain text:** if it has links or buttons, it is a popup or a dialog, and needs a different pattern.
+
+## Related Tools
+
+- **`aria-description`** is a newer attribute that lets you write a description as a string, in the same way `aria-label` writes a name. Support has been growing, but it is not yet as reliable as `aria-describedby`, and it is invisible and may not be translated. Prefer pointing to real text.
+- **`aria-details`** points to richer content, as mentioned above.
+- **`title`** can act as a tooltip, and as a fallback description when a control already has a name. It is not shown to keyboard or touch users, so do not depend on it.
+- **`aria-errormessage`** is designed for errors, but support is patchy. `aria-describedby` with `aria-invalid` is the safer choice today.
+
+## Check Your Descriptions
+
+The checker below finds the usual problems: references to ids that do not exist, duplicate ids, empty referenced elements, links or controls inside a description, descriptions that repeat the name, invalid fields with no message, placeholders used as hints, and tooltips that nothing points to.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DescribedbyChecker />
+</>
+</BrowserWindow>
+
+On a real site, you can also:
+
+1. **Open DevTools,** select a control, and look in the Accessibility panel. Many browsers show the computed description.
+2. **Use a screen reader,** Tab to each field and button, and listen for the description after the name.
+3. **Try it with descriptions turned off** (most screen readers have a verbosity setting), and see what is lost.
+4. **Trigger every error,** and check that the description changes when the error appears and disappears.
+5. **Test tooltips** with a keyboard, a pointer, and a magnifier.
+
+## Good Habits
+
+1. **Use a name for what it is,** and a description for extra help.
+2. **Keep descriptions short and plain,** with no links or formatting.
+3. **Show the same help on screen** that you connect with `aria-describedby`.
+4. **Never put essential information only in a description.**
+5. **Link errors only while they are showing,** and set `aria-invalid` to match.
+6. **Use unique ids,** and check every referenced id exists.
+7. **Back urgent messages with a live region** or focus.
+8. **Make tooltips dismissible, hoverable, persistent,** and visible on focus.
+9. **Test with a screen reader,** with descriptions on and off.
+
+## Accessibility Checklist
+
+- [ ] Every id in every `aria-describedby` exists, is unique, and has text.
+- [ ] Descriptions hold extra help, not the name.
+- [ ] Anything essential is also in the label or the visible text.
+- [ ] Hints and errors are visible on the page, as well as connected.
+- [ ] Invalid fields have `aria-invalid` and a linked, specific error message.
+- [ ] References to errors are added and removed as the errors appear and disappear.
+- [ ] Descriptions are short, plain text, with no links or buttons.
+- [ ] Tooltips appear on focus and hover, can be dismissed, and can be hovered.
+- [ ] Dialogs have both a name and a description where it helps.
+- [ ] The page was tested with a screen reader and a keyboard.
+
+## Security and Privacy Notes
+
+- **Descriptions are read aloud and are in the page source.** Do not put private data, account details, or internal notes in them.
+- **Be careful with error text.** A description such as "This email is already registered" tells anyone, including attackers, who has an account. Many sites use a general message and explain it elsewhere.
+- **Password help is fine,** but do not reveal the exact rules an attacker could exploit, or the user's current password in any form.
+- **Do not use descriptions to mislead.** A description that contradicts the visible text ("This is free" when it costs money) is deceptive, and it harms people who cannot see the screen.
+- **Do not hide warnings only in descriptions.** Consent, charges, and privacy terms must be visible to everyone, and not read out only to some people.
+- **Clean user-supplied text** before placing it in a described element, to prevent script injection.
+- **Tooltips from third parties** (embedded widgets) can add misleading text. Check what they show.
+
+## Global Audience Notes
+
+- **Translate descriptions** with the rest of the page. Because they point to real text, translation tools handle them well, which is an advantage over `aria-description`.
+- **Keep them short and in plain language.** They are heard once, in a second language for many people, and long text is easily lost.
+- **Show formats clearly:** "Date: day/month/year," with an example. Formats such as dates, phone numbers, and decimals differ across regions.
+- **Right-to-left languages:** check how punctuation and mixed text (numbers, Latin words) read, and that tooltips appear on the correct side.
+- **Set the `lang` attribute** on the page, and on any description in another language, so the voice reads it correctly.
+- **Low connectivity and old devices:** do not rely on a script to show help that matters. Put hints in the HTML, visible from the start.
+- **Cultural differences:** avoid idioms and jokes in help text. A literal, polite sentence travels best.
+
+## Common Mistakes to Avoid
+
+1. **Using `aria-describedby` instead of a label.**
+2. **Essential information only in the description.**
+3. **A typo in the id,** so nothing is described.
+4. **Pointing to an empty element.**
+5. **Links and buttons inside the described text.**
+6. **Leaving an old error linked** after it is fixed.
+7. **An error with no `aria-invalid`,** or `aria-invalid` with no message.
+8. **Descriptions that repeat the name.**
+9. **Hidden help that sighted people cannot see.**
+10. **Tooltips that only show on hover,** or cannot be dismissed.
+11. **Long, paragraph-length descriptions.**
+12. **Never testing with descriptions off.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the description builder with each example, and turn descriptions off. What does the listener lose?
+2. Add the error to the password example, and explain when its id should be added and removed.
+3. Use the tooltip lab with each option off in turn, and write down which rule it breaks.
+4. Run the checker on the messy HTML, fix every problem, and run it again.
+5. Add a hint and an error to a form field in a page you built, and test with a screen reader.
+6. Give a "Delete" button a description that explains the consequence.
+7. Name a dialog with `aria-labelledby`, and describe it with `aria-describedby`.
+8. Replace a `title` tooltip with a proper tooltip that works with a keyboard.
+9. Find a site with a tooltip that vanishes when you move the pointer onto it. Which rule does it break?
+10. Bonus: build a form field whose description updates as the error is added and removed, with a live region for the change.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between a name and a description?</summary>
+
+A name says what a control is, in a few words. A description adds extra help, such as a rule or a warning, in a sentence or two. It is read after the name, role, and state.
+
+</details>
+
+<details>
+<summary>2. What does `aria-describedby` take as its value?</summary>
+
+A list of ids of elements already on the page. Their text is joined, in order, to make the description.
+
+</details>
+
+<details>
+<summary>3. Why should essential information not live only in a description?</summary>
+
+Many screen reader users turn descriptions off, and descriptions are not read when moving through lists of links or fields. Essential facts belong in the label or visible text.
+
+</details>
+
+<details>
+<summary>4. How should you handle an error that appears and disappears?</summary>
+
+Add the error's id (and `aria-invalid="true"`) when it appears, and remove them when it is fixed. Back urgent errors with a live region or focus.
+
+</details>
+
+<details>
+<summary>5. What are the three rules for tooltips in WCAG 1.4.13?</summary>
+
+They must be dismissible (for example with Esc), hoverable (the pointer can move onto them), and persistent (they stay until you move away or dismiss them).
+
+</details>
+
+<details>
+<summary>6. What happens to links inside described text?</summary>
+
+They are flattened into plain text, and cannot be used. Keep descriptions simple, and use `aria-details` or visible content for anything richer.
+
+</details>
+
+## Key Takeaways
+
+- **A name says what it is. A description says what else you should know.**
+- **`aria-describedby` points to text already on the page,** in the order you list the ids.
+- **Descriptions can be missed.** Never put essential information only in one, and always show help on screen.
+- **Keep them short, plain, and accurate.** Add and remove error ids as errors come and go.
+- **Tooltips must be dismissible, hoverable, persistent,** and visible on focus, as well as hover.
+- **Use `aria-invalid` and a linked message** for errors, with a live region or focus for urgent ones.
+- **Test with a screen reader,** with descriptions on and off.
+
+Next, learn how to hide things from assistive technology, and when not to, in [aria-hidden](./aria-hidden).

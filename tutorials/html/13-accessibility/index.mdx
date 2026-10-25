@@ -1,25 +1,524 @@
+---
+id: accessibility-overview
+title: "HTML Accessibility: Building for Everyone"
+sidebar_label: "Accessibility"
+sidebar_position: 1
+slug: /html/accessibility
+description: "Start learning web accessibility: why it matters, who it helps, the four WCAG principles (perceivable, operable, understandable, robust), and a map of every lesson in this section. Includes a live experience simulator, a contrast checker, and a short drill that sorts real barriers into the four principles."
+keywords:
+  - HTML accessibility
+  - web accessibility for beginners
+  - WCAG principles POUR
+  - screen reader basics
+  - keyboard accessibility
+  - ARIA introduction
+  - color contrast checker
+  - accessible HTML
+  - a11y
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, a11y, wcag, aria, frontend]
+---
+
+import {useState} from 'react';
+
+export function ExperienceSim() {
+  const [vision, setVision] = useState("none");
+  const [blur, setBlur] = useState(false);
+  const [lowContrast, setLowContrast] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [noMouse, setNoMouse] = useState(false);
+  const [hideFocus, setHideFocus] = useState(false);
+  const parts = [];
+  if (blur) parts.push("blur(1.5px)");
+  if (vision === "grayscale") parts.push("grayscale(1)");
+  if (vision === "protanopia") parts.push("url(#a11y-protanopia)");
+  if (vision === "deuteranopia") parts.push("url(#a11y-deuteranopia)");
+  if (vision === "tritanopia") parts.push("url(#a11y-tritanopia)");
+  if (lowContrast) parts.push("contrast(0.45)");
+  return (
+    <div>
+      <svg width="0" height="0" style={{position: "absolute"}} aria-hidden="true" focusable="false">
+        <defs>
+          <filter id="a11y-protanopia"><feColorMatrix type="matrix" values="0.152 1.053 -0.205 0 0  0.115 0.786 0.099 0 0  -0.004 -0.048 1.052 0 0  0 0 0 1 0" /></filter>
+          <filter id="a11y-deuteranopia"><feColorMatrix type="matrix" values="0.367 0.861 -0.228 0 0  0.280 0.673 0.047 0 0  -0.012 0.043 0.969 0 0  0 0 0 1 0" /></filter>
+          <filter id="a11y-tritanopia"><feColorMatrix type="matrix" values="1.256 -0.077 -0.179 0 0  -0.078 0.931 0.148 0 0  0.005 0.691 0.304 0 0  0 0 0 1 0" /></filter>
+        </defs>
+      </svg>
+      <style>{".a11y-sample-nofocus *:focus { outline: none !important; box-shadow: none !important; }"}</style>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Change how the sample page is experienced</legend>
+        <label style={{display: "block"}}>Colour vision{" "}
+          <select value={vision} onChange={(event) => setVision(event.target.value)}>
+            <option value="none">Typical</option>
+            <option value="grayscale">No colour (grayscale)</option>
+            <option value="protanopia">Red-weak or red-blind (protanopia, approximate)</option>
+            <option value="deuteranopia">Green-weak or green-blind (deuteranopia, approximate)</option>
+            <option value="tritanopia">Blue-weak (tritanopia, approximate)</option>
+          </select>
+        </label>
+        <label style={{display: "block"}}>Text size{" "}
+          <select value={zoom} onChange={(event) => setZoom(Number(event.target.value))}>
+            <option value={100}>100 percent</option>
+            <option value={200}>200 percent</option>
+            <option value={300}>300 percent</option>
+          </select>
+        </label>
+        <label style={{display: "block"}}><input type="checkbox" checked={blur} onChange={(event) => setBlur(event.target.checked)} /> Blurred vision</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={lowContrast} onChange={(event) => setLowContrast(event.target.checked)} /> Low contrast (glare or a dim screen)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={noMouse} onChange={(event) => setNoMouse(event.target.checked)} /> No mouse: only the keyboard works</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={hideFocus} onChange={(event) => setHideFocus(event.target.checked)} /> Hide the focus outline (a common mistake)</label>
+      </fieldset>
+      <div className={hideFocus ? "a11y-sample-nofocus" : ""} style={{filter: parts.length > 0 ? parts.join(" ") : "none", pointerEvents: noMouse ? "none" : "auto", fontSize: zoom + "%", border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.8rem", background: "#ffffff", color: "#1e293b", overflow: "auto"}}>
+        <h3 style={{margin: "0 0 0.4rem", color: "#1e293b"}}>Join The Bread Bin</h3>
+        <p style={{margin: "0 0 0.5rem"}}>Weekly recipes, sent every Friday. <a href="#sample-story" onClick={(event) => event.preventDefault()} style={{color: "#1d4ed8"}}>Read our story</a></p>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="sim-email">Email address</label><br />
+          <input id="sim-email" type="email" placeholder="you@example.com" style={{width: "100%", maxWidth: "20rem"}} />
+        </p>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <button type="button" style={{background: "#15803d", color: "#fff", border: 0, padding: "0.5rem 1rem", borderRadius: "6px", fontSize: "1em"}}>Subscribe</button>{" "}
+          <button type="button" style={{background: "#b91c1c", color: "#fff", border: 0, padding: "0.5rem 1rem", borderRadius: "6px", fontSize: "1em"}}>No thanks</button>
+        </p>
+        <p style={{margin: 0, color: "#64748b"}}>Green means subscribe. Red means no thanks.</p>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {noMouse ? "Mouse use is switched off for the sample. Press Tab to move through it, and Enter or Space to press a button. " : ""}
+        {hideFocus ? "With the outline hidden, can you still tell where you are on the page? " : ""}
+        {vision !== "none" ? "Look at the two buttons. Could you tell them apart without relying on colour? " : ""}
+        {!noMouse && !hideFocus && vision === "none" && !blur && !lowContrast && zoom === 100 ? "Try the options above, one at a time." : ""}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are rough simulations for building understanding. They are not a medical model of any condition, and no simulation replaces testing with, and listening to, real disabled people.
+      </p>
+    </div>
+  );
+}
+
+export const toLinear = (value) => {
+  const channel = value / 255;
+  return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+};
+
+export const relativeLuminance = (hex) => {
+  const value = hex.replace("#", "");
+  const red = parseInt(value.slice(0, 2), 16);
+  const green = parseInt(value.slice(2, 4), 16);
+  const blue = parseInt(value.slice(4, 6), 16);
+  return 0.2126 * toLinear(red) + 0.7152 * toLinear(green) + 0.0722 * toLinear(blue);
+};
+
+export const contrastOf = (first, second) => {
+  const a = relativeLuminance(first);
+  const b = relativeLuminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+};
+
+export function ContrastChecker() {
+  const [fg, setFg] = useState("#767676");
+  const [bg, setBg] = useState("#ffffff");
+  const [large, setLarge] = useState(false);
+  const ratio = contrastOf(fg, bg);
+  const result = (needed) => (ratio >= needed ? "Pass" : "Fail");
+  const rows = [
+    {label: "AA, " + (large ? "large text" : "normal text"), needed: large ? 3 : 4.5},
+    {label: "AAA, " + (large ? "large text" : "normal text"), needed: large ? 4.5 : 7},
+    {label: "AA, icons and input borders (non-text)", needed: 3},
+  ];
+  return (
+    <div>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1rem", marginBottom: "0.6rem"}}>
+        <label>Text colour<br /><input type="color" value={fg} onChange={(event) => setFg(event.target.value)} /></label>
+        <label>Background colour<br /><input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
+        <label style={{alignSelf: "end"}}><input type="checkbox" checked={large} onChange={(event) => setLarge(event.target.checked)} /> Large text (24px, or 19px bold)</label>
+      </div>
+      <p style={{margin: "0 0 0.6rem", padding: "0.8rem", background: bg, color: fg, fontSize: large ? "24px" : "16px", border: "1px solid #94a3b8", borderRadius: "6px"}}>
+        The quick brown fox jumps over the lazy dog.
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}>Contrast ratio: <strong>{ratio.toFixed(2)} : 1</strong></p>
+      <table>
+        <thead>
+          <tr><th scope="col">Requirement</th><th scope="col">Needs at least</th><th scope="col">Result</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <th scope="row" style={{textAlign: "start"}}>{row.label}</th>
+              <td>{row.needed} : 1</td>
+              <td><strong>{result(row.needed)}</strong></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The default grey (#767676 on white) is the lightest grey that just passes for normal text. The ratio uses the formula from the Web Content Accessibility Guidelines. It cannot judge font weight, thin letter shapes, or images behind text, so always look at the real result too.
+      </p>
+    </div>
+  );
+}
+
+export const barriers = [
+  {text: "A photo of a product has no text alternative.", answer: "Perceivable", why: "People who cannot see the image cannot perceive its content."},
+  {text: "A menu opens only when you hover over it with a mouse.", answer: "Operable", why: "Keyboard and touch users cannot operate it."},
+  {text: "An error message says only \"Invalid input\", without saying which field or why.", answer: "Understandable", why: "People cannot understand what went wrong or how to fix it."},
+  {text: "A custom toggle looks on or off, but never tells assistive technology its state.", answer: "Robust", why: "Assistive technology cannot reliably interpret the control."},
+  {text: "A video has speech but no captions.", answer: "Perceivable", why: "People who cannot hear the audio cannot perceive the speech."},
+  {text: "A pop-up window traps keyboard focus, with no way to close it using the keyboard.", answer: "Operable", why: "Keyboard users cannot operate their way out."},
+  {text: "The page language is not set, so a screen reader pronounces the text with the wrong voice.", answer: "Understandable", why: "The language of the page needs to be identified so the text can be understood."},
+  {text: "A control is built from div elements with no role, so assistive technology cannot tell it is a button.", answer: "Robust", why: "The content is not built so that a wide range of tools can interpret it."},
+];
+
+export function PourDrill() {
+  const [index, setIndex] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [score, setScore] = useState(0);
+  const done = index >= barriers.length;
+  const item = barriers[index];
+  const choose = (choice) => {
+    if (picked !== null) return;
+    setPicked(choice);
+    if (choice === item.answer) setScore(score + 1);
+  };
+  const next = () => {
+    setPicked(null);
+    setIndex(index + 1);
+  };
+  const restart = () => {
+    setIndex(0);
+    setPicked(null);
+    setScore(0);
+  };
+  const options = ["Perceivable", "Operable", "Understandable", "Robust"];
+  if (done) {
+    return (
+      <div>
+        <p role="status" style={{margin: "0 0 0.5rem"}}>You finished. Score: <strong>{score} out of {barriers.length}</strong>.</p>
+        <button type="button" onClick={restart}>Try again</button>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p style={{margin: "0 0 0.3rem", fontSize: "0.9em"}}>Barrier {index + 1} of {barriers.length}</p>
+      <p style={{margin: "0 0 0.6rem", fontSize: "1.1em"}}>{item.text}</p>
+      <p style={{margin: "0 0 0.5rem"}}>Which principle does it break?</p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {options.map((option) => (
+          <button key={option} type="button" onClick={() => choose(option)} disabled={picked !== null} style={{marginRight: "0.4rem", marginBottom: "0.3rem"}}>{option}</button>
+        ))}
+      </p>
+      <div role="status">
+        {picked === null ? null : (
+          <p style={{margin: "0 0 0.5rem"}}>
+            <strong>{picked === item.answer ? "Correct." : "Not quite. The best answer is " + item.answer + "."}</strong> {item.why}
+          </p>
+        )}
+      </div>
+      {picked !== null ? (<button type="button" onClick={next}>{index === barriers.length - 1 ? "See my score" : "Next barrier"}</button>) : null}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Many real barriers fit more than one principle. In this drill, pick the one that fits best. You will see all four principles in detail in the lesson on WCAG basics.
+      </p>
+    </div>
+  );
+}
+
+Think of a building with a grand staircase and no ramp. A lot of people can enter easily. But someone using a wheelchair cannot, a parent with a pushchair struggles, and a delivery worker with a heavy trolley is stuck at the bottom. Nobody planned to exclude them. The designer simply did not think about them.
+
+Websites are the same. A page can look beautiful and still lock people out: a button that works only with a mouse, a picture with no description, a form that never says what went wrong. **Web accessibility** is the practice of building pages so that **as many people as possible** can use them, whatever their abilities, devices, or circumstances.
+
+The good news: HTML was designed with accessibility in mind. Most of the work is **choosing the right element** and **writing clear content.** This section teaches you how.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn in This Section
+
+- **Why** accessibility matters, and **who** it helps
+- The four principles of the **Web Content Accessibility Guidelines (WCAG)**
+- How people **really use** the web: screen readers, keyboards, magnifiers, voice, and switches
+- Building with **semantic HTML,** the foundation of accessible pages
+- Writing accessible **names, images, links, buttons, forms, and tables**
+- **ARIA:** what it is, when to use it, and when **not** to
+- **Keyboard** use and **focus management**
+- **Testing** your work
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<main>
+  <h1>Join The Bread Bin</h1>
+
+  <form>
+    <label for="email">Email address</label>
+    <input id="email" type="email" autocomplete="email" required>
+
+    <button type="submit">Subscribe</button>
+  </form>
+
+  <img src="loaf.jpg" alt="A golden sourdough loaf on a wooden board">
+</main>
 ```
-        ├── 13-accessibility/
-        │   ├── index.mdx
-        │   ├── introduction-to-a11y.mdx
-        │   ├── wcag-basics.mdx
-        │   ├── semantic-accessibility.mdx
-        │   ├── keyboard-accessibility.mdx
-        │   ├── screen-readers.mdx
-        │   ├── focus-management.mdx
-        │   ├── accessible-names.mdx
-        │   ├── alt-text.mdx
-        │   ├── accessible-forms.mdx
-        │   ├── accessible-tables.mdx
-        │   ├── accessible-links.mdx
-        │   ├── accessible-buttons.mdx
-        │   ├── aria-introduction.mdx
-        │   ├── aria-roles.mdx
-        │   ├── aria-states-properties.mdx
-        │   ├── aria-label.mdx
-        │   ├── aria-labelledby.mdx
-        │   ├── aria-describedby.mdx
-        │   ├── aria-live.mdx
-        │   ├── aria-hidden.mdx
-        │   └── accessibility-testing.mdx
+
+</TabItem>
+<TabItem value="output" label="Experience the Page">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ExperienceSim />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try each option, one at a time. Turn on **"No mouse"** and press Tab. Turn on **"Hide the focus outline"** and try again. Then switch to a colour-vision option, and look at the two buttons. Small choices in HTML and CSS make a very big difference for real people.
+
+## Who Benefits?
+
+Accessibility is often pictured as helping a small group. In fact, the numbers are large. The World Health Organization estimates that roughly **one in six people** in the world lives with a significant disability. And everyone is sometimes limited:
+
+| Kind of barrier | Permanent | Temporary | Situational |
+| :-- | :-- | :-- | :-- |
+| **Seeing** | Blindness, low vision, colour blindness | Eye surgery, a lost pair of glasses | Bright sunlight on a phone |
+| **Hearing** | Deafness, hearing loss | An ear infection | A noisy train, or a silent office |
+| **Movement** | Paralysis, tremor, limb difference | A broken arm | Holding a baby in one arm |
+| **Thinking and learning** | Dyslexia, autism, memory differences | A concussion | Tiredness, stress, a second language |
+
+Features built for disabled people often help **everyone.** Captions help in a noisy café. A keyboard-friendly form is faster for power users. Good contrast helps outdoors. Clear writing helps people reading in a second language. This is called the **curb-cut effect:** ramps cut into pavements for wheelchairs are used by cyclists, parents, and travellers with suitcases every day.
+
+## How People Use the Web
+
+Not everyone uses a mouse and a screen the way you do. Some of the ways people use the web:
+
+| Tool or method | Who uses it | What it needs from your HTML |
+| :-- | :-- | :-- |
+| **Screen reader** | People who are blind or have low vision | Real headings, landmarks, labels, text alternatives |
+| **Keyboard only** | People who cannot use a mouse, and many who prefer not to | Everything reachable and usable with Tab, Enter, Space, and arrows. A visible focus |
+| **Switch devices and voice control** | People with limited movement | Real buttons and links with clear names, so that "click Subscribe" works |
+| **Screen magnifier or zoom** | People with low vision | Layouts that stay usable at 200 percent and more |
+| **High-contrast or custom colours** | People with low vision, light sensitivity, or dyslexia | Do not depend on your own colours alone |
+| **Captions and transcripts** | People who are deaf or hard of hearing, and many others | Text versions of audio and video |
+| **Reduced motion settings** | People with vestibular disorders or motion sensitivity | Respecting `prefers-reduced-motion` |
+| **Simple, predictable pages** | People with cognitive or learning disabilities | Plain language, consistent layout, clear errors |
+
+## The Four Principles: POUR
+
+The Web Content Accessibility Guidelines, known as **WCAG**, are the international standard. They are built on four principles, remembered by the word **POUR**:
+
+| Principle | The question it asks | Example |
+| :-- | :-- | :-- |
+| **P**erceivable | Can people **sense** the content? | Text alternatives for images, captions for video, enough contrast |
+| **O**perable | Can people **use** the controls? | Everything works with a keyboard, no traps, enough time |
+| **U**nderstandable | Can people **make sense** of it? | Clear language, predictable behaviour, helpful error messages |
+| **R**obust | Does it work with **many tools,** now and later? | Valid, semantic HTML, with names, roles, and states that assistive technology can read |
+
+Sort a few real barriers into the four principles:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="pour-examples.html"
+<!-- Perceivable: a text alternative -->
+<img src="chart.png" alt="Sales rose 20 percent in 2026">
+
+<!-- Operable: a real button works with Enter and Space -->
+<button type="button">Open menu</button>
+
+<!-- Understandable: an error that says what to do -->
+<p id="err" role="alert">Enter an email address, such as name@example.com.</p>
+
+<!-- Robust: a native element, with a role and state built in -->
+<input type="checkbox" id="news"> <label for="news">Send me the newsletter</label>
 ```
+
+</TabItem>
+<TabItem value="output" label="Sort the Barriers">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PourDrill />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+WCAG organises its rules into three **levels:** **A** (the minimum), **AA** (the usual target, and the level most laws and policies ask for), and **AAA** (the highest, and not possible for every kind of content). The current published version is WCAG 2.2, and newer versions may appear, so check the W3C for the latest.
+
+## Contrast: Your First Measurable Rule
+
+One accessibility rule is easy to measure: the **contrast** between text and its background. WCAG asks for at least **4.5 to 1** for normal text at level AA, **3 to 1** for large text, and **3 to 1** for important icons and the borders of form fields. Try the checker below with your own colours:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```css title="styles.css"
+/* A light grey on white often fails. This passes at 4.5 to 1 */
+body {
+  background: #ffffff;
+  color: #595959;
+}
+
+/* Never remove the focus outline without replacing it */
+:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Contrast Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ContrastChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## The First Rule of ARIA
+
+You will meet **ARIA** later in this section. It is a set of attributes that can add accessibility information to elements. It is powerful, but the most important thing to know is its first rule:
+
+:::tip No ARIA is better than bad ARIA
+**If a native HTML element already does the job, use it.** A real `<button>` is already focusable, works with Enter and Space, and tells assistive technology it is a button. A `<div role="button">` has none of that until you build it yourself. ARIA changes only what is announced. It does **not** add behaviour.
+:::
+
+## What Is in This Section
+
+<DocCardList />
+
+## Five Habits to Start Today
+
+1. **Use the right element.** A button for actions, a link for navigation, a heading for a heading.
+2. **Label everything.** Every input, every icon button, every image that carries meaning.
+3. **Try your keyboard.** Put the mouse aside, and use Tab, Shift+Tab, Enter, Space, and Escape.
+4. **Check contrast and zoom.** Enlarge your page to 200 percent, and check the colours.
+5. **Write clearly.** Plain words, short sentences, and error messages that say how to fix the problem.
+
+## Accessibility Checklist for Any Page
+
+- [ ] The page has a `lang` attribute and a unique `<title>`.
+- [ ] Headings form a logical outline, and landmarks (`header`, `nav`, `main`, `footer`) are used.
+- [ ] Every image has the right `alt`, and decorative images have `alt=""`.
+- [ ] Every form control has a visible `<label>`.
+- [ ] Links make sense out of context, and buttons say what they do.
+- [ ] Everything works with the **keyboard,** and the **focus is always visible.**
+- [ ] Text has enough **contrast,** and information is **never** shown by colour alone.
+- [ ] The page works at **200 percent zoom** and on small screens.
+- [ ] Video has captions, and audio has a transcript.
+- [ ] Animations can be stopped, and respect reduced motion.
+- [ ] Errors are described in text, and are announced.
+
+## Security and Privacy Notes
+
+- **Do not ask people to prove their disability** to use your site, and never store disability information without a clear need and consent. It is sensitive personal data.
+- **Be careful with accessibility detection.** Using a visitor's settings (such as screen reader use, reduced motion, or contrast) to track or profile them can reveal private information. Respond to their preferences in your styles, and do not collect them.
+- **Accessible does not mean unprotected.** CAPTCHAs that rely only on images or sounds shut out many people. Offer an alternative that is both secure and accessible.
+- **Session timeouts** need warnings and a way to extend the time, which is both an accessibility and a security issue.
+- **Do not put sensitive details in labels and error messages** that are read aloud, because others nearby may hear them.
+
+## Global Audience Notes
+
+- **Disability is global,** and so are the tools. Many people in lower-income regions use older phones, slower networks, and free screen readers. Lean, semantic HTML serves them best.
+- **Set `lang`** correctly, and mark passages in other languages, so screen readers pronounce them properly.
+- **Right-to-left languages** need `dir="rtl"` and testing with assistive technology.
+- **Write in plain language,** which helps translators, people reading in a second language, and people with cognitive disabilities.
+- **Laws differ,** but many countries now require accessible websites, for example the Americans with Disabilities Act and Section 508 in the United States, the European Accessibility Act in the European Union, and similar rules elsewhere. They often point to WCAG. This is not legal advice, so check the rules for your region and your audience.
+- **Avoid idioms and cultural shortcuts** in icons and instructions.
+
+## Common Mistakes to Avoid
+
+1. **Treating accessibility as a last-minute extra.**
+2. **Building controls from `div` and `span`** instead of real elements.
+3. **Removing the focus outline.**
+4. **Using colour alone** to show errors, status, or required fields.
+5. **Missing or meaningless alt text,** such as "image" or a file name.
+6. **Placeholder text used as a label.**
+7. **Link text such as "click here".**
+8. **Adding ARIA by default,** and creating wrong or conflicting information.
+9. **Relying only on automatic tools.** They find only part of the problems.
+10. **Never testing with a keyboard or a screen reader.**
+11. **Auto-playing media,** and moving content with no pause.
+12. **Assuming "it looks fine to me" means it is fine.**
+
+## Practice Time
+
+Try these in your editor and your browser:
+
+1. Use the simulator above with each option, and write down what became harder.
+2. Put your mouse away, and complete a form on a site you use, with the keyboard only.
+3. Press Tab through your own page, and note every place where you lose track of the focus.
+4. Check the contrast of three colour pairs on your site, using the checker.
+5. Zoom a page to 200 percent, and note anything that breaks.
+6. Turn on a built-in screen reader for five minutes, and listen to a page you built.
+7. List every image on a page, and write its alt text, or mark it as decorative.
+8. Replace one `div` that acts as a button with a real `<button>`.
+9. Run an automatic accessibility checker (such as the one built into your browser's developer tools), and fix the first three issues.
+10. Bonus: ask a friend who uses assistive technology, if they are happy to help, how they find your site.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is web accessibility?</summary>
+
+Building websites so that as many people as possible can use them, whatever their abilities, devices, or situations.
+
+</details>
+
+<details>
+<summary>2. What does POUR stand for?</summary>
+
+Perceivable, Operable, Understandable, and Robust: the four principles of the Web Content Accessibility Guidelines.
+
+</details>
+
+<details>
+<summary>3. What is the first rule of ARIA?</summary>
+
+If a native HTML element already does the job, use it instead of adding ARIA. ARIA changes what is announced, but it does not add behaviour.
+
+</details>
+
+<details>
+<summary>4. What contrast does WCAG level AA require for normal text?</summary>
+
+At least 4.5 to 1 between the text and its background. Large text and important non-text parts need at least 3 to 1.
+
+</details>
+
+<details>
+<summary>5. Why is the keyboard such an important test?</summary>
+
+Many people cannot use a mouse, and screen readers, switch devices, and voice control all depend on keyboard-style navigation. If it works with the keyboard, it is likely to work with other tools.
+
+</details>
+
+<details>
+<summary>6. What is the curb-cut effect?</summary>
+
+Features built for disabled people, such as ramps or captions, often benefit everyone, including cyclists, parents with pushchairs, and people in noisy places.
+
+</details>
+
+## Key Takeaways
+
+- **Accessibility** means building for as many people as possible. Roughly one in six people has a significant disability, and everyone is sometimes limited.
+- WCAG rests on four principles: **Perceivable, Operable, Understandable, Robust.** Level **AA** is the usual target.
+- **Semantic HTML** is the foundation. Use the right element before you reach for ARIA.
+- Test with the **keyboard, zoom, contrast checks, and a screen reader,** and with real people when you can.
+- **Never rely on colour alone,** never remove the focus outline, and always label controls.
+- Protect people's privacy, including information about their disabilities and settings.
+- Plain language, lean pages, and correct `lang` help people everywhere.
+
+Ready to begin? Start with [Introduction to A11y](./accessibility/introduction-to-a11y).

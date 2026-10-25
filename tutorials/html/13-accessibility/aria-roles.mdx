@@ -1,0 +1,584 @@
+---
+id: html-aria-roles
+title: "ARIA Roles"
+sidebar_label: "ARIA Roles"
+sidebar_position: 15
+slug: /html/accessibility/aria-roles
+description: "Learn what ARIA roles are, how native HTML elements already have them, and which roles are worth knowing: landmark, widget, live region, and structure roles. Includes a searchable role explorer, a landmark lab that shows what a screen reader's landmark list looks like, and a live roles lab for status, alert, and log."
+keywords:
+  - ARIA roles
+  - role attribute
+  - landmark roles
+  - role status alert
+  - role dialog
+  - implicit roles
+  - role presentation
+  - tablist tab tabpanel
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, roles, landmarks, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function makeRole(role, cat, native, name, keys, note, code) {
+  return {role, cat, native, name, keys, note, code};
+}
+
+export const roleData = [
+  makeRole("banner", "Landmark", "header (page level)", "No", "None", "The site header. Use it once per page.", '<header>\n  <a href="/">Baker\'s Corner</a>\n</header>'),
+  makeRole("navigation", "Landmark", "nav", "Recommended when there is more than one", "None", "A block of navigation links. Name each one if you have several.", '<nav aria-label="Main">…</nav>'),
+  makeRole("main", "Landmark", "main", "No", "None", "The main content. Use it once per page.", '<main>…</main>'),
+  makeRole("complementary", "Landmark", "aside", "Recommended when there is more than one", "None", "Related content that makes sense on its own, such as a sidebar.", '<aside aria-label="Related recipes">…</aside>'),
+  makeRole("contentinfo", "Landmark", "footer (page level)", "No", "None", "The site footer, with copyright and links.", '<footer>…</footer>'),
+  makeRole("search", "Landmark", "search element, or form with role=search", "Recommended", "None", "The search area of the page.", '<form role="search" aria-label="Recipes">\n  <input type="search" aria-label="Search recipes">\n  <button type="submit">Search</button>\n</form>'),
+  makeRole("form", "Landmark", "form (only when it has a name)", "Required to be a landmark", "None", "A form is a landmark only if it has an accessible name.", '<form aria-labelledby="signup-title">…</form>'),
+  makeRole("region", "Landmark", "section (only when it has a name)", "Required to be a landmark", "None", "Use sparingly. Too many regions make a landmark list noisy.", '<section aria-labelledby="delivery-title">\n  <h2 id="delivery-title">Delivery</h2>\n</section>'),
+  makeRole("button", "Widget", "button", "Required", "Enter and Space", "Something you press to do an action.", '<button type="button">Save</button>'),
+  makeRole("checkbox", "Widget", "input type=checkbox", "Required", "Space", "A two- or three-state choice. A custom one needs aria-checked.", '<input type="checkbox" id="c1">\n<label for="c1">Remember me</label>'),
+  makeRole("switch", "Widget", "None (checkbox with role=switch)", "Required", "Space", "An on and off setting. Needs aria-checked.", '<button type="button" role="switch" aria-checked="false">Dark mode</button>'),
+  makeRole("textbox", "Widget", "input type=text, textarea", "Required", "Typing", "A place to type text.", '<label for="n">Name</label>\n<input id="n" type="text">'),
+  makeRole("slider", "Widget", "input type=range", "Required", "Arrow keys, Home, End", "Needs aria-valuenow, aria-valuemin, and aria-valuemax if custom.", '<label for="v">Volume</label>\n<input id="v" type="range" min="0" max="10">'),
+  makeRole("progressbar", "Widget", "progress", "Recommended", "None", "Shows how far a task has got.", '<label for="p">Upload</label>\n<progress id="p" max="100" value="40"></progress>'),
+  makeRole("tablist", "Widget", "None", "Recommended", "Left and Right arrows", "Holds the tabs. Its children must be tab elements.", '<div role="tablist" aria-label="Recipe">…</div>'),
+  makeRole("tab", "Widget", "None", "Required", "Arrow keys, roving tabindex", "One tab. Needs aria-selected and aria-controls.", '<button role="tab" aria-selected="true" aria-controls="p1">Ingredients</button>'),
+  makeRole("tabpanel", "Widget", "None", "Required", "None", "The content for a tab. Link it with aria-labelledby.", '<div role="tabpanel" id="p1" aria-labelledby="t1">…</div>'),
+  makeRole("combobox", "Widget", "select, or input with datalist", "Required", "Typing, arrows, Esc", "A complex pattern. Use native select where you can, and follow a tested pattern otherwise.", '<label for="s">Loaf</label>\n<select id="s">…</select>'),
+  makeRole("listbox", "Widget", "select with multiple", "Required", "Arrow keys", "A list you choose from. Its children are option elements.", '<select multiple aria-label="Toppings">…</select>'),
+  makeRole("menu", "Widget", "None", "Recommended", "Arrow keys, Esc", "For application-style menus (like a right-click menu). Do not use it for site navigation links.", '<ul role="menu">\n  <li role="menuitem">Copy</li>\n</ul>'),
+  makeRole("tooltip", "Widget", "None", "Not needed", "Esc closes it", "A small popup, linked with aria-describedby. It must show on focus too.", '<button aria-describedby="tip">Help</button>\n<div role="tooltip" id="tip">Opens the help centre.</div>'),
+  makeRole("status", "Live region", "output", "No", "None", "A polite message, announced when the screen reader is free. Good for \"Saved.\"", '<div role="status">Recipe saved.</div>'),
+  makeRole("alert", "Live region", "None", "No", "None", "An urgent message, announced at once. Use rarely.", '<div role="alert">Your session ends in one minute.</div>'),
+  makeRole("log", "Live region", "None", "Recommended", "None", "A history where new items are added, such as chat.", '<div role="log" aria-label="Chat">…</div>'),
+  makeRole("timer", "Live region", "None", "Recommended", "None", "A timer. It is not announced as it changes, unless you ask for it.", '<div role="timer" aria-label="Time left">04:59</div>'),
+  makeRole("list", "Structure", "ul, ol", "No", "None", "A list. Its children are listitem elements.", '<ul>\n  <li>Flour</li>\n</ul>'),
+  makeRole("heading", "Structure", "h1 to h6", "Content", "None", "A custom heading also needs aria-level.", '<h2>Ingredients</h2>'),
+  makeRole("img", "Structure", "img", "Required", "None", "An image. Also useful on an SVG, or a group of emoji, that should be read as one picture.", '<svg role="img" aria-label="Rye loaf">…</svg>'),
+  makeRole("table", "Structure", "table", "Recommended", "None", "Data in rows and columns. See Accessible Tables.", '<table>\n  <caption>Prices</caption>\n  …\n</table>'),
+  makeRole("group", "Structure", "fieldset, details", "Recommended", "None", "A set of related things. A custom group needs a name.", '<div role="group" aria-label="Text style">…</div>'),
+  makeRole("separator", "Structure", "hr", "No", "None", "A divider between sections.", '<hr>'),
+  makeRole("article", "Structure", "article", "No", "None", "A self-contained piece, such as a post or card.", '<article>…</article>'),
+  makeRole("presentation / none", "Structure", "None", "No", "None", "Removes the role of an element. Never use it on something focusable.", '<table role="presentation">…</table>'),
+  makeRole("dialog", "Window", "dialog", "Required", "Esc closes it", "A window on top of the page. Move focus in, and back out when it closes.", '<dialog aria-labelledby="dlg-title">…</dialog>'),
+  makeRole("alertdialog", "Window", "None (dialog with role=alertdialog)", "Required", "Esc closes it", "A dialog that needs an answer now, such as a confirmation. Focus the safe choice.", '<div role="alertdialog" aria-labelledby="t" aria-describedby="d">…</div>'),
+];
+
+export const roleCategories = ["All", "Landmark", "Widget", "Live region", "Structure", "Window"];
+
+export function RoleExplorer() {
+  const [category, setCategory] = useState("All");
+  const [query, setQuery] = useState("");
+  const [picked, setPicked] = useState("button");
+  const list = roleData.filter((item) => (category === "All" || item.cat === category) && (query.trim() === "" || item.role.indexOf(query.trim().toLowerCase()) !== -1 || item.native.toLowerCase().indexOf(query.trim().toLowerCase()) !== -1));
+  const current = roleData.find((item) => item.role === picked) || list[0] || roleData[0];
+  return (
+    <div>
+      <div style={{display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.6rem"}}>
+        <p style={{margin: 0}}>
+          <label htmlFor="role-category">Category</label><br />
+          <select id="role-category" value={category} onChange={(event) => setCategory(event.target.value)}>
+            {roleCategories.map((name) => (<option key={name} value={name}>{name}</option>))}
+          </select>
+        </p>
+        <p style={{margin: 0}}>
+          <label htmlFor="role-query">Search by role or element</label><br />
+          <input id="role-query" type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+        </p>
+      </div>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{list.length}</strong> roles shown. Choose one to see the details.</p>
+      <div role="group" aria-label="Roles" style={{display: "flex", gap: "0.3rem", flexWrap: "wrap", marginBottom: "0.7rem"}}>
+        {list.map((item) => (
+          <button key={item.role} type="button" aria-pressed={current.role === item.role} onClick={() => setPicked(item.role)} style={{padding: "0.2rem 0.6rem", fontWeight: current.role === item.role ? 700 : 400, background: current.role === item.role ? "#dbeafe" : undefined, color: current.role === item.role ? "#1e293b" : undefined, border: current.role === item.role ? "2px solid #1d4ed8" : undefined}}>{item.role}</button>
+        ))}
+      </div>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem"}} aria-live="polite">
+        <p style={{margin: "0 0 0.3rem"}}><strong>{current.role}</strong> ({current.cat})</p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Native HTML:</strong> {current.native}</p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Needs a name:</strong> {current.name}</p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Keyboard:</strong> {current.keys}</p>
+        <p style={{margin: "0 0 0.5rem"}}>{current.note}</p>
+        <pre style={{margin: 0, overflowX: "auto"}}><code>{current.code}</code></pre>
+      </div>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a selection of the most useful roles, not the whole list. For a custom widget, always follow a tested pattern, because a role also brings rules about names, keyboard keys, required children, and states.
+      </p>
+    </div>
+  );
+}
+
+export function LandmarkLab() {
+  const [semantic, setSemantic] = useState(true);
+  const [nameSecond, setNameSecond] = useState(false);
+  const [useSearch, setUseSearch] = useState(true);
+  const [useAside, setUseAside] = useState(true);
+  const [regionMode, setRegionMode] = useState("none");
+  const landmarks = [];
+  const problems = [];
+  if (semantic) {
+    landmarks.push("banner");
+    landmarks.push("navigation: Main");
+    landmarks.push(nameSecond ? "navigation: Footer links" : "navigation");
+    if (!nameSecond) problems.push("Two navigation landmarks, and one has no name. Someone browsing landmarks cannot tell them apart.");
+    if (useSearch) landmarks.push("search: Recipes");
+    landmarks.push("main");
+    if (useAside) landmarks.push("complementary: Related recipes");
+    if (regionMode === "named") landmarks.push("region: Delivery");
+    if (regionMode === "unnamed") problems.push("A section with no name is not a landmark at all, so it is missing from the list.");
+    landmarks.push("contentinfo");
+  } else {
+    problems.push("Only div elements, so there are no landmarks. Someone using a landmark list finds nothing, and must read the whole page in order.");
+  }
+  const lines = [];
+  lines.push(semantic ? "<header>…</header>" : "<div class=\"header\">…</div>");
+  lines.push(semantic ? "<nav aria-label=\"Main\">…</nav>" : "<div class=\"menu\">…</div>");
+  if (useSearch) lines.push(semantic ? "<form role=\"search\" aria-label=\"Recipes\">…</form>" : "<div class=\"search\">…</div>");
+  lines.push(semantic ? "<main>" : "<div class=\"content\">");
+  if (regionMode !== "none") lines.push(semantic ? (regionMode === "named" ? "  <section aria-labelledby=\"delivery\"><h2 id=\"delivery\">Delivery</h2>…</section>" : "  <section>…</section>") : "  <div class=\"box\">…</div>");
+  lines.push(semantic ? "</main>" : "</div>");
+  if (useAside) lines.push(semantic ? "<aside aria-label=\"Related recipes\">…</aside>" : "<div class=\"side\">…</div>");
+  lines.push(semantic ? "<nav" + (nameSecond ? " aria-label=\"Footer links\"" : "") + ">…</nav>" : "<div class=\"links\">…</div>");
+  lines.push(semantic ? "<footer>…</footer>" : "<div class=\"footer\">…</div>");
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Build the page</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={semantic} onChange={(event) => setSemantic(event.target.checked)} /> Use landmark elements (header, nav, main, footer)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={nameSecond} onChange={(event) => setNameSecond(event.target.checked)} disabled={!semantic} /> Name the second nav ("Footer links")</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={useSearch} onChange={(event) => setUseSearch(event.target.checked)} /> Add a search area</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={useAside} onChange={(event) => setUseAside(event.target.checked)} /> Add a sidebar (aside)</label>
+        <p style={{margin: "0.4rem 0 0"}}>
+          <label htmlFor="landmark-region">A section for delivery</label>{" "}
+          <select id="landmark-region" value={regionMode} onChange={(event) => setRegionMode(event.target.value)}>
+            <option value="none">None</option>
+            <option value="unnamed">A section with no name</option>
+            <option value="named">A section with a name</option>
+          </select>
+        </p>
+      </fieldset>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The HTML:</strong></p>
+      <pre style={{margin: "0 0 0.7rem", overflowX: "auto"}}><code>{lines.join("\n")}</code></pre>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"}} aria-live="polite">
+        <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader's landmark list:</strong></p>
+        {landmarks.length === 0 ? <p style={{margin: 0}}><em>(no landmarks found)</em></p> : (
+          <ol style={{margin: 0, paddingLeft: "1.2rem"}}>
+            {landmarks.map((item, index) => (<li key={index}>{item}</li>))}
+          </ol>
+        )}
+      </div>
+      {problems.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {problems.map((item, index) => (<li key={index}><strong>Problem:</strong> {item}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}><strong>Looks good:</strong> every landmark is there, and every repeated one has its own name.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Screen readers can list the landmarks of a page, or jump from one to the next, so people can skip straight to the main content or the search. The names and the list shown here are a simplified example of that, and each screen reader words it a little differently. Also note that the header and footer are page-level landmarks only when they sit directly in the page, and not inside an article or section.
+      </p>
+    </div>
+  );
+}
+
+export function LiveRolesLab() {
+  const [statusText, setStatusText] = useState("");
+  const [alertText, setAlertText] = useState("");
+  const [logLines, setLogLines] = useState([]);
+  const [transcript, setTranscript] = useState([]);
+  const note = (line) => setTranscript((previous) => previous.concat(line).slice(-7));
+  const save = () => {
+    if (statusText === "Recipe saved.") note("status: the text did not change, so nothing new is announced.");
+    else {
+      setStatusText("Recipe saved.");
+      note("status: \"Recipe saved.\" Announced politely, when the screen reader is not busy.");
+    }
+  };
+  const fail = () => {
+    if (alertText === "Could not save. Check your connection.") note("alert: the text did not change, so nothing new is announced.");
+    else {
+      setAlertText("Could not save. Check your connection.");
+      note("alert: \"Could not save...\" Announced at once, and may interrupt what is being read.");
+    }
+  };
+  const chat = () => {
+    const line = "Message " + (logLines.length + 1) + " from Sam";
+    setLogLines(logLines.concat(line));
+    note("log: \"" + line + "\" Added to the end, and announced politely.");
+  };
+  const reset = () => {
+    setStatusText("");
+    setAlertText("");
+    setLogLines([]);
+    setTranscript([]);
+  };
+  const box = {border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.5rem 0.7rem", marginBottom: "0.5rem", minHeight: "2.4rem"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem", display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        <button type="button" onClick={save}>Save recipe</button>
+        <button type="button" onClick={fail}>Make an error</button>
+        <button type="button" onClick={chat}>Add a chat line</button>
+        <button type="button" onClick={reset}>Reset</button>
+      </p>
+      <p style={{margin: "0 0 0.2rem"}}><strong>role="status"</strong> (polite)</p>
+      <div role="status" style={box}>{statusText}</div>
+      <p style={{margin: "0 0 0.2rem"}}><strong>role="alert"</strong> (assertive)</p>
+      <div role="alert" style={box}>{alertText}</div>
+      <p style={{margin: "0 0 0.2rem"}}><strong>role="log"</strong> (a history)</p>
+      <div role="log" aria-label="Chat" style={box}>
+        {logLines.map((line, index) => (<p key={index} style={{margin: 0}}>{line}</p>))}
+      </div>
+      <p style={{margin: "0.4rem 0 0.2rem"}}><strong>What a screen reader would do (simulation):</strong></p>
+      {transcript.length === 0 ? <p style={{margin: 0}}><em>Press a button.</em></p> : (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {transcript.map((line, index) => (<li key={index}>{line}</li>))}
+        </ul>
+      )}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are real live regions, so if you use a screen reader, you will hear them. The list above is only a plain-text simulation of the difference. Two things matter: the region must already be in the page before its text changes, and an identical message is not announced again. The exact behaviour depends on the screen reader and browser, so test it. Do not use <code>alert</code> for ordinary messages, because it interrupts people.
+      </p>
+    </div>
+  );
+}
+
+A **role** tells assistive technology **what an element is.** "This is a button." "This is a navigation area." "This is a tab." It is the first thing a screen reader tells you about something, and it decides how a person expects to use it: a button is pressed, a checkbox is toggled, a link is followed.
+
+The key point, which you met in the last lesson, is that **native HTML elements already have roles.** A `button` is a button, a `nav` is a navigation landmark, an `h2` is a level 2 heading. The `role` attribute is for the situations where HTML has no element that fits.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a **role** is, and how **native elements** already have them
+- The main **families of roles:** landmark, widget, live region, structure, and window
+- Which roles are worth **knowing**
+- What a role **promises,** and what you must still build
+- Roles to **avoid**
+- How to **check** roles
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Native elements already have roles -->
+<header>…</header>                <!-- role: banner -->
+<nav aria-label="Main">…</nav>    <!-- role: navigation -->
+<main>…</main>                    <!-- role: main -->
+<button type="button">Save</button>  <!-- role: button -->
+<h2>Ingredients</h2>              <!-- role: heading, level 2 -->
+
+<!-- An explicit role fills a gap: there is no HTML tab element -->
+<div role="tablist" aria-label="Recipe">
+  <button role="tab" aria-selected="true" aria-controls="panel-1" id="tab-1">
+    Ingredients
+  </button>
+</div>
+<div role="tabpanel" id="panel-1" aria-labelledby="tab-1">…</div>
+
+<!-- A live region needs a role too -->
+<div role="status">Recipe saved.</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Role Explorer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RoleExplorer />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Browse the list by category, search for an element such as `nav`, and look at the "Native HTML" line first. Most of the time it says an element exists.
+
+## How Roles Work
+
+- **Every element has a role,** either **implicit** (from the HTML element) or **explicit** (from the `role` attribute).
+- **An explicit role wins** over the implicit one. `<div role="button">` is a button to assistive technology, even though it is a `div` in the code.
+- **A role is a promise.** It tells people what to expect: a `button` should respond to Enter and Space, a `tab` should respond to arrow keys, a `dialog` should keep focus inside. The role does **not** keep the promise for you. You must write the behaviour.
+- **Each role has rules.** Some need a **name** (`dialog`, `img`), some need **children** of a certain kind (`tablist` needs `tab`, `list` needs `listitem`), and some need **states** (`checkbox` needs `aria-checked` if it is custom).
+- **A role needs to fit the element.** The "ARIA in HTML" rules list which roles are allowed on which elements. For example, you may not put `role="button"` on a heading, or on a link, without changing what the element is.
+- **The `role` attribute can hold a list** of words, and browsers use the first one they understand. It is rarely needed, and support is not something to rely on, so use one role.
+- **Roles are read by the browser's accessibility tree,** which you saw in [Introduction to Accessibility](./introduction-to-a11y).
+
+## The Families of Roles
+
+| Family | What it covers | Examples |
+| :-- | :-- | :-- |
+| **Landmark** | Big areas of the page | `banner`, `navigation`, `main`, `search`, `contentinfo` |
+| **Widget** | Things you interact with | `button`, `checkbox`, `tab`, `slider`, `combobox` |
+| **Live region** | Messages that change | `status`, `alert`, `log`, `timer` |
+| **Document structure** | The shape of content | `list`, `heading`, `img`, `table`, `group` |
+| **Window** | Pop-up windows | `dialog`, `alertdialog` |
+
+There is also a group of **abstract** roles used to define the others. **Never** use them in your pages.
+
+## Landmark Roles
+
+Landmarks mark the **big areas** of a page. Screen reader users can list them, or jump between them, much as sighted users glance at the layout. They are the single biggest help for people who need to get to the main content, the search box, or the menu without reading everything in order.
+
+You almost never need the `role` attribute for them, because HTML elements do the job:
+
+| Element | Landmark role |
+| :-- | :-- |
+| `header` (directly in the page) | `banner` |
+| `nav` | `navigation` |
+| `main` | `main` |
+| `aside` | `complementary` |
+| `footer` (directly in the page) | `contentinfo` |
+| `section` (with a name) | `region` |
+| `form` (with a name) | `form` |
+| `search`, or `form role="search"` | `search` |
+
+Rules of thumb:
+
+- **One `main`** per page, and use `header` and `footer` for the page (not for sections).
+- **Name repeated landmarks,** with `aria-label` or `aria-labelledby`: two `nav` elements need different names.
+- **Do not repeat the role in the name:** "Main," not "Main navigation."
+- **Use `section` and `region` sparingly.** Too many landmarks are as unhelpful as none.
+- **Put everything inside a landmark.** Content outside any landmark is easy to miss.
+- **A newer `search` element exists** in recent HTML. Support is growing, so check your target browsers, and use `role="search"` on a form as the safe option.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<header>…</header>
+
+<nav aria-label="Main">…</nav>
+
+<form role="search" aria-label="Recipes">
+  <input type="search" aria-label="Search recipes">
+  <button type="submit">Search</button>
+</form>
+
+<main>
+  <h1>Sourdough</h1>
+  …
+</main>
+
+<aside aria-label="Related recipes">…</aside>
+
+<nav aria-label="Footer links">…</nav>
+
+<footer>…</footer>
+```
+
+</TabItem>
+<TabItem value="output" label="Landmark Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LandmarkLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Widget Roles
+
+Widget roles describe **interactive** things. Native elements cover many of them (`button`, `checkbox`, `radio`, `textbox`, `slider`, `progressbar`, `option`). A few have **no native element,** so you need roles to build them: `tab`, `tablist`, `tabpanel`, `switch`, `menu`, `menuitem`, `tooltip`, and a full `combobox`.
+
+Using a widget role is a **contract.** It means you will provide:
+
+1. **A name.**
+2. **The right states** (for example `aria-selected` on a tab).
+3. **The keyboard behaviour** people expect (arrow keys inside tabs and menus).
+4. **Focus handling** (a roving `tabindex` in a tab list, for instance).
+5. **The right structure** (tabs inside a tablist).
+
+If you cannot provide all five, **do not use the role.** A half-built widget confuses people more than a plain one.
+
+:::warning
+**`menu` is not for website navigation.** A `role="menu"` tells a screen reader to switch into a special mode where the arrow keys are the way to move, like an application menu. A site's main menu is a list of links, so use `nav`, `ul`, and `a`.
+:::
+
+## Live Region Roles
+
+Some roles tell assistive technology to **announce changes** to a region, **without moving focus.** The page must already contain the region, and then you change the text in it.
+
+| Role | Announced | Use it for |
+| :-- | :-- | :-- |
+| `status` | Politely (when the reader is free) | "Recipe saved," "3 results found" |
+| `alert` | At once, and may interrupt | Urgent errors, "Session ending" |
+| `log` | Politely, new items added | Chat, activity history |
+| `timer` | Not announced as it changes | A countdown, with a name |
+
+Try them in the lab. If you use a screen reader, you will hear the real thing.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LiveRolesLab />
+</>
+</BrowserWindow>
+
+Choose the **gentlest** option that works. Most messages should be `status`, and `alert` should be rare. Over-using `alert` is like shouting: it interrupts people, and makes them stop trusting your messages. The next lessons cover live regions in depth, in [aria-live](./aria-live).
+
+## Structure and Special Roles
+
+Most structure roles come from HTML: `ul` and `ol` (`list`), `li` (`listitem`), `h1` to `h6` (`heading`), `table`, `img`, `figure`, `hr` (`separator`), `article`. A few explicit roles are worth knowing:
+
+- **`role="img"`** makes a group of things (an SVG, a few emoji) read as **one image,** with a name from `aria-label`.
+- **`role="group"`** with a name gathers related controls, such as a set of toolbar buttons. For form fields, prefer `fieldset` and `legend`.
+- **`role="presentation"` or `role="none"`** removes the role of an element. It is useful to turn a **layout table** into plain content, or to hide a `li` inside a custom widget. **Never put it on something focusable or interactive.**
+- **`role="list"` on a `ul` with `list-style: none`.** Some browser and screen reader combinations (notably Safari with VoiceOver) have stopped treating such a list as a list. Adding the role puts it back. This behaviour has changed over time, so check what your audience's browsers do before adding it everywhere.
+
+## Roles to Avoid
+
+- **Abstract roles** (such as `widget`, `landmark`, `command`). They are only for the ARIA specification.
+- **`role="application"`.** It tells screen readers to hand over **all** the keys to your page, and turn off their own navigation. Almost no page needs it.
+- **`role="menu"` for site navigation.** Use a `nav` with links.
+- **A role that repeats the element:** `<button role="button">`, `<nav role="navigation">`. It does nothing useful, and clutters your code.
+- **A role that fights the element:** `<h2 role="button">`, `<a role="heading">`. Wrap the content instead: `<h2><button>…</button></h2>`.
+- **`role="alert"` for everyday messages.**
+- **Interactive roles with no keyboard support** (see [Accessible Buttons](./accessible-buttons)).
+- **Roles you do not understand.** If you cannot say what a role promises, do not use it.
+
+## Check Your Roles
+
+1. **Open the Accessibility panel** in your browser's DevTools, and look at the **Role** of each element. Does it match what you intended?
+2. **List the landmarks** with a screen reader, or a browser extension that shows them. Is there one `main`? Are repeated ones named?
+3. **Search your code for `role=`.** For each one, ask: is there a native element? Is the role allowed on this element? Do I provide the name, states, and keys that go with it?
+4. **Run an automated checker** (axe, Lighthouse) for invalid roles, missing required children, and missing names.
+5. **Use the keyboard** on every widget role, and listen with a screen reader.
+6. **Check the "ARIA in HTML" rules** if you are unsure which roles an element may have.
+
+## Good Habits
+
+1. **Use the element with the right role,** and add `role` only to fill a gap.
+2. **Use landmark elements,** and name the repeated ones.
+3. **Treat a widget role as a promise** of name, states, keys, and focus.
+4. **Follow a tested pattern** for tabs, menus, combo boxes, and dialogs.
+5. **Choose `status` before `alert`.**
+6. **Never put `presentation`, `none`, or `aria-hidden` on focusable elements.**
+7. **Keep roles in line with the real behaviour.**
+8. **Test with a screen reader,** and review roles in code review.
+
+## Accessibility Checklist
+
+- [ ] No role is used where a native element does the job.
+- [ ] The page has one `main`, and a `header` and `footer`.
+- [ ] Repeated landmarks have unique names.
+- [ ] Every widget role has a name, the right states, and the right keyboard behaviour.
+- [ ] Required parent and child roles are present (such as `tablist` with `tab`).
+- [ ] `dialog` and `alertdialog` have names, and move focus in and out.
+- [ ] `status` is used for normal messages, and `alert` is rare.
+- [ ] `menu` is not used for site navigation, and `application` is not used.
+- [ ] No focusable element has `role="presentation"` or `role="none"`.
+- [ ] Roles do not repeat or fight the element they are on.
+
+## Security and Privacy Notes
+
+- **Do not announce sensitive data in live regions.** A `status` or `alert` that reads out an account number, a one-time code, or a password can be overheard.
+- **Do not use roles to disguise controls.** A control that looks harmless but is announced as something else, or the other way round, is a deceptive pattern, and can hide dangerous actions from people who cannot see the screen.
+- **Alerts must be honest.** A fake "Security warning" in an `alert` role, used to push people into clicking, is a scam technique.
+- **Be careful with user-supplied text** in roles and ARIA values. Never insert unchecked user input into attributes.
+- **Role-based detection** of screen reader users (by looking for how they use landmarks or live regions) could reveal a disability. Avoid tracking it.
+- **Dialogs that ask for consent or privacy choices** need proper roles and focus, so that everyone can answer. Hidden or hard-to-reach "reject" buttons are a dark pattern.
+
+## Global Audience Notes
+
+- **Landmark names are text,** so translate them (`aria-label="Main"`, `aria-label="Footer links"`) along with the rest of the page.
+- **Do not repeat the role name** in your label. Screen readers say "navigation" in the user's own language, so "Main navigation" can become a repeated word after translation.
+- **Set `lang` on the page,** and on any labels in other languages.
+- **Right-to-left languages:** arrow-key behaviour in tabs, menus, and toolbars should follow the reading direction. Test it.
+- **Live regions in other languages:** make sure the message text is in the page's language, and short enough to be understood when read aloud.
+- **Different devices:** many people use a screen reader on a phone. Roles are understood there too, but some patterns (such as menus and combo boxes) behave differently on touch. Test on mobile.
+
+## Common Mistakes to Avoid
+
+1. **`div role="button"` with no keyboard support.**
+2. **`role="button"` on a `button`,** or `role="navigation"` on a `nav`.
+3. **A `section` with no name,** expected to be a landmark.
+4. **Two `nav` elements with no names.**
+5. **`role="menu"` for a site navigation.**
+6. **`role="application"` "to be safe."**
+7. **`role="alert"` for every message.**
+8. **A `tablist` with no `tab` children.**
+9. **`role="presentation"` on something focusable.**
+10. **Landmarks nested or repeated without reason.**
+11. **Content outside any landmark.**
+12. **Never checking the roles in the Accessibility panel.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Browse the role explorer, and find the native element for ten roles.
+2. Use the landmark lab to build a page with no problems, and then break it one way at a time.
+3. Open a page you built, and list its landmarks with a screen reader or an extension.
+4. Add names to two `nav` elements, and check the Accessibility panel.
+5. Change a layout table to `role="presentation"`, and compare it with using CSS grid.
+6. Use the live roles lab with a screen reader (if you can), and compare `status` with `alert`.
+7. Replace three `div role="button"` elements with real buttons.
+8. Make a `role="img"` SVG, with a short name.
+9. Search your project for `role=`, and mark each as "native exists," "fills a gap," or "not sure."
+10. Bonus: read the tabs pattern in the ARIA Authoring Practices Guide, and list the roles, states, and keys it needs.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a role?</summary>
+
+It tells assistive technology what an element is, such as a button, a navigation area, or a tab, and so how a person should expect to use it.
+
+</details>
+
+<details>
+<summary>2. What is the difference between an implicit and an explicit role?</summary>
+
+An implicit role comes from the HTML element (a `nav` is a navigation). An explicit role is set with the `role` attribute, and it wins over the implicit one.
+
+</details>
+
+<details>
+<summary>3. Does adding `role="tab"` to a `button` make it behave like a tab?</summary>
+
+No. The role is a promise. You must add the states (`aria-selected`), the keyboard behaviour (arrow keys), and the focus handling yourself.
+
+</details>
+
+<details>
+<summary>4. Why name two `nav` landmarks differently?</summary>
+
+So a person browsing the landmark list can tell them apart, for example "Main" and "Footer links."
+
+</details>
+
+<details>
+<summary>5. When should you use `role="status"` and when `role="alert"`?</summary>
+
+Use `status` for ordinary updates, announced politely. Use `alert` rarely, for urgent messages that must be announced at once.
+
+</details>
+
+<details>
+<summary>6. Why is `role="menu"` wrong for site navigation?</summary>
+
+It switches screen readers to an application-style mode with arrow-key navigation. A website menu is a list of links, so use `nav`, `ul`, and `a`.
+
+</details>
+
+## Key Takeaways
+
+- **A role says what something is.** Native elements already have the right ones.
+- **Landmark elements** (`header`, `nav`, `main`, `aside`, `footer`) are the easiest big win. Name the repeated ones.
+- **A widget role is a promise** of a name, states, keys, and focus. Keep it, or do not use the role.
+- **Live regions** need a role, and must already exist in the page. Prefer `status`, and use `alert` rarely.
+- **Avoid** abstract roles, `application`, `menu` for navigation, and roles that repeat or fight the element.
+- **Never** put `presentation`, `none`, or `aria-hidden` on focusable elements.
+- **Check roles** in the Accessibility panel, and test with a screen reader.
+
+Next, learn how to describe what things are doing with [ARIA States and Properties](./aria-states-properties).

@@ -1,0 +1,572 @@
+---
+id: html-keyboard-accessibility
+title: "Keyboard Accessibility"
+sidebar_label: "Keyboard Accessibility"
+sidebar_position: 6
+slug: /html/accessibility/keyboard-accessibility
+description: "Learn how to make every part of a web page work with a keyboard: which elements are focusable, how tabindex and focus order work, how to style focus with :focus-visible, how to avoid keyboard traps, and how arrow keys and roving tabindex work in custom widgets. Includes a live focus-order lab, a focus-style test, and a roving toolbar."
+keywords:
+  - keyboard accessibility
+  - tabindex
+  - focus order
+  - focus-visible
+  - keyboard trap
+  - roving tabindex
+  - WCAG 2.1.1 keyboard
+  - focus indicator
+  - tab key navigation
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, keyboard, focus, tabindex, a11y, frontend]
+---
+
+import {useState, useRef} from 'react';
+
+export const tabItems = ["Home", "Recipes", "Shop", "Blog", "Contact"];
+
+export function TabOrderLab() {
+  const [positive, setPositive] = useState(false);
+  const [reverse, setReverse] = useState(false);
+  const [skipSecond, setSkipSecond] = useState(false);
+  const [log, setLog] = useState([]);
+  const startRef = useRef(null);
+  const record = (label) => (event) => {
+    const left = event.currentTarget.getBoundingClientRect().left;
+    setLog((previous) => {
+      const last = previous[previous.length - 1];
+      const backwards = Boolean(last) && left < last.left - 1;
+      return previous.concat({label, left, backwards}).slice(-12);
+    });
+  };
+  const tabIndexFor = (index) => {
+    if (index === 3 && positive) return 1;
+    if (index === 1 && skipSecond) return -1;
+    return undefined;
+  };
+  const jumps = log.filter((entry) => entry.backwards).length;
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Change the page, and watch the focus order</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={positive} onChange={(event) => { setPositive(event.target.checked); setLog([]); }} /> Give "Blog" <code>tabindex="1"</code> (a positive value)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={reverse} onChange={(event) => { setReverse(event.target.checked); setLog([]); }} /> Reverse the visual order with CSS (<code>flex-direction: row-reverse</code>)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={skipSecond} onChange={(event) => { setSkipSecond(event.target.checked); setLog([]); }} /> Give "Recipes" <code>tabindex="-1"</code></label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button ref={startRef} type="button" onFocus={() => setLog([])}>Start here</button> Click it (or press Enter), then press <kbd>Tab</kbd> repeatedly.
+      </p>
+      <div style={{display: "flex", flexDirection: reverse ? "row-reverse" : "row", justifyContent: reverse ? "flex-end" : "flex-start", gap: "0.5rem", flexWrap: "nowrap", overflow: "auto", padding: "0.5rem", border: "1px solid #94a3b8", borderRadius: "8px"}}>
+        {tabItems.map((label, index) => (
+          <button key={label} type="button" tabIndex={tabIndexFor(index)} onFocus={record(label)} style={{padding: "0.4rem 0.8rem"}}>{label}</button>
+        ))}
+      </div>
+      <p style={{margin: "0.5rem 0 0.2rem"}}><strong>Focus log (most recent last):</strong></p>
+      <ol role="status" style={{margin: 0}}>
+        {log.length === 0 ? (<li>(press Tab after clicking Start here)</li>) : log.map((entry, index) => (<li key={index}>{entry.label}{entry.backwards ? " (the focus jumped backwards on screen)" : ""}</li>))}
+      </ol>
+      <p style={{margin: "0.5rem 0 0"}}>
+        {jumps > 0 ? "Focus moved against the reading direction " + jumps + " time(s). A keyboard user would feel lost." : positive ? "A positive tabindex takes an element out of the natural order. Browsers visit it before everything with tabindex 0, so it is reached first when Tab starts at the top of the page, not here in the row." : skipSecond ? "A tabindex of -1 removes Recipes from the Tab order. Keyboard users can no longer reach it." : reverse ? "Press Tab through the row to see the jumps." : "With no changes, focus follows the order in the code, which is also the visual order."}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is real browser behaviour, measured when each button gets focus. The exact starting point after clicking can differ a little between browsers.
+      </p>
+    </div>
+  );
+}
+
+export const focusStyles = {
+  default: "",
+  none: ".fs-none a:focus, .fs-none button:focus, .fs-none input:focus, .fs-none select:focus { outline: none; }",
+  custom: ".fs-custom a:focus-visible, .fs-custom button:focus-visible, .fs-custom input:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; box-shadow: 0 0 0 5px #fde68a; }",
+  focusAlways: ".fs-always a:focus, .fs-always button:focus, .fs-always input:focus { outline: 3px solid #b91c1c; outline-offset: 2px; }",
+};
+
+export function FocusStyleLab() {
+  const [mode, setMode] = useState("default");
+  const className = mode === "none" ? "fs-none" : mode === "custom" ? "fs-custom" : mode === "focusAlways" ? "fs-always" : "";
+  const css = focusStyles.none + focusStyles.custom + focusStyles.focusAlways;
+  const options = [
+    {key: "default", label: "Browser default focus ring"},
+    {key: "none", label: "outline: none (do not do this)"},
+    {key: "custom", label: "Custom ring with :focus-visible (recommended)"},
+    {key: "focusAlways", label: "Custom ring with :focus (also appears on mouse clicks)"},
+  ];
+  return (
+    <div>
+      <style>{css}</style>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Focus style</legend>
+        {options.map((option) => (
+          <label key={option.key} style={{display: "block"}}>
+            <input type="radio" name="focus-style" checked={mode === option.key} onChange={() => setMode(option.key)} /> {option.label}
+          </label>
+        ))}
+      </fieldset>
+      <p style={{margin: "0 0 0.4rem"}}>Press <kbd>Tab</kbd> to move through the controls. Then click them with the mouse, and compare.</p>
+      <div className={className} style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.8rem", padding: "0.8rem", border: "1px solid #94a3b8", borderRadius: "8px", background: "#fff", color: "#1e293b"}}>
+        <a href="#fs-sample" onClick={(event) => event.preventDefault()} style={{color: "#1d4ed8"}}>A link</a>
+        <button type="button">A button</button>
+        <input type="text" aria-label="A text field" placeholder="A text field" />
+        <label><input type="checkbox" /> A checkbox</label>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {mode === "none" ? "With the outline removed, a keyboard user cannot see where they are. This fails WCAG 2.4.7 (Focus Visible)." : mode === "custom" ? "The ring shows when you use the keyboard. Many browsers do not show it when you click a button with the mouse, which is what :focus-visible is for." : mode === "focusAlways" ? "The ring shows for every kind of focus, including mouse clicks. It is accessible, but some designers find it noisy." : "Every browser draws its own default ring. It is usually acceptable, but check it on your colours."}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are real focus styles on real elements, so what you see is what a visitor would see. Which clicks show a ring under :focus-visible depends a little on the browser and the element.
+      </p>
+    </div>
+  );
+}
+
+export const toolbarItems = ["Bold", "Italic", "Underline", "Link"];
+
+export function RovingToolbar() {
+  const [roving, setRoving] = useState(true);
+  const [active, setActive] = useState(0);
+  const [pressed, setPressed] = useState([]);
+  const [stops, setStops] = useState(0);
+  const [keys, setKeys] = useState([]);
+  const refs = useRef([]);
+  const move = (next) => {
+    const target = (next + toolbarItems.length) % toolbarItems.length;
+    setActive(target);
+    if (refs.current[target]) refs.current[target].focus();
+  };
+  const onKeyDown = (index) => (event) => {
+    setKeys((previous) => previous.concat(event.key === " " ? "Space" : event.key).slice(-6));
+    if (!roving) return;
+    if (event.key === "ArrowRight") { event.preventDefault(); move(index + 1); }
+    if (event.key === "ArrowLeft") { event.preventDefault(); move(index - 1); }
+    if (event.key === "Home") { event.preventDefault(); move(0); }
+    if (event.key === "End") { event.preventDefault(); move(toolbarItems.length - 1); }
+  };
+  const toggle = (label) => setPressed((previous) => (previous.indexOf(label) === -1 ? previous.concat(label) : previous.filter((item) => item !== label)));
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label><input type="checkbox" checked={roving} onChange={(event) => { setRoving(event.target.checked); setStops(0); setKeys([]); }} /> Use the roving tabindex pattern</label>
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onFocus={() => setStops(0)}>Before the toolbar</button> Press Tab from here, and watch the count. {roving ? "Once inside, use the arrow keys, Home, and End." : "Every button needs its own Tab press."}
+      </p>
+      <div role="toolbar" aria-label="Text formatting" style={{display: "flex", gap: "0.4rem", padding: "0.5rem", border: "1px solid #94a3b8", borderRadius: "8px", marginBottom: "0.4rem"}}>
+        {toolbarItems.map((label, index) => (
+          <button key={label} ref={(element) => { refs.current[index] = element; }} type="button" aria-pressed={pressed.indexOf(label) !== -1} tabIndex={roving ? (index === active ? 0 : -1) : 0} onFocus={() => { setActive(index); setStops((previous) => previous + 1); }} onKeyDown={onKeyDown(index)} onClick={() => toggle(label)} style={{padding: "0.4rem 0.8rem", fontWeight: pressed.indexOf(label) !== -1 ? 700 : 400, background: pressed.indexOf(label) !== -1 ? "#dbeafe" : undefined, color: pressed.indexOf(label) !== -1 ? "#1e293b" : undefined}}>{label}</button>
+        ))}
+        <span aria-hidden="true" style={{alignSelf: "center", fontSize: "0.85em"}}>(pressed: {pressed.length === 0 ? "none" : pressed.join(", ")})</span>
+      </div>
+      <button type="button">After the toolbar</button>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>Focus moves counted since you left the first button: <strong>{stops}</strong>. Last keys: {keys.length === 0 ? "(none)" : keys.join(", ")}.</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        In the roving pattern, only one button is in the Tab order at a time (the active one has tabindex 0, and the others have -1). Tab goes in once and out once, and the arrow keys move inside. This is the pattern recommended for toolbars, tabs, and menus.
+      </p>
+    </div>
+  );
+}
+
+A mouse is just one way to use a computer. Many people never touch one, or cannot. People who are blind use a keyboard (or touch gestures) with a screen reader. People with tremors, paralysis, or repetitive strain injuries may use a keyboard, a switch, a mouth stick, or voice commands that behave like a keyboard. Many power users simply find the keyboard **faster.**
+
+That is why **keyboard accessibility** is one of the most important rules in WCAG (2.1.1), and one of the easiest to test. **If everything works with the keyboard, it will usually work with many other assistive tools too.** And if it does not, it is broken for a huge group of people.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The **keys** people use to browse
+- Which elements are **focusable** by default
+- How **`tabindex`** works, and which values to use and avoid
+- Keeping a **logical focus order**
+- Making focus **clearly visible,** with `:focus-visible`
+- Avoiding **keyboard traps**
+- How **arrow keys** and **roving tabindex** work in custom widgets
+- How to **test** your own pages
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Everything here works with the keyboard, with no extra code -->
+<a href="/recipes">Recipes</a>
+
+<button type="button">Subscribe</button>
+
+<label for="email">Email address</label>
+<input id="email" type="email">
+
+<input type="checkbox" id="news">
+<label for="news">Send me the newsletter</label>
+
+<select aria-label="Choose a loaf">
+  <option>Sourdough</option>
+  <option>Rye</option>
+</select>
+```
+
+</TabItem>
+<TabItem value="output" label="Focus Order Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TabOrderLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use the lab as a real test. Start with everything off, and Tab through. Then turn on each option, one at a time, and read the log.
+
+## The Keys That Matter
+
+| Key | What it does |
+| :-- | :-- |
+| <kbd>Tab</kbd> | Moves focus to the next focusable element |
+| <kbd>Shift</kbd> + <kbd>Tab</kbd> | Moves focus to the previous one |
+| <kbd>Enter</kbd> | Follows a link, presses a button, submits a form |
+| <kbd>Space</kbd> | Presses a button, ticks a checkbox, scrolls the page |
+| <kbd>Arrow keys</kbd> | Move within a group: radio buttons, a select list, tabs, menus, sliders |
+| <kbd>Esc</kbd> | Closes a dialog, menu, or pop-up |
+| <kbd>Home</kbd> and <kbd>End</kbd> | Jump to the first or last item in a list or widget |
+| <kbd>Page Up</kbd> and <kbd>Page Down</kbd> | Scroll, or move in large steps |
+
+Real HTML elements already follow these rules. That is the biggest reason to use them.
+
+## What Can Receive Focus?
+
+Some elements are **focusable by default.** They are in the Tab order automatically:
+
+| Element | Notes |
+| :-- | :-- |
+| `<a href="…">` | Only links **with an `href`** |
+| `<button>` | Unless `disabled` |
+| `<input>`, `<select>`, `<textarea>` | Unless `disabled`. `type="hidden"` is not focusable |
+| `<summary>` | The toggle of a `<details>` element |
+| `<iframe>` | The frame itself is focusable in many browsers |
+| `[contenteditable]` | Editable areas |
+| Elements with a `tabindex` | See below |
+
+Not focusable by default: `div`, `span`, `p`, headings, images, and an `a` with no `href`. If you give one a click handler, the keyboard still cannot reach it. That is why the guidance is: **use a button or a link.**
+
+Two details that surprise people:
+
+- A **disabled** button or input is removed from the Tab order. Keyboard users cannot even find it, and screen readers may skip it. If you want users to discover why something is unavailable, consider `aria-disabled="true"` with an explanation, and keep it focusable. You then have to block the action yourself.
+- **Radio buttons** in a group are **one Tab stop.** Tab goes into the group, and the arrow keys move between the choices.
+
+## `tabindex`: Use Only Three Kinds of Value
+
+| Value | Meaning | Use it for |
+| :-- | :-- | :-- |
+| *(none)* | The natural behaviour of the element | Almost always |
+| `tabindex="0"` | Put this element in the natural Tab order | Custom widgets that must be focusable, when no native element fits |
+| `tabindex="-1"` | Focusable **by script or a link**, but **not** reachable with Tab | Moving focus to a heading, an error summary, or a dialog with `element.focus()` |
+| `tabindex="1"` or higher | Jump the queue: visited **before** everything else | **Never.** It overrides the natural order for the whole page, and is nearly impossible to maintain |
+
+```html
+<!-- Good: moves focus to the new content after a navigation -->
+<h1 id="page-title" tabindex="-1">Checkout</h1>
+<script>
+  document.getElementById("page-title").focus();
+</script>
+
+<!-- Bad: positive values -->
+<button tabindex="3">Next</button>
+```
+
+:::danger Never use a positive tabindex
+It looks like a handy way to control order, but it creates a second, hidden order that everyone who edits the page later must understand. Fix the **source order** instead.
+:::
+
+## Focus Order
+
+The Tab order follows the order of the **HTML.** For a clear experience:
+
+1. **Write your HTML in the order you want it used,** and read from top to bottom, left to right (or right to left for RTL languages).
+2. **Do not rearrange the screen with CSS** in ways that disagree with the code. This includes `flex-direction: row-reverse`, the `order` property, grid placement, and absolute positioning of interactive controls.
+3. **When something appears,** such as a dialog, a menu, or a validation summary, **place it** in the code where it will make sense, or **move focus to it** on purpose.
+4. **When something disappears,** put the focus somewhere sensible. If the focused element is removed, focus can be lost to the top of the page.
+
+Turn on the **reverse** option in the lab above, and see what happens. The log will tell you the focus moved backwards on screen.
+
+## Seeing Where You Are: Focus Indicators
+
+If a keyboard user cannot see the focus, they cannot use the page. WCAG 2.4.7 (Focus Visible) requires a visible focus indicator, and WCAG 2.2 also asks that focus is not hidden behind other content (2.4.11).
+
+Browsers draw a default ring. The most common mistake is to remove it:
+
+```css
+/* The most harmful line of CSS on the web */
+*:focus {
+  outline: none;
+}
+```
+
+Instead, **style it,** and make it clear:
+
+```css
+:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+```
+
+- **`:focus-visible`** applies when the browser decides focus should be visible, which is mostly keyboard use, and for text fields. Many browsers do not show it when a button is clicked with a mouse.
+- **`:focus`** applies in every case, including mouse clicks.
+- Make the indicator **at least 3 to 1 in contrast** against its background, and thick enough to see (an outline of 2 or 3 pixels works well).
+- **Check dark and light areas.** A ring that works on white may vanish on a dark header.
+- **Do not hide focus rings with `box-shadow` tricks alone** in forced-colour (high-contrast) modes, where shadows may not display. An `outline` keeps working.
+- **Make sure sticky headers do not cover** the focused element. Use `scroll-padding-top` on the page so scrolled-to items are not hidden.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```css title="focus.css"
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+html {
+  scroll-padding-top: 5rem; /* the height of a sticky header */
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Focus Style Test">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FocusStyleLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Keyboard Traps
+
+A **keyboard trap** is when focus gets stuck: a user can tab into something, but cannot tab or press a key to leave. It is a serious barrier, and it fails WCAG 2.1.2 (No Keyboard Trap).
+
+Common causes:
+
+- A **custom widget or embedded player** that captures keys and never releases them.
+- A **modal dialog** with no way to close it from the keyboard.
+- A **third-party chat widget** or advert in an iframe.
+- A **rich text editor** that uses Tab for indentation, with no other exit.
+
+A modal dialog is the one **intentional** trap: while it is open, focus should stay **inside** it, and **Esc** (and a close button) must always get out. The native `<dialog>` element, opened with `showModal()`, handles most of this for you. See [Focus Management](./focus-management) for the full pattern.
+
+## Keyboard Behaviour for Custom Widgets
+
+When you must build a custom widget, give it the keyboard behaviour that people already know from similar widgets. The **WAI-ARIA Authoring Practices Guide** documents patterns for tabs, menus, accordions, dialogs, listboxes, and more. The general ideas:
+
+| Widget | Keys |
+| :-- | :-- |
+| **Tabs** | Tab enters the tab list. Arrow keys move between tabs. Tab moves on to the panel |
+| **Menu or menu bar** | Arrow keys move between items. Enter or Space activates. Esc closes |
+| **Toolbar** | Arrow keys move between buttons. One Tab stop for the whole toolbar |
+| **Accordion** | Tab between headers. Enter or Space opens and closes |
+| **Dialog** | Focus moves in. Tab cycles inside. Esc closes. Focus returns to the opener |
+| **Slider** | Arrow keys change the value. Home and End jump to the ends |
+| **Listbox, select** | Arrow keys move. Typing a letter jumps to a matching item |
+
+### Roving Tabindex
+
+For groups such as toolbars and tab lists, the **roving tabindex** pattern keeps the Tab order short. Only the **active** item has `tabindex="0"`. The others have `tabindex="-1"`. Arrow keys move the `0` from one item to the next, and move focus with it.
+
+Try it. Switch the pattern off and on, and compare the number of Tab presses you need to get past the toolbar.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="toolbar.html"
+<div role="toolbar" aria-label="Text formatting">
+  <button type="button" tabindex="0">Bold</button>
+  <button type="button" tabindex="-1">Italic</button>
+  <button type="button" tabindex="-1">Underline</button>
+</div>
+
+<script>
+  // On ArrowRight or ArrowLeft, set the old item to -1,
+  // set the new item to 0, and call focus() on it.
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Roving Toolbar">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RovingToolbar />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Other Keyboard Rules
+
+- **No keyboard-only features hidden behind hover or drag.** Anything you can do with a mouse hover, drag, or gesture needs a keyboard and a simple pointer alternative (WCAG 2.1.1, 2.5.1, 2.5.7).
+- **Single-character shortcuts** (such as pressing just "S" to search) can fire by accident, especially for people who use speech input. WCAG 2.1.4 asks that you let users **turn them off, remap them, or only activate them when the relevant control has focus.** Prefer shortcuts with a modifier key, and do not clash with the browser or screen reader shortcuts.
+- **Avoid `accesskey`.** It conflicts with browser and assistive technology shortcuts, and differs across platforms.
+- **Do not change focus unexpectedly** when a control receives focus or input (WCAG 3.2.1, 3.2.2). Moving focus must be a result of something the user did.
+- **Keep timed content manageable.** If something disappears after a few seconds, a keyboard user may not reach it in time.
+- **Use `inert`** on background content when a modal is open. The `inert` attribute makes an area unreachable by keyboard, mouse, and assistive technology. Support is good in modern browsers, but check the ones you need.
+- **Hidden things must not stay focusable.** Off-screen menus and collapsed panels should use `hidden`, `display: none`, or `inert`, so Tab does not walk into invisible controls.
+
+## Test With Your Own Keyboard
+
+You need nothing but your keyboard. Do this for each important page, and for every key task (sign-up, search, checkout):
+
+1. **Put the mouse away.**
+2. Start at the top, and press **Tab** repeatedly. Can you reach **every** link, button, and field?
+3. Is the **focus always visible?** Can you tell where you are?
+4. Is the **order logical?** Does it follow the visual layout?
+5. Can you **activate everything** with Enter or Space?
+6. Can you **operate custom widgets** with arrow keys, and **close** them with Esc?
+7. Can you **leave** every area? Are there any traps?
+8. When something appears or disappears (a menu, a dialog, an error), **does focus go somewhere sensible?**
+9. Use **Shift + Tab** to go backwards, and check it again.
+10. Repeat with the page **zoomed to 200 percent.**
+
+## Good Habits
+
+1. **Use native elements:** `a`, `button`, `input`, `select`, `details`, `dialog`.
+2. **Keep the source order the same as the visual order.**
+3. **Use `tabindex` only as 0 or -1.**
+4. **Never remove the focus outline** without a clearer replacement.
+5. **Give every pointer action a keyboard alternative.**
+6. **Use roving tabindex** for toolbars, tab lists, and menus.
+7. **Move focus on purpose** when views change, and return it when you close something.
+8. **Avoid single-key shortcuts,** or let users turn them off.
+9. **Test with the keyboard** on every release.
+
+## Accessibility Checklist
+
+- [ ] Every interactive element is reachable with Tab, and can be used with Enter or Space.
+- [ ] The focus order follows the visual and reading order.
+- [ ] No `tabindex` is greater than 0.
+- [ ] Focus is clearly visible, with enough contrast, and not hidden behind sticky bars.
+- [ ] There are no keyboard traps.
+- [ ] Custom widgets follow the expected keyboard patterns, and close with Esc.
+- [ ] Anything that needs hover, drag, or a path gesture has a simple alternative.
+- [ ] Hidden or off-screen content is not focusable.
+- [ ] Focus moves to the right place after dialogs, menus, and page changes.
+- [ ] Skip links work, and appear when focused. See [Semantic Accessibility](./semantic-accessibility).
+
+## Security and Privacy Notes
+
+- **Do not trap focus to hold people on a page.** Keyboard traps used to stop people leaving, to force them to read an advert, or to block navigation away, are both an accessibility failure and a dark pattern.
+- **Be careful with key listeners.** A script that listens for every key press on the page (a "keylogger") can capture passwords and personal data. Listen only on the elements you need, and never send raw key presses to a server.
+- **Do not detect keyboard or switch use** to profile people. How someone navigates can reveal a disability.
+- **Do not block paste or autofill** in fields. It hurts people who use assistive input and password managers, and it makes passwords weaker. See WCAG 3.3.8.
+- **Clickjacking and focus:** make sure that critical buttons, such as "Delete" or "Pay", cannot be focused and activated while hidden or covered by something else.
+- **Sensitive shortcuts** (such as delete or send) should need a confirmation, so an accidental key press does no harm.
+
+## Global Audience Notes
+
+- **Keyboard layouts differ around the world.** Do not rely on a key that exists only on some layouts, or on character keys that are hard to reach, for essential shortcuts.
+- **Right-to-left languages:** the arrow key directions should match the reading direction. In a right-to-left toolbar, the Right Arrow often moves to the previous item. Test it, and use logical thinking, not fixed directions.
+- **Input methods:** people typing in Chinese, Japanese, or Korean use an input method editor, where Enter confirms text rather than sending a form. Do not submit forms on a single Enter in a text field without checking that the text is not still being composed.
+- **Many users share computers or use older devices,** where only the keyboard works properly. Lean, native HTML works best.
+- **Voice control** users say what they see ("click Subscribe"). A visible label that matches the accessible name makes this work in any language (WCAG 2.5.3).
+- **Avoid shortcuts that clash with the screen readers** and operating systems used in your audience's region.
+
+## Common Mistakes to Avoid
+
+1. **`div` and `span` with a click handler,** and no keyboard support.
+2. **Removing the focus outline.**
+3. **Positive `tabindex` values.**
+4. **A visual order that disagrees with the code order.**
+5. **Menus that open only on hover.**
+6. **Modals with no way to close them using Esc.**
+7. **Focus lost after something is removed or replaced.**
+8. **Off-screen content that can still be tabbed to.**
+9. **Single-key shortcuts that cannot be turned off.**
+10. **Disabling a control with no explanation,** and removing it from the Tab order.
+11. **Custom widgets that ignore the usual arrow key patterns.**
+12. **Never testing with the keyboard.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the focus order lab with each option, and explain what you saw.
+2. Take a site you use, put the mouse away, and try to finish one task.
+3. Remove `outline: none` from your CSS, and add a clear `:focus-visible` ring.
+4. Replace a `div` with an `onclick` by a real `button`, and compare the keyboard behaviour.
+5. Build a small toolbar with roving tabindex, using script.
+6. Open a native `<dialog>` with `showModal()`, and test Tab and Esc.
+7. Add `scroll-padding-top` to a page with a sticky header, and test with Tab.
+8. Find a menu that opens on hover, and rewrite it so a keyboard user can open it.
+9. List every single-key shortcut in an app you use. Can you turn them off?
+10. Bonus: press Tab through your whole site, and write down every place where the focus is lost or unclear.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Which elements can be reached with Tab by default?</summary>
+
+Links with an `href`, buttons, form controls (unless disabled), `summary`, and elements with a `tabindex`. A plain `div` or `span` cannot.
+
+</details>
+
+<details>
+<summary>2. Which `tabindex` values should you use?</summary>
+
+Only `0` (add to the natural order, when no native element fits) and `-1` (focus by script, not by Tab). Never use a value above 0.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `:focus` and `:focus-visible`?</summary>
+
+`:focus` applies for every kind of focus, including mouse clicks. `:focus-visible` applies when the browser decides focus should be visible, mostly for keyboard use and in text fields.
+
+</details>
+
+<details>
+<summary>4. What is a keyboard trap?</summary>
+
+A place where keyboard focus can enter, but cannot leave using the keyboard. It is a serious failure of WCAG 2.1.2.
+
+</details>
+
+<details>
+<summary>5. What is roving tabindex?</summary>
+
+A pattern for groups such as toolbars and tabs. Only the active item has `tabindex="0"`, the others have `-1`, and arrow keys move the `0` and the focus. The whole group is one Tab stop.
+
+</details>
+
+<details>
+<summary>6. Why can a CSS `row-reverse` cause an accessibility problem?</summary>
+
+It changes the visual order without changing the code order. Focus follows the code, so it appears to jump around the screen, which confuses keyboard users.
+
+</details>
+
+## Key Takeaways
+
+- **Everything must work with a keyboard.** It is the baseline for many kinds of assistive technology.
+- **Native elements** (`a`, `button`, `input`, `select`, `details`, `dialog`) give you the keyboard behaviour for free.
+- Use **`tabindex` only as 0 or -1,** and keep the **source order** the same as the **visual order.**
+- **Never remove the focus outline.** Style `:focus-visible` with a clear, high-contrast ring.
+- **Avoid traps.** Everything focusable must be escapable, and dialogs must close with **Esc.**
+- Custom widgets need the **expected arrow key patterns,** and **roving tabindex** for groups.
+- **Move focus on purpose,** and return it when something closes.
+- Test with just your keyboard, at 200 percent zoom, on every release.
+
+Next, learn how to move and manage focus on purpose in [Focus Management](./focus-management).

@@ -1,0 +1,619 @@
+---
+id: html-semantic-accessibility
+title: "Semantic HTML and Accessibility"
+sidebar_label: "Semantic Accessibility"
+sidebar_position: 4
+slug: /html/accessibility/semantic-accessibility
+description: "Learn how semantic HTML makes pages accessible: heading outlines, landmarks, lists, buttons versus links, skip links, reading order, and visually hidden text. Includes a live structure navigator that shows what a screen reader user can jump between, and a real skip-link focus test."
+keywords:
+  - semantic HTML accessibility
+  - heading structure
+  - landmark roles
+  - skip link
+  - sr-only visually hidden
+  - reading order
+  - div soup
+  - screen reader navigation
+  - accessible page structure
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, semantic-html, landmarks, headings, a11y, frontend]
+---
+
+import {useState, useRef} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const structureSamples = {
+  soup: [
+    '<div class="top"><div class="logo">The Bread Bin</div>',
+    '  <div class="menu"><a href="/recipes">Recipes</a> <a href="/shop">Shop</a></div></div>',
+    '<div class="content">',
+    '  <div style="font-size:32px;font-weight:bold">Sourdough for Beginners</div>',
+    '  <div style="font-size:22px">Ingredients</div>',
+    '  <p>Flour, water, and salt.</p>',
+    '  <a href="/more">Click here</a>',
+    '</div>',
+    '<div class="foot">© 2026 The Bread Bin</div>',
+  ].join("\n"),
+  good: [
+    '<header>',
+    '  <p>The Bread Bin</p>',
+    '  <nav aria-label="Main"><ul><li><a href="/recipes">Recipes</a></li><li><a href="/shop">Shop</a></li></ul></nav>',
+    '</header>',
+    '<main>',
+    '  <h1>Sourdough for Beginners</h1>',
+    '  <h2>Ingredients</h2>',
+    '  <ul><li>Flour</li><li>Water</li><li>Salt</li></ul>',
+    '  <h2>Method</h2>',
+    '  <p>Mix, rest, shape, and bake.</p>',
+    '  <a href="/more">Read the full sourdough guide</a>',
+    '</main>',
+    '<footer><nav aria-label="Footer"><a href="/contact">Contact</a></nav><p>© 2026 The Bread Bin</p></footer>',
+  ].join("\n"),
+  skipped: [
+    '<header><nav><a href="/">Home</a></nav></header>',
+    '<main>',
+    '  <h1>Our Bakery</h1>',
+    '  <h3>Opening hours</h3>',
+    '  <p>Daily from seven.</p>',
+    '  <h1>Contact</h1>',
+    '  <h2></h2>',
+    '</main>',
+    '<nav><a href="/privacy">Privacy</a></nav>',
+  ].join("\n"),
+};
+
+export const landmarkRoles = ["banner", "navigation", "main", "complementary", "contentinfo", "search", "region", "form"];
+
+export const labelOf = (el, doc) => {
+  const by = el.getAttribute("aria-labelledby");
+  if (by) {
+    const text = by.split(/\s+/).map((id) => { const target = doc.getElementById(id); return target ? target.textContent.trim() : ""; }).filter(Boolean).join(" ");
+    if (text) return text;
+  }
+  return (el.getAttribute("aria-label") || "").trim();
+};
+
+export const landmarkOf = (el, doc) => {
+  const explicit = el.getAttribute("role");
+  if (explicit && landmarkRoles.indexOf(explicit) !== -1) return explicit;
+  const tag = el.tagName.toLowerCase();
+  const parentIsBody = el.parentElement && el.parentElement.tagName.toLowerCase() === "body";
+  if (tag === "nav") return "navigation";
+  if (tag === "main") return "main";
+  if (tag === "aside") return "complementary";
+  if (tag === "header" && parentIsBody) return "banner";
+  if (tag === "footer" && parentIsBody) return "contentinfo";
+  if (tag === "form" && labelOf(el, doc)) return "form";
+  if (tag === "section" && labelOf(el, doc)) return "region";
+  return "";
+};
+
+export function StructureNavigator() {
+  const [source, setSource] = useState(structureSamples.soup);
+  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><body>" + source + "</body></html>", "text/html");
+  const visible = (el) => !el.closest('[hidden], [aria-hidden="true"]');
+  const headings = Array.from(doc.body.querySelectorAll("h1, h2, h3, h4, h5, h6, [role=heading]")).filter(visible).map((el) => ({level: el.hasAttribute("role") ? Number(el.getAttribute("aria-level") || 2) : Number(el.tagName.charAt(1)), text: el.textContent.replace(/\s+/g, " ").trim()}));
+  const landmarks = Array.from(doc.body.querySelectorAll("*")).filter(visible).map((el) => ({role: landmarkOf(el, doc), name: labelOf(el, doc)})).filter((item) => item.role !== "");
+  const links = Array.from(doc.body.querySelectorAll("a[href]")).filter(visible).map((el) => el.textContent.replace(/\s+/g, " ").trim());
+  const notes = [];
+  const h1s = headings.filter((item) => item.level === 1).length;
+  if (headings.length === 0) notes.push("There are no headings at all. A screen reader user cannot jump through this page by headings.");
+  if (headings.length > 0 && h1s === 0) notes.push("No level 1 heading. Most pages should have one that names the page.");
+  if (h1s > 1) notes.push("There are " + h1s + " level 1 headings. One is the usual advice, because it names the whole page.");
+  headings.forEach((item, index) => {
+    if (index > 0 && item.level > headings[index - 1].level + 1) notes.push('The outline jumps from level ' + headings[index - 1].level + ' to level ' + item.level + ' at "' + (item.text || "(empty)") + '". Do not skip levels.');
+    if (item.text === "") notes.push("There is an empty heading. Screen readers announce it with no words.");
+  });
+  const fake = Array.from(doc.body.querySelectorAll("div, span, p, b")).filter((el) => /font-size\s*:\s*(\d+)px/i.test(el.getAttribute("style") || "") && Number((el.getAttribute("style").match(/font-size\s*:\s*(\d+)px/i) || [0, 0])[1]) >= 20);
+  if (fake.length > 0) notes.push(fake.length + " element(s) are styled to look like headings, but are not headings. Use h1 to h6, and style them with CSS.");
+  const mains = landmarks.filter((item) => item.role === "main").length;
+  if (mains === 0) notes.push("There is no main landmark, so there is no quick way to jump to the content.");
+  if (mains > 1) notes.push("There is more than one main landmark. Use only one visible main per page.");
+  const navs = landmarks.filter((item) => item.role === "navigation");
+  if (navs.length > 1 && navs.some((item) => item.name === "")) notes.push("There are several navigation landmarks, and at least one has no label. Give each one a different aria-label.");
+  const generic = links.filter((text) => /^(click here|here|read more|more|link|learn more)$/i.test(text));
+  if (generic.length > 0) notes.push(generic.length + ' link(s) have vague text ("' + generic[0] + '"). Link text should make sense out of context.');
+  if (landmarks.length === 0) notes.push("There are no landmarks. A screen reader user cannot jump to the menu, the content, or the footer.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setSource(structureSamples.soup)}>Div soup</button>{" "}
+        <button type="button" onClick={() => setSource(structureSamples.good)}>Semantic page</button>{" "}
+        <button type="button" onClick={() => setSource(structureSamples.skipped)}>Skipped levels</button>
+      </p>
+      <label htmlFor="structure-source">HTML to inspect (edit it freely)</label>
+      <textarea id="structure-source" rows={9} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1rem", marginTop: "0.5rem"}}>
+        <div style={{flex: "1 1 13rem"}}>
+          <strong>Headings list ({headings.length})</strong>
+          <ul style={{margin: "0.3rem 0 0", listStyle: "none", paddingLeft: 0}}>
+            {headings.length === 0 ? <li>(none)</li> : headings.map((item, index) => (<li key={index} style={{paddingLeft: (item.level - 1) * 0.9 + "rem"}}><code>h{item.level}</code> {item.text || "(empty)"}</li>))}
+          </ul>
+        </div>
+        <div style={{flex: "1 1 13rem"}}>
+          <strong>Landmarks list ({landmarks.length})</strong>
+          <ul style={{margin: "0.3rem 0 0", listStyle: "none", paddingLeft: 0}}>
+            {landmarks.length === 0 ? <li>(none)</li> : landmarks.map((item, index) => (<li key={index}><code>{item.role}</code>{item.name ? ' "' + item.name + '"' : ""}</li>))}
+          </ul>
+        </div>
+        <div style={{flex: "1 1 13rem"}}>
+          <strong>Links list ({links.length})</strong>
+          <ul style={{margin: "0.3rem 0 0", listStyle: "none", paddingLeft: 0}}>
+            {links.length === 0 ? <li>(none)</li> : links.map((text, index) => (<li key={index}>{text || "(no text)"}</li>))}
+          </ul>
+        </div>
+      </div>
+      <p role="status" style={{margin: "0.6rem 0 0.2rem"}}><strong>{notes.length === 0 ? "No structure problems found by this simple check." : notes.length + " thing(s) to fix:"}</strong></p>
+      <ul style={{margin: 0}}>
+        {notes.map((note, index) => (<li key={index}>{note}</li>))}
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This imitates the lists that screen readers can build for you. The three lists are exactly how many users move around a page: by headings, by landmarks, and by links. This simple check cannot judge whether your headings are well written.
+      </p>
+    </div>
+  );
+}
+
+export function SkipLinkTest() {
+  const [useSkip, setUseSkip] = useState(true);
+  const [showSkip, setShowSkip] = useState(false);
+  const [log, setLog] = useState([]);
+  const mainRef = useRef(null);
+  const topRef = useRef(null);
+  const nav = ["Home", "Recipes", "Shop", "Classes", "Blog", "Events", "About", "Jobs", "Contact"];
+  const note = (name) => setLog((previous) => previous.concat(name).slice(-14));
+  const start = () => {
+    setLog([]);
+    if (topRef.current) topRef.current.focus();
+  };
+  const jump = (event) => {
+    event.preventDefault();
+    if (mainRef.current) mainRef.current.focus();
+  };
+  const skipStyle = showSkip ? {position: "static", display: "inline-block", marginBottom: "0.4rem", padding: "0.3rem 0.6rem", background: "#fde68a", color: "#1e293b", border: "2px solid #1e293b"} : {position: "absolute", left: "-9999px", top: "auto", width: "1px", height: "1px", overflow: "hidden"};
+  const stops = log.filter((name) => name !== "start").length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <label><input type="checkbox" checked={useSkip} onChange={(event) => { setUseSkip(event.target.checked); setLog([]); }} /> The page has a skip link</label>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={start}>Start at the top of the sample page</button> Then press <kbd>Tab</kbd> repeatedly. When the skip link appears, press <kbd>Enter</kbd>.
+      </p>
+      <div style={{position: "relative", border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.6rem", background: "#fff", color: "#1e293b"}}>
+        <span ref={topRef} tabIndex={-1} onFocus={() => note("start")} style={{outline: "none"}} aria-label="Top of the sample page" />
+        {useSkip ? (<a href="#sample-main" onClick={jump} onFocus={() => { setShowSkip(true); note("Skip to main content"); }} onBlur={() => setShowSkip(false)} style={skipStyle}>Skip to main content</a>) : null}
+        <nav aria-label="Sample site menu" style={{marginBottom: "0.5rem"}}>
+          {nav.map((label) => (<a key={label} href={"#sample-" + label} onClick={(event) => event.preventDefault()} onFocus={() => note(label)} style={{marginRight: "0.7rem", color: "#1d4ed8"}}>{label}</a>))}
+        </nav>
+        <div id="sample-main" ref={mainRef} tabIndex={-1} onFocus={() => note("MAIN CONTENT")} style={{borderTop: "2px solid #cbd5e1", paddingTop: "0.5rem"}}>
+          <p style={{margin: "0 0 0.4rem"}}>The main content of the page starts here.</p>
+          <button type="button" onFocus={() => note("Order button (first control in main)")}>Order bread</button>
+        </div>
+      </div>
+      <p style={{margin: "0.5rem 0 0.2rem"}}><strong>Focus log:</strong></p>
+      <ol role="status" style={{margin: 0}}>
+        {log.length === 0 ? (<li>(nothing yet)</li>) : log.map((entry, index) => (<li key={index}>{entry}</li>))}
+      </ol>
+      <p style={{margin: "0.5rem 0 0"}}>
+        {log.indexOf("Order button (first control in main)") !== -1 ? "You reached the first control in the main content after " + stops + " stop(s)." : "Keep pressing Tab, or use the skip link."}{" "}
+        {!useSkip ? "Without a skip link, every visitor must tab past the whole menu on every page." : "With a skip link, one key press takes a keyboard user past the menu."}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a real focus test. The skip link is hidden off screen until it receives focus, which is the usual pattern. The demo moves focus in script, because a fragment link inside this documentation site could navigate away from the page. On a normal page, a plain fragment link works too.
+      </p>
+    </div>
+  );
+}
+
+Long before screen readers, people built the web with plain HTML: headings, paragraphs, lists, links, tables. That design turned out to be a gift. Because each element **says what it is,** software can help people in ways the author never planned: reading aloud, jumping between sections, reformatting, translating, or listing every link.
+
+When you use the right element, you get accessibility **almost for free.** When you pile up generic `div` and `span` elements and style them to look right, you throw that gift away. This lesson shows what you gain by choosing well, and what you lose by not.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How people **navigate by structure,** rather than reading top to bottom
+- Writing a clean **heading outline**
+- Using **landmarks** to mark the regions of a page
+- Using the right element for **lists, tables, buttons, and links**
+- Adding a **skip link**
+- Keeping the **reading order** and the **visual order** together
+- Hiding text **visually** but not from screen readers
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+
+  <header>
+    <p>The Bread Bin</p>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/shop">Shop</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <h1>Sourdough for Beginners</h1>
+    <h2>Ingredients</h2>
+    <ul>
+      <li>Flour</li>
+      <li>Water</li>
+      <li>Salt</li>
+    </ul>
+    <h2>Method</h2>
+    <p>Mix, rest, shape, and bake.</p>
+  </main>
+
+  <footer>
+    <p>© 2026 The Bread Bin</p>
+  </footer>
+</body>
+```
+
+</TabItem>
+<TabItem value="output" label="Structure Navigator">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BrowserOnly>{() => <StructureNavigator />}</BrowserOnly>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Load each sample, and look at the three lists. These are the same lists that a screen reader can offer. A "div soup" page gives a reader nothing to jump between. The semantic page gives them a table of contents, a map of regions, and a list of links.
+
+## How People Really Navigate
+
+Sighted people scan a page: they glance at the big text, spot the menu, and skip to what they want. Screen reader users do the same thing, but through the code. According to surveys of screen reader users, **headings are the most common way** to find information, followed by landmarks and links. They rarely listen to a page from top to bottom.
+
+Common navigation shortcuts in screen readers:
+
+| Shortcut idea | What it needs from your HTML |
+| :-- | :-- |
+| Jump to the next **heading** | Real `h1` to `h6` elements |
+| Jump by heading **level** | Headings in a logical order |
+| Jump to a **landmark** (menu, main, footer) | `header`, `nav`, `main`, `aside`, `footer` |
+| List all **links** | Link text that makes sense alone |
+| Jump to the next **list**, **table**, **form field**, **button** | The real elements |
+
+If your page does not offer these things, a screen reader user has to listen to **everything,** in order, every time.
+
+## Headings: The Outline of Your Page
+
+Headings are the single most useful structure on a page.
+
+```html
+<h1>Sourdough for Beginners</h1>
+  <h2>Ingredients</h2>
+  <h2>Method</h2>
+    <h3>Mixing</h3>
+    <h3>Shaping</h3>
+  <h2>Baking tips</h2>
+```
+
+Rules of thumb:
+
+1. **One `h1`,** that names the page. (More than one is allowed by HTML, but one is clearer, and is the usual guidance.)
+2. **Do not skip levels.** Go from `h2` to `h3`, not from `h2` to `h4`.
+3. **Choose the level for meaning,** not for size. If a heading is too big, change it in CSS.
+4. **Never use a heading just for styling.** Do not make bold text a heading to make it look big, and do not use a `div` to look like one.
+5. **Write headings that make sense alone,** because people read them as a list.
+6. **Do not leave a heading empty.**
+
+:::tip The outline test
+Read **only** the headings of your page, from top to bottom. Do they tell the story? If not, a reader jumping through them will be lost.
+:::
+
+## Landmarks: The Map of Your Page
+
+Landmarks mark the large regions of a page, so people can jump straight to them.
+
+| HTML element | Landmark role | Use |
+| :-- | :-- | :-- |
+| `<header>` (directly in `body`) | banner | The site-wide header: logo, site name |
+| `<nav>` | navigation | A group of navigation links |
+| `<main>` | main | The main content. **One per page** |
+| `<aside>` | complementary | Related content, such as a sidebar |
+| `<footer>` (directly in `body`) | contentinfo | The site-wide footer |
+| `<section>` with a name | region | A significant section that you have named |
+| `<form>` with a name | form | An important form |
+| `<div role="search">` or `<search>` | search | A search area |
+
+Important details:
+
+- **A `header` or `footer` inside an `article` or `section`** is **not** a page-level landmark. It belongs to that part.
+- **If you have more than one `nav`,** give each one a label, so users can tell them apart: `<nav aria-label="Main">`, `<nav aria-label="Footer">`.
+- **Do not label things with the landmark's own name.** "Main navigation" is fine as a label on a `nav`. Do not write "navigation" inside the label, because the screen reader already says it.
+- **Put all page content inside a landmark,** so nothing is left outside the map.
+- **Do not overdo it.** A page with 20 landmarks is as hard to use as one with none.
+
+For more on these elements and how to lay out a whole page, see [Semantic Page Layout](/html/semantic-html/semantic-page-layout).
+
+## Skip Links
+
+On most sites, every page begins with the same menu. A sighted mouse user ignores it. A keyboard user must tab through **every link** before reaching the content, on **every page.** A **skip link** fixes that. It is the first link on the page, and it jumps over the repeated blocks.
+
+```html
+<a href="#main" class="skip-link">Skip to main content</a>
+...
+<main id="main" tabindex="-1">...</main>
+```
+
+```css
+.skip-link {
+  position: absolute;
+  left: -9999px;       /* hidden off screen until focused */
+}
+.skip-link:focus {
+  position: static;    /* appears when a keyboard user reaches it */
+  padding: 0.5rem 1rem;
+  background: #fde68a;
+  color: #1e293b;
+}
+```
+
+This is directly related to WCAG 2.4.1 (Bypass Blocks). Use the test below. First try it **without** the skip link, and count the stops. Then try again with it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="skip-link.html"
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <nav aria-label="Main"> ...nine links... </nav>
+  <main id="main" tabindex="-1">
+    <h1>Welcome</h1>
+    <button type="button">Order bread</button>
+  </main>
+</body>
+```
+
+</TabItem>
+<TabItem value="output" label="Skip Link Test">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SkipLinkTest />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The `tabindex="-1"` on `main` lets script and fragment links move **focus** to it, without adding it to the normal Tab order.
+
+## Lists, Tables, and Other Structure
+
+| If your content is… | Use | Because |
+| :-- | :-- | :-- |
+| A set of related items | `ul`, `ol` | A screen reader announces "list, 5 items", and lets people jump or skip it |
+| Steps in order | `ol` | The numbering is meaningful, and is announced |
+| Terms and definitions | `dl`, `dt`, `dd` | The relationship is in the code |
+| Data in rows and columns | `table`, with `th` | Headers are announced with each cell. See [Accessible Tables](./accessible-tables) |
+| A group of related form fields | `fieldset`, `legend` | The group name is announced with each field |
+| A quotation | `blockquote`, `q` | It is announced as a quotation |
+| Emphasis | `em`, `strong` | They carry meaning. `i` and `b` are only visual |
+| A date or time | `time` | Machines can read it |
+| An abbreviation | `abbr` | A title can explain it |
+
+**Do not use a table for layout.** Screen readers will announce data table structure that is not there. Use CSS grid or flexbox.
+
+**Do not use `<br>` to make lists or spacing.** A row of lines and dashes is not a list. Use real list elements, and CSS for the gaps.
+
+## Buttons and Links: Pick the Right One
+
+This is one of the most important decisions in HTML:
+
+| It… | Use | Why |
+| :-- | :-- | :-- |
+| Goes to another page or place | `<a href="…">` | Links work with the keyboard, open in new tabs, and are announced as links |
+| Does something on this page (open, submit, toggle) | `<button type="button">` | Works with Enter and Space, and is announced as a button |
+
+If it looks like a button but takes you to another page, it can still be a link, styled like a button. If it opens a menu on the current page, it is a button. Mixing them up confuses both screen reader users and keyboard users. See [Accessible Buttons](./accessible-buttons) and [Accessible Links](./accessible-links).
+
+## Reading Order and Visual Order
+
+Assistive technology reads your page in **source order,** the order of the HTML. CSS can move things around on the screen, using `order`, `flex-direction: row-reverse`, grid placement, or absolute positioning. If the visual order and the source order **disagree,** a keyboard user's focus can jump around the screen unpredictably, and a screen reader reads things in a confusing order.
+
+Guidelines:
+
+- **Write your HTML in the order you want it read.** Then use CSS to place it.
+- **Test by tabbing.** The focus should move in a sensible visual path.
+- **Avoid positive `tabindex` values** (such as `tabindex="3"`). They override the natural order, and are very hard to maintain. Use `0` or `-1` only.
+- **Avoid reordering interactive content** in ways that make a mismatch.
+
+## Visually Hidden Text
+
+Sometimes you want text that screen readers can read, but sighted users do not need: for example, an extra word for an icon, or a heading for a region. Use a **visually hidden** class:
+
+```css
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+```
+
+```html
+<a href="/cart">
+  <svg aria-hidden="true" focusable="false"> ... </svg>
+  <span class="visually-hidden">Shopping cart, 3 items</span>
+</a>
+```
+
+Know the difference between ways of hiding:
+
+| Method | Visible? | Read by screen readers? | In the Tab order? |
+| :-- | :-- | :-- | :-- |
+| `display: none`, `visibility: hidden`, the `hidden` attribute | No | **No** | No |
+| `aria-hidden="true"` | Yes | **No** | **Yes (still focusable!)** |
+| `.visually-hidden` | No | **Yes** | Yes, if it is a control |
+
+Be careful with `aria-hidden` on anything focusable. See the [aria-hidden lesson](./aria-hidden).
+
+## The Page Language and Title
+
+Two small things at the top of the page have a big effect:
+
+```html
+<html lang="en">
+<head>
+  <title>Sourdough for Beginners | The Bread Bin</title>
+</head>
+```
+
+The `lang` attribute lets a screen reader choose the right voice. The `title` is the first thing announced when a page loads. For more, see [The HTML Element](/html/html-head/html) and [The Title Element](/html/html-head/title).
+
+## Good Habits
+
+1. **Choose the element that matches the meaning.**
+2. **One `h1`, no skipped levels,** and headings that tell the story.
+3. **Wrap content in landmarks,** and label repeated ones.
+4. **Add a skip link** to every page that has a repeated menu.
+5. **Use lists for lists** and tables for tables.
+6. **Use `button` for actions** and `a` for navigation.
+7. **Keep source order the same as visual order.**
+8. **Use `div` and `span` only** when no meaningful element fits.
+9. **Test with the keyboard** and a screen reader.
+
+## Accessibility Checklist
+
+- [ ] The page has a `lang`, and a unique, meaningful `<title>`.
+- [ ] There is a logical heading outline, with no skipped levels and no empty headings.
+- [ ] `main` appears once, and `header`, `nav`, and `footer` are used where they fit.
+- [ ] Repeated landmarks, such as two `nav` elements, have different labels.
+- [ ] A skip link is the first focusable element.
+- [ ] Lists use `ul`, `ol`, and `dl`. Tables are used only for data.
+- [ ] Buttons are `button`, and links are `a` with an `href`.
+- [ ] Tab order follows the visual order, and no `tabindex` is above 0.
+- [ ] Text meant only for assistive technology uses a visually hidden class.
+- [ ] No heading is used only for its size.
+
+## Security and Privacy Notes
+
+- **Do not put sensitive data in visually hidden text,** or in headings and landmark labels. Anyone using assistive technology, anyone reading the page source, and search engines can see it.
+- **Hidden text is also content.** Do not use it to stuff keywords for search engines. It can be penalised, and it harms screen reader users.
+- **Be careful with user-generated headings.** If visitors can post content, make sure they cannot inject their own `h1`, landmark roles, or `aria-hidden`. Escape their text, and control which elements are allowed.
+- **A skip link target should not be user-controlled.** Build `href="#main"` yourself, and avoid passing arbitrary fragments from the address.
+- **Do not hide security warnings** with `aria-hidden`, or off-screen. Anything people need to see for safe use must be available to everyone.
+
+## Global Audience Notes
+
+- **Screen readers read the `lang` attribute,** so a Hindi page set as English will be read with the wrong voice. Set `lang` on the page and on passages in other languages.
+- **Heading and landmark labels should be in the page's language.** An English `aria-label` on a Spanish page is read with an English or Spanish voice, and either is confusing.
+- **Right-to-left pages** need `dir="rtl"`. The reading order in the code should match the visual order in that direction.
+- **Write short, plain headings** that translate well, and that fit on small screens in any script.
+- **Many people use older phones and basic screen readers.** Plain, semantic HTML works best on all of them.
+- **Do not use a symbol or emoji alone as a heading or label.** Meanings differ across cultures.
+
+## Common Mistakes to Avoid
+
+1. **Div soup:** a page with no headings, landmarks, or lists.
+2. **Skipping heading levels** because of the size it gives.
+3. **Using bold or a large font** instead of a real heading.
+4. **Several `main` elements,** or none.
+5. **Unlabelled repeated `nav` elements.**
+6. **No skip link** on pages with long menus.
+7. **A `div` or `span` for a button,** or an `a` with no `href` for an action.
+8. **Layout tables.**
+9. **Visual order that disagrees with the source order.**
+10. **Positive `tabindex` values.**
+11. **`aria-hidden` on content that can be focused.**
+12. **Hiding with `display: none`** content that screen readers need.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the structure navigator, load the div soup sample, and fix it one problem at a time.
+2. Write the heading outline for your own page, then read only that list.
+3. Add a skip link to a page, and test it with the keyboard.
+4. Replace three `div` elements with `header`, `main`, and `footer`.
+5. Give two `nav` elements different labels.
+6. Turn a list written with `<br>` into a real `ul`.
+7. Find a `div` that acts as a button, and replace it with a `button`.
+8. Use CSS to reverse the visual order of two blocks, and then press Tab. What happens?
+9. Make an icon-only link accessible with a visually hidden label.
+10. Bonus: open a news site, and list the headings and landmarks it uses, with your browser's Accessibility panel.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why does semantic HTML help accessibility?</summary>
+
+Each semantic element says what it is, so browsers and assistive technology can announce it, let people jump between elements, and provide keyboard behaviour, without extra code.
+
+</details>
+
+<details>
+<summary>2. What are the rules for a good heading outline?</summary>
+
+One `h1` that names the page, no skipped levels, levels chosen for meaning rather than size, and headings that make sense on their own.
+
+</details>
+
+<details>
+<summary>3. What are landmarks?</summary>
+
+Regions such as banner, navigation, main, complementary, and contentinfo, created by elements like `header`, `nav`, `main`, `aside`, and `footer`. They let users jump straight to a region.
+
+</details>
+
+<details>
+<summary>4. What does a skip link do?</summary>
+
+It is the first link on a page, and lets keyboard users jump over repeated content, such as a long menu, straight to the main content.
+
+</details>
+
+<details>
+<summary>5. When do you use a button, and when a link?</summary>
+
+A button does something on the current page. A link goes somewhere else, with an `href`.
+
+</details>
+
+<details>
+<summary>6. How does `aria-hidden="true"` differ from `display: none`?</summary>
+
+`display: none` hides the element from everyone, including screen readers, and removes it from the Tab order. `aria-hidden` hides it only from assistive technology, but a focusable element inside it can still be reached by keyboard, which is a trap.
+
+</details>
+
+## Key Takeaways
+
+- People navigate by **structure:** headings, landmarks, links, lists, and form fields.
+- Build a clean **heading outline,** with one `h1` and no skipped levels.
+- Use **landmarks** to map the page, and **label** repeated ones.
+- Add a **skip link** so keyboard users can bypass repeated menus.
+- Use the **right element:** lists for lists, tables for data, `button` for actions, `a` for navigation.
+- Keep **source order** and **visual order** together, and avoid positive `tabindex`.
+- Use a **visually hidden** class for text that is only for assistive technology, and know the difference from `aria-hidden` and `display: none`.
+- **Language and title** are the first things a screen reader announces. Set both.
+
+Next, hear how all this structure sounds with [Screen Readers](./screen-readers).

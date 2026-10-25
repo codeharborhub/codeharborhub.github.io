@@ -1,0 +1,630 @@
+---
+id: html-accessible-tables
+title: "Accessible Tables"
+sidebar_label: "Accessible Tables"
+sidebar_position: 13
+slug: /html/accessibility/accessible-tables
+description: "Learn how to build data tables that work for screen reader and keyboard users: when to use a table, captions, th and scope, complex tables, empty cells, sortable columns, buttons and checkboxes in rows, and scrollable wide tables. Includes a table reader lab, a scrolling region lab, and a live table checker."
+keywords:
+  - accessible tables
+  - table caption
+  - th scope
+  - table headers
+  - sortable table aria-sort
+  - scrollable table accessibility
+  - screen reader tables
+  - data table
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, tables, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const readerHeaders = ["Loaf", "Price (USD)", "Weight (g)", "In stock"];
+
+export const readerRows = [
+  ["Sourdough", "6.50", "800", "12"],
+  ["Rye", "5.75", "700", "4"],
+  ["Focaccia", "4.25", "500", "9"],
+];
+
+export function TableReaderLab() {
+  const [proper, setProper] = useState(true);
+  const [row, setRow] = useState(0);
+  const [col, setCol] = useState(1);
+  const move = (dr, dc) => {
+    setRow(Math.max(0, Math.min(readerRows.length - 1, row + dr)));
+    setCol(Math.max(0, Math.min(readerHeaders.length - 1, col + dc)));
+  };
+  const value = readerRows[row][col];
+  const colHeader = readerHeaders[col];
+  const rowHeader = readerRows[row][0];
+  const spoken = proper
+    ? (col === 0 ? value + ", row header, row " + (row + 1) + " of " + readerRows.length : value + ". Column: " + colHeader + ". Row: " + rowHeader + ".")
+    : value + ", row " + (row + 2) + ", column " + (col + 1);
+  const cellStyle = (r, c) => ({border: "1px solid #94a3b8", padding: "6px 12px", textAlign: c === 0 ? "left" : "right", background: r === row && c === col ? "#fde68a" : undefined, color: r === row && c === col ? "#0f172a" : undefined, outline: r === row && c === col ? "3px solid #b45309" : undefined, outlineOffset: "-3px"});
+  const headStyle = {border: "1px solid #94a3b8", padding: "6px 12px", textAlign: "left", background: "#e2e8f0", color: "#0f172a"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={proper} onChange={(event) => setProper(event.target.checked)} /> Use real header cells (<code>th</code> with <code>scope</code>)</label>
+      </p>
+      <div style={{overflowX: "auto", marginBottom: "0.6rem"}}>
+        <table style={{borderCollapse: "collapse", minWidth: "26rem"}}>
+          <caption style={{textAlign: "left", fontWeight: 600, paddingBottom: "0.3rem"}}>Bread prices and stock</caption>
+          <thead>
+            <tr>
+              {readerHeaders.map((header, c) => (proper ? <th key={header} scope="col" style={headStyle}>{header}</th> : <td key={header} style={{...headStyle, fontWeight: 700}}>{header}</td>))}
+            </tr>
+          </thead>
+          <tbody>
+            {readerRows.map((cells, r) => (
+              <tr key={cells[0]}>
+                {cells.map((cell, c) => (c === 0 && proper ? <th key={c} scope="row" style={{...cellStyle(r, c), fontWeight: 700}}>{cell}</th> : <td key={c} style={{...cellStyle(r, c), fontWeight: c === 0 ? 700 : 400}}>{cell}</td>))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <span role="group" aria-label="Move around the table">
+          <button type="button" aria-label="Move up" onClick={() => move(-1, 0)}>↑</button>{" "}
+          <button type="button" aria-label="Move down" onClick={() => move(1, 0)}>↓</button>{" "}
+          <button type="button" aria-label="Move left" onClick={() => move(0, -1)}>←</button>{" "}
+          <button type="button" aria-label="Move right" onClick={() => move(0, 1)}>→</button>
+        </span>
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{spoken}</code></p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Move the highlighted cell with the arrow buttons. With real headers, every cell tells you what it is: the number 6.50 arrives with "Price" and "Sourdough." Without them, you hear a bare number, and must count columns in your head. Screen readers use their own keys to move around tables (they vary), and word it differently, so this is a simplified example.
+      </p>
+    </div>
+  );
+}
+
+export const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function ScrollRegionLab() {
+  const [focusable, setFocusable] = useState(true);
+  const [scrolled, setScrolled] = useState(0);
+  const [focused, setFocused] = useState(false);
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={focusable} onChange={(event) => setFocusable(event.target.checked)} /> Make the scrolling area keyboard focusable (<code>tabindex="0"</code>)</label>
+      </p>
+      <div role="region" aria-labelledby="scrolllab-caption" tabIndex={focusable ? 0 : undefined} onScroll={(event) => setScrolled(Math.round(event.currentTarget.scrollLeft))} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={{overflowX: "auto", maxWidth: "100%", border: "1px solid #94a3b8"}}>
+        <table style={{borderCollapse: "collapse", whiteSpace: "nowrap"}}>
+          <caption id="scrolllab-caption" style={{textAlign: "left", fontWeight: 600, padding: "0.4rem"}}>Loaves sold each month</caption>
+          <thead>
+            <tr>
+              <th scope="col" style={{border: "1px solid #94a3b8", padding: "6px 14px", textAlign: "left", background: "#e2e8f0", color: "#0f172a"}}>Loaf</th>
+              {months.map((month) => (<th key={month} scope="col" style={{border: "1px solid #94a3b8", padding: "6px 14px", background: "#e2e8f0", color: "#0f172a"}}>{month}</th>))}
+            </tr>
+          </thead>
+          <tbody>
+            {["Sourdough", "Rye", "Focaccia"].map((loaf, r) => (
+              <tr key={loaf}>
+                <th scope="row" style={{border: "1px solid #94a3b8", padding: "6px 14px", textAlign: "left"}}>{loaf}</th>
+                {months.map((month, c) => (<td key={month} style={{border: "1px solid #94a3b8", padding: "6px 14px", textAlign: "right"}}>{100 + r * 30 + c * 7}</td>))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{margin: "0.6rem 0 0.2rem"}}>Scrolled sideways by: <strong>{scrolled}</strong> pixels. The scrolling area {focused ? "has focus." : "does not have focus."}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Press Tab until the table area has a focus ring, then use the left and right arrow keys, and watch the number change. If the box is not focusable, many keyboard users cannot scroll it at all. Some newer browsers make scrollable areas focusable on their own, and others do not, so add <code>tabindex="0"</code> yourself, and test in the browsers your readers use. The area also gets a name from the caption, so a screen reader can announce it as a region.
+      </p>
+    </div>
+  );
+}
+
+export const tableSamples = {
+  messy: '<table>\n  <tr><td><b>Loaf</b></td><td><b>Price</b></td><td></td></tr>\n  <tr><td>Sourdough</td><td>6.50</td><td><button>Edit</button></td></tr>\n  <tr><td>Rye</td><td>5.75</td><td><button>Edit</button></td></tr>\n  <tr><td>Focaccia</td><td></td><td><button>Edit</button></td></tr>\n</table>\n<table>\n  <caption>Opening hours</caption>\n  <tr><th></th><th>Open</th><th>Close</th></tr>\n  <tr><th>Mon</th><td>8:00</td><td>17:00</td></tr>\n</table>',
+  fixed: '<table>\n  <caption>Bread prices and stock</caption>\n  <thead>\n    <tr>\n      <th scope="col">Loaf</th>\n      <th scope="col">Price (USD)</th>\n      <th scope="col"><span class="sr-only">Actions</span></th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr><th scope="row">Sourdough</th><td>6.50</td><td><button type="button" aria-label="Edit Sourdough">Edit</button></td></tr>\n    <tr><th scope="row">Rye</th><td>5.75</td><td><button type="button" aria-label="Edit Rye">Edit</button></td></tr>\n    <tr><th scope="row">Focaccia</th><td>No data</td><td><button type="button" aria-label="Edit Focaccia">Edit</button></td></tr>\n  </tbody>\n</table>',
+};
+
+export function TableCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(tableSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const tables = Array.from(doc.querySelectorAll("table"));
+  const reports = tables.map((table, index) => {
+    const issues = [];
+    const notes = [];
+    const caption = table.querySelector("caption");
+    const named = Boolean(caption && caption.textContent.trim()) || Boolean(table.getAttribute("aria-label")) || Boolean(table.getAttribute("aria-labelledby"));
+    const rows = table.querySelectorAll("tr").length;
+    const ths = Array.from(table.querySelectorAll("th"));
+    const role = (table.getAttribute("role") || "").toLowerCase();
+    if (role === "presentation" || role === "none") {
+      if (ths.length > 0 || caption || table.querySelector("thead")) issues.push("Marked as a layout table, but it has data table markup (th, caption, or thead). Remove the role, or the markup.");
+      else notes.push("A layout table. Use CSS grid or flexbox for layout instead.");
+    } else {
+      if (ths.length === 0) issues.push("No header cells. Use th for column and row headings, not bold text in td.");
+      if (!named) issues.push("No caption. Add a caption that names the table.");
+      const noScope = ths.filter((th) => !th.getAttribute("scope") && !th.getAttribute("id"));
+      if (ths.length > 0 && noScope.length > 0) notes.push(noScope.length + " header cell(s) have no scope. Adding scope=\"col\" or scope=\"row\" is the safe choice.");
+      if (ths.some((th) => th.textContent.trim() === "" && !th.querySelector("img[alt]"))) issues.push("A header cell is empty. Add text, or visually hidden text such as Actions.");
+      if (table.querySelector("table")) issues.push("A table inside a table. Split it up, or flatten the layout.");
+      if (table.querySelector("[colspan], [rowspan]") && !table.querySelector("[headers]")) notes.push("Merged cells (colspan or rowspan). Consider splitting into simpler tables, or use headers and id for a complex table.");
+      Array.from(table.querySelectorAll("[headers]")).forEach((cell) => {
+        cell.getAttribute("headers").split(/\s+/).filter(Boolean).forEach((id) => { if (!doc.getElementById(id)) issues.push("A headers value points to the id \"" + id + "\", which does not exist."); });
+      });
+      const empties = Array.from(table.querySelectorAll("td")).filter((td) => td.textContent.trim() === "" && !td.querySelector("img, input, button, select, svg"));
+      if (empties.length > 0) notes.push(empties.length + " empty cell(s). Write something like No data, so nobody wonders if content is missing.");
+    }
+    const names = {};
+    Array.from(table.querySelectorAll("button, a[href]")).forEach((el) => {
+      const name = (el.getAttribute("aria-label") || el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+      if (name) names[name] = (names[name] || 0) + 1;
+    });
+    Object.keys(names).forEach((name) => { if (names[name] > 1) issues.push(names[name] + " controls in rows share the name \"" + name + "\". Make each unique, such as Edit Rye."); });
+    Array.from(table.querySelectorAll('input[type="checkbox"], input[type="radio"]')).forEach((input) => {
+      const id = input.getAttribute("id");
+      const labelled = input.getAttribute("aria-label") || input.getAttribute("aria-labelledby") || input.closest("label") || (id && Array.from(doc.querySelectorAll("label")).some((label) => label.getAttribute("for") === id));
+      if (!labelled) issues.push("A checkbox or radio button in a row has no name. Label it, such as Select Rye.");
+    });
+    return {index, rows, caption: caption ? caption.textContent.trim() : "", issues: Array.from(new Set(issues)), notes};
+  });
+  const bad = reports.reduce((sum, report) => sum + report.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(tableSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which tables do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="table-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy tables</label>
+        <label><input type="radio" name="table-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="table-html">HTML to check (edit it freely)</label><br />
+        <textarea id="table-html" rows={11} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{tables.length}</strong> tables found, <strong>{bad}</strong> problems.</p>
+      {reports.map((report) => (
+        <div key={report.index} style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.6rem 0.8rem", marginBottom: "0.6rem"}}>
+          <p style={{margin: "0 0 0.3rem"}}><strong>Table {report.index + 1}:</strong> {report.caption ? <code>{'"' + report.caption + '"'}</code> : <em>no caption</em>}, {report.rows} rows</p>
+          {report.issues.length === 0 && report.notes.length === 0 ? <p style={{margin: 0}}><strong>OK</strong></p> : null}
+          <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+            {report.issues.map((item, i) => (<li key={"p" + i}><strong>Problem:</strong> {item}</li>))}
+            {report.notes.map((item, i) => (<li key={"n" + i}><em>Note:</em> {item}</li>))}
+          </ul>
+        </div>
+      ))}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot tell whether a caption is clear, whether the data should be a table, or how the table behaves when scrolled or squeezed. Always try it with a keyboard and zoom as well.
+      </p>
+    </div>
+  );
+}
+
+export function TableChecker() {
+  return <BrowserOnly>{() => <TableCheckerInner />}</BrowserOnly>;
+}
+
+A table shows **relationships.** A sighted person sees a grid, and their eyes quickly travel along a row or down a column to find "the price of rye." A person using a screen reader cannot see the grid. They depend on the **markup** to tell them what each cell means, and which row and column it belongs to. Without that markup, a table becomes a long stream of unconnected numbers.
+
+The good news is that HTML tables are very good at this, when you use them as intended: a `caption` to name the table, `th` cells for headings, and `scope` to say which way they point.
+
+:::info
+This lesson focuses on tables in the **accessibility** section: how assistive technology reads them, and the checks to run. For the complete tour of table elements, `colspan`, `rowspan`, and styling, see [Accessible HTML Tables](/html/tables/table-accessibility) in the Tables section.
+:::
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- **When** to use a table, and when not to
+- How **captions, `th`,** and **`scope`** give a table meaning
+- How to deal with **complex tables** and **merged cells**
+- How to handle **empty cells,** **sorting,** and **buttons in rows**
+- How to make **wide tables** scroll safely
+- How to **check** your tables
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<table>
+  <caption>Bread prices and stock</caption>
+  <thead>
+    <tr>
+      <th scope="col">Loaf</th>
+      <th scope="col">Price (USD)</th>
+      <th scope="col">Weight (g)</th>
+      <th scope="col">In stock</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Sourdough</th>
+      <td>6.50</td>
+      <td>800</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <th scope="row">Rye</th>
+      <td>5.75</td>
+      <td>700</td>
+      <td>4</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+</TabItem>
+<TabItem value="output" label="Table Reader Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TableReaderLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Move around the table with the arrows, once with real headers and once without. Notice how the number 6.50 means nothing alone, and a lot with its two headings.
+
+## Is It a Table?
+
+Use a table for **data with relationships:** rows and columns where each cell depends on **both** its row and its column. Prices by product, opening hours by day, scores by team.
+
+| It is... | Use |
+| :-- | :-- |
+| Data in rows and columns | `table` |
+| A simple list of items | `ul` or `ol` |
+| Page layout, columns, cards | CSS grid or flexbox |
+| Name and value pairs | `dl` (a description list) |
+
+**Never use a table for layout.** Screen readers announce every table, with its rows and columns, and a layout table creates a confusing maze. CSS does the job better, and also adapts to small screens. If an old page must keep a layout table, mark it with `role="presentation"`, and do not put `th` or `caption` in it.
+
+## Caption: The Name of the Table
+
+The `caption` is the **title** of the table. It is announced when a screen reader reaches the table, and it appears in lists of tables, so people can choose which one to read.
+
+```html
+<table>
+  <caption>Bread prices and stock</caption>
+  …
+</table>
+```
+
+- **Put the `caption` first** inside the `table`.
+- **Make it short and specific:** "Opening hours, October," not "Table 1."
+- **If you need more explanation,** put it in a normal paragraph near the table, and connect it with `aria-describedby="id-of-paragraph"` on the `table`.
+- **Not using a visible caption?** Use `aria-label` or `aria-labelledby` on the table instead, but a visible caption helps everyone.
+
+If the table sits under a heading that already names it, the caption can be a little more detail than the heading, and should not just repeat it.
+
+## Header Cells: `th` and `scope`
+
+Header cells use **`th`,** not `td` with bold text. The **`scope`** attribute says which way a heading points:
+
+- `scope="col"` for a **column** heading (at the top).
+- `scope="row"` for a **row** heading (at the start of a row).
+
+```html
+<thead>
+  <tr>
+    <th scope="col">Loaf</th>
+    <th scope="col">Price (USD)</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <th scope="row">Sourdough</th>
+    <td>6.50</td>
+  </tr>
+</tbody>
+```
+
+- **Group your rows** with `thead`, `tbody`, and (if needed) `tfoot`. It helps browsers, print, and assistive technology.
+- **Put units in the heading,** not in every cell: "Price (USD)" and "Weight (g)."
+- **Make the first column a row header** (`th scope="row"`) when each row is about one thing, such as one product.
+- **The top-left corner cell** is often empty in a table with both row and column headers. Do not leave a `th` empty: put text in it, or visually hidden text such as "Product," so it still has a name.
+
+Modern browsers can often work out the header cells without `scope`, but adding it is a **safe habit** that works everywhere, and costs nothing.
+
+## Complex Tables and Merged Cells
+
+A **simple** table has one row of column headings, and maybe one column of row headings. A **complex** table has headings with several levels, or cells merged with `colspan` and `rowspan`.
+
+Complex tables are hard for assistive technology, and often hard for everyone. Two ideas help:
+
+1. **Simplify first.** Can you split it into two or three simple tables, each with its own caption? That is usually the best accessibility fix.
+2. **If it must stay complex,** connect each cell to its headings by hand: give every `th` an `id`, and list the matching ids in each `td` with the `headers` attribute.
+
+```html
+<tr>
+  <th id="loaf">Loaf</th>
+  <th id="mar">March</th>
+</tr>
+<tr>
+  <th id="rye" headers="loaf">Rye</th>
+  <td headers="rye mar">120</td>
+</tr>
+```
+
+Test complex tables with a screen reader, because support for the `headers` attribute is not always perfect. The full details are in the [Tables section](/html/tables/table-accessibility).
+
+## Empty Cells
+
+An **empty cell** leaves people wondering: is the data missing, or is the screen reader skipping it? Say what it means:
+
+- Write **"No data,"** "Not applicable," or "0" if that is the meaning.
+- A dash ("-") is often **read as nothing** or as "dash," so add text if the meaning is not obvious.
+- **Never leave a header cell empty.** If it is just a spacer, use visually hidden text such as "Actions."
+
+## Sortable Columns
+
+If users can sort a table by a column, the column heading must be a **button,** so it can be reached with the keyboard, and `aria-sort` on the `th` says the current order:
+
+```html
+<th scope="col" aria-sort="ascending">
+  <button type="button">Price (USD)</button>
+</th>
+<th scope="col">
+  <button type="button">Weight (g)</button>
+</th>
+```
+
+- Set `aria-sort` to `ascending` or `descending` **only on the column currently sorted.** Remove it from the others.
+- **Do not rely on an arrow icon alone** to show the direction. The text, or `aria-sort`, should say it.
+- **Announce the change** in a polite live region: "Sorted by price, lowest first." See [ARIA Live Regions](./aria-live).
+- **Keep focus on the button** after sorting. See [Focus Management](./focus-management).
+
+## Controls Inside Tables
+
+Rows often hold checkboxes, links, and buttons ("Edit," "Delete"). Each control needs its own name that makes sense on its own (see [Accessible Names](./accessible-names)):
+
+```html
+<tr>
+  <th scope="row">Rye</th>
+  <td>5.75</td>
+  <td>
+    <input type="checkbox" aria-label="Select Rye">
+    <button type="button" aria-label="Edit Rye">Edit</button>
+  </td>
+</tr>
+```
+
+If every row says just "Edit," a list of buttons gives the person nothing to tell them apart. Add the row name, as above.
+
+Also **avoid `role="grid"`** unless you are really building a spreadsheet-like widget, with arrow-key cell navigation that you have coded and tested. An ordinary table is better understood, and usually works well.
+
+## Wide Tables and Scrolling
+
+A table with many columns cannot always fit a small screen. The usual fix is to put it in a **scrolling container.** For a keyboard user to scroll it, the container must be **focusable,** and it should have a **name:**
+
+```html
+<div role="region" aria-labelledby="sales-caption" tabindex="0" class="table-scroll">
+  <table>
+    <caption id="sales-caption">Loaves sold each month</caption>
+    …
+  </table>
+</div>
+```
+
+```css
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+```
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<div role="region" aria-labelledby="sales-caption" tabindex="0" class="table-scroll">
+  <table>
+    <caption id="sales-caption">Loaves sold each month</caption>
+    <thead>
+      <tr>
+        <th scope="col">Loaf</th>
+        <th scope="col">Jan</th>
+        <th scope="col">Feb</th>
+        <!-- … more months … -->
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Sourdough</th>
+        <td>100</td>
+        <td>107</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Scrolling Region Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ScrollRegionLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+A few more points on small screens:
+
+- **Reflow is the goal,** but WCAG (1.4.10) allows **data tables** to scroll sideways, because breaking the grid would destroy the meaning.
+- **Be careful with "stacked card" designs** that turn rows into blocks with CSS (`display: block`). In some browsers, changing the `display` of table elements has removed their table meaning. Newer versions have improved, but **test with a screen reader.** See [Responsive Tables](/html/tables/responsive-tables).
+- **Keep the first column visible** (sticky) if people need to keep their place while scrolling.
+
+## Colour, Contrast, and Zoom
+
+- **Zebra stripes** help the eye, but must not be the only way to tell rows apart. Keep borders or spacing too.
+- **Keep text contrast at 4.5:1** against every row colour, including stripes and hover colours.
+- **Do not use colour alone** to mark meaning (red for "low stock"). Add text, such as "Low."
+- **Align numbers to the right,** so digits line up, and use the same number of decimal places.
+- **Zoom to 200 percent,** and check that the table is still readable, and the header cells are not cut off.
+
+## Check Your Tables
+
+The checker below reads each `table` in a snippet of HTML, and looks for missing headers, missing captions, empty header cells, missing scope, layout tables with data markup, nested tables, bad `headers` references, empty cells, duplicate button names, and unlabelled checkboxes.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TableChecker />
+</>
+</BrowserWindow>
+
+Then try the table by hand:
+
+1. **Tab** through the page. Can you reach every control, and scroll any wide table?
+2. **Use a screen reader's table commands** (they differ for each one) to move between cells. Is each cell announced with its headings?
+3. **Open the screen reader's list of tables,** if it has one. Does each table have a meaningful name?
+4. **Zoom to 200 and 400 percent.**
+5. **Print the page,** or view it without CSS. Does the table still make sense?
+
+## Good Habits
+
+1. **Use a table only for data** with rows and columns.
+2. **Give every table a short, specific `caption`.**
+3. **Use `th` with `scope`,** never bold `td` cells.
+4. **Group rows** with `thead` and `tbody`.
+5. **Keep tables simple.** Split complex ones, and use `headers` and `id` only when you must.
+6. **Fill empty cells** with real text such as "No data."
+7. **Name every control in a row** so it is unique.
+8. **Make scrolling areas focusable and named.**
+9. **Test with a screen reader,** a keyboard, and zoom.
+
+## Accessibility Checklist
+
+- [ ] The table holds real data, and is not used for layout.
+- [ ] It has a caption, or an accessible name.
+- [ ] All headings are `th` cells, with `scope` set correctly.
+- [ ] The corner cell and any "actions" column have a name, not an empty header.
+- [ ] Complex tables are simplified, or use `headers` and `id` correctly.
+- [ ] Empty cells say what they mean.
+- [ ] Sortable columns use buttons and `aria-sort`, and announce changes.
+- [ ] Buttons, links, and checkboxes in rows have unique names.
+- [ ] A scrolling table is focusable, named, and keyboard usable.
+- [ ] Contrast is enough, and meaning does not depend on colour alone.
+
+## Security and Privacy Notes
+
+- **Think about who can see the table.** Tables often hold personal data (names, emails, orders, health information). Only show the columns a person is allowed to see, and check access on the server, not only by hiding things in the page.
+- **Do not leave private data in hidden cells,** `aria-label` values, or `data-` attributes. Screen readers, extensions, and anyone viewing the source can read them.
+- **Beware of spreadsheet formula injection.** If people can download a table as a CSV or spreadsheet, a cell that begins with `=`, `+`, `-`, or `@` can run as a formula in some spreadsheet programs. Escape or prefix such values when you export.
+- **Escape user-supplied text** before putting it in a cell, to avoid script injection (cross-site scripting).
+- **Do not make personal data easy to scrape** with an unprotected, unlimited export or "show all rows" feature.
+- **Sorting and filtering done in the browser** still gets all the data. If some of it is confidential, do not send it at all.
+
+## Global Audience Notes
+
+- **Numbers differ.** Some places use a decimal comma ("6,50") and spaces or dots for thousands. Use a formatter that follows the reader's locale, and put the currency or unit in the heading.
+- **Dates:** show them in an unambiguous format (such as 3 Mar 2026), or use a locale-aware formatter.
+- **Right-to-left languages:** add `dir="rtl"` to the page, and the column order mirrors, so the first column appears on the right. Test it, especially sticky columns and scroll direction.
+- **Translated headings are longer.** Do not set fixed widths, and allow wrapping. Short headings in the source translate best.
+- **Abbreviations:** if you use `abbr` for a long heading, write the full meaning in the `title`, and mark foreign words with `lang`. Do not assume everyone knows "qty" or "avg."
+- **Sorting:** alphabetical order differs by language (for example, accented letters). Use locale-aware sorting (`localeCompare`) so the order makes sense to local readers.
+- **Mobile data:** very large tables are heavy on slow connections. Paginate, or load more rows on request, and say clearly how many rows there are.
+
+## Common Mistakes to Avoid
+
+1. **Using a table for page layout.**
+2. **Bold `td` cells instead of `th`.**
+3. **No `caption`, or a caption like "Table 1."**
+4. **Header cells with no text.**
+5. **Missing `scope`,** and no row headers.
+6. **Merged cells in a table that could be split.**
+7. **Empty cells that leave people guessing.**
+8. **Sortable columns that are not buttons.**
+9. **Rows full of buttons that all say "Edit."**
+10. **A scrolling table that a keyboard cannot scroll.**
+11. **Stacked mobile layouts that destroy the table meaning.**
+12. **Never trying the table with a screen reader.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. In the reader lab, walk through all twelve cells with real headers, and then without. Write down the difference.
+2. Run the checker on the messy tables, fix every problem, and run it again.
+3. Turn a table of your own into one with a `caption`, `thead`, `tbody`, and `scope`.
+4. Give the empty corner cell and an "Actions" column visually hidden names.
+5. Add `aria-sort` and sort buttons to a table, with a live region announcing the change.
+6. Make every "Edit" button unique by adding the row name to an `aria-label`.
+7. Put a wide table in a focusable, named scrolling region, and use only the keyboard to read every column.
+8. Replace a layout table with CSS grid.
+9. Split a complex table with merged cells into two simple tables.
+10. Bonus: run a screen reader (or the browser's accessibility panel) over a table, and describe how it announces each cell.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. When should you use a table?</summary>
+
+For data where each cell depends on both its row and its column. Not for page layout, which belongs to CSS.
+
+</details>
+
+<details>
+<summary>2. What does the `caption` do?</summary>
+
+It names the table. It is announced by screen readers, and listed in table lists, so people can find the one they want.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `scope="col"` and `scope="row"`?</summary>
+
+`scope="col"` says a header applies to the column below it, and `scope="row"` says it applies to the row beside it.
+
+</details>
+
+<details>
+<summary>4. How should you handle an empty cell?</summary>
+
+Write what it means, such as "No data." Never leave a header cell empty, and use visually hidden text for spacer or action headers.
+
+</details>
+
+<details>
+<summary>5. How do you make a column sortable accessibly?</summary>
+
+Put a `button` inside the `th`, set `aria-sort` on the sorted column, and announce the change with a live region.
+
+</details>
+
+<details>
+<summary>6. Why make a scrolling table container focusable?</summary>
+
+So keyboard users can reach it and scroll it with the arrow keys. Give it a name, with a role of `region` and an `aria-labelledby` that points to the caption.
+
+</details>
+
+## Key Takeaways
+
+- **Tables are for data,** and CSS is for layout.
+- **Name the table** with a `caption`.
+- **Use `th` with `scope`,** and group with `thead` and `tbody`, so every cell has its headings.
+- **Keep tables simple.** Split complex ones before you reach for `headers`.
+- **Fill empty cells,** and name every control in a row uniquely.
+- **Sortable columns** need buttons, `aria-sort`, and announcements.
+- **Wide tables** need a focusable, named scrolling region.
+- **Test** with a keyboard, a screen reader, and zoom.
+
+Next, learn what ARIA is, and when to use it, in [Introduction to ARIA](./aria-introduction).

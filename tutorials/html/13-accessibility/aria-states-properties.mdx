@@ -1,0 +1,591 @@
+---
+id: html-aria-states-properties
+title: "ARIA States and Properties"
+sidebar_label: "States and Properties"
+sidebar_position: 16
+slug: /html/accessibility/aria-states-properties
+description: "Learn the difference between ARIA states and properties, the kinds of values they take, and the most useful ones: aria-expanded, aria-pressed, aria-checked, aria-selected, aria-current, aria-disabled, aria-invalid, aria-busy, and aria-controls. Includes a state sync lab that shows what goes wrong when state is not updated, a value tester, and a lab for aria-current and aria-busy."
+keywords:
+  - ARIA states
+  - ARIA properties
+  - aria-expanded
+  - aria-pressed
+  - aria-selected
+  - aria-current
+  - aria-busy
+  - aria-checked
+  - aria-disabled
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, states, properties, a11y, frontend]
+---
+
+import {useState, useRef, useEffect} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const tabNames = ["Ingredients", "Method", "Serving"];
+
+export const panelTexts = ["Flour, water, salt, and a little patience.", "Mix, fold every 30 minutes, then bake.", "Best eaten warm, with butter."];
+
+export function StateSyncLab() {
+  const [buggy, setBuggy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const [tab, setTab] = useState(0);
+  const refs = useRef([]);
+  const told = {expanded: buggy ? false : open, pressed: buggy ? false : pressed, tab: buggy ? 0 : tab};
+  const moveTab = (next) => {
+    const target = (next + tabNames.length) % tabNames.length;
+    setTab(target);
+    if (refs.current[target]) refs.current[target].focus();
+  };
+  const onKey = (index) => (event) => {
+    if (event.key === "ArrowRight") { event.preventDefault(); moveTab(index + 1); }
+    if (event.key === "ArrowLeft") { event.preventDefault(); moveTab(index - 1); }
+    if (event.key === "Home") { event.preventDefault(); moveTab(0); }
+    if (event.key === "End") { event.preventDefault(); moveTab(tabNames.length - 1); }
+  };
+  const mismatches = [told.expanded !== open, told.pressed !== pressed, told.tab !== tab].filter(Boolean).length;
+  const box = {border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"};
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={buggy} onChange={(event) => setBuggy(event.target.checked)} /> Forget to update the ARIA state (the bug)</label>
+      </p>
+      <div style={box}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>Disclosure</strong></p>
+        <button type="button" aria-expanded={told.expanded} aria-controls="statelab-details" onClick={() => setOpen(!open)}>
+          <span aria-hidden="true">{open ? "▾ " : "▸ "}</span>Delivery details
+        </button>
+        <div id="statelab-details" hidden={!open} style={{margin: "0.4rem 0 0"}}>Free delivery on orders over 20 dollars.</div>
+        <p style={{margin: "0.4rem 0 0"}}>Told to assistive technology: <code>Delivery details, button, {told.expanded ? "expanded" : "collapsed"}</code> {told.expanded !== open ? <strong>(wrong!)</strong> : null}</p>
+      </div>
+      <div style={box}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>Toggle button</strong></p>
+        <button type="button" aria-pressed={told.pressed} onClick={() => setPressed(!pressed)} style={{fontWeight: pressed ? 700 : 400, background: pressed ? "#dbeafe" : undefined, color: pressed ? "#1e293b" : undefined, border: pressed ? "2px solid #1d4ed8" : undefined}}>
+          <span aria-hidden="true">{pressed ? "✓ " : ""}</span>Favourite
+        </button>
+        <p style={{margin: "0.4rem 0 0"}}>Told to assistive technology: <code>Favourite, toggle button, {told.pressed ? "pressed" : "not pressed"}</code> {told.pressed !== pressed ? <strong>(wrong!)</strong> : null}</p>
+      </div>
+      <div style={box}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>Tabs</strong> (use the left and right arrow keys)</p>
+        <div role="tablist" aria-label="Recipe">
+          {tabNames.map((name, i) => (
+            <button key={name} ref={(element) => { refs.current[i] = element; }} role="tab" type="button" id={"statelab-tab-" + i} aria-selected={told.tab === i} aria-controls={"statelab-panel-" + i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)} onKeyDown={onKey(i)} style={{padding: "0.3rem 0.8rem", marginRight: "0.2rem", fontWeight: tab === i ? 700 : 400, borderBottom: tab === i ? "3px solid #1d4ed8" : "3px solid transparent"}}>{name}</button>
+          ))}
+        </div>
+        {tabNames.map((name, i) => (
+          <div key={name} role="tabpanel" id={"statelab-panel-" + i} aria-labelledby={"statelab-tab-" + i} hidden={tab !== i} style={{padding: "0.5rem 0"}}>{panelTexts[i]}</div>
+        ))}
+        <p style={{margin: "0.2rem 0 0"}}>Told to assistive technology: <code>{tabNames[told.tab]}, tab, selected</code> {told.tab !== tab ? <strong>(wrong! The page shows "{tabNames[tab]}")</strong> : null}</p>
+      </div>
+      <p style={{margin: "0 0 0.4rem"}} aria-live="polite"><strong>{mismatches === 0 ? "Everything agrees." : mismatches + " widget(s) say one thing and show another."}</strong></p>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        Try each widget with the bug off, and then on. The picture changes, but with the bug on, the state attributes stay frozen. A person using a screen reader hears the wrong state, and cannot tell that anything happened. When the state is correct, the attribute is the <em>only</em> way they know. (The lines show what the attributes say. The exact words a screen reader uses differ.)
+      </p>
+    </div>
+  );
+}
+
+export const attrData = [
+  {name: "aria-expanded", type: "true / false / undefined", values: ["true", "false", "undefined"], on: "A button or other control that opens and closes something", note: "Put it on the control, not on the panel. Remove it only when the control does not expand at all.", example: '<button aria-expanded="false" aria-controls="menu">Menu</button>'},
+  {name: "aria-pressed", type: "tri-state: true / false / mixed", values: ["true", "false", "mixed", "undefined"], on: "A toggle button", note: "Keep the button label the same. mixed is for a button that controls several things in different states.", example: '<button aria-pressed="false">Mute</button>'},
+  {name: "aria-checked", type: "tri-state: true / false / mixed", values: ["true", "false", "mixed", "undefined"], on: "Custom checkbox, radio, switch, and menu item checkbox roles", note: "Do not add it to a native checkbox. The browser already tracks it, and the two can disagree.", example: '<div role="switch" tabindex="0" aria-checked="false">Dark mode</div>'},
+  {name: "aria-selected", type: "true / false / undefined", values: ["true", "false", "undefined"], on: "tab, option, row, gridcell", note: "It marks the chosen one in a set. Put it on the tab, not the panel.", example: '<button role="tab" aria-selected="true">Ingredients</button>'},
+  {name: "aria-current", type: "token", values: ["page", "step", "location", "date", "time", "true", "false"], on: "Any element that is the current item of a set", note: "Use page in navigation, step in a process, and true when none of the others fit.", example: '<a href="/recipes" aria-current="page">Recipes</a>'},
+  {name: "aria-disabled", type: "true / false", values: ["true", "false"], on: "Controls that are unavailable", note: "The control stays focusable. You must block its action yourself. For a native form control, disabled is simpler.", example: '<button aria-disabled="true">Place order</button>'},
+  {name: "aria-invalid", type: "true / false / grammar / spelling", values: ["true", "false", "grammar", "spelling"], on: "Form fields with an error", note: "Pair it with a visible error message, linked with aria-describedby.", example: '<input aria-invalid="true" aria-describedby="err">'},
+  {name: "aria-required", type: "true / false", values: ["true", "false"], on: "Custom form widgets", note: "A native field should use the required attribute instead.", example: '<div role="combobox" aria-required="true">…</div>'},
+  {name: "aria-busy", type: "true / false", values: ["true", "false"], on: "A region that is being updated", note: "Set to true while loading, and false when done, so assistive technology waits for the finished content.", example: '<ul aria-busy="true">…</ul>'},
+  {name: "aria-haspopup", type: "token", values: ["true", "false", "menu", "listbox", "tree", "grid", "dialog"], on: "A control that opens a popup", note: "Support varies, so do not rely on it alone. Use aria-expanded too.", example: '<button aria-haspopup="menu" aria-expanded="false">Actions</button>'},
+  {name: "aria-live", type: "token", values: ["off", "polite", "assertive"], on: "A region that changes", note: "Covered in the live region lesson. Prefer role=status for ordinary messages.", example: '<div aria-live="polite">…</div>'},
+  {name: "aria-controls", type: "id reference list", values: null, on: "A control and the thing it changes", note: "Names the element that is controlled. Screen reader support is limited, so it is a helper, not a substitute for good structure.", example: '<button aria-controls="panel">Show</button>'},
+  {name: "aria-labelledby", type: "id reference list", values: null, on: "Almost anything that needs a name", note: "Takes the name from other visible text. Covered in its own lesson.", example: '<section aria-labelledby="title">…</section>'},
+  {name: "aria-describedby", type: "id reference list", values: null, on: "Almost anything that needs extra help", note: "Points to hints and error messages. Covered in its own lesson.", example: '<input aria-describedby="hint">'},
+  {name: "aria-label", type: "string", values: null, on: "Elements that need a name and have no visible text", note: "Written in the page language. Covered in its own lesson.", example: '<button aria-label="Close">×</button>'},
+  {name: "aria-level", type: "integer", values: null, on: "A custom heading, or tree item", note: "Only needed when role=heading is not on a real h1 to h6.", example: '<div role="heading" aria-level="2">Title</div>'},
+  {name: "aria-valuenow", type: "number", values: null, on: "slider, progressbar, spinbutton", note: "Use with aria-valuemin and aria-valuemax. Add aria-valuetext when the number alone is not clear.", example: '<div role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>'},
+];
+
+export function checkValue(item, raw) {
+  const value = raw.trim();
+  if (item.values) {
+    if (value === "") return {ok: false, text: "The value is empty. Allowed: " + item.values.join(", ") + "."};
+    if (item.values.indexOf(value) === -1) return {ok: false, text: "Not valid. Allowed: " + item.values.join(", ") + (item.values.indexOf(value.toLowerCase()) !== -1 ? ". Write the value in lowercase." : ".")};
+    return {ok: true, text: "Valid."};
+  }
+  if (item.type === "number") return !isNaN(Number(value)) && value !== "" ? {ok: true, text: "Valid."} : {ok: false, text: "This must be a number, such as 40."};
+  if (item.type === "integer") return /^\d+$/.test(value) ? {ok: true, text: "Valid."} : {ok: false, text: "This must be a whole number, such as 2."};
+  if (item.type === "string") return value === "" ? {ok: false, text: "An empty label gives nothing to announce."} : {ok: true, text: "Valid. Remember to translate it."};
+  if (value === "") return {ok: false, text: "This needs at least one id."};
+  return {ok: true, text: "Valid, as long as an element with " + (value.indexOf(" ") !== -1 ? "each of these ids" : "the id \"" + value + "\"") + " exists in the page."};
+}
+
+export function ValueTester() {
+  const [index, setIndex] = useState(0);
+  const [value, setValue] = useState("true");
+  const item = attrData[index];
+  const verdict = checkValue(item, value);
+  return (
+    <div>
+      <div style={{display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.6rem"}}>
+        <p style={{margin: 0}}>
+          <label htmlFor="value-attr">ARIA attribute</label><br />
+          <select id="value-attr" value={index} onChange={(event) => { const next = Number(event.target.value); setIndex(next); setValue(attrData[next].values ? attrData[next].values[0] : ""); }}>
+            {attrData.map((entry, i) => (<option key={entry.name} value={i}>{entry.name}</option>))}
+          </select>
+        </p>
+        <p style={{margin: 0}}>
+          <label htmlFor="value-input">Value to try</label><br />
+          <input id="value-input" type="text" value={value} onChange={(event) => setValue(event.target.value)} />
+        </p>
+      </div>
+      <p style={{margin: "0 0 0.4rem"}}><strong>Your attribute:</strong> <code>{item.name + '="' + value + '"'}</code></p>
+      <p style={{margin: "0 0 0.6rem"}} aria-live="polite"><strong>{verdict.ok ? "Valid." : "Problem:"}</strong> {verdict.ok ? (verdict.text === "Valid." ? "" : verdict.text) : verdict.text}</p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem"}}>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Type of value:</strong> {item.type}</p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Used on:</strong> {item.on}</p>
+        <p style={{margin: "0 0 0.5rem"}}>{item.note}</p>
+        <pre style={{margin: 0, overflowX: "auto"}}><code>{item.example}</code></pre>
+      </div>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Try the wrong things on purpose: <code>aria-expanded="yes"</code>, <code>aria-pressed="on"</code>, <code>aria-level="two"</code>. Browsers do not complain about an invalid value. They just ignore it, or treat it unpredictably, which is why a checker is useful. (This list is a selection, not every ARIA attribute.)
+      </p>
+    </div>
+  );
+}
+
+export const stepNames = ["Basket", "Delivery", "Payment", "Done"];
+
+export const pageNames = ["Home", "Recipes", "Contact"];
+
+export function CurrentBusyLab() {
+  const [step, setStep] = useState(1);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState([]);
+  const [message, setMessage] = useState("");
+  const timer = useRef(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const load = () => {
+    if (loading) return;
+    setLoading(true);
+    setItems([]);
+    setMessage("Loading recipes...");
+    timer.current = setTimeout(() => {
+      setItems(["Sourdough", "Rye", "Focaccia"]);
+      setLoading(false);
+      setMessage("3 recipes loaded.");
+    }, 1500);
+  };
+  const box = {border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"};
+  return (
+    <div>
+      <div style={box}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>aria-current in a menu</strong></p>
+        <nav aria-label="Demo menu">
+          <ul style={{listStyle: "none", padding: 0, margin: 0, display: "flex", gap: "1rem"}}>
+            {pageNames.map((name, i) => (
+              <li key={name}><a href={"#currentlab-" + name} aria-current={page === i ? "page" : undefined} onClick={(event) => { event.preventDefault(); setPage(i); }} style={{fontWeight: page === i ? 700 : 400, textDecoration: "underline"}}>{name}</a></li>
+            ))}
+          </ul>
+        </nav>
+        <p style={{margin: "0.4rem 0 0"}}>The attribute on the current link: <code>aria-current="page"</code> on "{pageNames[page]}"</p>
+      </div>
+      <div style={box}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>aria-current in a process</strong></p>
+        <ol style={{margin: "0 0 0.4rem", paddingLeft: "1.2rem"}} aria-label="Checkout progress">
+          {stepNames.map((name, i) => (
+            <li key={name} aria-current={step === i ? "step" : undefined} style={{fontWeight: step === i ? 700 : 400}}>{name}{step === i ? " (you are here)" : ""}</li>
+          ))}
+        </ol>
+        <button type="button" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}>Back</button>{" "}
+        <button type="button" onClick={() => setStep(Math.min(stepNames.length - 1, step + 1))} disabled={step === stepNames.length - 1}>Next</button>
+        <p style={{margin: "0.4rem 0 0"}}>The attribute on the current step: <code>aria-current="step"</code> on "{stepNames[step]}"</p>
+      </div>
+      <div style={box}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>aria-busy while loading</strong></p>
+        <button type="button" onClick={load} aria-disabled={loading ? "true" : undefined}>Load recipes</button>
+        <ul aria-busy={loading} aria-label="Recipes" style={{margin: "0.5rem 0", paddingLeft: "1.2rem", minHeight: "1.5em"}}>
+          {items.map((name) => (<li key={name}>{name}</li>))}
+        </ul>
+        <p role="status" style={{margin: 0}}>{message}</p>
+        <p style={{margin: "0.4rem 0 0"}}>The list says: <code>aria-busy="{loading ? "true" : "false"}"</code></p>
+      </div>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        Notice that the "(you are here)" text and the bold style are for sighted users, and the attribute is what tells a screen reader. Both are needed, and they must always agree. The busy list is hidden from none of the tools, but a screen reader may wait to read it until <code>aria-busy</code> goes back to <code>false</code>. Support for <code>aria-busy</code> varies, so also give a visible and spoken message, as here with <code>role="status"</code>.
+      </p>
+    </div>
+  );
+}
+
+HTML elements have built-in meaning, and the browser keeps track of their state for you. A checkbox knows whether it is checked. A `details` knows whether it is open. A `button` that is `disabled` is understood as unavailable. Whenever possible, use these.
+
+But when you build something custom, the browser cannot know what you mean. That is the job of ARIA **states** and **properties:** small attributes that tell assistive technology **what is happening to a thing,** and **how things relate to one another.** They are simple to write, and **easy to get out of date,** which is where most mistakes come from.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The difference between ARIA **states** and **properties**
+- The kinds of **values** ARIA attributes take
+- The most useful ARIA attributes: **`aria-expanded`, `aria-pressed`, `aria-selected`, `aria-current`, `aria-busy`,** and more
+- Why you must **keep states in sync** with what people see
+- How **native** states and ARIA states interact
+- How to **check** your ARIA attributes
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A disclosure: the state says open or closed -->
+<button type="button" aria-expanded="false" aria-controls="details">
+  Delivery details
+</button>
+<div id="details" hidden>Free delivery on orders over 20 dollars.</div>
+
+<!-- A toggle: the state says on or off -->
+<button type="button" aria-pressed="false">Favourite</button>
+
+<!-- Tabs: the state says which one is chosen -->
+<div role="tablist" aria-label="Recipe">
+  <button role="tab" aria-selected="true" aria-controls="p1" id="t1">Ingredients</button>
+  <button role="tab" aria-selected="false" aria-controls="p2" id="t2" tabindex="-1">Method</button>
+</div>
+
+<script>
+  button.addEventListener("click", () => {
+    const open = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", String(!open)); // keep it in sync!
+    panel.hidden = open;
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="State Sync Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<StateSyncLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use all three widgets with the bug **off.** Then tick the box, and use them again. The page looks the same, but a screen reader user is now told the wrong thing.
+
+## States and Properties
+
+ARIA splits its attributes into two groups. In practice the line is fuzzy, and you rarely need to care which is which. The idea behind it is useful, though:
+
+| | States | Properties |
+| :-- | :-- | :-- |
+| **What they describe** | Something that changes as people use the page | Something that is fixed, or changes rarely |
+| **Who changes them** | Your script, often | Usually you, once, in the HTML |
+| **Examples** | `aria-expanded`, `aria-pressed`, `aria-checked`, `aria-selected`, `aria-current`, `aria-disabled`, `aria-invalid`, `aria-busy`, `aria-hidden` | `aria-label`, `aria-labelledby`, `aria-describedby`, `aria-controls`, `aria-haspopup`, `aria-required`, `aria-orientation`, `aria-level` |
+
+You can think of a **property** as **"what it is like,"** and a **state** as **"what it is doing right now."**
+
+## What Values Look Like
+
+ARIA attributes take a few kinds of values. Getting the kind right matters, because browsers **ignore** a value they do not understand.
+
+| Kind | What it looks like | Examples |
+| :-- | :-- | :-- |
+| **True or false** | The words `true` or `false`, in quotes | `aria-disabled="true"` |
+| **Tri-state** | `true`, `false`, or `mixed` | `aria-checked="mixed"` |
+| **Token** | One word from a fixed list | `aria-live="polite"`, `aria-current="page"` |
+| **ID reference** | The `id` of another element | `aria-labelledby="title"` |
+| **ID reference list** | Several ids, with spaces | `aria-describedby="hint error"` |
+| **String** | Plain text, in the page language | `aria-label="Close"` |
+| **Number or integer** | A number | `aria-valuenow="40"`, `aria-level="2"` |
+
+A few more notes:
+
+- **Write `true` and `false` as words,** not `yes`, `on`, or `1`.
+- **Write values in lowercase,** to be safe.
+- **A missing attribute and `false` are not always the same.** For `aria-pressed`, a missing attribute means "this is not a toggle," and `false` means "a toggle that is off." Follow the rules for each one.
+- **IDs must exist,** and be unique on the page.
+
+Try some values in the tester below, including wrong ones.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Right -->
+<button aria-expanded="false">Menu</button>
+<button aria-pressed="mixed">Select all</button>
+<a href="/recipes" aria-current="page">Recipes</a>
+<input aria-describedby="hint error">
+
+<!-- Wrong: ignored, or unpredictable -->
+<button aria-expanded="yes">Menu</button>
+<button aria-pressed="on">Mute</button>
+<div role="heading" aria-level="two">Title</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Value Tester">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ValueTester />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## The Big Trap: Keeping State in Sync
+
+An ARIA state is a **promise about the page right now.** If the panel is open and the attribute says `false`, ARIA is **lying** to the person who relies on it. Unlike a visual bug, nobody using a screen reader can see the mismatch to report it. They simply get confused.
+
+Some ways to avoid it:
+
+1. **Update the state in the same place you update the page.** The line that opens the panel is also the line that sets `aria-expanded`.
+2. **Use one source of truth.** In a framework, bind the attribute to your state variable (`aria-expanded={open}`), so they can never disagree.
+3. **Style from the attribute.** If your CSS uses `[aria-expanded="true"]` to show the open look, then a forgotten attribute is also a visible bug, and gets fixed quickly:
+
+```css
+button[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+[role="tab"][aria-selected="true"] {
+  border-bottom: 3px solid #1d4ed8;
+}
+```
+
+4. **Test every state change** with a screen reader, or the Accessibility panel, and not only by looking.
+5. **Set the starting state** in the HTML, so the page is right before any script runs.
+
+## Put It on the Right Element
+
+A state belongs on the element a person **interacts with,** or that has that role:
+
+| Attribute | Put it on | Not on |
+| :-- | :-- | :-- |
+| `aria-expanded` | The button that opens the panel | The panel |
+| `aria-selected` | The `tab` | The `tabpanel` |
+| `aria-pressed` | The toggle `button` | A wrapper `div` |
+| `aria-current` | The link or step that is current | The whole list |
+| `aria-invalid` | The form field | The error message |
+| `aria-busy` | The region being updated | The button that started it |
+
+## The States You Will Use Most
+
+### `aria-expanded`
+
+For anything that **opens and closes:** a menu button, an accordion header, a disclosure. It goes on the **trigger.** (If you can, use the native `details` and `summary`, which need none of this.)
+
+### `aria-pressed`
+
+For a **toggle button** that is on or off (Mute, Bold, Favourite). Keep the label the same, and let the state do the changing. Use `mixed` for a "select all" button when only some items are selected.
+
+### `aria-checked`
+
+For **custom** checkboxes, radios, and switches. For a **native** checkbox, do **not** add it, because the browser already tracks `checked`, and the two can disagree.
+
+### `aria-selected`
+
+For the chosen item in a set of **tabs,** **options,** or **rows.** Exactly one tab in a tab list should be selected at a time.
+
+### `aria-current`
+
+For **where you are:** `page` for the current page link in a menu, `step` for the current step in a process, `location`, `date`, and `time` for other cases, and `true` if none fit. Do not rely on a colour or a bold style alone, because a screen reader cannot see them.
+
+### `aria-disabled`
+
+Says a control is **unavailable,** but leaves it **focusable.** You must block the action yourself, and make it look unavailable. For plain form controls, the native `disabled` attribute is simpler. See [Accessible Buttons](./accessible-buttons) for when to choose which.
+
+### `aria-invalid`
+
+Marks a field with a **problem.** Set it to `true` when the field has an error, together with a visible error message linked by `aria-describedby`. Remove it (or set it to `false`) once the problem is fixed. See [Accessible Forms](./accessible-forms).
+
+### `aria-busy`
+
+Says a region is **being updated,** so a screen reader can wait until it finishes, rather than reading half-loaded content. Support is uneven, so also give a visible message, and a `role="status"` announcement, as in the lab below.
+
+### `aria-hidden`
+
+Removes something from assistive technology completely. It has its own lesson, because it is easy to misuse: [aria-hidden](./aria-hidden).
+
+## Properties You Will Use Often
+
+- **`aria-label`, `aria-labelledby`, `aria-describedby`:** names and descriptions. Each has its own lesson soon.
+- **`aria-controls`:** says which element a control changes. Support in screen readers is limited, so treat it as a helper. The real work is done by good structure, and by `aria-expanded`.
+- **`aria-haspopup`:** says a control opens a menu, a list, or a dialog. Support varies, so use it with `aria-expanded`, not instead of it.
+- **`aria-required`:** for custom widgets. For native fields, use `required`.
+- **`aria-orientation`:** says whether a toolbar, tab list, or slider is `horizontal` or `vertical`.
+- **`aria-level`:** the heading level of a custom heading, or the depth of a tree item.
+- **`aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-valuetext`:** for sliders and progress bars. Use `aria-valuetext` when the number needs a unit or a word ("3 stars," "Medium").
+
+## Native and ARIA: Do Not Fight
+
+When both a native feature and an ARIA attribute describe the same thing, **the native one is the truth.** A `checkbox` with `checked` and `aria-checked="false"` is confusing, and browsers do not agree on which wins. A button with `disabled` and `aria-disabled="false"` is just as odd.
+
+- **Use the native attribute** (`checked`, `disabled`, `required`, `hidden`, `open`) whenever one exists.
+- **Add the ARIA state only** where HTML has none (`aria-expanded` on a custom button, `aria-selected` on a tab, `aria-current`).
+- **Never set both,** and never let them disagree.
+
+## Try Current and Busy
+
+The lab below shows `aria-current` in a menu and in a step-by-step process, and `aria-busy` on a list that loads.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CurrentBusyLab />
+</>
+</BrowserWindow>
+
+## Check Your States and Properties
+
+1. **Open the Accessibility panel** in your browser's DevTools, and look at the state of each widget. Click through it, and watch the values change.
+2. **Use the keyboard,** and check that every state change happens when it should, including Esc and arrow keys.
+3. **Listen with a screen reader.** Does it say "expanded" and "collapsed," "pressed" and "not pressed," "selected," and "current page"?
+4. **Check the starting state** with scripts turned off.
+5. **Run an automated checker** (axe, Lighthouse) to catch invalid values and ids that point nowhere.
+6. **Search your code for `aria-`** and ask, for each: does the state change with the page? Is there a native attribute that does it?
+
+## Good Habits
+
+1. **Use native states first** (`checked`, `disabled`, `required`, `open`).
+2. **Keep ARIA states in sync** with what people see, from one source of truth.
+3. **Put each attribute on the right element.**
+4. **Write values correctly:** lowercase `true` and `false`, real tokens, real ids.
+5. **Set the starting state in the HTML.**
+6. **Style from the attribute,** so mistakes show.
+7. **Keep labels stable** when a state changes.
+8. **Back every ARIA state with a visible cue,** and every visible cue with a state.
+9. **Test with a screen reader.**
+
+## Accessibility Checklist
+
+- [ ] Every toggle, disclosure, tab, and custom checkbox has the right state attribute.
+- [ ] States change at the same moment as the page does.
+- [ ] Starting states are correct in the HTML.
+- [ ] State attributes are on the correct elements.
+- [ ] Values are valid, in lowercase, with real tokens.
+- [ ] Every id in `aria-controls`, `aria-labelledby`, and `aria-describedby` exists.
+- [ ] No native control also has a disagreeing ARIA state.
+- [ ] `aria-current` marks the current page or step.
+- [ ] Errors use `aria-invalid` and a visible message, and clear when fixed.
+- [ ] Loading regions give a visible and spoken message as well as `aria-busy`.
+
+## Security and Privacy Notes
+
+- **State attributes are public.** Anyone can read `aria-*` values in the page source, and assistive technology reads them aloud. Do not store secrets, personal data, or tokens in them.
+- **Do not expose private information through state.** An `aria-invalid="true"` on a login field, or a "valid" and "invalid" announcement on a password check, could reveal something about an account, so keep messages general ("Email or password is incorrect").
+- **States must tell the truth.** A state that says "selected" or "checked" when it is not, or a loading state used to hide content, is deceptive and can lead people to take actions by mistake.
+- **Be careful with consent controls.** A toggle for tracking or marketing must report its **real** state, so that people using assistive technology know what they have agreed to.
+- **Do not use state to profile people.** How someone uses states and focus can reveal that they use assistive technology, and so reveal a disability.
+- **Keep ids unpredictable where it matters.** Reusing the same ids for sensitive elements across pages makes automation (and scraping) easier, though this is a minor concern next to correct markup.
+
+## Global Audience Notes
+
+- **Translate string values** (`aria-label`, `aria-valuetext`, `aria-description`) with the rest of your page. States such as `true` and `false` are code, and are never translated.
+- **Format `aria-valuetext` for the reader.** Numbers, units, and dates differ by region ("3,5 stars" or "3.5 stars"), so build the text with a locale-aware formatter.
+- **Right-to-left languages:** `aria-orientation` and arrow-key behaviour in tabs and sliders should follow the reading direction. Test them in a right-to-left layout.
+- **Screen readers announce states in the user's own language,** such as "expanded," "pressed," and "selected." Do not write these words into your labels, because the user would hear them twice.
+- **Slow connections:** a loading state (`aria-busy` with a visible message) is more important when pages take a while to update. Say what is happening, in short, translatable words.
+- **Different tools differ.** Support for states such as `aria-busy`, `aria-haspopup`, and `aria-controls` varies. Test on the devices and screen readers your audience uses.
+
+## Common Mistakes to Avoid
+
+1. **Never updating the state** after the page changes.
+2. **`aria-expanded` on the panel,** not the button.
+3. **Invalid values** such as `aria-expanded="yes"`.
+4. **`aria-checked` on a native checkbox.**
+5. **Both `disabled` and `aria-disabled`.**
+6. **`aria-selected` on every tab,** or on none.
+7. **Changing the label and the state together,** such as "Unmute" with `aria-pressed`.
+8. **Pointing `aria-controls` at an id that does not exist.**
+9. **Relying on `aria-busy` alone** to tell people something is loading.
+10. **Using `aria-current` without any visible cue,** or the other way round.
+11. **Writing the state words in the label** ("Menu, expanded").
+12. **Never checking the Accessibility panel.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the state sync lab with the bug off and on. Write down what is different for a screen reader user.
+2. Use the value tester with five wrong values, and explain why each is wrong.
+3. Build a disclosure button with `aria-expanded`, and watch it in the Accessibility panel.
+4. Build a toggle with `aria-pressed`. Keep the label fixed.
+5. Style your tabs from `[aria-selected="true"]`, and delete the JavaScript that updates it. What breaks?
+6. Add `aria-current="page"` to your navigation, and style it.
+7. Add a step list with `aria-current="step"` to a checkout page.
+8. Mark a field `aria-invalid`, with an error linked by `aria-describedby`.
+9. Add a loading state with `aria-busy` and a `role="status"` message.
+10. Bonus: take a custom checkbox made from a `div`, and replace it with a native one. What ARIA could you delete?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between a state and a property?</summary>
+
+A state describes something that changes as people use the page (`aria-expanded`, `aria-pressed`). A property describes something fixed or rarely changing (`aria-label`, `aria-controls`).
+
+</details>
+
+<details>
+<summary>2. Why must you keep ARIA states in sync with the page?</summary>
+
+The state is the only way a screen reader user knows what changed. If it is out of date, they are told something false.
+
+</details>
+
+<details>
+<summary>3. Which element gets `aria-expanded`?</summary>
+
+The control that opens and closes the content (usually a `button`), not the content panel.
+
+</details>
+
+<details>
+<summary>4. When should you not use `aria-checked`?</summary>
+
+On a native checkbox or radio button. The browser already tracks `checked`, and the two can disagree.
+
+</details>
+
+<details>
+<summary>5. What does `aria-current="page"` do?</summary>
+
+It marks the link to the page you are on, so a screen reader can say "current page." It needs a visible cue as well.
+
+</details>
+
+<details>
+<summary>6. What happens if you write an invalid value, like `aria-expanded="yes"`?</summary>
+
+Browsers do not warn you. They ignore the value, or treat it unpredictably, so the state is lost.
+
+</details>
+
+## Key Takeaways
+
+- **States** describe what is happening now. **Properties** describe what it is like and how things relate.
+- **Use native states first,** and ARIA only to fill gaps.
+- **Keep every state in sync** with the page, from one source of truth.
+- **Put each attribute on the right element:** the trigger, the tab, the field.
+- **Use valid values:** lowercase `true` and `false`, real tokens, real ids.
+- **Pair every ARIA state with a visible cue,** and every visible cue with an ARIA state.
+- **Check in the Accessibility panel,** and test with a screen reader.
+
+Next, learn how to give names to controls and images with [aria-label](./aria-label).

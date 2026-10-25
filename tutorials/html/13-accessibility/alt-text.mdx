@@ -1,0 +1,632 @@
+---
+id: html-alt-text
+title: "Alt Text"
+sidebar_label: "Alt Text"
+sidebar_position: 9
+slug: /html/accessibility/alt-text
+description: "Learn how to write good alt text: the five kinds of images (informative, decorative, functional, images of text, complex), how to decide which one you have, how to write short, useful descriptions, and how to handle links, charts, SVG, and figures. Includes a decision guide, an alt text writing practice lab, and a live alt text checker."
+keywords:
+  - alt text
+  - alt attribute
+  - image accessibility
+  - decorative images
+  - alt empty
+  - functional images
+  - complex images
+  - WCAG 1.1.1
+  - screen reader images
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, images, alt-text, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const guideNodes = {
+  start: {question: "Is the image inside a link or a button, or does it do something when clicked?", yes: "functional", no: "text"},
+  text: {question: "Does the image contain words that matter for understanding the page?", yes: "textimage", no: "meaning"},
+  meaning: {question: "Does the image add information that the text around it does not already give?", yes: "detail", no: "decorative"},
+  detail: {question: "Is it a chart, diagram, map, or another image with a lot of detail?", yes: "complex", no: "informative"},
+};
+
+export const guideResults = {
+  functional: {title: "A functional image", advice: "The alt text should say where the link goes, or what the button does. Do not describe the picture.", code: '<a href="/">\n  <img src="logo.svg" alt="Baker\'s Corner, home">\n</a>\n\n<button type="button">\n  <img src="printer.svg" alt="Print recipe">\n</button>'},
+  textimage: {title: "An image of text", advice: "Repeat the words exactly. Better still, use real text styled with CSS, so it can be resized, translated, and searched.", code: '<img src="sign.png" alt="Closed on Mondays">'},
+  decorative: {title: "A decorative image", advice: "Use an empty alt, so assistive technology skips it. Do not leave the attribute out.", code: '<img src="swirl.svg" alt="">'},
+  informative: {title: "An informative image", advice: "Describe what matters about the image, in the context of the page. Keep it short, and skip phrases like image of.", code: '<img src="sourdough.jpg"\n     alt="A round sourdough loaf with a deep golden, crackly crust">'},
+  complex: {title: "A complex image", advice: "Write a short alt that says what the image is and its main point, then put the full detail in the page, such as a table, nearby text, or a details block.", code: '<figure>\n  <img src="sales.png"\n       alt="Bar chart: weekly bread sales rose from 120 loaves in March to 310 in June. Data in the table below.">\n  <figcaption>Weekly bread sales</figcaption>\n</figure>'},
+};
+
+export function AltGuide() {
+  const [path, setPath] = useState([]);
+  const current = path.length === 0 ? "start" : path[path.length - 1].next;
+  const result = guideResults[current];
+  const node = guideNodes[current];
+  const answer = (choice) => setPath(path.concat({from: current, choice, next: node[choice]}));
+  return (
+    <div>
+      {path.length > 0 ? (
+        <ol style={{margin: "0 0 0.7rem", paddingLeft: "1.2rem", fontSize: "0.9em"}}>
+          {path.map((step, index) => (<li key={index}>{guideNodes[step.from].question} <strong>{step.choice === "yes" ? "Yes" : "No"}</strong></li>))}
+        </ol>
+      ) : null}
+      <div aria-live="polite">
+        {node ? (
+          <div>
+            <p style={{margin: "0 0 0.5rem"}}><strong>{node.question}</strong></p>
+            <button type="button" onClick={() => answer("yes")}>Yes</button>{" "}
+            <button type="button" onClick={() => answer("no")}>No</button>
+          </div>
+        ) : (
+          <div style={{border: "2px solid #1d4ed8", borderRadius: "8px", padding: "0.7rem"}}>
+            <p style={{margin: "0 0 0.3rem"}}><strong>Result: {result.title}</strong></p>
+            <p style={{margin: "0 0 0.5rem"}}>{result.advice}</p>
+            <pre style={{margin: 0, overflowX: "auto"}}><code>{result.code}</code></pre>
+          </div>
+        )}
+      </div>
+      <p style={{margin: "0.7rem 0 0"}}>
+        <button type="button" onClick={() => setPath(path.slice(0, -1))} disabled={path.length === 0}>Back</button>{" "}
+        <button type="button" onClick={() => setPath([])} disabled={path.length === 0}>Start again</button>
+      </p>
+    </div>
+  );
+}
+
+export const scenarios = [
+  {label: "A photo in a recipe", kind: "informative", icon: "🥖", sees: "A photo of a round loaf with a golden, crackly crust, in an article about sourdough.", context: "Our sourdough has a crackly, deep golden crust and a soft, airy inside.", sample: "A round sourdough loaf with a deep golden, crackly crust, scored with one curved cut."},
+  {label: "A swirl divider", kind: "decorative", icon: "〰️", sees: "A thin wavy line that separates two sections. It adds no information.", context: "(Between two sections of text.)", sample: ""},
+  {label: "A logo that links home", kind: "functional", role: "link", icon: "🥖", sees: "The Baker's Corner logo in the header. Clicking it goes to the home page.", context: "(Inside a link to the home page.)", sample: "Baker's Corner, home"},
+  {label: "A sign with words", kind: "text", icon: "🪧", sees: "A hand-painted sign that says: Closed on Mondays.", context: "(An image of a sign. No other text on the page says the same.)", text: "Closed on Mondays", sample: "Closed on Mondays"},
+  {label: "A sales chart", kind: "complex", icon: "📊", sees: "A bar chart. Weekly sales climb from 120 loaves in March to 310 in June.", context: "The full numbers are in the table under the chart.", sample: "Bar chart: weekly bread sales rose from 120 loaves in March to 310 in June. Full data in the table below."},
+  {label: "A print button icon", kind: "functional", role: "button", icon: "🖨️", sees: "A printer icon on a button, with no visible text.", context: "(The only content inside the button.)", sample: "Print recipe"},
+];
+
+export function evaluateAlt(scn, alt) {
+  const text = alt.trim();
+  const notes = [];
+  let level = "ok";
+  const fail = (note) => { level = "fail"; notes.push(note); };
+  const warn = (note) => { if (level === "ok") level = "warn"; notes.push(note); };
+  if (scn.kind === "decorative") {
+    if (text !== "") fail("This image is decorative. Use an empty alt (alt=\"\"), so screen readers skip it.");
+    return {level, notes};
+  }
+  if (text === "") {
+    fail("An empty alt hides this image, and it matters here.");
+    return {level, notes};
+  }
+  if (/^(image|picture|photo|graphic|icon)\b/i.test(text)) warn("Do not start with image, picture, or photo. Screen readers already say it is an image.");
+  if (/\.(jpe?g|png|gif|svg|webp)$/i.test(text) || /^(img|dsc|image)[-_ ]?\d+/i.test(text)) fail("This looks like a file name. It tells nobody anything.");
+  if (text.length > 125) warn("This is long (" + text.length + " characters). Keep alt short, and put extra detail in the page.");
+  if (scn.kind === "functional" && /\b(icon|button|link|logo)\b/i.test(text) && !/home/i.test(text)) warn("Describe the action or destination, not the icon. The role is announced for you.");
+  if (scn.kind === "text" && text.toLowerCase() !== scn.text.toLowerCase()) warn("For an image of text, repeat the words exactly.");
+  if (scn.kind === "informative" && text.split(/\s+/).length < 3) warn("Very short. Say what matters about this image on this page.");
+  if (scn.kind === "complex" && !/(below|table|details|following|data)/i.test(text)) warn("Mention where the full detail is, such as the table below.");
+  if (notes.length === 0) notes.push("This looks good. Read it aloud, and ask: does it do the job of the image?");
+  return {level, notes};
+}
+
+export function AltWriter() {
+  const [index, setIndex] = useState(0);
+  const [alt, setAlt] = useState("");
+  const [show, setShow] = useState(false);
+  const scn = scenarios[index];
+  const result = evaluateAlt(scn, alt);
+  const spoken = scn.kind === "decorative" && alt.trim() === "" ? "(nothing: the image is skipped)" : alt.trim() === "" ? "(unlabelled " + (scn.role || "image") + ")" : (scn.role || "image") + ", \"" + alt.trim() + "\"";
+  const label = result.level === "ok" ? "Good" : result.level === "warn" ? "Could be better" : "Needs work";
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="altwriter-scenario">Pick an image to describe</label><br />
+        <select id="altwriter-scenario" value={index} onChange={(event) => { setIndex(Number(event.target.value)); setAlt(""); setShow(false); }}>
+          {scenarios.map((item, i) => (<option key={item.label} value={i}>{item.label}</option>))}
+        </select>
+      </p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem", display: "flex", gap: "0.8rem", alignItems: "center"}}>
+        <span aria-hidden="true" style={{fontSize: "2.4rem"}}>{scn.icon}</span>
+        <div>
+          <p style={{margin: "0 0 0.2rem"}}><strong>What a sighted visitor sees:</strong> {scn.sees}</p>
+          <p style={{margin: 0}}><strong>Context:</strong> {scn.context}</p>
+        </div>
+      </div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="altwriter-alt">Your alt text (leave it empty if you think the image is decorative)</label><br />
+        <input id="altwriter-alt" type="text" value={alt} onChange={(event) => setAlt(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{spoken}</code></p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Feedback: {label}.</strong></p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}}>
+        {result.notes.map((note, i) => (<li key={i}>{note}</li>))}
+      </ul>
+      <button type="button" aria-expanded={show} onClick={() => setShow(!show)}>{show ? "Hide the sample answer" : "Show a sample answer"}</button>
+      {show ? <p style={{margin: "0.5rem 0 0"}}>Sample: <code>{scn.sample === "" ? 'alt=""' : 'alt="' + scn.sample + '"'}</code></p> : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These checks are simple rules of thumb, not a judge. Good alt text always depends on the context and the purpose of the image, and a rule cannot see either. Different screen readers also announce images differently, so the spoken line is only an example.
+      </p>
+    </div>
+  );
+}
+
+export const checkSamples = {
+  messy: '<img src="IMG_4021.jpg">\n<img src="loaf.jpg" alt="IMG_4021.jpg">\n<img src="loaf.jpg" alt="Image of a loaf">\n<a href="/"><img src="logo.png" alt=""></a>\n<img src="x.png" alt="photo">\n<figure>\n  <img src="rye.jpg" alt="Dark rye bread">\n  <figcaption>Dark rye bread</figcaption>\n</figure>\n<img src="divider.png" alt="">\n<img src="chart.png" alt="A chart showing very many data points for bread sales across all twelve months of the year, including every week at every regional bakery, with totals, averages, and notes about holidays">',
+  fixed: '<img src="sourdough.jpg" alt="A round sourdough loaf with a deep golden crust">\n<img src="rye.jpg" alt="A sliced loaf of dark rye on a wooden board">\n<a href="/"><img src="logo.png" alt="Baker\'s Corner, home"></a>\n<figure>\n  <img src="rye2.jpg" alt="Rye loaf cut open to show a dense, even crumb">\n  <figcaption>Dark rye bread</figcaption>\n</figure>\n<img src="divider.png" alt="">\n<img src="chart.png" alt="Bar chart: weekly sales rose from 120 loaves in March to 310 in June. Data in the table below.">',
+};
+
+export function checkImage(img) {
+  const issues = [];
+  const src = (img.getAttribute("src") || "").split("/").pop();
+  const hasAlt = img.hasAttribute("alt");
+  const alt = (img.getAttribute("alt") || "").trim();
+  if (!hasAlt) return {src, alt: null, kind: "fail", issues: ["Missing alt attribute. Some screen readers read the file name."]};
+  if (alt === "") {
+    const holder = img.closest("a, button");
+    if (holder) {
+      const other = (holder.textContent || "").replace(/\s+/g, "").length;
+      if (other === 0 && !holder.getAttribute("aria-label")) return {src, alt, kind: "fail", issues: ["Empty alt inside a link or button with no other text, so it has no name."]};
+    }
+    return {src, alt, kind: "decorative", issues: ["Decorative (empty alt). Check that it really adds no information."]};
+  }
+  if (/^(image|picture|photo|graphic|icon)\b/i.test(alt)) issues.push("Starts with image, photo, or picture. That is announced already.");
+  if (/\.(jpe?g|png|gif|svg|webp)$/i.test(alt) || /^(img|dsc|image)[-_ ]?\d+/i.test(alt)) issues.push("Looks like a file name.");
+  if (/^(image|photo|picture|logo|icon|banner|graphic)$/i.test(alt)) issues.push("Too vague. Say what the image shows or does.");
+  if (alt.length > 125) issues.push("Long (" + alt.length + " characters). Consider a short alt plus a longer description nearby.");
+  const figure = img.closest("figure");
+  const caption = figure ? figure.querySelector("figcaption") : null;
+  if (caption && caption.textContent.trim().toLowerCase() === alt.toLowerCase()) issues.push("Repeats the figure caption word for word. Say something new, or use an empty alt.");
+  return {src, alt, kind: issues.length > 0 ? "warn" : "ok", issues};
+}
+
+export function AltCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(checkSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const images = Array.from(doc.querySelectorAll("img"));
+  const rows = images.map(checkImage);
+  const bad = rows.filter((row) => row.kind === "fail" || row.kind === "warn").length;
+  const choose = (value) => { setWhich(value); setHtml(checkSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="alt-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="alt-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="alt-html">HTML to check (edit it freely)</label><br />
+        <textarea id="alt-html" rows={8} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> images found, <strong>{bad}</strong> to look at.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{row.src || "(no src)"}</code>: alt {row.alt === null ? <em>missing</em> : row.alt === "" ? <code>""</code> : <code>{'"' + (row.alt.length > 60 ? row.alt.slice(0, 60) + "..." : row.alt) + '"'}</code>}
+            {" "}<strong>{row.kind === "ok" ? "OK" : row.kind === "decorative" ? "Decorative" : row.kind === "warn" ? "Check" : "Problem"}</strong>
+            {row.issues.length > 0 ? <span>: {row.issues.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        A tool can find missing and suspicious alt text, but it cannot tell you whether the description is <em>right.</em> Only a person who knows the image and the page can do that. The images are not loaded here, only their HTML is checked.
+      </p>
+    </div>
+  );
+}
+
+export function AltChecker() {
+  return <BrowserOnly>{() => <AltCheckerInner />}</BrowserOnly>;
+}
+
+Alt text is the short description you give an image, so that people who **cannot see it** still get what it offers. It is one of the oldest accessibility features of HTML, and one of the most often done badly: missing, stuffed with keywords, or just "image.jpg."
+
+Writing good alt text is less about **rules** and more about one question: **if this image could not be seen, what would the person need to be told?** The answer changes with the image and with the page. In this lesson you will learn to tell the main kinds of images apart, and to write alt text that helps.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- **Who** relies on alt text, and why
+- The **five kinds** of images, and how to tell them apart
+- How to write **short, useful** descriptions
+- When to use an **empty alt** (`alt=""`)
+- How to handle **images in links and buttons,** images of text, and **complex images**
+- Alt text for **SVG, figures,** and other special cases
+- How to **check** your images
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Informative: describe what matters -->
+<img src="sourdough.jpg"
+     alt="A round sourdough loaf with a deep golden, crackly crust">
+
+<!-- Decorative: an empty alt hides it from assistive technology -->
+<img src="swirl.svg" alt="">
+
+<!-- Functional (in a link): describe where it goes -->
+<a href="/">
+  <img src="logo.svg" alt="Baker's Corner, home">
+</a>
+
+<!-- Image of text: repeat the words -->
+<img src="sign.png" alt="Closed on Mondays">
+
+<!-- Complex: short alt, details in the page -->
+<figure>
+  <img src="sales.png"
+       alt="Bar chart: weekly sales rose from 120 loaves in March to 310 in June. Data in the table below.">
+  <figcaption>Weekly bread sales</figcaption>
+</figure>
+```
+
+</TabItem>
+<TabItem value="output" label="Alt Decision Guide">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AltGuide />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Use the guide with an image from your own project. The answers lead you to the kind of image, and then to the right way to write the alt.
+
+## Who Needs Alt Text?
+
+- **People who are blind** and use a screen reader, which reads alt text aloud in place of the image.
+- **People with low vision** who use screen readers or magnification together with their remaining sight.
+- **People on slow or expensive connections,** or with images turned off, who see the alt text where the image should be.
+- **Anyone when an image fails to load** (a broken link, a blocked domain, a server error).
+- **People using text-only browsers,** reading tools, and voice assistants.
+- **Search engines,** which use alt text to understand what an image shows. This is a bonus, never the goal.
+
+It is also a legal and standards requirement in many places: WCAG success criterion **1.1.1 (Non-text Content)** asks for a text alternative for every image that carries meaning.
+
+## The `alt` Attribute
+
+The `alt` attribute goes on every `img` element:
+
+```html
+<img src="loaf.jpg" alt="A round sourdough loaf with a golden crust">
+```
+
+Three states exist, and they mean different things:
+
+| Code | Meaning |
+| :-- | :-- |
+| `alt="A round loaf"` | This image has a description. |
+| `alt=""` | This image is **decorative.** Skip it. |
+| no `alt` at all | **A mistake.** The tool does not know what to do, and some screen readers read out the file name. |
+
+The `title` attribute is **not** a replacement for `alt`. It shows as a tooltip for mouse users, and is not reliably announced.
+
+## The Five Kinds of Images
+
+The right alt text depends on the **purpose** of the image on **this page.**
+
+| Kind | What it does | What to write |
+| :-- | :-- | :-- |
+| **Informative** | Adds information or meaning | A short description of what matters |
+| **Decorative** | Only decorates, or repeats nearby text | An **empty** alt: `alt=""` |
+| **Functional** | Is inside a link or button | Where it goes, or what it does |
+| **Image of text** | Shows words as a picture | The **same words** |
+| **Complex** | A chart, graph, diagram, or map | A short alt, plus a **full description** in the page |
+
+The same picture can be different kinds in different places. A photo of a loaf is **informative** in a recipe, **decorative** next to a caption that says everything, and **functional** if it is a link to the recipe.
+
+## Writing Good Alt Text
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Weak -->
+<img src="loaf.jpg" alt="loaf">
+<img src="loaf.jpg" alt="Image of a picture of a loaf of bread">
+<img src="loaf.jpg" alt="IMG_4021.jpg">
+<img src="loaf.jpg" alt="bread, sourdough, best bread, buy bread online">
+
+<!-- Better -->
+<img src="loaf.jpg"
+     alt="A round sourdough loaf with a deep golden, crackly crust">
+```
+
+</TabItem>
+<TabItem value="output" label="Alt Writing Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AltWriter />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try each of the six scenarios in the lab. Write your own alt first, read the feedback, and only then look at the sample.
+
+Here are the habits behind the feedback:
+
+1. **Describe the purpose, in context.** Ask what the image is **for** on this page, not just what it shows.
+2. **Be concise.** One short sentence is usually enough. Many guides suggest staying under about 125 characters. That is a guideline, not a rule, so use a longer description in the page for anything more.
+3. **Skip "image of," "photo of," and "picture of."** The screen reader already says "image."
+4. **Do not repeat nearby text.** If the caption says "Sourdough loaf," you do not need the same words again. Say something new, or use `alt=""`.
+5. **Write like a person.** Natural language, with normal punctuation, reads better when spoken aloud.
+6. **Never stuff keywords.** Alt text is for people first. Search engines punish stuffing, and screen reader users have to listen to it.
+7. **Do not guess.** If you do not know what an image shows, find out, or do not use it.
+
+:::tip
+A good test: **read the page aloud, skipping the images, and say the alt text instead.** Does it still make sense? Does it give the same information a sighted person gets?
+:::
+
+## Decorative Images
+
+If an image adds **nothing** a person needs, hide it from assistive technology with an **empty** alt:
+
+```html
+<img src="swirl.svg" alt="">
+```
+
+Better still, use **CSS** for purely decorative pictures, so they never appear in the HTML at all:
+
+```css
+.hero {
+  background-image: url("flour.jpg");
+}
+```
+
+Images added with CSS `background-image` are **not announced,** so they should never carry meaning. If the image is important, use an `img`.
+
+Be careful: **empty alt is a decision, not a shortcut.** Using it to skip work on images that do matter hides content from some people.
+
+## Images in Links and Buttons
+
+When an image is the **only** content of a link or button, its alt text is the link's **name** (see [Accessible Names](./accessible-names)). Write where the link **goes,** or what the button **does:**
+
+```html
+<!-- Good -->
+<a href="/"><img src="logo.svg" alt="Baker's Corner, home"></a>
+<button type="button"><img src="printer.svg" alt="Print recipe"></button>
+
+<!-- Bad: describes the picture, and an empty alt leaves no name at all -->
+<a href="/"><img src="logo.svg" alt="A logo with a wheat icon"></a>
+<a href="/"><img src="logo.svg" alt=""></a>
+```
+
+If the link also has **text** beside the image, the image is usually redundant, so use `alt=""` to avoid saying it twice.
+
+## Images of Text
+
+If an image shows words that matter, the alt text should **repeat them exactly.**
+
+Even better, **avoid images of text.** WCAG (criterion 1.4.5) prefers real text styled with CSS. Real text can be resized without blur, translated, searched, copied, and changed to high-contrast colours. A logo is the main fair exception.
+
+## Complex Images: Charts, Diagrams, and Maps
+
+A chart can hold hundreds of numbers, and no short alt can say them all. Use **two layers:**
+
+1. **A short alt text** that says what the image is and its main point.
+2. **The full information** in the page itself, so everyone can use it. A **table** next to a chart is ideal, because sighted users benefit from it too.
+
+```html
+<figure>
+  <img src="sales.png"
+       alt="Bar chart: weekly bread sales rose from 120 loaves in March to 310 in June. Data in the table below.">
+  <figcaption>Weekly bread sales, March to June</figcaption>
+</figure>
+
+<details>
+  <summary>Data for this chart</summary>
+  <table>
+    <caption>Weekly bread sales</caption>
+    <tr><th scope="col">Month</th><th scope="col">Loaves</th></tr>
+    <tr><td>March</td><td>120</td></tr>
+    <tr><td>June</td><td>310</td></tr>
+  </table>
+</details>
+```
+
+You can also link to a separate page with the full description, or point to it with `aria-describedby` (covered later in this section).
+
+## Figures and Captions
+
+`figure` and `figcaption` give an image a **visible** caption. The caption is **not** the alt text, and does not replace it.
+
+- If the caption **already describes** the image, use `alt=""`, or add only what the caption lacks.
+- If the caption gives **context** ("Our founder in 1998"), the alt text should describe what you **see.**
+
+## SVG, Icons, and Other Images
+
+- **Inline SVG that carries meaning:** give it `role="img"` and a name, either with `aria-label` or a `title` element:
+
+```html
+<svg role="img" aria-labelledby="t1" viewBox="0 0 24 24">
+  <title id="t1">Print recipe</title>
+  <path d="M6 9V3h12v6M6 18H4v-8h16v8h-2M6 14h12v7H6z" />
+</svg>
+```
+
+- **Decorative SVG:** use `aria-hidden="true"` so it is skipped.
+- **Icon fonts and emoji:** screen readers may read them as odd names or characters. Hide purely decorative ones with `aria-hidden="true"`, and give useful ones a text alternative.
+- **`picture` with several sources:** put the `alt` on the **`img` inside** it, not on `source`.
+- **Image maps:** every `area` needs its own `alt`.
+- **Video and audio** need captions and transcripts, not alt text. See the earlier section on audio and video.
+
+## Check Your Images
+
+The checker below looks at every `img` in a snippet of HTML, and flags missing alt, file-name alt, "image of" starts, very long alt, links with no name, and captions that repeat the alt.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img src="sourdough.jpg" alt="A round sourdough loaf with a deep golden crust">
+
+<a href="/"><img src="logo.png" alt="Baker's Corner, home"></a>
+
+<figure>
+  <img src="rye2.jpg" alt="Rye loaf cut open to show a dense, even crumb">
+  <figcaption>Dark rye bread</figcaption>
+</figure>
+
+<img src="divider.png" alt="">
+```
+
+</TabItem>
+<TabItem value="output" label="Alt Text Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AltChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Run the messy page first, then fix each problem. In real life, the browser's **Accessibility panel** shows the name of each image, and automated tools (such as Lighthouse or axe) find the missing ones. But **only a person** can judge whether the text is useful.
+
+## Good Habits
+
+1. **Ask what the image is for,** before you write.
+2. **Use `alt` on every `img`.** Empty for decoration, never missing.
+3. **Keep it short and natural.**
+4. **Describe the destination** for images in links and buttons.
+5. **Repeat words** shown in an image of text, or use real text instead.
+6. **Put complex data in the page,** not in the alt.
+7. **Give people who upload images a way to add alt text,** and explain why.
+8. **Review the alt text** when a design changes. The same image may now play another role.
+9. **Test with a screen reader** on your most important pages.
+
+## Accessibility Checklist
+
+- [ ] Every `img` has an `alt` attribute.
+- [ ] Informative images have short, meaningful descriptions.
+- [ ] Decorative images use `alt=""` (or are CSS backgrounds).
+- [ ] Images in links and buttons describe the destination or action.
+- [ ] Images of text repeat the text, or have been replaced by real text.
+- [ ] Charts and diagrams have a short alt and a full description in the page.
+- [ ] Alt text does not start with "image of," and is not a file name or a list of keywords.
+- [ ] Captions and alt text do not repeat each other.
+- [ ] Meaningful SVG has `role="img"` and a name, and decorative SVG is hidden.
+- [ ] Alt text is translated along with the rest of the page.
+
+## Security and Privacy Notes
+
+- **Do not identify people in alt text** unless they have agreed and it is needed. Naming someone in a public description can reveal who they are to search engines and scrapers.
+- **Do not put private information in alt text** (home addresses, ID numbers, medical details). Alt text is public, and gets indexed.
+- **Be careful with automatic alt text.** Services that generate descriptions with artificial intelligence may send your images to an outside server, which is a privacy issue for personal or sensitive pictures. They can also be wrong or biased. Review every description before you publish it.
+- **User uploads:** photos often carry hidden metadata, such as location. This is separate from alt text, but if your site accepts uploads, strip that data, and let people write their own alt text.
+- **Do not describe an image differently from what it shows.** Misleading alt text (to fool search engines or readers) is both deceptive and an accessibility failure.
+
+## Global Audience Notes
+
+- **Translate alt text** with the rest of your content. Make sure your translation workflow includes attributes, not only visible text.
+- **Set the page language** with `lang`, so the screen reader voice pronounces the description correctly.
+- **Avoid images of text.** They cannot be translated, and text in a picture is blurry on small screens and breaks with large text sizes.
+- **Avoid culture-specific references** in descriptions. A joke, an idiom, or a local landmark may mean nothing to a reader in another country.
+- **Use simple, clear language.** It translates better, and it is easier for people reading in a second language.
+- **Slow networks:** on a slow connection, alt text is what people read **while** the image loads, or in place of it. Make it useful on its own.
+- **Right-to-left languages:** write the description in the direction of the language, and check that any numbers or Latin words inside it display in the right order.
+
+## Common Mistakes to Avoid
+
+1. **No `alt` attribute at all.**
+2. **File names as alt text** ("IMG_4021.jpg").
+3. **Starting with "image of" or "photo of."**
+4. **Keyword stuffing for search engines.**
+5. **The same alt text on every image.**
+6. **Describing the logo instead of the link destination.**
+7. **An empty alt on an image inside a link with no other text.**
+8. **Repeating the caption word for word.**
+9. **Putting a whole chart's data in one very long alt.**
+10. **Using `title` instead of `alt`.**
+11. **Using images of text, with no text alternative.**
+12. **Publishing automatic alt text without reading it.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the decision guide on five images from a site you like, and write down the kind of each.
+2. In the writing lab, write your own alt for each scenario before looking at the samples.
+3. Run the checker on the messy page, and fix every item.
+4. Take a page you built, and list every `img`. Is any missing an `alt`?
+5. Turn off images in your browser (or use a text-only view), and see which pages still make sense.
+6. Replace an image of text on one of your pages with real text styled in CSS.
+7. Add a data table beneath a chart image, and shorten the alt to match.
+8. Make a logo link with the right alt, and test it with a screen reader.
+9. Add `role="img"` and a `title` to an inline SVG, and look at its name in the Accessibility panel.
+10. Bonus: pick a news photo, and write three alt texts for three different pages (a news article, a gallery, a link). How do they differ?
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between `alt=""` and no `alt` at all?</summary>
+
+An empty alt tells assistive technology the image is decorative, so it is skipped. A missing alt is a mistake, and some screen readers read the file name instead.
+
+</details>
+
+<details>
+<summary>2. Name the five kinds of images.</summary>
+
+Informative, decorative, functional (in a link or button), image of text, and complex (charts, diagrams, maps).
+
+</details>
+
+<details>
+<summary>3. What should the alt text of a logo link say?</summary>
+
+Where the link goes, such as "Baker's Corner, home," not a description of the logo's picture.
+
+</details>
+
+<details>
+<summary>4. Why not start alt text with "image of"?</summary>
+
+Screen readers already announce that it is an image, so the words are repeated for nothing.
+
+</details>
+
+<details>
+<summary>5. How do you handle a complex chart?</summary>
+
+Write a short alt that says what it is and its main point, and put the full data in the page, for example in a table.
+
+</details>
+
+<details>
+<summary>6. Should the alt text repeat the figure caption?</summary>
+
+No. If the caption already says it, use an empty alt, or write something that adds to it.
+
+</details>
+
+## Key Takeaways
+
+- **Every `img` needs an `alt` attribute.** What you put in it depends on the **purpose** of the image on **that page.**
+- **Informative** images get a short description. **Decorative** images get `alt=""`. **Functional** images describe the **action.** **Images of text** repeat the words.
+- **Complex** images need a short alt **and** a full description in the page.
+- **Be short, natural, and honest.** No "image of," no file names, no keyword stuffing.
+- **Prefer real text** to images of text, and **CSS** to decorative images.
+- **Translate and review** alt text, including any generated automatically.
+- Tools can find missing alt text, but only **a person** can judge whether it helps.
+
+Next, learn how to make links clear and usable in [Accessible Links](./accessible-links).
