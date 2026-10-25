@@ -1,0 +1,555 @@
+---
+id: html-aria-introduction
+title: "Introduction to ARIA"
+sidebar_label: "Introduction to ARIA"
+sidebar_position: 14
+slug: /html/accessibility/aria-introduction
+description: "Learn what ARIA is and when to use it: roles, properties and states, the five rules of ARIA, why native HTML comes first, what ARIA can and cannot do, and how to check it. Includes a lab that shows ARIA changes meaning but not behaviour, a 'do I need ARIA?' guide, and a live ARIA checker."
+keywords:
+  - ARIA
+  - WAI-ARIA
+  - ARIA roles
+  - ARIA states and properties
+  - first rule of ARIA
+  - native HTML first
+  - aria-label
+  - accessible rich internet applications
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function AriaBehaviourLab() {
+  const [tabbable, setTabbable] = useState(false);
+  const [keys, setKeys] = useState(false);
+  const empty = {focus: 0, clicks: 0, enter: 0, space: 0, actions: 0};
+  const [fake, setFake] = useState(empty);
+  const [real, setReal] = useState(empty);
+  const bump = (setter, field, extra) => setter((previous) => ({...previous, [field]: previous[field] + 1, actions: previous.actions + (extra ? 1 : 0)}));
+  const onFakeKey = (event) => {
+    if (event.key === "Enter") bump(setFake, "enter", keys);
+    if (event.key === " ") {
+      if (keys) event.preventDefault();
+      bump(setFake, "space", keys);
+    }
+  };
+  const onRealKey = (event) => {
+    if (event.key === "Enter") setReal((previous) => ({...previous, enter: previous.enter + 1}));
+    if (event.key === " ") setReal((previous) => ({...previous, space: previous.space + 1}));
+  };
+  const box = {border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", flex: "1 1 14rem"};
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Help the made-up button along (the real one needs nothing)</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={tabbable} onChange={(event) => setTabbable(event.target.checked)} /> Add <code>tabindex="0"</code> so Tab can reach it</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={keys} onChange={(event) => setKeys(event.target.checked)} /> Write script so Enter and Space work</label>
+      </fieldset>
+      <div style={{display: "flex", gap: "0.8rem", flexWrap: "wrap", marginBottom: "0.7rem"}}>
+        <div style={box}>
+          <p style={{margin: "0 0 0.4rem"}}><strong>A div with role="button"</strong></p>
+          <div role="button" tabIndex={tabbable ? 0 : undefined} onFocus={() => bump(setFake, "focus", false)} onClick={() => bump(setFake, "clicks", true)} onKeyDown={onFakeKey} style={{display: "inline-block", padding: "0.4rem 0.9rem", border: "2px solid #1d4ed8", borderRadius: "6px", cursor: "pointer"}}>Save</div>
+          <ul style={{margin: "0.5rem 0 0", paddingLeft: "1.2rem"}}>
+            <li>Reached by Tab: <strong>{fake.focus}</strong></li>
+            <li>Mouse clicks: <strong>{fake.clicks}</strong></li>
+            <li>Enter received: <strong>{fake.enter}</strong></li>
+            <li>Space received: <strong>{fake.space}</strong></li>
+            <li>Times it did its job: <strong>{fake.actions}</strong></li>
+          </ul>
+        </div>
+        <div style={box}>
+          <p style={{margin: "0 0 0.4rem"}}><strong>A real button</strong></p>
+          <button type="button" onFocus={() => bump(setReal, "focus", false)} onClick={() => bump(setReal, "clicks", true)} onKeyDown={onRealKey}>Save</button>
+          <ul style={{margin: "0.5rem 0 0", paddingLeft: "1.2rem"}}>
+            <li>Reached by Tab: <strong>{real.focus}</strong></li>
+            <li>Clicks (mouse, Enter, or Space): <strong>{real.clicks}</strong></li>
+            <li>Enter received: <strong>{real.enter}</strong></li>
+            <li>Space received: <strong>{real.space}</strong></li>
+            <li>Times it did its job: <strong>{real.actions}</strong></li>
+          </ul>
+        </div>
+      </div>
+      <p style={{margin: "0 0 0.5rem"}}><button type="button" onClick={() => { setFake(empty); setReal(empty); }}>Reset the counts</button></p>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        Press Tab to move through the page, and try Enter and Space on each one. To a screen reader, both are "button" (that is what <code>role="button"</code> does). But the made-up one starts with no keyboard support at all: Tab skips it, and Enter and Space do nothing. ARIA changed what it is called, not what it does. You have to add the focus and the key handling yourself, and then you have rebuilt, in more code, what the real button gave you for free. (Counts are for this demo only. Some screen readers have their own ways to activate items, so they may behave differently.)
+      </p>
+    </div>
+  );
+}
+
+export const scenarios = [
+  {label: "A button that saves", need: "Not needed", native: '<button type="button">Save</button>', note: "A native button already has the role, focus, keyboard support, and a name."},
+  {label: "A link to another page", need: "Not needed", native: '<a href="/recipes">All recipes</a>', note: "An a element with an href is a link, with everything that goes with it."},
+  {label: "A required field", need: "Not needed", native: '<label for="email">Email address (required)</label>\n<input id="email" type="email" required>', note: "The required attribute is understood by browsers and assistive technology. aria-required is not needed."},
+  {label: "Main page sections", need: "Not needed (usually)", native: '<header>…</header>\n<nav aria-label="Main">…</nav>\n<main>…</main>\n<footer>…</footer>', note: "Landmark elements give you the roles. Add a name only when there is more than one of the same kind."},
+  {label: "A show and hide panel", need: "A little, or none", native: '<details>\n  <summary>Delivery details</summary>\n  <p>Free delivery over 20 dollars.</p>\n</details>\n\n<!-- or a custom button: -->\n<button type="button" aria-expanded="false" aria-controls="panel">Delivery details</button>\n<div id="panel" hidden>…</div>', note: "The native details element needs no ARIA at all. If you build your own, aria-expanded carries the state."},
+  {label: "An icon-only close button", need: "A little", native: '<button type="button" aria-label="Close">\n  <svg aria-hidden="true" focusable="false">…</svg>\n</button>', note: "The button is native. ARIA only supplies the missing name, and hides the decorative icon."},
+  {label: "A decorative icon", need: "A little", native: '<span class="icon-star" aria-hidden="true"></span>', note: "aria-hidden removes purely decorative things from assistive technology."},
+  {label: "The current page in a menu", need: "A little", native: '<a href="/recipes" aria-current="page">Recipes</a>', note: "There is no HTML for this, so aria-current says which link is the current one."},
+  {label: "A message that appears after saving", need: "Yes", native: '<div role="status">Recipe saved.</div>', note: "Content that changes needs a live region, so it is announced without moving focus. HTML has no native way to do this."},
+  {label: "A custom tab panel", need: "Yes, a lot", native: '<div role="tablist" aria-label="Recipe">\n  <button role="tab" aria-selected="true" aria-controls="p1" id="t1">Ingredients</button>\n  <button role="tab" aria-selected="false" aria-controls="p2" id="t2" tabindex="-1">Method</button>\n</div>\n<div role="tabpanel" id="p1" aria-labelledby="t1">…</div>\n<div role="tabpanel" id="p2" aria-labelledby="t2" hidden>…</div>', note: "No native element does tabs. You need roles, states, arrow-key script, and a roving tabindex. Follow a tested pattern."},
+];
+
+export function AriaScenarioGuide() {
+  const [index, setIndex] = useState(0);
+  const item = scenarios[index];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="aria-scenario">What are you building?</label><br />
+        <select id="aria-scenario" value={index} onChange={(event) => setIndex(Number(event.target.value))}>
+          {scenarios.map((scenario, i) => (<option key={scenario.label} value={i}>{scenario.label}</option>))}
+        </select>
+      </p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem"}} aria-live="polite">
+        <p style={{margin: "0 0 0.3rem"}}><strong>Do you need ARIA?</strong> {item.need}</p>
+        <p style={{margin: "0 0 0.5rem"}}>{item.note}</p>
+        <pre style={{margin: 0, overflowX: "auto"}}><code>{item.native}</code></pre>
+      </div>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Go down the list from top to bottom. The more custom your widget, the more ARIA it needs, and the more you must test it.
+      </p>
+    </div>
+  );
+}
+
+export const knownRoles = ["alert", "alertdialog", "application", "article", "banner", "button", "cell", "checkbox", "columnheader", "combobox", "complementary", "contentinfo", "definition", "dialog", "directory", "document", "feed", "figure", "form", "grid", "gridcell", "group", "heading", "img", "link", "list", "listbox", "listitem", "log", "main", "marquee", "math", "menu", "menubar", "menuitem", "menuitemcheckbox", "menuitemradio", "navigation", "none", "note", "option", "presentation", "progressbar", "radio", "radiogroup", "region", "row", "rowgroup", "rowheader", "scrollbar", "search", "searchbox", "separator", "slider", "spinbutton", "status", "switch", "tab", "table", "tablist", "tabpanel", "term", "textbox", "timer", "toolbar", "tooltip", "tree", "treegrid", "treeitem"];
+
+export const knownAttrs = ["activedescendant", "atomic", "autocomplete", "braillelabel", "brailleroledescription", "busy", "checked", "colcount", "colindex", "colspan", "controls", "current", "describedby", "description", "details", "disabled", "dropeffect", "errormessage", "expanded", "flowto", "grabbed", "haspopup", "hidden", "invalid", "keyshortcuts", "label", "labelledby", "level", "live", "modal", "multiline", "multiselectable", "orientation", "owns", "placeholder", "posinset", "pressed", "readonly", "relevant", "required", "roledescription", "rowcount", "rowindex", "rowspan", "selected", "setsize", "sort", "valuemax", "valuemin", "valuenow", "valuetext"];
+
+export const allowedValues = {
+  expanded: ["true", "false", "undefined"],
+  pressed: ["true", "false", "mixed", "undefined"],
+  checked: ["true", "false", "mixed", "undefined"],
+  selected: ["true", "false", "undefined"],
+  hidden: ["true", "false", "undefined"],
+  disabled: ["true", "false"],
+  required: ["true", "false"],
+  busy: ["true", "false"],
+  atomic: ["true", "false"],
+  modal: ["true", "false"],
+  multiline: ["true", "false"],
+  readonly: ["true", "false"],
+  multiselectable: ["true", "false"],
+  invalid: ["true", "false", "grammar", "spelling"],
+  live: ["off", "polite", "assertive"],
+  current: ["page", "step", "location", "date", "time", "true", "false"],
+  haspopup: ["true", "false", "menu", "listbox", "tree", "grid", "dialog"],
+};
+
+export const idRefAttrs = ["labelledby", "describedby", "controls", "owns", "details", "errormessage", "flowto", "activedescendant"];
+
+export const implicitRoles = {button: "button", nav: "navigation", main: "main", ul: "list", ol: "list", li: "listitem", img: "img", table: "table", h1: "heading", h2: "heading", h3: "heading", h4: "heading", h5: "heading", h6: "heading", aside: "complementary", footer: "contentinfo", header: "banner"};
+
+export const ariaSamples = {
+  messy: '<div role="button">Save</div>\n<button role="button">Open</button>\n<nav role="navigation" aria-label="Main"><a href="/" role="link">Home</a></nav>\n<span aria-label="Close">x</span>\n<button aria-hidden="true">Hidden but focusable</button>\n<div role="buton" tabindex="0">Typo role</div>\n<button aria-expanded="yes" aria-controls="menu-x">Menu</button>\n<input type="checkbox" aria-checked="true">\n<p aria-lable="Oops">Typo attribute</p>\n<button aria-describedby="nothing">Help</button>',
+  fixed: '<button type="button">Save</button>\n<button type="button" aria-expanded="false" aria-controls="menu">Menu</button>\n<ul id="menu" hidden><li><a href="/a">A</a></li></ul>\n<nav aria-label="Main"><a href="/">Home</a></nav>\n<button type="button" aria-label="Close"><span aria-hidden="true">×</span></button>\n<div role="status">Saved</div>\n<input type="checkbox" id="c1"><label for="c1">Remember me</label>\n<button type="button" aria-describedby="help-text">Help</button>\n<p id="help-text">Opens the help centre.</p>',
+};
+
+export function AriaCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(ariaSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const focusSelector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+  const elements = Array.from(doc.querySelectorAll("*")).filter((el) => el.hasAttribute("role") || Array.from(el.attributes).some((attr) => attr.name.indexOf("aria-") === 0));
+  const widgetRoles = ["button", "link", "checkbox", "switch", "tab", "menuitem", "radio", "option", "slider"];
+  const nativeTags = ["button", "a", "input", "select", "textarea", "summary"];
+  const rows = elements.map((el) => {
+    const tag = el.tagName.toLowerCase();
+    const issues = [];
+    const notes = [];
+    const role = (el.getAttribute("role") || "").trim().toLowerCase().split(/\s+/)[0];
+    const focusable = el.matches(focusSelector);
+    if (role) {
+      if (knownRoles.indexOf(role) === -1) issues.push("Unknown role \"" + role + "\". Check the spelling.");
+      else {
+        const implicit = tag === "a" ? (el.hasAttribute("href") ? "link" : "") : implicitRoles[tag];
+        if (implicit === role) notes.push("Redundant: a " + tag + " already has the role " + role + ".");
+        if (widgetRoles.indexOf(role) !== -1 && nativeTags.indexOf(tag) === -1 && !focusable) issues.push("role=\"" + role + "\" on a " + tag + " that cannot be focused. ARIA adds no keyboard behaviour. Use a native element, or add tabindex and key handling.");
+        if ((role === "presentation" || role === "none") && focusable) issues.push("A focusable element must not have role=" + role + ".");
+      }
+    }
+    Array.from(el.attributes).forEach((attr) => {
+      if (attr.name.indexOf("aria-") !== 0) return;
+      const name = attr.name.slice(5);
+      const value = attr.value.trim().toLowerCase();
+      if (knownAttrs.indexOf(name) === -1) {
+        issues.push("Unknown attribute " + attr.name + ". Check the spelling.");
+        return;
+      }
+      if (allowedValues[name] && allowedValues[name].indexOf(value) === -1) issues.push(attr.name + "=\"" + attr.value + "\" is not a valid value. Allowed: " + allowedValues[name].join(", ") + ".");
+      if (idRefAttrs.indexOf(name) !== -1) {
+        attr.value.split(/\s+/).filter(Boolean).forEach((id) => { if (!doc.getElementById(id)) issues.push(attr.name + " points to the id \"" + id + "\", which does not exist."); });
+      }
+    });
+    if (el.getAttribute("aria-hidden") === "true" && (focusable || el.querySelector(focusSelector))) issues.push("aria-hidden=\"true\" on something focusable. Keyboard users can reach it, but screen reader users cannot see it.");
+    if ((el.hasAttribute("aria-label") || el.hasAttribute("aria-labelledby")) && !role && /^(div|span|p|b|i|em|strong|small|u)$/.test(tag)) notes.push("A name on a plain " + tag + " is not reliably announced. Give it a role, or put the text in the content.");
+    if (el.hasAttribute("aria-pressed") && tag !== "button" && role !== "button") issues.push("aria-pressed belongs on a button.");
+    if (el.hasAttribute("aria-checked") && tag === "input" && /^(checkbox|radio)$/.test((el.getAttribute("type") || "").toLowerCase())) notes.push("A native checkbox or radio already has a checked state. Remove aria-checked, or it can disagree with the real state.");
+    return {tag, role, issues, notes};
+  });
+  const bad = rows.reduce((sum, row) => sum + row.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(ariaSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="aria-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy ARIA</label>
+        <label><input type="radio" name="aria-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="aria-html">HTML to check (edit it freely)</label><br />
+        <textarea id="aria-html" rows={10} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> elements use ARIA, with <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + (row.role ? " role=" + row.role : "") + ">"}</code>{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        A teaching checker with a shortened list of roles and attributes. It cannot know whether your ARIA is the right ARIA, or whether a widget really works. Use a full checker (such as your browser's accessibility panel, axe, or Lighthouse) and test with real assistive technology.
+      </p>
+    </div>
+  );
+}
+
+export function AriaChecker() {
+  return <BrowserOnly>{() => <AriaCheckerInner />}</BrowserOnly>;
+}
+
+So far in this section you have used plain HTML to make pages accessible: real headings, real buttons, real labels, real tables. That is the best foundation, and it will carry you a long way. But sometimes HTML alone is not enough. A tab panel, a live "Saved!" message, an icon-only button: these need a little extra help to tell assistive technology what is going on.
+
+That help is **ARIA.** It is powerful, and easy to misuse. This lesson explains what ARIA is, what it can and **cannot** do, and the few rules that keep you out of trouble. The next lessons look at the main parts one by one.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **ARIA** stands for, and what it does
+- The three kinds of ARIA: **roles, properties,** and **states**
+- The **five rules of ARIA**
+- Why **native HTML comes first**
+- What ARIA **cannot** do
+- **When** you really need ARIA
+- How to **check** your ARIA
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Native HTML: no ARIA needed -->
+<button type="button">Save</button>
+
+<!-- ARIA gives a name to an icon-only button -->
+<button type="button" aria-label="Close">
+  <svg aria-hidden="true" focusable="false">…</svg>
+</button>
+
+<!-- ARIA carries a state -->
+<button type="button" aria-expanded="false" aria-controls="panel">
+  Delivery details
+</button>
+<div id="panel" hidden>…</div>
+
+<!-- ARIA announces a change -->
+<div role="status">Recipe saved.</div>
+
+<!-- A made-up button: role only, no behaviour! -->
+<div role="button">Save</div>
+```
+
+</TabItem>
+<TabItem value="output" label="ARIA Behaviour Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AriaBehaviourLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try the lab first with both boxes unticked, then tick them one at a time. You will see how much work a real `button` does that a `div` with ARIA does not.
+
+## What Is ARIA?
+
+**ARIA** stands for **Accessible Rich Internet Applications.** (You will also see **WAI-ARIA,** from the W3C's Web Accessibility Initiative.) It is a set of **attributes** you add to HTML elements to give assistive technology more information:
+
+- **Roles** say **what** something is (`role="tablist"`).
+- **Properties** describe **it** (`aria-label="Close"`, `aria-controls="menu"`).
+- **States** say **what it is doing right now** (`aria-expanded="true"`, `aria-pressed="false"`).
+
+Think of ARIA as **a note stuck on the accessibility tree** (see [Introduction to Accessibility](./introduction-to-a11y)). It changes what a screen reader **hears,** and nothing else.
+
+### What ARIA Does Not Do
+
+- **It does not add behaviour.** `role="button"` makes something sound like a button. It does not make it focusable, or give it Enter and Space support, as the lab showed.
+- **It does not change how things look.** A `div` with `role="heading"` is not bigger or bolder.
+- **It does not fix the focus order** or the keyboard.
+- **It does not work magic on its own.** Support varies between browsers and screen readers, and a wrong role can make things **worse** than none.
+
+:::warning
+You may hear **"No ARIA is better than bad ARIA."** Large surveys of home pages (such as the WebAIM Million) have repeatedly found that pages **with** ARIA tend to have **more** detected accessibility errors than pages without it. That does not mean ARIA is bad. It means ARIA is **easy to get wrong,** and a wrong role is worse than a missing one. Use it with care, and test.
+:::
+
+## The Five Rules of ARIA
+
+The W3C's guide to using ARIA boils everything down to five rules:
+
+1. **If you can use a native HTML element or attribute with the meaning and behaviour you need, use it,** instead of adding ARIA. (Use `button`, not `div role="button"`.)
+2. **Do not change native semantics,** unless you really have to. (Do not write `<h2 role="button">`. Put a `button` inside the heading.)
+3. **All interactive ARIA controls must be usable with the keyboard.** If you make a `role="button"`, it must be focusable and respond to Enter and Space.
+4. **Do not use `role="presentation"` or `aria-hidden="true"` on a focusable element.** It would be reachable by keyboard, but invisible to a screen reader.
+5. **All interactive elements must have an accessible name.** See [Accessible Names](./accessible-names).
+
+If you remember only one thing, remember rule 1.
+
+## Native HTML First
+
+Almost every ARIA role you meet has a **native** equivalent that is better:
+
+| Instead of this | Use this |
+| :-- | :-- |
+| `div role="button"` | `button` |
+| `div role="link"` | `a href` |
+| `div role="navigation"` | `nav` |
+| `div role="main"` | `main` |
+| `div role="heading" aria-level="2"` | `h2` |
+| `div role="list"` and `listitem` | `ul` and `li` |
+| `div role="checkbox"` | `input type="checkbox"` |
+| `div role="dialog"` | `dialog` |
+| `aria-required="true"` | `required` |
+| `aria-disabled` on a form field | `disabled` |
+
+Native elements come with **focus, keyboard support, a role, a name, and a state,** all tested by browser makers for years. ARIA is for the gaps where HTML has **no** native answer.
+
+## Roles, Properties, and States
+
+Here is a map of the ARIA you will meet. Each group gets its own lesson soon.
+
+| Kind | What it does | Examples |
+| :-- | :-- | :-- |
+| **Roles** | Say what something is | `tablist`, `dialog`, `status`, `alert`, `search` |
+| **Properties** | Describe and connect things | `aria-label`, `aria-labelledby`, `aria-describedby`, `aria-controls` |
+| **States** | Change as people use the page | `aria-expanded`, `aria-pressed`, `aria-checked`, `aria-selected`, `aria-hidden`, `aria-current` |
+| **Live regions** | Announce changes | `aria-live`, `role="status"`, `aria-atomic` |
+
+### How the Syntax Works
+
+- Every ARIA attribute begins with **`aria-`,** and the role is the plain **`role`** attribute.
+- **True and false are words:** `aria-expanded="true"` and `aria-expanded="false"`. Write them as strings, with the quotes.
+- Some values come from a **fixed list:** `aria-live="polite"`, `aria-current="page"`, `aria-pressed="mixed"`.
+- Some values are the **`id` of another element:** `aria-labelledby="title"`, `aria-controls="menu"`. The id must exist.
+- Some are **plain text:** `aria-label="Close"`. Write it in the page's language.
+- **States must be kept up to date with script.** If a panel opens and `aria-expanded` still says `false`, ARIA is now lying to people.
+- A **missing** attribute and a `false` value can mean different things for some attributes (for example `aria-pressed`: not a toggle at all, or a toggle that is off). Follow the rules for each attribute.
+
+## Do You Need ARIA?
+
+Use the guide below on things you are building. Notice how many answers are "Not needed."
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Not needed: native -->
+<label for="email">Email address (required)</label>
+<input id="email" type="email" required>
+
+<!-- A little: a missing name, and a hidden icon -->
+<button type="button" aria-label="Close">
+  <svg aria-hidden="true" focusable="false">…</svg>
+</button>
+
+<!-- A little: the current page -->
+<a href="/recipes" aria-current="page">Recipes</a>
+
+<!-- Yes: a message that appears -->
+<div role="status">Recipe saved.</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Do I Need ARIA?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AriaScenarioGuide />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Where to Learn the Patterns
+
+When you must build a custom widget (tabs, a menu, a combobox, an accordion), do **not** invent the ARIA yourself. Follow a tested pattern, such as those in the **WAI-ARIA Authoring Practices Guide (APG).** It lists the roles, states, and keyboard keys for each widget, with examples.
+
+Even a good pattern needs **testing,** because screen reader support differs. A pattern that works well in one combination (say, a screen reader and browser on Windows) may behave differently on a phone. Test with the combinations your audience really uses.
+
+## Check Your ARIA
+
+The checker below finds common mistakes: unknown roles and attributes, bad values, references to ids that do not exist, `aria-hidden` on focusable things, made-up buttons that cannot be focused, redundant roles, and `aria-label` on plain `div` or `span` elements.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AriaChecker />
+</>
+</BrowserWindow>
+
+On a real site, also:
+
+1. **Search your code for `role=` and `aria-`.** For each one, ask: could a native element do this?
+2. **Use the browser's Accessibility panel** to check the role, name, and state of each widget.
+3. **Run an automated checker** (such as axe or Lighthouse) to catch invalid ARIA.
+4. **Use the keyboard** on every ARIA widget. Can you reach it, and operate it?
+5. **Listen with a screen reader.** Do the name, role, and state sound right, and do they update?
+
+## Good Habits
+
+1. **Reach for native HTML first,** every time.
+2. **Add ARIA only to fill a real gap.**
+3. **Keep ARIA states up to date** with script.
+4. **Make every ARIA control work with a keyboard.**
+5. **Never hide a focusable element** with `aria-hidden`.
+6. **Follow a tested pattern** for custom widgets.
+7. **Check that every id you reference exists.**
+8. **Write names in the page's language,** and keep them short.
+9. **Test with real assistive technology,** and review ARIA in code review.
+
+## Accessibility Checklist
+
+- [ ] No ARIA is used where a native element or attribute would do.
+- [ ] Every ARIA role is valid, and suits the element.
+- [ ] Every custom widget can be focused and used with a keyboard.
+- [ ] No focusable element has `aria-hidden="true"` or `role="presentation"`.
+- [ ] Every interactive element has an accessible name.
+- [ ] ARIA states (`aria-expanded`, `aria-pressed`, and so on) change when the widget changes.
+- [ ] Every id used in `aria-labelledby`, `aria-describedby`, and `aria-controls` exists.
+- [ ] ARIA values are valid, and spelled correctly.
+- [ ] Custom widgets follow a known pattern, and were tested with a screen reader.
+- [ ] The ARIA has been checked with an automated tool, and by a person.
+
+## Security and Privacy Notes
+
+- **Do not put private data in ARIA attributes.** Values such as `aria-label` can be read aloud, read by browser extensions, and seen in the page source. Do not include passwords, personal identifiers, or hidden information.
+- **Do not use ARIA to mislead.** A name that does not match what a control really does (for example "Cancel" on a button that confirms a purchase) is deceptive, and harms people who rely on it.
+- **Be careful what you announce.** A live region that reads out sensitive information (a one-time code, an account balance, a typed password) could be overheard by someone nearby.
+- **Do not use `aria-hidden` to hide important warnings,** security messages, or legal notices from screen reader users.
+- **Do not detect or track assistive technology use** by looking for ARIA behaviour or settings. It can reveal a disability.
+- **Test that ARIA cannot be abused** if you render content from users. Never insert user-supplied text into `role` or `aria-*` attributes without cleaning it first.
+
+## Global Audience Notes
+
+- **Translate ARIA text.** Values such as `aria-label`, `aria-description`, and `aria-roledescription` are part of your content. Include them in your translation process, and test with the tools your audience uses.
+- **Set the page language** with `lang`, so screen readers pick the right voice for the names ARIA supplies.
+- **Avoid `aria-roledescription`** unless you have a clear need. A custom description is read in your words, and may be wrong in other languages, or confuse people who know the usual role names.
+- **Right-to-left languages:** arrow-key patterns (tabs, menus, sliders) should follow the reading direction. Test them in a right-to-left layout.
+- **Assistive technology differs by region and device.** Many people use a screen reader on a phone, and some use older or free tools. Test on both a desktop and a mobile screen reader, and keep your markup simple.
+- **Simple wording** in ARIA labels translates best, and is easier for people reading in a second language.
+
+## Common Mistakes to Avoid
+
+1. **`div` or `span` with `role="button"`** and no keyboard support.
+2. **Putting ARIA on everything,** "just in case."
+3. **Adding `role="button"` to a `button`,** or `role="navigation"` to a `nav`.
+4. **`aria-hidden="true"` on a focusable element.**
+5. **States that never change,** such as `aria-expanded` stuck on `false`.
+6. **Pointing to ids that do not exist.**
+7. **Misspelled roles and attributes** (`aria-lable`).
+8. **Invalid values** (`aria-expanded="yes"`).
+9. **Using `aria-label` on a plain `div` or `span`.**
+10. **Using ARIA to repair bad HTML** instead of fixing the HTML.
+11. **Inventing your own widget patterns.**
+12. **Never testing with a screen reader.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the behaviour lab with both boxes unticked, and press Tab, Enter, and Space. Describe what happens.
+2. Tick the boxes one at a time, and note how much extra work the made-up button needs.
+3. Go through every item in the "Do I need ARIA?" guide, and say which are native.
+4. Run the checker on the messy page, fix every problem, and run it again.
+5. Find three places in a project where you use `role=` or `aria-`. Could a native element do the job?
+6. Replace a `div role="button"` with a real `button`.
+7. Open the Accessibility panel, and look at the role, name, and state of a button, a link, and a checkbox.
+8. Add `aria-current="page"` to the current link in a menu.
+9. Make a "Saved" message with `role="status"`, and trigger it from a button.
+10. Bonus: read the APG pattern for tabs, and list every role, state, and key it needs.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does ARIA stand for, and what does it do?</summary>
+
+Accessible Rich Internet Applications. It adds roles, properties, and states that tell assistive technology more about an element.
+
+</details>
+
+<details>
+<summary>2. What is the first rule of ARIA?</summary>
+
+If a native HTML element or attribute can do the job, use it, and do not add ARIA.
+
+</details>
+
+<details>
+<summary>3. Does `role="button"` make a `div` work like a button?</summary>
+
+No. It only changes what assistive technology announces. You still have to add focus, and Enter and Space support, yourself.
+
+</details>
+
+<details>
+<summary>4. What are the three kinds of ARIA attributes?</summary>
+
+Roles (what it is), properties (what it is like, and what it relates to), and states (what it is doing right now).
+
+</details>
+
+<details>
+<summary>5. Why must you never put `aria-hidden="true"` on a focusable element?</summary>
+
+Keyboard users could still reach it, but screen reader users would not know it exists.
+
+</details>
+
+<details>
+<summary>6. When do you need ARIA?</summary>
+
+When HTML has no native answer: custom widgets such as tabs, live messages, extra states such as `aria-expanded`, and missing names for icon-only controls.
+
+</details>
+
+## Key Takeaways
+
+- **ARIA adds meaning, not behaviour.** It changes what assistive technology hears, and nothing else.
+- **Native HTML first.** It is shorter, tested, and more reliable.
+- **Roles, properties, and states** are the three parts of ARIA.
+- **Follow the five rules,** especially: keyboard support, no hiding focusable things, and an accessible name for everything interactive.
+- **Keep states up to date,** and make sure referenced ids exist.
+- **Copy tested patterns** for custom widgets, and do not invent your own.
+- **Test with a keyboard and a screen reader.** Bad ARIA is worse than none.
+
+Next, learn what roles do, and which ones are worth knowing, in [ARIA Roles](./aria-roles).

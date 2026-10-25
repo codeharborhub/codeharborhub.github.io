@@ -1,0 +1,621 @@
+---
+id: html-aria-labelledby
+title: "Aria Labelledby"
+sidebar_label: "Aria Labelledby"
+sidebar_position: 18
+slug: /html/accessibility/aria-labelledby
+description: "Learn how aria-labelledby names an element from text that is already on the page: naming dialogs and sections from their headings, building names from several pieces, making repeated buttons unique, how hidden text and self-reference work, and why unique ids matter. Includes a name builder lab, a duplicate id lab, and a live aria-labelledby checker."
+keywords:
+  - aria-labelledby
+  - accessible name
+  - id reference
+  - name dialog from heading
+  - duplicate ids
+  - aria-label vs aria-labelledby
+  - label in name
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, aria-labelledby, accessible-name, a11y, frontend]
+---
+
+import {useState, useEffect} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const nameScenarios = [
+  {
+    id: "row",
+    title: "An Edit button in a table row",
+    role: "button",
+    defaults: ["edit", "name"],
+    nodes: [
+      {key: "name", text: "Rye bread"},
+      {key: "price", text: "5.75 dollars"},
+      {key: "edit", text: "Edit"},
+    ],
+  },
+  {
+    id: "dialog",
+    title: "A dialog named by its heading",
+    role: "dialog",
+    defaults: ["title"],
+    nodes: [
+      {key: "title", text: "Delete recipe?"},
+      {key: "body", text: "This cannot be undone."},
+    ],
+  },
+  {
+    id: "region",
+    title: "A section named by its heading",
+    role: "region",
+    defaults: ["title"],
+    nodes: [
+      {key: "title", text: "Delivery"},
+      {key: "body", text: "Tuesday to Saturday."},
+    ],
+  },
+  {
+    id: "input",
+    title: "An input named from two pieces of text",
+    role: "edit text",
+    defaults: ["label", "unit"],
+    nodes: [
+      {key: "label", text: "Amount"},
+      {key: "unit", text: "in US dollars"},
+    ],
+  },
+];
+
+export function NameBuilderLab() {
+  const [index, setIndex] = useState(0);
+  const [ids, setIds] = useState(nameScenarios[0].defaults);
+  const [typo, setTypo] = useState(false);
+  const [hide, setHide] = useState(false);
+  const scn = nameScenarios[index];
+  const full = (key) => "lblby-" + scn.id + "-" + key;
+  const listed = ids.map(full).concat(typo ? ["lblby-" + scn.id + "-nmae"] : []);
+  const attr = listed.length > 0 ? listed.join(" ") : undefined;
+  const found = ids.map((key) => scn.nodes.find((node) => node.key === key)).filter(Boolean);
+  const name = found.map((node) => node.text).join(" ");
+  const choose = (next) => {
+    setIndex(next);
+    setIds(nameScenarios[next].defaults);
+    setTypo(false);
+    setHide(false);
+  };
+  const toggle = (key) => setIds(ids.indexOf(key) === -1 ? ids.concat(key) : ids.filter((item) => item !== key));
+  const hideStyle = (key) => (hide && key !== "edit" ? {display: "none"} : undefined);
+  const node = (key) => scn.nodes.find((item) => item.key === key);
+  const notes = [];
+  if (ids.length === 0) notes.push("No ids are listed, so aria-labelledby does nothing, and the name comes from somewhere else.");
+  if (typo) notes.push("The id \"" + full("nmae") + "\" does not exist (a typo), so it is silently ignored. Browsers do not warn you.");
+  if (scn.id === "row" && ids.indexOf("edit") === -1 && ids.length > 0) notes.push("The button's own text, \"Edit\", is no longer in the name, because aria-labelledby replaces the content. Include the button's own id to keep it (this is called self-reference). Voice control users who say \"click Edit\" would not match.");
+  if (scn.id === "row" && ids.length > 0 && ids[0] !== "edit" && ids.indexOf("edit") !== -1) notes.push("The order matters: the name is built in the order of the ids. Visible text usually comes first, so it starts with \"Edit\".");
+  if (hide && ids.length > 0) notes.push("The referenced text is hidden with display: none, and it is still used in the name. That is why aria-labelledby can name something from text that nobody sees.");
+  if (notes.length === 0) notes.push("This works: every id exists, and the order reads naturally.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="builder-scenario">Pick an example</label><br />
+        <select id="builder-scenario" value={index} onChange={(event) => choose(Number(event.target.value))}>
+          {nameScenarios.map((item, i) => (<option key={item.id} value={i}>{item.title}</option>))}
+        </select>
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which text should name it? (Tick them in the order you want them read.)</legend>
+        {scn.nodes.map((item) => (
+          <label key={item.key} style={{display: "block"}}>
+            <input type="checkbox" checked={ids.indexOf(item.key) !== -1} onChange={() => toggle(item.key)} /> {item.text} <code>{"#" + full(item.key)}</code>{ids.indexOf(item.key) !== -1 ? " (number " + (ids.indexOf(item.key) + 1) + ")" : ""}
+          </label>
+        ))}
+        <label style={{display: "block", marginTop: "0.3rem"}}><input type="checkbox" checked={typo} onChange={(event) => setTypo(event.target.checked)} /> Add a mistyped id</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={hide} onChange={(event) => setHide(event.target.checked)} /> Hide the text on screen with <code>display: none</code></label>
+      </fieldset>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"}}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>The element:</strong></p>
+        {scn.id === "row" ? (
+          <p style={{margin: 0, display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap"}}>
+            <span id={full("name")} style={hideStyle("name")}>{node("name").text}</span>
+            <span id={full("price")} style={hideStyle("price")}>{node("price").text}</span>
+            <button type="button" id={full("edit")} aria-labelledby={attr}>{node("edit").text}</button>
+          </p>
+        ) : null}
+        {scn.id === "dialog" ? (
+          <div role="dialog" aria-labelledby={attr} style={{border: "2px solid #1d4ed8", borderRadius: "8px", padding: "0.6rem"}}>
+            <h4 id={full("title")} style={{margin: "0 0 0.3rem", ...(hideStyle("title") || {})}}>{node("title").text}</h4>
+            <p id={full("body")} style={{margin: "0 0 0.4rem", ...(hideStyle("body") || {})}}>{node("body").text}</p>
+            <button type="button">Delete</button>{" "}
+            <button type="button">Cancel</button>
+          </div>
+        ) : null}
+        {scn.id === "region" ? (
+          <section aria-labelledby={attr}>
+            <h4 id={full("title")} style={{margin: "0 0 0.3rem", ...(hideStyle("title") || {})}}>{node("title").text}</h4>
+            <p id={full("body")} style={{margin: 0, ...(hideStyle("body") || {})}}>{node("body").text}</p>
+          </section>
+        ) : null}
+        {scn.id === "input" ? (
+          <p style={{margin: 0, display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap"}}>
+            <span id={full("label")} style={hideStyle("label")}>{node("label").text}</span>
+            <input type="number" aria-labelledby={attr} style={{width: "8rem"}} />
+            <span id={full("unit")} style={hideStyle("unit")}>{node("unit").text}</span>
+          </p>
+        ) : null}
+        <p style={{margin: "0.6rem 0 0.3rem"}}><strong>The attribute:</strong> <code>{attr ? 'aria-labelledby="' + attr + '"' : "(none)"}</code></p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{(name || "(no name from aria-labelledby)") + ", " + scn.role}</code></p>
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {notes.map((note, i) => (<li key={i}>{note}</li>))}
+        </ul>
+      </div>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        The attribute is real and sits on a real element, so you can inspect it with your browser's tools. The spoken line is a simplified example, and different screen readers word it differently.
+      </p>
+    </div>
+  );
+}
+
+export const cardData = [
+  {name: "Sourdough", blurb: "A tangy loaf with a crackly crust."},
+  {name: "Rye", blurb: "Dark, dense, and a little sweet."},
+  {name: "Focaccia", blurb: "Soft, oily, and full of herbs."},
+];
+
+export function DuplicateIdLab() {
+  const [unique, setUnique] = useState(false);
+  const [names, setNames] = useState([]);
+  useEffect(() => {
+    const result = cardData.map((card, i) => {
+      const link = document.getElementById("dup-link-" + i);
+      if (!link) return "";
+      return link.getAttribute("aria-labelledby").split(/\s+/).map((id) => {
+        const target = document.getElementById(id);
+        return target ? target.textContent.trim() : "";
+      }).join(" ");
+    });
+    setNames(result);
+  }, [unique]);
+  const titleId = (i) => (unique ? "dup-title-" + i : "dup-title");
+  const wrong = names.filter((name, i) => name.indexOf(cardData[i].name) === -1).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={unique} onChange={(event) => setUnique(event.target.checked)} /> Give each heading its own unique id</label>
+      </p>
+      <div style={{display: "flex", gap: "0.7rem", flexWrap: "wrap", marginBottom: "0.6rem"}}>
+        {cardData.map((card, i) => (
+          <div key={card.name} style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.6rem", flex: "1 1 10rem"}}>
+            <h4 id={titleId(i)} style={{margin: "0 0 0.3rem"}}>{card.name}</h4>
+            <p style={{margin: "0 0 0.4rem"}}>{card.blurb}</p>
+            <a href="#duplab" id={"dup-link-" + i} aria-labelledby={"dup-link-" + i + " " + titleId(i)} onClick={(event) => event.preventDefault()}>Read more</a>
+          </div>
+        ))}
+      </div>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The names a screen reader gets for the three links:</strong></p>
+      <ol style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}}>
+        {names.map((name, i) => (<li key={i}><code>{'"' + name + '"'}</code> {name.indexOf(cardData[i].name) === -1 ? <strong>(wrong: this is the {cardData[i].name} card)</strong> : null}</li>))}
+      </ol>
+      <p style={{margin: "0 0 0.3rem"}}><strong>{wrong === 0 ? "Every link has the right name." : wrong + " link(s) have the wrong name."}</strong></p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        With the same id on all three headings, <code>getElementById</code> always finds the <em>first</em> one, so every link is named after the first card. The code in this lab asks the browser to find each id, the same way assistive technology does. This is a very common bug in components that are used more than once, and the fix is to build the id from something unique, such as an index or a generated id.
+      </p>
+    </div>
+  );
+}
+
+export const labelledbySamples = {
+  messy: '<section aria-labelledby="title">\n  <h2 id="titel">Delivery</h2>\n</section>\n<button aria-labelledby="row-name">Edit</button>\n<span id="row-name">Rye bread</span>\n<h3 id="dup">Sourdough</h3>\n<h3 id="dup">Rye</h3>\n<a href="/a" aria-labelledby="dup">Read more</a>\n<label for="q">Search</label>\n<input id="q" aria-labelledby="hint">\n<p id="hint"></p>\n<div aria-labelledby="row-name">Plain div</div>\n<button aria-label="Close" aria-labelledby="row-name">X</button>',
+  fixed: '<section aria-labelledby="title">\n  <h2 id="title">Delivery</h2>\n</section>\n<button id="edit-rye" aria-labelledby="edit-rye row-name">Edit</button>\n<span id="row-name">Rye bread</span>\n<h3 id="t1">Sourdough</h3>\n<a href="/a" id="l1" aria-labelledby="l1 t1">Read more</a>\n<h3 id="t2">Rye</h3>\n<a href="/b" id="l2" aria-labelledby="l2 t2">Read more</a>\n<label for="q">Search</label>\n<input id="q" type="search">',
+};
+
+export function lbText(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  let out = "";
+  node.childNodes.forEach((child) => { out += " " + lbText(child) + " "; });
+  return out;
+}
+
+export function LabelledbyCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(labelledbySamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const idCounts = {};
+  Array.from(doc.querySelectorAll("[id]")).forEach((el) => { idCounts[el.id] = (idCounts[el.id] || 0) + 1; });
+  const elements = Array.from(doc.querySelectorAll("[aria-labelledby]"));
+  const rows = elements.map((el) => {
+    const tag = el.tagName.toLowerCase();
+    const role = el.getAttribute("role") || "";
+    const raw = el.getAttribute("aria-labelledby").trim();
+    const ids = raw.split(/\s+/).filter(Boolean);
+    const issues = [];
+    const notes = [];
+    const parts = [];
+    if (ids.length === 0) issues.push("An empty aria-labelledby does nothing.");
+    ids.forEach((id) => {
+      const target = doc.getElementById(id);
+      if (!target) {
+        issues.push("The id \"" + id + "\" does not exist, so it is ignored.");
+        return;
+      }
+      if (idCounts[id] > 1) issues.push("The id \"" + id + "\" is used " + idCounts[id] + " times. Only the first one is used.");
+      const text = lbText(target).replace(/\s+/g, " ").trim();
+      if (text === "") issues.push("The element with the id \"" + id + "\" has no text, so it adds nothing to the name.");
+      else parts.push(text);
+    });
+    const name = parts.join(" ");
+    if (el.hasAttribute("aria-label")) notes.push("It also has aria-label. aria-labelledby wins, so the aria-label is ignored.");
+    if (tag === "input" && el.getAttribute("id") && Array.from(doc.querySelectorAll("label")).some((label) => label.getAttribute("for") === el.getAttribute("id"))) notes.push("A visible label is connected too, and aria-labelledby overrides it. Remove one of them.");
+    if (!role && /^(div|span|p|b|i|em|strong|small|u)$/.test(tag)) issues.push("A name on a plain " + tag + " (no role) is not reliably announced. Give it a role, or restructure the HTML.");
+    const textual = tag === "button" || tag === "a" || role === "button" || role === "link";
+    const own = lbText(el).replace(/\s+/g, " ").trim();
+    if (textual && own && name && name.toLowerCase().indexOf(own.toLowerCase()) === -1) issues.push("The visible text \"" + own + "\" is not in the name \"" + name + "\" (WCAG 2.5.3). Include the element's own id in the list to keep it.");
+    return {tag, role, raw, name, issues, notes};
+  });
+  const bad = rows.reduce((sum, row) => sum + row.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(labelledbySamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="lb-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy references</label>
+        <label><input type="radio" name="lb-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="lb-html">HTML to check (edit it freely)</label><br />
+        <textarea id="lb-html" rows={10} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> elements use <code>aria-labelledby</code>, with <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + (row.role ? " role=" + row.role : "") + ' aria-labelledby="' + row.raw + '">'}</code> {row.name ? <span>named <code>{'"' + row.name + '"'}</code></span> : <em>no name</em>}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only, with a simplified version of the naming rules. It cannot tell whether the chosen text makes a good name, so read each result and ask: does this make sense on its own?
+      </p>
+    </div>
+  );
+}
+
+export function LabelledbyChecker() {
+  return <BrowserOnly>{() => <LabelledbyCheckerInner />}</BrowserOnly>;
+}
+
+Last time you learned `aria-label`, which lets you **write** an invisible name. But often the best name for something is **already on the page.** A dialog has a heading. A section has a title. A table row has the name of the item. It would be wasteful (and fragile) to type the same words again in an attribute.
+
+**`aria-labelledby`** solves that. Instead of writing the name, you **point to** the text that already is the name, using its `id`. The name stays in one place, is visible to everyone, and is translated along with the page.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **`aria-labelledby`** does, and how it **builds a name** from other elements
+- How to **name dialogs, sections,** and **groups** from their headings
+- How to **combine** several pieces of text, and why **order** matters
+- How **self-reference** keeps a button's own text
+- Why **hidden text** still counts
+- Why ids must be **unique** and **correct**
+- How to **choose** between `label`, `aria-label`, and `aria-labelledby`
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A dialog named by its heading -->
+<div role="dialog" aria-labelledby="dialog-title">
+  <h2 id="dialog-title">Delete recipe?</h2>
+  <p>This cannot be undone.</p>
+</div>
+
+<!-- A section named by its heading -->
+<section aria-labelledby="delivery-title">
+  <h2 id="delivery-title">Delivery</h2>
+  …
+</section>
+
+<!-- Self-reference: the button's own text, then the item name -->
+<span id="rye-name">Rye bread</span>
+<button id="rye-edit" aria-labelledby="rye-edit rye-name">Edit</button>
+
+<!-- An input named from two pieces of text -->
+<span id="amount-label">Amount</span>
+<input type="number" aria-labelledby="amount-label amount-unit">
+<span id="amount-unit">in US dollars</span>
+```
+
+</TabItem>
+<TabItem value="output" label="Name Builder Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NameBuilderLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try each example in the lab. Untick an id, change the order, and add the mistyped id, and watch the name change.
+
+## How It Works
+
+The value of `aria-labelledby` is a **list of ids,** separated by spaces. The browser:
+
+1. **Finds** each element with that id, in the whole page.
+2. **Takes the text** of each one (including text of nested elements, and the `alt` of images).
+3. **Joins them,** in the order listed, with a space between.
+4. **Uses the result as the name** of the element that has the attribute.
+
+Some important details:
+
+- **It comes first.** `aria-labelledby` is at the top of the naming order. It beats `aria-label`, native labels, and the element's own content. (See [Accessible Names](./accessible-names).)
+- **It replaces the content.** A button with `aria-labelledby` is named from the pointed-at text, **not** its own. If you want to keep its own text, **include its own id** in the list. This is called **self-reference,** and it is used in the "Edit Rye bread" example.
+- **Order matters.** "Edit Rye bread" and "Rye bread Edit" are different. Put the most important words first, and the visible text first.
+- **Hidden text counts.** An element hidden with `display: none`, `visibility: hidden`, the `hidden` attribute, or `aria-hidden="true"` is still used when you point to it. That is very handy: you can put a name in a hidden element, and use it for the label.
+- **Missing ids are ignored,** silently. A typo gives you no error, just no name.
+- **Ids must be in the same page** (the same document). You cannot point across an `iframe` or into another page.
+- **It names, it does not describe.** For extra help text, use `aria-describedby` instead. See [aria-describedby](./aria-describedby).
+
+## When to Use It
+
+### Name a dialog or region from its heading
+
+```html
+<div role="dialog" aria-labelledby="dlg-title">
+  <h2 id="dlg-title">Subscribe</h2>
+  …
+</div>
+```
+
+Dialogs, regions, forms, and groups **need names,** and the heading is the natural one. This keeps the name and the heading in step: change the heading, and the name changes too.
+
+### Make repeated buttons and links unique
+
+```html
+<ul>
+  <li>
+    <span id="item-1">Rye bread</span>
+    <button id="edit-1" aria-labelledby="edit-1 item-1">Edit</button>
+    <button id="del-1" aria-labelledby="del-1 item-1">Delete</button>
+  </li>
+</ul>
+```
+
+Every row says "Edit" and "Delete," but each button is named "Edit Rye bread," "Delete Rye bread," and so on. The visible text is first, so voice control still works (WCAG 2.5.3).
+
+### Name something from several pieces
+
+A field with a prefix or a unit, a card with a title and a price, a progress bar with a heading: list all the pieces, in reading order.
+
+### Name a widget from text that is hidden on purpose
+
+If an icon-only control has hidden text in the page, point to it. That gives you a name that **translates like normal text.**
+
+## When Not to Use It
+
+| Situation | Better choice |
+| :-- | :-- |
+| A form field and a visible label next to it | `label` with `for`. It also makes the click area bigger. |
+| An icon-only button with no text anywhere | `aria-label`, or visually hidden text |
+| The name is just the element's own text | Nothing. Content names it already. |
+| You want to explain, not name | `aria-describedby` |
+| A plain `div` or `span` with no role | Give it a role, or restructure. A name there is not reliably announced. |
+| An element that has both a `label` and `aria-labelledby` | Choose one. `aria-labelledby` overrides the label. |
+
+## Choosing Between the Three
+
+| | Where the name comes from | Visible? | Translates with the page? |
+| :-- | :-- | :-- | :-- |
+| **`label`** | A connected `label` element | Yes | Yes |
+| **`aria-labelledby`** | Other text on the page, pointed to by id | Usually, or hidden on purpose | Yes (it is real text) |
+| **`aria-label`** | A string you write in the attribute | No | Maybe not, so test |
+
+A simple rule: **visible text first** (`label`, or the content). If the text is somewhere else on the page, use **`aria-labelledby`.** If there is no text at all, use **`aria-label`.**
+
+## Unique and Correct Ids
+
+`aria-labelledby` only works if the ids are **right.** Two things go wrong most often:
+
+1. **A typo or a missing element.** The reference is ignored, and nothing tells you.
+2. **The same id used twice.** Browsers return the **first** match, so every copy of a component points to the **first** heading. This happens a lot when a card or a dialog is used many times.
+
+Try the lab below. It reads the real ids from the page, the way assistive technology does.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Wrong: the same id on every card -->
+<h3 id="title">Sourdough</h3>
+<a href="/a" id="l1" aria-labelledby="l1 title">Read more</a>
+<h3 id="title">Rye</h3>
+<a href="/b" id="l2" aria-labelledby="l2 title">Read more</a>
+
+<!-- Right: a unique id for each card -->
+<h3 id="title-1">Sourdough</h3>
+<a href="/a" id="link-1" aria-labelledby="link-1 title-1">Read more</a>
+<h3 id="title-2">Rye</h3>
+<a href="/b" id="link-2" aria-labelledby="link-2 title-2">Read more</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Duplicate Id Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DuplicateIdLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+How to keep ids unique:
+
+- **Build ids from a unique value:** an item id, an index, or a counter (`"title-" + item.id`).
+- **In a framework,** use its built-in id helper (such as React's `useId`) instead of fixed ids inside components that repeat.
+- **Never use spaces** in an id. A space would split it into two ids.
+- **Keep the referenced element in the page** while the label is needed. If it is removed or re-created with a different id, the name is lost.
+
+## Check Your References
+
+The checker below finds the usual `aria-labelledby` problems: ids that do not exist, duplicate ids, referenced elements with no text, a name that loses the visible text, labels that conflict with `aria-label` or a visible `label`, and names on plain `div` or `span` elements.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LabelledbyChecker />
+</>
+</BrowserWindow>
+
+On a real site, you can also:
+
+1. **Open DevTools,** select the element, and look at the Accessibility panel. Many browsers show the name, and which element it came from.
+2. **Change the referenced text,** and check that the name changes too.
+3. **Test with voice control:** say "click" and the visible text of each button.
+4. **Use a screen reader** on dialogs and regions, and listen for the names.
+5. **Run an automated checker,** which will find missing and duplicate ids.
+
+## Good Habits
+
+1. **Prefer visible text,** and point to it with `aria-labelledby` when it is elsewhere on the page.
+2. **List the ids in a natural reading order,** with the visible text first.
+3. **Include the element's own id** when you want to keep its own text.
+4. **Use unique ids,** built from something unique.
+5. **Name dialogs, regions, and forms** from their headings.
+6. **Do not mix `label`, `aria-label`, and `aria-labelledby`** on the same element.
+7. **Check every id** in the list exists.
+8. **Keep referenced text short,** so the name is short.
+9. **Test with a screen reader** and voice control.
+
+## Accessibility Checklist
+
+- [ ] Every id in every `aria-labelledby` exists, and is unique on the page.
+- [ ] The referenced elements have text.
+- [ ] The visible text of a control is included in its name, and comes first.
+- [ ] Dialogs, regions, and forms are named from their headings.
+- [ ] Repeated buttons and links have unique names.
+- [ ] Controls do not have a `label`, `aria-label`, and `aria-labelledby` all at once.
+- [ ] `aria-labelledby` is not used on plain `div` or `span` elements.
+- [ ] Names make sense on their own, and are not too long.
+- [ ] Referenced text is translated along with the page.
+- [ ] Names were checked in the Accessibility panel and with real assistive technology.
+
+## Security and Privacy Notes
+
+- **Hidden text can be read.** Text you point to with `aria-labelledby` may be hidden on screen, but it is still in the page source, and a screen reader will read it aloud. Do not put private data or internal notes in it.
+- **Do not use it to mislead.** Naming a button "Cancel" from hidden text when it really confirms a payment is a deceptive pattern that harms people who cannot see the screen.
+- **Be careful with user data.** If a name is built from text that users can edit (such as a username or an item title), clean that text before putting it in the page, to prevent script injection.
+- **Ids can be targeted.** Page scripts and extensions can find elements by id. Do not rely on a hidden id to protect anything.
+- **Do not use it to detect assistive technology.** For example, checking whether hidden label text was read could reveal a disability.
+- **Sensitive names:** "Delete message from Sam" may be read aloud near other people. Think about this for private content, and about how names appear in shared screens and recordings.
+
+## Global Audience Notes
+
+- **It translates well.** Because `aria-labelledby` points to real text on the page, translation tools translate the name along with everything else. That makes it a good choice for multilingual sites, and often safer than `aria-label`.
+- **Order may need care in other languages.** "Edit Rye bread" reads naturally in English. In some languages the item name or action may need to come in a different order. Build the order with translators in mind, and test it.
+- **Right-to-left languages:** the name is built in the order of the ids, which follows the reading logic and not the screen position. Check that mixed text (numbers, Latin words) reads sensibly.
+- **Set `lang`** on the page, and on any referenced text in another language, so the voice pronounces each part correctly.
+- **Keep referenced text short and plain.** It is easier to translate, and quicker to hear in a list of controls.
+- **Voice control users speak the visible label** in their own language. Keep the visible text first in the name.
+
+## Common Mistakes to Avoid
+
+1. **A typo in an id,** so nothing is named.
+2. **The same id used on several elements.**
+3. **Listing ids in the wrong order.**
+4. **Forgetting the element's own id,** and losing its visible text.
+5. **Using it together with `aria-label` or a visible `label`.**
+6. **Pointing to an element that is empty,** or removed by script.
+7. **`aria-labelledby` on a plain `div` or `span`.**
+8. **Using it to describe things,** instead of `aria-describedby`.
+9. **Very long names** built from many pieces.
+10. **Putting private data in hidden text.**
+11. **Using ids with spaces.**
+12. **Never checking the result** in the Accessibility panel.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the name builder lab with every example, and write down the final name for each.
+2. Change the order of the ids in the "Edit" example, and say which order is best, and why.
+3. Add the mistyped id, and explain why nothing breaks, but the name is wrong.
+4. In the duplicate id lab, fix the problem, and explain how.
+5. Run the checker on the messy page, fix every problem, and run it again.
+6. Name a dialog from its heading, and check it in the Accessibility panel.
+7. Build a list of three rows, each with "Edit" and "Delete" buttons that include the item name.
+8. Hide a text with `display: none`, and use it as a name with `aria-labelledby`.
+9. Replace an `aria-label` in a project with `aria-labelledby`, using text that is already visible.
+10. Bonus: in a component that repeats, generate a unique id for each copy, and test with three copies.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `aria-labelledby` do?</summary>
+
+It names an element from the text of one or more other elements on the page, found by their ids.
+
+</details>
+
+<details>
+<summary>2. What does the order of ids do?</summary>
+
+The name is built in the order the ids are listed, so put the visible text, and the most important words, first.
+
+</details>
+
+<details>
+<summary>3. What is self-reference?</summary>
+
+Including the element's own id in its `aria-labelledby`, to keep its own text in the name, such as "Edit Rye bread".
+
+</details>
+
+<details>
+<summary>4. Does hidden text count?</summary>
+
+Yes. A referenced element that is hidden (with `display: none`, `hidden`, or `aria-hidden`) is still used to build the name.
+
+</details>
+
+<details>
+<summary>5. What happens if an id in the list does not exist?</summary>
+
+It is silently ignored. You get no error, so the name may be missing or wrong.
+
+</details>
+
+<details>
+<summary>6. Why is the same id on several elements a problem?</summary>
+
+Browsers use the first match, so every copy points to the first one. Use unique ids built from something unique, such as an item id.
+
+</details>
+
+## Key Takeaways
+
+- **`aria-labelledby` points to text that already exists,** so the name stays in one place and translates with the page.
+- **It comes first** in the naming order, and replaces the element's own content.
+- **Use self-reference** to keep the visible text, and put it first.
+- **Hidden text still counts.** Do not put private data in it.
+- **Ids must exist and be unique.** A typo or a duplicate fails silently.
+- **Choose:** `label` for form fields, `aria-labelledby` for text elsewhere, `aria-label` when there is no text.
+- **Check** in the Accessibility panel, and with voice control and a screen reader.
+
+Next, learn how to add extra help to a control with [aria-describedby](./aria-describedby).

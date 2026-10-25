@@ -1,0 +1,594 @@
+---
+id: html-accessible-buttons
+title: "Accessible Buttons"
+sidebar_label: "Accessible Buttons"
+sidebar_position: 11
+slug: /html/accessibility/accessible-buttons
+description: "Learn how to build buttons that work for everyone: use the real button element, set the type, name icon buttons, make toggle and disclosure buttons with aria-pressed and aria-expanded, handle disabled and loading states, and avoid fake buttons made from div and span. Includes a toggle lab, a disabled-button lab, and a live button checker."
+keywords:
+  - accessible buttons
+  - button element
+  - aria-pressed
+  - aria-expanded
+  - aria-disabled
+  - disabled button
+  - toggle button
+  - icon button
+  - div as button
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, buttons, aria, keyboard, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function ToggleLab() {
+  const [muted, setMuted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [changeLabel, setChangeLabel] = useState(false);
+  const label = changeLabel ? (muted ? "Unmute" : "Mute") : "Mute";
+  const toggleSpoken = label + ", toggle button, " + (muted ? "pressed" : "not pressed");
+  const discSpoken = "Delivery details, button, " + (open ? "expanded" : "collapsed");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={changeLabel} onChange={(event) => setChangeLabel(event.target.checked)} /> Also change the label when it is pressed (a common mistake)</label>
+      </p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.7rem"}}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>A toggle button</strong> (on or off)</p>
+        <button type="button" aria-pressed={muted} onClick={() => setMuted(!muted)} style={{padding: "0.4rem 0.9rem", fontWeight: muted ? 700 : 400, background: muted ? "#dbeafe" : undefined, color: muted ? "#1e293b" : undefined, border: muted ? "2px solid #1d4ed8" : undefined}}>
+          <span aria-hidden="true">{muted ? "✓ " : ""}</span>{label}
+        </button>
+        <p style={{margin: "0.4rem 0 0"}}>A screen reader may say: <code>{toggleSpoken}</code></p>
+        {changeLabel ? <p style={{margin: "0.3rem 0 0"}}><strong>Problem:</strong> when the label changes <em>and</em> the state is announced, people hear "Unmute, pressed", and cannot tell whether sound is on or off.</p> : <p style={{margin: "0.3rem 0 0"}}>The label stays the same, and the <em>state</em> carries the change. That is the correct pattern.</p>}
+      </div>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem"}}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>A disclosure button</strong> (show or hide a panel)</p>
+        <button type="button" aria-expanded={open} aria-controls="togglelab-panel" onClick={() => setOpen(!open)}>
+          <span aria-hidden="true">{open ? "▾ " : "▸ "}</span>Delivery details
+        </button>
+        <div id="togglelab-panel" hidden={!open} style={{margin: "0.5rem 0 0"}}>
+          Free delivery on orders over 20 dollars. We deliver Tuesday to Saturday.
+        </div>
+        <p style={{margin: "0.4rem 0 0"}}>A screen reader may say: <code>{discSpoken}</code></p>
+      </div>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Press each button with Enter or Space. The exact words differ between screen readers (some say "toggle button", some say "pressed", some say "checked"), so the lines above are examples, not exact output. The rule stays the same: a stable label, and a changing state.
+      </p>
+    </div>
+  );
+}
+
+export function DisabledLab() {
+  const [mode, setMode] = useState("native");
+  const [agree, setAgree] = useState(false);
+  const [message, setMessage] = useState("");
+  const [where, setWhere] = useState("nowhere yet");
+  const onFocus = (event) => setWhere(event.target.getAttribute("data-name") || event.target.tagName.toLowerCase());
+  const place = () => {
+    if (mode === "aria" && !agree) {
+      setMessage("Please accept the terms before placing your order.");
+      return;
+    }
+    setMessage("Order placed. (This is a demo, so nothing was sent.)");
+  };
+  return (
+    <div onFocus={onFocus}>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>How should the unavailable button work?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="disabledlab-mode" checked={mode === "native"} onChange={() => { setMode("native"); setMessage(""); }} /> Native <code>disabled</code></label>
+        <label><input type="radio" name="disabledlab-mode" checked={mode === "aria"} onChange={() => { setMode("aria"); setMessage(""); }} /> <code>aria-disabled</code></label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label><input type="checkbox" data-name="Terms checkbox" checked={agree} onChange={(event) => { setAgree(event.target.checked); setMessage(""); }} /> I accept the terms</label>
+      </p>
+      <p id="disabledlab-hint" style={{margin: "0 0 0.5rem"}}>{agree ? "Ready when you are." : "Accept the terms to place your order."}</p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" data-name="Place order button" disabled={mode === "native" && !agree} aria-disabled={mode === "aria" && !agree ? "true" : undefined} aria-describedby="disabledlab-hint" onClick={place} style={{opacity: !agree ? 0.7 : 1, cursor: !agree ? "not-allowed" : "pointer"}}>Place order</button>{" "}
+        <button type="button" data-name="Cancel button">Cancel</button>
+      </p>
+      <p aria-live="polite" style={{margin: "0 0 0.4rem", minHeight: "1.4em"}}>{message}</p>
+      <p style={{margin: "0 0 0.4rem"}}>Focus last landed on: <code>{where}</code></p>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        Leave the box unticked, click the checkbox, then press Tab. With native <code>disabled</code>, focus skips straight past the Place order button, so a keyboard user may never learn it exists or why it does not work. With <code>aria-disabled</code>, focus lands on it, the reason is read out (it is connected with <code>aria-describedby</code>), and pressing it explains the problem. The trade-off: you must block the action yourself, and make it look unavailable. Both ways can work, as long as the reason is visible near the button.
+      </p>
+    </div>
+  );
+}
+
+export const buttonSamples = {
+  messy: '<form>\n  <input type="text" aria-label="Email">\n  <button>Subscribe</button>\n</form>\n<div class="btn" onclick="save()">Save</div>\n<span role="button">Share</span>\n<a href="#" onclick="openMenu()">Menu</a>\n<button type="button"><span class="icon-trash"></span></button>\n<button type="button" tabindex="3">Next</button>\n<button type="button"><a href="/help">Help</a></button>\n<button type="button" disabled>Checkout</button>',
+  fixed: '<form>\n  <input type="text" aria-label="Email">\n  <button type="submit">Subscribe</button>\n</form>\n<button type="button" onclick="save()">Save</button>\n<button type="button">Share</button>\n<button type="button" aria-expanded="false">Menu</button>\n<button type="button" aria-label="Delete recipe"><span aria-hidden="true">🗑</span></button>\n<button type="button">Next</button>\n<a href="/help">Help</a>\n<button type="button" aria-disabled="true">Checkout</button>',
+};
+
+export function buttonTextOf(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (node.getAttribute("aria-hidden") === "true" || node.hasAttribute("hidden")) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  let out = "";
+  node.childNodes.forEach((child) => { out += " " + buttonTextOf(child) + " "; });
+  return out;
+}
+
+export function buttonNameOf(el) {
+  const label = (el.getAttribute("aria-label") || "").trim();
+  if (label) return label;
+  const tag = el.tagName.toLowerCase();
+  const type = (el.getAttribute("type") || "").toLowerCase();
+  if (tag === "input") {
+    const value = (el.getAttribute("value") || "").trim();
+    if (value) return value;
+    if (type === "image") return (el.getAttribute("alt") || "").trim();
+    return type === "submit" ? "Submit" : type === "reset" ? "Reset" : "";
+  }
+  return buttonTextOf(el).replace(/\s+/g, " ").trim();
+}
+
+export function ButtonCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(buttonSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const selector = 'button, input[type="button"], input[type="submit"], input[type="reset"], input[type="image"], [role="button"], [onclick]:not(a):not(button):not(input):not(select):not(textarea):not(summary), a[href="#"], a[href^="javascript:"]';
+  const elements = Array.from(doc.querySelectorAll(selector));
+  const rows = elements.map((el) => {
+    const tag = el.tagName.toLowerCase();
+    const issues = [];
+    const notes = [];
+    const real = tag === "button" || tag === "input";
+    const name = buttonNameOf(el);
+    if (!real) {
+      if (tag === "a") issues.push("A link used as a button. If it does an action, use a button.");
+      else if (el.getAttribute("role") === "button") issues.push("A made-up button (role=button on a " + tag + "). Use a real button element.");
+      else issues.push("A click handler on a " + tag + ". It is not announced as a button, and keyboards cannot use it. Use a button.");
+      if (tag !== "a" && !el.hasAttribute("tabindex")) issues.push("Not focusable: there is no tabindex, so keyboard users cannot reach it.");
+    }
+    if (tag === "button" && !el.hasAttribute("type") && el.closest("form")) issues.push("No type inside a form. It will submit the form. Add type=\"button\" or type=\"submit\" on purpose.");
+    if (!name) issues.push("No accessible name.");
+    const tabindex = parseInt(el.getAttribute("tabindex") || "0", 10);
+    if (tabindex > 0) issues.push("A positive tabindex changes the focus order. Use 0 or -1 only.");
+    if (tag === "button" && el.querySelector("a[href], button, input, select, textarea")) issues.push("An interactive element inside a button is not allowed, and confuses keyboards and screen readers.");
+    if (el.hasAttribute("disabled")) notes.push("Disabled: it is skipped by Tab. Say why nearby, or consider aria-disabled so people can find it.");
+    return {tag, name, issues, notes};
+  });
+  const bad = rows.filter((row) => row.issues.length > 0).length;
+  const choose = (value) => { setWhich(value); setHtml(buttonSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="button-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="button-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="button-html">HTML to check (edit it freely)</label><br />
+        <textarea id="button-html" rows={10} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> buttons and button-like items found, <strong>{bad}</strong> with problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + ">"}</code> {row.name ? <code>{'"' + row.name + '"'}</code> : <em>no name</em>}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only, and runs no scripts. It finds common problems, but cannot see styles, scripts added later, or whether a name is clear. Always test with a keyboard as well.
+      </p>
+    </div>
+  );
+}
+
+export function ButtonChecker() {
+  return <BrowserOnly>{() => <ButtonCheckerInner />}</BrowserOnly>;
+}
+
+Buttons are how people **do** things on the web: send a message, add to a basket, open a menu, save a draft. Because they are so common, they are also where a lot of accessibility problems hide, usually because someone built one out of a `div`.
+
+The HTML `button` element does a huge amount of work for you. It can be reached with Tab, activated with Enter **and** Space, announced as a "button," used with voice control, and styled as you like. **Use it,** name it well, and add a little ARIA only when a button has a **state,** such as "on" or "expanded."
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- Why the **real `button` element** beats a `div` every time
+- The **`type`** attribute, and the form-submit trap
+- How to **name** buttons, including **icon-only** ones
+- **Toggle** and **disclosure** buttons (`aria-pressed`, `aria-expanded`)
+- **Disabled** buttons, `aria-disabled`, and **loading** states
+- How big and how visible a button should be
+- How to **check** your buttons
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A normal action -->
+<button type="button">Save recipe</button>
+
+<!-- A form submit -->
+<form>
+  <label for="email">Email</label>
+  <input id="email" type="email">
+  <button type="submit">Subscribe</button>
+</form>
+
+<!-- An icon-only button needs a name -->
+<button type="button" aria-label="Delete recipe">
+  <span aria-hidden="true">🗑</span>
+</button>
+
+<!-- A toggle button: the label stays, the state changes -->
+<button type="button" aria-pressed="false">Mute</button>
+
+<!-- A disclosure button: it shows or hides something -->
+<button type="button" aria-expanded="false" aria-controls="details">
+  Delivery details
+</button>
+<div id="details" hidden>Free delivery on orders over 20 dollars.</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Toggle Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ToggleLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try both buttons in the lab, with the mouse and then with Enter and Space. Then tick the box at the top, and listen to what happens to the spoken line.
+
+## Why Use a Real `button`?
+
+A native `button` gives you all of this for free:
+
+| You get | What it means |
+| :-- | :-- |
+| **Focus** | It is in the Tab order, with a focus ring. |
+| **Keyboard** | Enter and Space both activate it. |
+| **Role** | Screen readers say "button." |
+| **Name** | The text inside becomes its accessible name. |
+| **State** | `disabled` is understood by browsers and assistive technology. |
+| **Forms** | It can submit, reset, or do nothing inside a form. |
+| **Voice control** | People can say "click Save." |
+
+A `div` has **none** of these. To rebuild them you need `role="button"`, `tabindex="0"`, handlers for **both** Enter and Space (with `preventDefault` on Space, so the page does not scroll), a focus style, and disabled behaviour. That is a lot of code to get **worse** results.
+
+```html
+<!-- Last resort only. Prefer a real button. -->
+<div role="button" tabindex="0" id="fake">Save</div>
+
+<script>
+  const fake = document.getElementById("fake");
+  fake.addEventListener("click", save);
+  fake.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      save();
+    }
+  });
+</script>
+```
+
+:::warning
+Even with all that code, a fake button still misses form behaviour, `disabled` support, and a few small details that vary between browsers and assistive technologies. If you can use `<button>`, use it.
+:::
+
+## The `type` Attribute
+
+A `button` inside a `form` is a **submit button by default.** That is a classic source of bugs: a "Show password" button that unexpectedly submits the form.
+
+| Type | What it does |
+| :-- | :-- |
+| `type="submit"` | Submits the form (the default inside a form). |
+| `type="button"` | Does nothing by itself. Use it for actions run by script. |
+| `type="reset"` | Resets the form fields. Rarely a good idea. |
+
+**Always write the `type`.** Use `type="submit"` for the one real submit button, and `type="button"` for everything else.
+
+There is also `input type="submit"`, `input type="button"`, and `input type="image"`. They work, but `button` is more flexible because it can hold text, icons, and other content.
+
+## Naming Buttons
+
+A button's name comes from its **content,** so a visible text label is the best choice. See [Accessible Names](./accessible-names) for the full rules.
+
+- **Use a verb or action:** "Save recipe," "Add to basket," "Send message."
+- **Be specific.** If there are several "Delete" buttons on a page, make each one unique: "Delete sourdough recipe."
+- **Do not repeat the role:** "Save," not "Save button."
+- **Icon-only buttons** need a name with `aria-label` (or hidden text), and the icon should be hidden with `aria-hidden="true"`.
+- **Match the visible label** in the name, so voice control works (WCAG 2.5.3).
+- **Keep the name the same** when the state changes (see below).
+
+```html
+<button type="button" aria-label="Delete sourdough recipe">
+  <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24">
+    <path d="M6 7h12l-1 14H7L6 7zm3-4h6l1 2H8l1-2z" />
+  </svg>
+</button>
+```
+
+## Toggle Buttons: `aria-pressed`
+
+A **toggle button** switches something on or off, such as "Mute," "Bold," or "Favourite." Use `aria-pressed`:
+
+```html
+<button type="button" aria-pressed="false">Mute</button>
+```
+
+Your script flips the value to `"true"` and back. The **label stays the same,** and the **state** carries the change. If you change the label too ("Mute" to "Unmute") **and** use `aria-pressed`, people hear "Unmute, pressed," which is confusing, as the lab showed. Pick **one** approach:
+
+- **Stable label + `aria-pressed`** (best for toggles), or
+- **Changing label with no `aria-pressed`** (fine for simple actions like "Play" and "Pause").
+
+Do not rely on **colour alone** to show that a toggle is on. Use a border, an icon, or bold text as well, as the lab does.
+
+## Disclosure Buttons: `aria-expanded`
+
+A button that **shows or hides** something (a menu, a panel, an accordion section) uses `aria-expanded`:
+
+```html
+<button type="button" aria-expanded="false" aria-controls="details">
+  Delivery details
+</button>
+<div id="details" hidden>…</div>
+```
+
+When opened, set `aria-expanded="true"` and remove `hidden` from the panel. `aria-controls` points to the panel (support from screen readers varies, so do not rely on it alone). For simple show-and-hide content, the native `details` and `summary` elements do the same job with **no** script at all.
+
+## Disabled Buttons
+
+The `disabled` attribute makes a button **unavailable.** It cannot be clicked, and it is **removed from the Tab order.** That is sometimes right, but it has a cost: **keyboard and screen reader users may never find it,** and may not know why it does not work.
+
+Two common choices:
+
+- **Native `disabled`:** simple, and fully blocks the button. Use it when the reason is obvious, and say **why** in nearby text.
+- **`aria-disabled="true"`:** the button stays **focusable,** and is announced as "dimmed" or "unavailable." You must **block the action yourself** in script, and **style** it so it looks unavailable. This lets you explain the reason when someone presses it.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<input type="checkbox" id="agree">
+<label for="agree">I accept the terms</label>
+
+<p id="hint">Accept the terms to place your order.</p>
+
+<!-- Option 1: native disabled -->
+<button type="button" disabled aria-describedby="hint">Place order</button>
+
+<!-- Option 2: aria-disabled, which stays focusable -->
+<button type="button" aria-disabled="true" aria-describedby="hint" id="order">
+  Place order
+</button>
+
+<script>
+  document.getElementById("order").addEventListener("click", (event) => {
+    if (event.currentTarget.getAttribute("aria-disabled") === "true") {
+      // block the action, and explain why
+      return;
+    }
+    placeOrder();
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Disabled Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DisabledLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Another option is to leave the button **enabled** and show an **error message** when someone presses it too early, which is often the friendliest design of all. Whatever you choose, **do not rely on a greyed-out look alone.** Disabled text is also exempt from the usual contrast rules, so make sure that the reason is stated in readable text.
+
+## Loading States
+
+When a button starts something that takes time (saving, paying), people need to know it is **working,** and must not press it twice.
+
+- **Change the text** ("Saving...") or show a spinner **with a text alternative.**
+- **Announce it** with a live region (see [ARIA Live Regions](./aria-live)), so screen reader users hear "Saving" and then "Saved."
+- **Ignore extra clicks** while busy, rather than removing the button.
+- **Be careful with `disabled`.** If you disable the button the person just pressed, it **loses focus,** and keyboard users are thrown back to the top of the page. Use `aria-disabled` and ignore clicks, or move focus on purpose. See [Focus Management](./focus-management).
+
+## Make Buttons Easy to See and Hit
+
+- **Show a clear focus style,** and never remove the outline without a better replacement.
+- **Contrast:** the text needs at least **4.5:1** against the button background, and the button's edge or background needs **3:1** against what is around it (WCAG 1.4.11), so it is recognisable as a button.
+- **Size:** WCAG 2.2 sets a minimum target size of **24 by 24 CSS pixels** (with some exceptions). Around **44 by 44** is a much more comfortable size for touch screens, especially for people with tremors.
+- **Space:** leave a gap between buttons, so a slip does not hit the wrong one.
+- **Look like a button.** A border, background, or clear shape helps everyone, and especially people with cognitive differences.
+- **Do not use a fixed width.** Translated or enlarged text must fit.
+
+```css
+button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 2px solid #1d4ed8;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+button:focus-visible {
+  outline: 3px solid #0f172a;
+  outline-offset: 3px;
+}
+```
+
+## Button or Link?
+
+If it **goes somewhere,** use a link. If it **does something,** use a button. Do not style one to look like the other without a good reason, because people expect different things, including the key that activates it (Enter only for links, Enter and Space for buttons). The full comparison is in [Accessible Links](./accessible-links).
+
+## Check Your Buttons
+
+The checker below looks for the problems we have covered: fake buttons made from `div` and `span`, links used as buttons, a missing `type` in a form, missing names, positive `tabindex`, interactive elements nested in buttons, and disabled buttons that deserve an explanation.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ButtonChecker />
+</>
+</BrowserWindow>
+
+On a real site, do these quick tests:
+
+1. **Press Tab.** Can you reach every button, and see where you are?
+2. **Press Enter and Space** on each button. Do both work?
+3. **Look in the Accessibility panel.** Does each button have a role and a name?
+4. **Listen with a screen reader.** Do toggle and disclosure buttons announce their state?
+5. **Use voice control.** Say "click" and the visible label.
+6. **Zoom in to 200 percent,** and check that the buttons still fit and work.
+
+## Good Habits
+
+1. **Use `button`,** and write its `type` every time.
+2. **Name every button,** with a clear verb, and make the visible text part of the name.
+3. **Use `aria-pressed`** for on and off, and **`aria-expanded`** for show and hide, with a stable label.
+4. **Explain why** a button is unavailable, in text near it.
+5. **Do not disable** a button the person is using. Move focus on purpose if you must.
+6. **Give feedback** when something starts, finishes, or fails.
+7. **Make buttons big enough,** with clear focus and good contrast.
+8. **Ask for confirmation, or offer undo,** for actions that cannot be reversed.
+9. **Test with a keyboard,** a screen reader, and a phone.
+
+## Accessibility Checklist
+
+- [ ] Every button is a real `button` (or `input type="button"` or `submit`).
+- [ ] Every button has a `type`.
+- [ ] Every button has a clear accessible name, and icon-only buttons are labelled.
+- [ ] Toggle buttons use `aria-pressed`, and disclosure buttons use `aria-expanded`, with stable labels.
+- [ ] Buttons can be reached with Tab and used with both Enter and Space.
+- [ ] Focus is clearly visible.
+- [ ] Text and button edges have enough contrast.
+- [ ] Targets are large enough, and spaced apart.
+- [ ] Disabled and loading states are explained, and announced.
+- [ ] Destructive actions have a confirmation, or an undo.
+
+## Security and Privacy Notes
+
+- **Prevent double submits.** A second click on "Pay" or "Send" can charge or send twice. Ignore repeat clicks while a request is running, and make the server safe against repeats as well.
+- **Confirm or allow undo for destructive actions** (delete, pay, share). Make the **safe** choice, such as Cancel, the default focus in confirmation dialogs.
+- **Be honest in labels.** A button called "Cancel" that really confirms, or a "Close" that accepts all cookies, is deceptive.
+- **Give equal weight to privacy choices.** In a consent banner, "Reject" should be as easy to find, reach, and press as "Accept." Hiding it is a dark pattern, and often against privacy law.
+- **Do not hide submit buttons** or make them invisible. An overlay that tricks people into clicking something else is clickjacking.
+- **Do not collect how people press buttons** (for example, with a keyboard or a switch) in a way that reveals a disability.
+- **Never put secrets in a button's attributes,** such as `data-` values or inline handlers. Anyone can read them.
+
+## Global Audience Notes
+
+- **Translate button text** and `aria-label` values with the rest of the page, and keep buttons wide enough for longer words in other languages. German and Finnish, for example, can be much longer than English.
+- **Avoid icon-only buttons** when you can. Icons are not universal (a hamburger, a heart, or a hand may mean different things in different places). Add a text label.
+- **Right-to-left languages:** arrows and "next" or "back" icons should flip to match the reading direction, and button order in a row should follow it too.
+- **Voice control** users say the visible label in their own language, so the visible text must be in the name.
+- **Slow networks and old devices:** show a loading state straight away, so people do not press twice and wonder if anything happened.
+- **Touch first:** many people use only a phone. Large, well-spaced buttons matter more than on a desktop.
+- **Verbs travel better than clever wording.** "Save," "Send," and "Next" translate well. Puns do not.
+
+## Common Mistakes to Avoid
+
+1. **A `div` or `span` used as a button.**
+2. **A link (`a href="#"`) used as a button.**
+3. **No `type`,** so a button submits the form by accident.
+4. **Icon-only buttons with no name.**
+5. **Changing the label and using `aria-pressed` together.**
+6. **Disabling a button with no explanation.**
+7. **Disabling the button someone just pressed,** which loses focus.
+8. **Removing the focus outline.**
+9. **Tiny buttons close together.**
+10. **Several buttons that all say "Delete" or "Edit."**
+11. **A link or another button nested inside a button.**
+12. **No feedback after pressing.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the toggle lab with and without the label change, and write down what you hear.
+2. Build a "Favourite" button with `aria-pressed`, and a "Show more" button with `aria-expanded`.
+3. Use the disabled lab in both modes. Press Tab from the checkbox, and describe where focus lands.
+4. Replace a `div` button with a real `button`, and compare the keyboard behaviour.
+5. Run the checker on the messy page, and fix every problem.
+6. Add `type="button"` to the buttons in a form you made. Does anything change?
+7. Label an icon-only button, and confirm its name in the Accessibility panel.
+8. Make a "Save" button that shows "Saving..." and announces "Saved" with a live region.
+9. Resize your buttons to 44 pixels tall, and test them on your phone.
+10. Bonus: build a confirmation dialog for "Delete recipe," with focus on the Cancel button.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why use a real `button` and not a `div`?</summary>
+
+A `button` gives you focus, Enter and Space activation, the button role, a name from its content, `disabled`, and form behaviour for free. A `div` has none of these.
+
+</details>
+
+<details>
+<summary>2. What is the risk of a button with no `type` inside a form?</summary>
+
+It is a submit button by default, so it can submit the form by accident. Write `type="button"` or `type="submit"` every time.
+
+</details>
+
+<details>
+<summary>3. How do you make a toggle button accessible?</summary>
+
+Use `aria-pressed`, flip it between `"true"` and `"false"`, and keep the label the same.
+
+</details>
+
+<details>
+<summary>4. Which attribute shows that a button opens and closes a panel?</summary>
+
+`aria-expanded`, set to `"true"` when open and `"false"` when closed, usually with `aria-controls` pointing to the panel.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `disabled` and `aria-disabled`?</summary>
+
+`disabled` blocks the button and removes it from the Tab order. `aria-disabled` keeps it focusable and announced as unavailable, but you must block the action yourself.
+
+</details>
+
+<details>
+<summary>6. Why can disabling a button after it is pressed be a problem?</summary>
+
+A disabled button cannot keep focus, so keyboard users lose their place. Use `aria-disabled` and ignore clicks, or move focus on purpose.
+
+</details>
+
+## Key Takeaways
+
+- **Use the real `button` element.** It gives you focus, keyboard support, role, and name for free.
+- **Always set the `type`.** Inside a form, the default is "submit."
+- **Name every button,** with a clear verb, and keep the visible text in the name.
+- **Toggle:** `aria-pressed`. **Disclosure:** `aria-expanded`. Keep the label stable.
+- **Explain** disabled and loading states, and announce changes.
+- **Make buttons visible, roomy, and high-contrast,** with a clear focus style.
+- **Protect people** from double submits and from destructive mistakes.
+
+Next, learn how to build forms that everyone can complete in [Accessible Forms](./accessible-forms).

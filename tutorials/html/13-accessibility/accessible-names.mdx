@@ -1,0 +1,681 @@
+---
+id: html-accessible-names
+title: "Accessible Names"
+sidebar_label: "Accessible Names"
+sidebar_position: 8
+slug: /html/accessibility/accessible-names
+description: "Learn what an accessible name is, where browsers get it from (aria-labelledby, aria-label, labels, alt text, content, title), how to write good names, and why the visible label must be part of the name. Includes a live name calculator, a page name audit, and a short drill."
+keywords:
+  - accessible name
+  - accessible name computation
+  - aria-label
+  - aria-labelledby
+  - label in name
+  - WCAG 2.5.3
+  - name role value
+  - screen reader names
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, accessible-name, labels, aria, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const nameSamples = [
+  {label: "Button with text", target: "button", html: '<button type="button">Save recipe</button>'},
+  {label: "Icon button with no name", target: "button", html: '<button type="button"><span aria-hidden="true">🔍</span></button>'},
+  {label: "Icon button with aria-label", target: "button", html: '<button type="button" aria-label="Search recipes"><span aria-hidden="true">🔍</span></button>'},
+  {label: "Input with a label", target: "input", html: '<label for="email">Email address</label>\n<input id="email" type="email">'},
+  {label: "Input with only a placeholder", target: "input", html: '<input type="email" placeholder="Email address">'},
+  {label: "Image with alt text", target: "img", html: '<img src="loaf.jpg" alt="A round sourdough loaf with a deep golden crust">'},
+  {label: "Image with no alt", target: "img", html: '<img src="loaf.jpg">'},
+  {label: "Link that says Read more", target: "a", html: '<h2>Sourdough</h2>\n<a href="/sourdough">Read more</a>'},
+  {label: "aria-labelledby wins", target: "button", html: '<h2 id="title">Rye bread</h2>\n<button type="button" aria-labelledby="title" aria-label="Ignored">Buy now</button>'},
+  {label: "Visible text missing from the name", target: "button", html: '<button type="button" aria-label="Find recipes">Search</button>'},
+];
+
+export const auditSamples = {
+  messy: '<nav>\n  <a href="/">Home</a>\n  <a href="/recipes">Recipes</a>\n</nav>\n<nav>\n  <a href="/privacy">Privacy</a>\n</nav>\n<h2>Sourdough</h2>\n<a href="/sourdough">Read more</a>\n<h2>Rye</h2>\n<a href="/rye">Read more</a>\n<button type="button"><span aria-hidden="true">🔍</span></button>\n<input type="email" placeholder="Email">\n<img src="loaf.jpg">\n<img src="divider.png" alt="">\n<iframe src="/map"></iframe>',
+  fixed: '<nav aria-label="Main">\n  <a href="/">Home</a>\n  <a href="/recipes">Recipes</a>\n</nav>\n<nav aria-label="Legal">\n  <a href="/privacy">Privacy</a>\n</nav>\n<h2>Sourdough</h2>\n<a href="/sourdough" aria-label="Read more about Sourdough">Read more</a>\n<h2>Rye</h2>\n<a href="/rye" aria-label="Read more about Rye">Read more</a>\n<button type="button" aria-label="Search recipes"><span aria-hidden="true">🔍</span></button>\n<label for="mail">Email</label>\n<input id="mail" type="email">\n<img src="loaf.jpg" alt="A round sourdough loaf">\n<img src="divider.png" alt="">\n<iframe src="/map" title="Map of our bakery"></iframe>',
+};
+
+export function cleanText(value) {
+  return (value || "").replace(/\s+/g, " ").trim();
+}
+
+export function textOf(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (node.getAttribute("aria-hidden") === "true" || node.hasAttribute("hidden")) return "";
+  const tag = node.tagName.toLowerCase();
+  if (tag === "img") return node.getAttribute("alt") || "";
+  if (tag === "svg") {
+    const title = node.querySelector("title");
+    return title ? title.textContent : "";
+  }
+  let out = "";
+  node.childNodes.forEach((child) => { out += " " + textOf(child) + " "; });
+  return out;
+}
+
+export function roleOf(el) {
+  const explicit = el.getAttribute("role");
+  if (explicit) return explicit;
+  const tag = el.tagName.toLowerCase();
+  const type = (el.getAttribute("type") || "text").toLowerCase();
+  if (tag === "a") return el.hasAttribute("href") ? "link" : "generic";
+  if (tag === "button" || tag === "summary") return "button";
+  if (tag === "img") return el.getAttribute("alt") === "" ? "presentation" : "img";
+  if (tag === "nav") return "navigation";
+  if (tag === "select") return "combobox";
+  if (tag === "textarea") return "textbox";
+  if (tag === "iframe") return "iframe";
+  if (/^h[1-6]$/.test(tag)) return "heading";
+  if (tag === "input") {
+    if (type === "checkbox") return "checkbox";
+    if (type === "radio") return "radio";
+    if (type === "submit" || type === "button" || type === "reset" || type === "image") return "button";
+    return "textbox";
+  }
+  return "generic";
+}
+
+export function describeName(el, doc) {
+  const steps = [];
+  const done = (name, source) => ({name, source, steps: steps.concat("Used: " + source)});
+  const tag = el.tagName.toLowerCase();
+  const type = (el.getAttribute("type") || "text").toLowerCase();
+  const ids = cleanText(el.getAttribute("aria-labelledby"));
+  if (ids) {
+    const text = cleanText(ids.split(" ").map((id) => {
+      const target = doc.getElementById(id);
+      return target ? target.textContent : "";
+    }).join(" "));
+    if (text) return done(text, "aria-labelledby");
+    steps.push("aria-labelledby: set, but points to nothing usable");
+  } else {
+    steps.push("aria-labelledby: not set");
+  }
+  const label = cleanText(el.getAttribute("aria-label"));
+  if (label) return done(label, "aria-label");
+  steps.push("aria-label: not set");
+  if (tag === "img" || (tag === "input" && type === "image")) {
+    if (el.hasAttribute("alt")) return done(cleanText(el.getAttribute("alt")), "alt attribute");
+    steps.push("alt: missing");
+  }
+  if (tag === "input" && (type === "submit" || type === "button" || type === "reset")) {
+    const value = cleanText(el.getAttribute("value")) || (type === "submit" ? "Submit" : type === "reset" ? "Reset" : "");
+    if (value) return done(value, "the value (or the browser default)");
+  }
+  if (tag === "input" || tag === "select" || tag === "textarea") {
+    const id = el.getAttribute("id");
+    let text = "";
+    if (id) {
+      const found = Array.from(doc.querySelectorAll("label")).find((item) => item.getAttribute("for") === id);
+      if (found) text = cleanText(found.textContent);
+    }
+    if (!text) {
+      const wrap = el.closest("label");
+      if (wrap) {
+        const copy = wrap.cloneNode(true);
+        copy.querySelectorAll("input, select, textarea").forEach((control) => control.remove());
+        text = cleanText(copy.textContent);
+      }
+    }
+    if (text) return done(text, "a label element");
+    steps.push("label element: none found");
+  }
+  if (tag === "iframe" && cleanText(el.getAttribute("title"))) return done(cleanText(el.getAttribute("title")), "the title attribute (an iframe's native name)");
+  const fromContent = /^(button|a|summary|h1|h2|h3|h4|h5|h6|option)$/.test(tag) || /^(button|link|heading|tab|menuitem)$/.test(el.getAttribute("role") || "");
+  if (fromContent) {
+    const text = cleanText(textOf(el));
+    if (text) return done(text, "the element's own content");
+    steps.push("content: empty (or hidden)");
+  }
+  const title = cleanText(el.getAttribute("title"));
+  if (title) return done(title, "the title attribute (last resort)");
+  steps.push("title: not set");
+  const placeholder = cleanText(el.getAttribute("placeholder"));
+  if (placeholder && (tag === "input" || tag === "textarea")) return done(placeholder, "the placeholder (a weak fallback, not a real label)");
+  steps.push("No source gave a name.");
+  return {name: "", source: "none", steps};
+}
+
+export function NameLabInner() {
+  const [pick, setPick] = useState(0);
+  const [html, setHtml] = useState(nameSamples[0].html);
+  const sample = nameSamples[pick];
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const target = doc.querySelector(sample.target);
+  const result = target ? describeName(target, doc) : null;
+  const role = target ? roleOf(target) : "";
+  const visible = target && /^(button|link)$/.test(role) ? cleanText(textOf(target)) : "";
+  const mismatch = Boolean(result && result.name && visible && result.name.toLowerCase().indexOf(visible.toLowerCase()) === -1);
+  const verdict = !result ? "No matching element found." : result.name === "" ? (role === "presentation" ? "Decorative: the empty name is correct." : "FAIL: no accessible name.") : mismatch ? "WARNING: the visible text is not part of the name." : result.source.indexOf("placeholder") === 0 || result.source.indexOf("the placeholder") === 0 ? "WEAK: only a placeholder." : "OK: this control has a name.";
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="namelab-sample">Pick an example</label><br />
+        <select id="namelab-sample" value={pick} onChange={(event) => { const next = Number(event.target.value); setPick(next); setHtml(nameSamples[next].html); }}>
+          {nameSamples.map((item, index) => (<option key={item.label} value={index}>{item.label}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="namelab-html">HTML (edit it freely)</label><br />
+        <textarea id="namelab-html" rows={4} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem"}}>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Tested element:</strong> <code>{"<" + sample.target + ">"}</code></p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Role:</strong> <code>{role || "none"}</code></p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Accessible name:</strong> {result && result.name ? <code>{'"' + result.name + '"'}</code> : <em>(none)</em>}</p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Source:</strong> {result ? result.source : "none"}</p>
+        <p style={{margin: "0 0 0.3rem"}}><strong>Result:</strong> {verdict}</p>
+        {result ? (
+          <details>
+            <summary>How the name was found, step by step</summary>
+            <ol style={{margin: "0.3rem 0 0"}}>
+              {result.steps.map((step, index) => (<li key={index}>{step}</li>))}
+            </ol>
+          </details>
+        ) : null}
+      </div>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simplified simulation of the browser's naming rules, not the full specification. Real browsers and screen readers handle many extra cases, and the results can differ slightly. For an image with no alt at all, some screen readers read the file name, which is almost never helpful.
+      </p>
+    </div>
+  );
+}
+
+export function NameLab() {
+  return <BrowserOnly>{() => <NameLabInner />}</BrowserOnly>;
+}
+
+export function NameAuditInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(auditSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const elements = Array.from(doc.querySelectorAll("a[href], button, input:not([type=hidden]), select, textarea, summary, img, iframe, nav"));
+  const navCount = elements.filter((el) => el.tagName.toLowerCase() === "nav").length;
+  const rows = elements.map((el) => {
+    const tag = el.tagName.toLowerCase();
+    const role = roleOf(el);
+    const info = describeName(el, doc);
+    return {el, tag, role, name: info.name, source: info.source, issues: []};
+  });
+  const counts = {};
+  rows.forEach((row) => {
+    if ((row.role === "link" || row.role === "button") && row.name) {
+      const key = row.role + ":" + row.name.toLowerCase();
+      counts[key] = (counts[key] || 0) + 1;
+    }
+  });
+  rows.forEach((row) => {
+    if (row.role === "presentation") return;
+    if (!row.name) {
+      row.issues.push(row.tag === "img" ? "Missing alt text" : row.tag === "nav" ? (navCount > 1 ? "Several nav landmarks, and this one has no name" : "") : "No accessible name");
+    } else if (row.source.indexOf("the placeholder") === 0) {
+      row.issues.push("Only a placeholder, which is not a real label");
+    }
+    if ((row.role === "link" || row.role === "button") && row.name && counts[row.role + ":" + row.name.toLowerCase()] > 1) {
+      row.issues.push("Same name as " + (counts[row.role + ":" + row.name.toLowerCase()] - 1) + " other " + row.role + "(s)");
+    }
+  });
+  const problems = rows.filter((row) => row.issues.filter(Boolean).length > 0);
+  const choose = (value) => { setWhich(value); setHtml(auditSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="audit-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="audit-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="audit-html">HTML to audit (edit it freely)</label><br />
+        <textarea id="audit-html" rows={8} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{elements.length}</strong> items checked, <strong>{problems.length}</strong> with problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => {
+          const issues = row.issues.filter(Boolean);
+          return (
+            <li key={index} style={{marginBottom: "0.3rem"}}>
+              <code>{"<" + row.tag + ">"}</code> ({row.role}): {row.name ? <code>{'"' + row.name + '"'}</code> : <em>no name</em>}{" "}
+              {row.role === "presentation" ? <span>Decorative image. Fine.</span> : issues.length === 0 ? <span>OK</span> : <strong>Problem: {issues.join("; ")}</strong>}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        A quick teaching check, not a full audit. Real tools such as the browser's Accessibility panel or an automated checker catch more, and a person testing with a screen reader catches the rest. A name can exist and still be unhelpful, so read each one and ask: does it make sense on its own?
+      </p>
+    </div>
+  );
+}
+
+export function NameAudit() {
+  return <BrowserOnly>{() => <NameAuditInner />}</BrowserOnly>;
+}
+
+export const drillQuestions = [
+  {q: "A button shows only a magnifying-glass icon. What should its accessible name be?", options: ["button", "Search", "magnifier.svg"], answer: 1, why: "Name the action, not the picture or the role. Add it with aria-label, or with visually hidden text inside the button."},
+  {q: "A text field has a placeholder that says Email, and no label. Is that enough?", options: ["Yes, the placeholder is the name", "No, use a real label element", "Yes, but only on phones"], answer: 1, why: "Placeholders disappear when you type, usually have weak contrast, and are only a fallback. A visible label element is the right fix."},
+  {q: "A button has aria-label=\"Find recipes\" but the visible text is Search. What is the problem?", options: ["Nothing, aria-label always wins", "The visible text is not in the name, which breaks voice control (WCAG 2.5.3)", "aria-label cannot be used on buttons"], answer: 1, why: "A person who says click Search will not match Find recipes. Start the name with the visible text, such as Search recipes."},
+  {q: "Which source wins if an element has both aria-labelledby and aria-label?", options: ["aria-label", "aria-labelledby", "Whichever comes first in the HTML"], answer: 1, why: "aria-labelledby comes first in the naming order, followed by aria-label."},
+  {q: "A page has two nav landmarks. What do they need?", options: ["Different names, such as Main and Footer", "Nothing, landmarks never need names", "The word navigation in their names"], answer: 0, why: "When there are several of the same landmark, names let people tell them apart. Do not add the role word, because the screen reader already says navigation."},
+  {q: "Three links all say Read more. What is the best fix?", options: ["Make them bold", "Give each a unique name, such as Read more about Rye", "Remove the links"], answer: 1, why: "Screen reader users often browse a list of links out of context, so each name should make sense alone."},
+];
+
+export function NameDrill() {
+  const [answers, setAnswers] = useState({});
+  const score = drillQuestions.filter((item, index) => answers[index] === item.answer).length;
+  const answered = Object.keys(answers).length;
+  return (
+    <div>
+      {drillQuestions.map((item, index) => (
+        <fieldset key={index} style={{margin: "0 0 0.7rem"}}>
+          <legend><strong>{index + 1}.</strong> {item.q}</legend>
+          {item.options.map((option, optionIndex) => (
+            <label key={option} style={{display: "block"}}>
+              <input type="radio" name={"name-drill-" + index} checked={answers[index] === optionIndex} onChange={() => setAnswers({...answers, [index]: optionIndex})} /> {option}
+            </label>
+          ))}
+          {answers[index] !== undefined ? (
+            <p style={{margin: "0.3rem 0 0"}}><strong>{answers[index] === item.answer ? "Correct." : "Not quite."}</strong> {item.why}</p>
+          ) : null}
+        </fieldset>
+      ))}
+      <p style={{margin: 0}} aria-live="polite">Score: <strong>{score}</strong> of {drillQuestions.length} ({answered} answered)</p>
+    </div>
+  );
+}
+
+Imagine walking into a room where every door, drawer, and switch has **no label**. You could still open things, but you would have to guess what each one does. That is what a page feels like to a screen reader user when controls have **no accessible name.**
+
+An **accessible name** is the short piece of text that assistive technology uses to **call something by its name.** "Save recipe, button." "Email address, edit text." "Close, button." The name is what a screen reader announces, what a voice control user says to click something, and what shows up in lists of links and form fields. It is one of the most important parts of an accessible page, and one of the easiest to get right.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What an **accessible name** is, and how it differs from a **description**
+- **Where browsers get names from,** and in what order
+- How names work for **buttons, links, form fields, images, landmarks,** and **iframes**
+- Why the **visible label must be part of the name** (WCAG 2.5.3)
+- How to **write good names:** short, unique, and meaningful
+- How to **check names** in your browser
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Names from content -->
+<button type="button">Save recipe</button>
+<a href="/recipes">All recipes</a>
+
+<!-- A name from a label -->
+<label for="email">Email address</label>
+<input id="email" type="email" autocomplete="email">
+
+<!-- A name from alt text -->
+<img src="loaf.jpg" alt="A round sourdough loaf with a deep golden crust">
+
+<!-- An icon-only button needs a name you add yourself -->
+<button type="button" aria-label="Search recipes">
+  <span aria-hidden="true">🔍</span>
+</button>
+
+<!-- Two navigation areas need different names -->
+<nav aria-label="Main">…</nav>
+<nav aria-label="Footer">…</nav>
+
+<!-- An iframe is named by its title -->
+<iframe src="/map" title="Map of our bakery"></iframe>
+```
+
+</TabItem>
+<TabItem value="output" label="Name Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NameLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Pick each example in the lab, read the name, then edit the HTML and watch the name change. Try deleting the `aria-label` from the icon button, or adding a `title` to the image.
+
+## What Is an Accessible Name?
+
+Every element in the accessibility tree has a **role** (what it is), a **name** (what it is called), and sometimes a **state** or **value** (what it is doing). Together they tell a person what a control **is** and what it **does.**
+
+- **Role:** `button`
+- **Name:** "Save recipe"
+- **State:** `pressed`, `expanded`, `checked`, and so on
+
+The name is **not** the same as a **description.** A name is short and identifies the thing ("Password"). A description gives **extra help** ("At least 12 characters"). You will learn to add descriptions with `aria-describedby` later in this section.
+
+:::info
+A screen reader reads the name and the role together, in an order that depends on the screen reader. If your name says "Search button," many users will hear "Search button, button." Name the **action,** and let the role speak for itself.
+:::
+
+## Where Names Come From
+
+The browser works out the name from several possible sources, and uses the **first useful one.** This is a simplified version of the order:
+
+| Order | Source | Example |
+| :-- | :-- | :-- |
+| 1 | `aria-labelledby` | `<button aria-labelledby="title">` |
+| 2 | `aria-label` | `<button aria-label="Close">` |
+| 3 | The element's **native** label | `<label>`, `alt`, `<legend>`, `<caption>`, a button's `value` |
+| 4 | The element's **content** (for buttons, links, headings, tabs, menu items) | `<button>Save recipe</button>` |
+| 5 | The `title` attribute | `<a href="/" title="Home">` |
+| 6 | The `placeholder` (a weak fallback) | `<input placeholder="Email">` |
+
+The real rules (called the Accessible Name and Description Computation) have more steps, and browsers apply a few small differences. But this order covers nearly everything you will meet.
+
+:::tip
+**The best name is almost always the one that is already on the screen.** Use real text and real labels first. Reach for `aria-label` only when there is no visible text to use. The next lessons look at `aria-label` and `aria-labelledby` in detail.
+:::
+
+## Names From Content
+
+Buttons, links, headings, tabs, and menu items are named by **what is inside them.**
+
+```html
+<button type="button">Save recipe</button>   <!-- name: Save recipe -->
+
+<a href="/sourdough">
+  <img src="loaf.jpg" alt="">
+  Sourdough loaf
+</a>                                         <!-- name: Sourdough loaf -->
+```
+
+Notice the image in the second example has `alt=""`. It is **decorative** (the text already says it), so it adds nothing to the name. If the image were the **only** content, its alt text would become the link's name, and it would need to describe where the link goes.
+
+An icon with no text is the classic failure:
+
+```html
+<!-- Bad: no name at all -->
+<button type="button"><span class="icon-search"></span></button>
+
+<!-- Good: a name for the action -->
+<button type="button" aria-label="Search recipes">
+  <span class="icon-search" aria-hidden="true"></span>
+</button>
+```
+
+Another good option is **visually hidden text** inside the button. It stays in the page for screen readers, but is not drawn on screen. Your CSS framework probably has a ready-made class for this, often called `sr-only` or `visually-hidden`.
+
+## Names From Labels
+
+Form fields get their names from a `label` element. This is the best way, because the label also makes the **clickable area bigger** and is visible to everyone.
+
+```html
+<!-- Connected with for and id -->
+<label for="email">Email address</label>
+<input id="email" type="email">
+
+<!-- Or wrapped around the field -->
+<label>
+  Email address
+  <input type="email">
+</label>
+```
+
+A **placeholder** is not a label. It vanishes as soon as you type, it often has weak contrast, and many tools treat it only as a last resort. Use it for an **example** of the format (`name@example.com`), never for the label itself. See [Accessible Forms](./accessible-forms) for more.
+
+For a **group** of related fields (such as a set of radio buttons), use `fieldset` with a `legend`. The legend gives the group its name, and a screen reader reads it with each option: "Delivery: Standard, radio button."
+
+## Names for Images
+
+For an `img`, the name is its `alt` text.
+
+- **Informative image:** write a short description of its **purpose or content.**
+- **Decorative image:** use `alt=""`, so assistive technology skips it.
+- **Image that is a link or button:** the alt text should describe **where the link goes or what the button does,** not the picture.
+- **Missing `alt`:** some screen readers read out the **file name,** such as "IMG underscore 4021 dot jpg." Always include the attribute.
+
+You will study this in depth in the next lesson, [Alt Text](./alt-text).
+
+## Names for Landmarks, Frames, and Tables
+
+- **Landmarks:** if you use more than one of the same kind (two `nav` elements, say), give each a **different name** with `aria-label` or `aria-labelledby`. Do not put the role in the name: use "Main," not "Main navigation," because the screen reader already says "navigation."
+- **Iframes:** use the **`title`** attribute to say what the frame holds, for example `title="Map of our bakery"`.
+- **Tables:** give each table a `caption`. See [Accessible Tables](./accessible-tables).
+- **Groups:** use `fieldset` and `legend`, as above.
+
+## Label in Name: Match What People See
+
+WCAG success criterion **2.5.3 (Label in Name)** says that, if a control has a **visible label,** the accessible name must **contain that visible text.**
+
+Why? Because voice control users **say what they see.** If the screen shows "Search," they say "click Search." If the hidden name is "Find recipes," nothing matches, and the command fails. A screen reader user who has sighted colleagues, or who uses speech and sight together, gets confused in the same way.
+
+```html
+<!-- Bad: the name does not include the visible text -->
+<button type="button" aria-label="Find recipes">Search</button>
+
+<!-- Good: the visible text comes first -->
+<button type="button" aria-label="Search recipes">Search</button>
+```
+
+The lab above has an example for this. Try it, and then fix it.
+
+## Writing Good Names
+
+1. **Be short.** A name is a label, not a sentence. Put long help in a description.
+2. **Name the action or purpose,** not the shape ("Close," not "X" or "Cross icon").
+3. **Make it unique.** Several "Read more" links are hard to tell apart in a list of links. Say "Read more about Rye."
+4. **Put the key words first.** Screen reader users often skim by the first word or two.
+5. **Do not repeat the role.** "Close," not "Close button."
+6. **Match the visible text** (see above).
+7. **Do not rely on `title` or a placeholder** for names that matter.
+8. **Do not use the same name for different things,** such as two buttons that both say "Delete" without saying what they delete.
+9. **Keep it in the language of the page,** and translate it with the rest of your text.
+
+## Audit the Names on Your Page
+
+A quick way to find missing names is to list every control and check it. The tool below does this for a snippet of HTML, and flags missing names, placeholders used as labels, duplicate names, and unnamed landmarks.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav aria-label="Main">
+  <a href="/">Home</a>
+  <a href="/recipes">Recipes</a>
+</nav>
+<nav aria-label="Legal">
+  <a href="/privacy">Privacy</a>
+</nav>
+
+<h2>Sourdough</h2>
+<a href="/sourdough" aria-label="Read more about Sourdough">Read more</a>
+
+<button type="button" aria-label="Search recipes">
+  <span aria-hidden="true">🔍</span>
+</button>
+
+<label for="mail">Email</label>
+<input id="mail" type="email">
+
+<img src="loaf.jpg" alt="A round sourdough loaf">
+<img src="divider.png" alt="">
+
+<iframe src="/map" title="Map of our bakery"></iframe>
+```
+
+</TabItem>
+<TabItem value="output" label="Name Audit">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NameAudit />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Start with the messy page, then switch to the fixed one and compare. Notice that the fixed "Read more" links use `aria-label`, but their visible text ("Read more") is still at the start of the name. That keeps **Label in Name** satisfied.
+
+## Check Names in Your Browser
+
+You do not need a screen reader for a first check:
+
+1. Open your browser's **DevTools,** and select an element.
+2. Find the **Accessibility** panel (in Chromium-based browsers it is next to "Styles," and in Firefox it has its own tab).
+3. Look at the **Name** and **Role.** If the name is empty, you have found a problem.
+4. Many browsers also show **where the name came from,** such as "aria-label" or "contents."
+5. Then, try it with a real screen reader and with voice control ("click Subscribe"), at least on your most important pages.
+
+## Good Habits
+
+1. **Use real text and real labels** first. Add ARIA only when you must.
+2. **Give every control, image, frame, and repeated landmark a name.**
+3. **Name icon-only controls,** and hide the icon itself with `aria-hidden="true"`.
+4. **Make visible text part of the name.**
+5. **Make names unique and meaningful on their own.**
+6. **Keep names short.** Put the extra detail in a description.
+7. **Check the Accessibility panel** whenever you build a new component.
+8. **Test with voice control** (say what you see), not only with a screen reader.
+
+## Accessibility Checklist
+
+- [ ] Every link, button, and form field has an accessible name.
+- [ ] Every form field has a visible `label` (not only a placeholder).
+- [ ] Every informative image has useful alt text, and decorative images use `alt=""`.
+- [ ] Icon-only controls have a name that describes the action.
+- [ ] When the page has more than one of the same landmark, each has a unique name.
+- [ ] Every `iframe` has a `title`, and every data table has a `caption`.
+- [ ] Visible labels are part of the accessible names (WCAG 2.5.3).
+- [ ] Links and buttons that look the same but do different things have different names.
+- [ ] Names do not repeat the role ("Close," not "Close button").
+- [ ] Names are written in the language of the page.
+
+## Security and Privacy Notes
+
+- **Do not put private data in names.** Accessible names can be read aloud, shown in lists, and picked up by browser extensions and screen readers around other people. Do not include account numbers, full email addresses, or health details in an `aria-label` unless it is necessary.
+- **Do not use names to mislead.** A name that says "Cancel" on a button that actually confirms a payment is deceptive, and breaks trust for every user.
+- **Be honest about links that leave your site.** A name such as "Pay now" for a link to another site hides where the person is going. Say so where it matters.
+- **Do not collect assistive technology usage.** Detecting that someone uses a screen reader, to change what you show or to track them, reveals a disability. Avoid it.
+- **Third-party widgets** (chat, ads, embeds) often ship with missing names. Check them, and name the frame with a clear `title`.
+
+## Global Audience Notes
+
+- **Translate your names.** Text in `aria-label`, `alt`, and `title` is part of your content. Make sure your translation process includes these attributes. Some automatic page-translation tools may not translate every attribute, so test with the tools your audience uses.
+- **Set the page language** with `lang` (and use `lang` on any phrase in another language), so screen readers pronounce names correctly.
+- **Right-to-left languages:** the accessible name follows the language of the text. Keep names in the same language as the visible label, and test with a right-to-left layout.
+- **Voice control works in many languages,** and users say the **visible** label in their own language. That is another reason to keep the visible text in the name.
+- **Names can get longer when translated.** Short, clear source names are easier to translate and to hear.
+- **Avoid names that only work in one culture,** such as jokes, idioms, or symbol names ("Hamburger menu"). Use "Menu."
+
+## Common Mistakes to Avoid
+
+1. **Icon buttons with no name.**
+2. **Inputs with only a placeholder.**
+3. **Many links called "Read more" or "Click here."**
+4. **Images with no `alt` attribute.**
+5. **A name that does not contain the visible text.**
+6. **Repeating the role in the name** ("Search button").
+7. **Using `title` as the main label.**
+8. **Several `nav` landmarks with no names.**
+9. **Iframes with no `title`.**
+10. **Using `aria-label` on elements that cannot be named** (for example, a plain `div` or `span` with no role).
+11. **Empty headings, links, or buttons** (for example, ones that only contain an icon font).
+12. **Never looking at the Accessibility panel.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the name lab with every example, and write down the **source** of each name.
+2. Remove the `aria-label` from the icon button, and watch the name disappear.
+3. Fix the "Label in Name" example so the visible text is in the name.
+4. Run the audit on the messy page. Fix every problem, and re-run it.
+5. Paste a form from your own project into the audit, and see which fields lack names.
+6. Open DevTools on a site you use, and find three controls whose names are weak.
+7. Rename three "Read more" links so each one makes sense on its own.
+8. Add a `caption` to a table and a `title` to an iframe, and check them in the Accessibility panel.
+9. Try voice control on your computer or phone, and say the visible name of a button.
+10. Bonus: write the names for a small toolbar of five icon buttons. Can you read them as a list?
+
+## Check Yourself
+
+Choose an answer for each question, and read the explanation.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NameDrill />
+</>
+</BrowserWindow>
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is an accessible name?</summary>
+
+The short text that assistive technology uses to identify an element, such as "Save recipe" for a button. It is announced by screen readers and used by voice control.
+
+</details>
+
+<details>
+<summary>2. In what order does a browser look for a name?</summary>
+
+Roughly: `aria-labelledby`, then `aria-label`, then the native label (label, alt, legend, caption), then the element's content, then `title`, and finally `placeholder` as a weak fallback.
+
+</details>
+
+<details>
+<summary>3. How do you name an icon-only button?</summary>
+
+Add a name that describes the action, with `aria-label` or visually hidden text, and hide the icon itself from assistive technology with `aria-hidden="true"`.
+
+</details>
+
+<details>
+<summary>4. What does "Label in Name" (WCAG 2.5.3) require?</summary>
+
+When a control has visible text, the accessible name must contain that text, so that voice control users can say what they see.
+
+</details>
+
+<details>
+<summary>5. Why is a placeholder not a good label?</summary>
+
+It disappears when typing, often has low contrast, and is treated only as a last-resort name. Use a real `label` element.
+
+</details>
+
+<details>
+<summary>6. How should you name two `nav` landmarks on one page?</summary>
+
+Give each a different name, such as `aria-label="Main"` and `aria-label="Footer"`, without repeating the word "navigation."
+
+</details>
+
+## Key Takeaways
+
+- An **accessible name** is what a control is **called** by assistive technology, and by voice control.
+- Names come from **aria-labelledby, aria-label, native labels, content, `title`,** and (as a last resort) **placeholders,** roughly in that order.
+- **Use visible text first.** Add ARIA only when there is nothing visible to use.
+- Every **link, button, field, image, frame,** and **repeated landmark** needs a name.
+- **Visible text must be part of the name** (WCAG 2.5.3).
+- Good names are **short, unique, meaningful on their own,** and do not repeat the role.
+- Check names in the **Accessibility panel,** and test with real assistive technology.
+
+Next, learn how to describe images well in [Alt Text](./alt-text).

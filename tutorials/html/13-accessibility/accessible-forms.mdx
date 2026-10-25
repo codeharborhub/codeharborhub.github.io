@@ -1,0 +1,681 @@
+---
+id: html-a11y-accessible-forms
+title: "Accessible Forms"
+sidebar_label: "Accessible Forms"
+sidebar_position: 12
+slug: /html/accessibility/accessible-forms
+description: "Learn how to build forms that everyone can complete: visible labels, fieldset and legend, hints and required fields with aria-describedby, the right input types and autocomplete, clear error messages, sensible validation timing, and safe, accessible sign-in. Includes a live field builder, a validation timing lab, and a form checker."
+keywords:
+  - accessible forms
+  - form labels
+  - fieldset legend
+  - aria-describedby
+  - autocomplete
+  - form validation
+  - error messages
+  - WCAG 3.3
+  - input purpose
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, forms, validation, a11y, frontend]
+---
+
+import {useState, useEffect, useRef} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const fieldTypes = {
+  email: {label: "Email address", type: "email", ac: "email", name: "email", hint: "We only use it to send your receipt.", error: "Enter an email address that includes an @ sign.", role: "edit text"},
+  phone: {label: "Phone number", type: "tel", ac: "tel", name: "phone", hint: "Include your country code, for example +1 555 010 1234.", error: "Enter a phone number with the country code.", role: "edit text"},
+  name: {label: "Full name", type: "text", ac: "name", name: "name", hint: "Use the name you want on the order.", error: "Enter your name.", role: "edit text"},
+  password: {label: "Password", type: "password", ac: "new-password", name: "password", hint: "At least 12 characters. You can paste from a password manager.", error: "Use at least 12 characters.", role: "protected edit text"},
+};
+
+export function FieldBuilder() {
+  const [kind, setKind] = useState("email");
+  const [naming, setNaming] = useState("label");
+  const [showHint, setShowHint] = useState(true);
+  const [required, setRequired] = useState(true);
+  const [showError, setShowError] = useState(false);
+  const [useAc, setUseAc] = useState(true);
+  const spec = fieldTypes[kind];
+  const id = "fb-" + spec.name;
+  const describedby = [showHint ? id + "-hint" : "", showError ? id + "-error" : ""].filter(Boolean).join(" ");
+  const labelText = spec.label + (required ? " (required)" : "");
+  const attrs = ['id="' + id + '"', 'name="' + spec.name + '"', 'type="' + spec.type + '"'];
+  if (useAc) attrs.push('autocomplete="' + spec.ac + '"');
+  if (naming === "arialabel") attrs.push('aria-label="' + spec.label + '"');
+  if (naming === "placeholder") attrs.push('placeholder="' + spec.label + '"');
+  if (required) attrs.push("required");
+  if (describedby) attrs.push('aria-describedby="' + describedby + '"');
+  if (showError) attrs.push('aria-invalid="true"');
+  const lines = [];
+  if (naming === "label") lines.push('<label for="' + id + '">' + labelText + "</label>");
+  if (showHint) lines.push('<p id="' + id + '-hint">' + spec.hint + "</p>");
+  lines.push("<input " + attrs.join(" ") + ">");
+  if (showError) lines.push('<p id="' + id + '-error"><strong>Error:</strong> ' + spec.error + "</p>");
+  const code = lines.join("\n");
+  const name = naming === "none" ? "unlabelled" : spec.label;
+  const spoken = name + ", " + spec.role + (required ? ", required" : "") + (showError ? ", invalid entry" : "") + (showHint ? ". " + spec.hint : "") + (showError ? " Error: " + spec.error : "");
+  const notes = [];
+  if (naming === "none") notes.push("No name at all. A screen reader user hears an unlabelled field.");
+  if (naming === "placeholder") notes.push("A placeholder is not a label. It disappears as you type, and is often low contrast.");
+  if (naming === "arialabel") notes.push("A hidden name works for a screen reader, but sighted users see no label. Use a visible label whenever you can.");
+  if (!useAc) notes.push("Without autocomplete, people have to type this by hand every time, and password managers may not help.");
+  if (required && naming !== "label") notes.push("The word (required) is shown only with a visible label here.");
+  if (notes.length === 0) notes.push("This field has a visible label, a hint, a clear required marker, and the right type.");
+  return (
+    <div>
+      <div style={{display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.6rem"}}>
+        <p style={{margin: 0}}>
+          <label htmlFor="fb-kind">Field</label><br />
+          <select id="fb-kind" value={kind} onChange={(event) => setKind(event.target.value)}>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+            <option value="name">Full name</option>
+            <option value="password">Password</option>
+          </select>
+        </p>
+        <p style={{margin: 0}}>
+          <label htmlFor="fb-naming">Where does the name come from?</label><br />
+          <select id="fb-naming" value={naming} onChange={(event) => setNaming(event.target.value)}>
+            <option value="label">A visible label</option>
+            <option value="arialabel">aria-label only</option>
+            <option value="placeholder">A placeholder only</option>
+            <option value="none">Nothing</option>
+          </select>
+        </p>
+      </div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Options</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={showHint} onChange={(event) => setShowHint(event.target.checked)} /> Add a hint</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={required} onChange={(event) => setRequired(event.target.checked)} /> Required</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={useAc} onChange={(event) => setUseAc(event.target.checked)} /> Add autocomplete</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={showError} onChange={(event) => setShowError(event.target.checked)} /> Show an error</label>
+      </fieldset>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"}}>
+        {naming === "label" ? <label htmlFor={id} style={{display: "block", fontWeight: 600}}>{labelText}</label> : null}
+        {showHint ? <p id={id + "-hint"} style={{margin: "0.2rem 0"}}>{spec.hint}</p> : null}
+        <input id={id} name={spec.name} type={spec.type} autoComplete={useAc ? spec.ac : "off"} aria-label={naming === "arialabel" ? spec.label : undefined} placeholder={naming === "placeholder" ? spec.label : undefined} required={required} aria-describedby={describedby || undefined} aria-invalid={showError ? "true" : undefined} style={{width: "100%", maxWidth: "22rem"}} />
+        {showError ? <p id={id + "-error"} style={{margin: "0.3rem 0 0"}}><strong>Error:</strong> {spec.error}</p> : null}
+      </div>
+      <p style={{margin: "0 0 0.3rem"}}><strong>HTML:</strong></p>
+      <pre style={{margin: "0 0 0.5rem", overflowX: "auto"}}><code>{code}</code></pre>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{spoken}</code></p>
+      <ul style={{margin: "0.3rem 0 0", paddingLeft: "1.2rem"}}>
+        {notes.map((note, index) => (<li key={index}>{note}</li>))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The spoken line is an example. The order and the words differ between screen readers and browsers, but the information (name, type, required, invalid, hint, error) is the same.
+      </p>
+    </div>
+  );
+}
+
+export function checkEmail(value) {
+  if (value === "") return "Enter an email address.";
+  if (value.indexOf("@") === -1) return "Include an @ sign in the email address.";
+  const after = value.slice(value.indexOf("@") + 1);
+  if (after === "") return "Add the part after the @ sign, such as example.com.";
+  if (after.indexOf(".") === -1) return "The part after the @ sign needs a dot, such as example.com.";
+  return "";
+}
+
+export function TimingLab() {
+  const [mode, setMode] = useState("typing");
+  const [value, setValue] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [count, setCount] = useState(0);
+  const [history, setHistory] = useState([]);
+  const lastShown = useRef("");
+  const reset = () => {
+    setValue("");
+    setDirty(false);
+    setTouched(false);
+    setSubmitted(false);
+    setCount(0);
+    setHistory([]);
+    lastShown.current = "";
+  };
+  const shown = mode === "typing" ? (dirty ? checkEmail(value) : "") : mode === "blur" ? (touched ? checkEmail(value) : "") : (submitted ? checkEmail(value) : "");
+  useEffect(() => {
+    if (shown === lastShown.current) return;
+    lastShown.current = shown;
+    if (shown !== "") setCount((previous) => previous + 1);
+    setHistory((previous) => previous.concat(shown === "" ? "(no error)" : shown).slice(-6));
+  }, [shown]);
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>When should the error appear?</legend>
+        <label style={{display: "block"}}><input type="radio" name="timing-mode" checked={mode === "typing"} onChange={() => { setMode("typing"); reset(); }} /> On every key press</label>
+        <label style={{display: "block"}}><input type="radio" name="timing-mode" checked={mode === "blur"} onChange={() => { setMode("blur"); reset(); }} /> When I leave the field</label>
+        <label style={{display: "block"}}><input type="radio" name="timing-mode" checked={mode === "submit"} onChange={() => { setMode("submit"); reset(); }} /> When I press Submit</label>
+      </fieldset>
+      <form onSubmit={(event) => { event.preventDefault(); setSubmitted(true); }} noValidate>
+        <p style={{margin: "0 0 0.4rem"}}>
+          <label htmlFor="timing-email">Email address</label><br />
+          <input id="timing-email" type="email" autoComplete="email" value={value} aria-invalid={shown ? "true" : undefined} aria-describedby="timing-error" onChange={(event) => { setValue(event.target.value); setDirty(true); }} onBlur={() => setTouched(true)} style={{width: "100%", maxWidth: "22rem"}} />
+        </p>
+        <p id="timing-error" aria-live="polite" style={{margin: "0 0 0.5rem", minHeight: "1.4em"}}>{shown ? <span><strong>Error:</strong> {shown}</span> : ""}</p>
+        <button type="submit">Submit</button>{" "}
+        <button type="button" onClick={reset}>Clear and try again</button>
+      </form>
+      <p style={{margin: "0.6rem 0 0.2rem"}}>Error messages announced so far: <strong>{count}</strong></p>
+      <p style={{margin: 0}}>Recent messages: {history.length === 0 ? "(none yet)" : history.join("  ->  ")}</p>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Type <code>a@b.co</code> slowly in each mode. In the first mode, a screen reader user hears a new error after nearly every key, before they have had a chance to finish. Waiting until the person leaves the field, or presses Submit, is usually kinder. A good pattern is to show an error after someone leaves a field, and to remove it as soon as they fix it. Counting messages here is a simulation of what a polite live region would announce, and real screen readers may combine or skip some of them.
+      </p>
+    </div>
+  );
+}
+
+export const formSamples = {
+  messy: '<form>\n  <input type="text" placeholder="Email">\n  <input type="text" id="phone" name="phone" placeholder="Phone">\n  <label for="nm">Name</label>\n  <input id="nm" name="name" autocomplete="off" required>\n  <label for="pw">Password</label>\n  <input id="pw" type="password" onpaste="return false">\n  <p>Delivery</p>\n  <input type="radio" name="delivery" id="d1"><label for="d1">Standard</label>\n  <input type="radio" name="delivery" id="d2"><label for="d2">Express</label>\n  <input type="email" id="e2" aria-invalid="true">\n  <label for="missing">Notes</label>\n  <textarea name="notes"></textarea>\n</form>',
+  fixed: '<form>\n  <label for="email">Email address (required)</label>\n  <input id="email" name="email" type="email" autocomplete="email" required>\n  <label for="phone">Phone number (optional)</label>\n  <input id="phone" name="phone" type="tel" autocomplete="tel">\n  <label for="nm">Full name (required)</label>\n  <input id="nm" name="name" autocomplete="name" required>\n  <label for="pw">Password</label>\n  <input id="pw" type="password" autocomplete="new-password">\n  <fieldset>\n    <legend>Delivery</legend>\n    <input type="radio" name="delivery" id="d1"><label for="d1">Standard</label>\n    <input type="radio" name="delivery" id="d2"><label for="d2">Express</label>\n  </fieldset>\n  <label for="notes">Notes</label>\n  <textarea id="notes" name="notes"></textarea>\n  <button type="submit">Place order</button>\n</form>',
+};
+
+export function fieldNameOf(el, doc) {
+  const clean = (value) => (value || "").replace(/\s+/g, " ").trim();
+  const ids = clean(el.getAttribute("aria-labelledby"));
+  if (ids) {
+    const text = clean(ids.split(" ").map((id) => { const target = doc.getElementById(id); return target ? target.textContent : ""; }).join(" "));
+    if (text) return {name: text, source: "aria-labelledby", labelText: text};
+  }
+  const aria = clean(el.getAttribute("aria-label"));
+  if (aria) return {name: aria, source: "aria-label", labelText: ""};
+  const id = el.getAttribute("id");
+  if (id) {
+    const found = Array.from(doc.querySelectorAll("label")).find((item) => item.getAttribute("for") === id);
+    if (found) return {name: clean(found.textContent), source: "label", labelText: clean(found.textContent)};
+  }
+  const wrap = el.closest("label");
+  if (wrap) {
+    const copy = wrap.cloneNode(true);
+    copy.querySelectorAll("input, select, textarea").forEach((control) => control.remove());
+    return {name: clean(copy.textContent), source: "label", labelText: clean(copy.textContent)};
+  }
+  if (clean(el.getAttribute("title"))) return {name: clean(el.getAttribute("title")), source: "title", labelText: ""};
+  if (clean(el.getAttribute("placeholder"))) return {name: clean(el.getAttribute("placeholder")), source: "placeholder", labelText: ""};
+  return {name: "", source: "none", labelText: ""};
+}
+
+export function FormCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(formSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const controls = Array.from(doc.querySelectorAll("input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=image]), select, textarea"));
+  const general = [];
+  const ids = {};
+  Array.from(doc.querySelectorAll("[id]")).forEach((el) => { ids[el.id] = (ids[el.id] || 0) + 1; });
+  Object.keys(ids).forEach((id) => { if (ids[id] > 1) general.push("The id \"" + id + "\" is used " + ids[id] + " times. Ids must be unique, or labels connect to the wrong field."); });
+  Array.from(doc.querySelectorAll("label[for]")).forEach((label) => { if (!doc.getElementById(label.getAttribute("for"))) general.push("A label points to the id \"" + label.getAttribute("for") + "\", which does not exist."); });
+  if (doc.querySelector("form") && !doc.querySelector('button:not([type="button"]):not([type="reset"]), input[type="submit"], input[type="image"]')) general.push("The form has no submit button.");
+  const groups = {};
+  controls.forEach((el) => {
+    const type = (el.getAttribute("type") || "").toLowerCase();
+    if ((type === "radio" || type === "checkbox") && el.getAttribute("name")) {
+      const key = type + ":" + el.getAttribute("name");
+      groups[key] = groups[key] || [];
+      groups[key].push(el);
+    }
+  });
+  Object.keys(groups).forEach((key) => {
+    const list = groups[key];
+    if (list.length > 1 && !list.some((el) => el.closest("fieldset"))) general.push("The " + key.split(":")[0] + " group \"" + key.split(":")[1] + "\" is not inside a fieldset with a legend.");
+  });
+  const rows = controls.map((el) => {
+    const tag = el.tagName.toLowerCase();
+    const type = (el.getAttribute("type") || (tag === "input" ? "text" : tag)).toLowerCase();
+    const info = fieldNameOf(el, doc);
+    const hint = ((el.getAttribute("name") || "") + " " + (el.getAttribute("id") || "") + " " + info.name).toLowerCase();
+    const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
+    const issues = [];
+    const notes = [];
+    if (info.source === "none") issues.push("No label or name.");
+    if (info.source === "placeholder") issues.push("Only a placeholder, which is not a real label.");
+    if (info.source === "title") issues.push("Only a title attribute. Use a visible label.");
+    if (info.source === "aria-label") notes.push("Named with aria-label only. A visible label is better for everyone.");
+    if (type === "text" && /e-?mail/.test(hint)) issues.push("This looks like an email field. Use type=\"email\".");
+    if (type === "text" && /(phone|tel|mobile)/.test(hint)) issues.push("This looks like a phone field. Use type=\"tel\".");
+    const expected = type === "email" || /e-?mail/.test(hint) ? "email" : type === "tel" || /(phone|tel\b|mobile)/.test(hint) ? "tel" : type === "password" ? "password" : /(^|[^a-z])(full )?name/.test(hint) ? "name" : "";
+    if (expected && ac === "") issues.push("Add an autocomplete value (for example " + (expected === "password" ? "new-password or current-password" : expected) + ").");
+    if (expected && ac === "off") issues.push("autocomplete=\"off\" blocks autofill and password managers, and fails WCAG 1.3.5 for personal data.");
+    if (el.hasAttribute("required") && !/(required|mandatory|\*)/i.test(info.labelText || "")) notes.push("Say that the field is required in visible words, such as (required), not only with the attribute.");
+    if (el.getAttribute("aria-invalid") === "true" && !el.getAttribute("aria-describedby")) issues.push("Marked invalid, but no error message is connected with aria-describedby.");
+    if (/return\s+false/i.test(el.getAttribute("onpaste") || "")) issues.push("Blocks pasting. This breaks password managers and fails WCAG 3.3.8.");
+    return {tag, type, name: info.name, source: info.source, issues, notes};
+  });
+  const bad = rows.filter((row) => row.issues.length > 0).length + general.length;
+  const choose = (value) => { setWhich(value); setHtml(formSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which form do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="form-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy form</label>
+        <label><input type="radio" name="form-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="form-html">HTML to check (edit it freely)</label><br />
+        <textarea id="form-html" rows={11} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> fields found, <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + (row.tag === "input" ? " type=" + row.type : "") + ">"}</code> {row.name ? <code>{'"' + row.name + '"'}</code> : <em>no name</em>}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      {general.length > 0 ? (
+        <div>
+          <p style={{margin: "0.6rem 0 0.2rem"}}><strong>Problems with the form as a whole:</strong></p>
+          <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+            {general.map((item, index) => (<li key={index}>{item}</li>))}
+          </ul>
+        </div>
+      ) : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot judge whether a label is clear, whether errors are helpful, or how the form behaves with a keyboard. Treat it as a first pass, and then test the real form.
+      </p>
+    </div>
+  );
+}
+
+export function FormChecker() {
+  return <BrowserOnly>{() => <FormCheckerInner />}</BrowserOnly>;
+}
+
+Forms are where websites ask something of people: sign up, check out, book, apply, contact. If a form is hard to use, **people cannot finish,** and the cost is real: a lost order, a missed appointment, a benefit that is never claimed. Forms are also where small accessibility details matter most, because a missing label or a vague error can stop someone completely.
+
+The HTML form controls (`input`, `select`, `textarea`, `button`) are accessible **by default.** Most form accessibility is just **using them properly:** labelling every field, grouping related ones, explaining what is needed, and telling people clearly when something goes wrong.
+
+:::info
+This lesson looks at forms through the lens of the accessibility section: names, focus, errors, and WCAG. If you want the full tour of form elements and attributes, and a step-by-step accessible form, see [Accessible HTML Forms](/tutorials/html/forms/accessible-forms) in the Forms section.
+:::
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to **label** every field, and why placeholders are not labels
+- How to **group** related fields with `fieldset` and `legend`
+- How to add **hints** and mark **required** fields
+- Choosing the right **input type** and **`autocomplete`**
+- Writing **error messages** that help
+- **When** to validate, and why it matters
+- Keeping **sign-in** and **long forms** easy
+- How to **check** a form
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<form novalidate>
+  <h2>Join the bakery newsletter</h2>
+
+  <p>
+    <label for="name">Full name (required)</label>
+    <input id="name" name="name" type="text" autocomplete="name" required>
+  </p>
+
+  <p>
+    <label for="email">Email address (required)</label>
+    <span id="email-hint">We only use it to send your receipt.</span>
+    <input id="email" name="email" type="email" autocomplete="email"
+           required aria-describedby="email-hint">
+  </p>
+
+  <fieldset>
+    <legend>How often would you like to hear from us?</legend>
+    <label><input type="radio" name="often" value="weekly"> Weekly</label>
+    <label><input type="radio" name="often" value="monthly"> Monthly</label>
+  </fieldset>
+
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+</TabItem>
+<TabItem value="output" label="Field Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FieldBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Change the settings one at a time, and watch both the HTML and the spoken line. Try "A placeholder only" and "Nothing" to see what goes missing.
+
+## Labels: Every Field Needs One
+
+Every form field needs a **visible, connected `label`.** A label gives the field its accessible name (see [Accessible Names](./accessible-names)), and it also makes the **click area bigger:** clicking the label focuses the field, and toggles a checkbox or radio button. That helps people with tremors, and anyone on a phone.
+
+```html
+<!-- Connected with for and id -->
+<label for="email">Email address</label>
+<input id="email" type="email">
+
+<!-- Or wrapped around the field -->
+<label>
+  Email address
+  <input type="email">
+</label>
+```
+
+- **`for` must match an `id`,** and ids must be unique on the page.
+- **Keep the label visible,** and close to its field. Putting it **above** the field works best on small screens and when zoomed in.
+- **Do not use a placeholder as a label.** It vanishes as you type, so people forget what to enter. It is often low-contrast, and not all tools treat it as a name. Use it, if at all, for a short **example** such as `name@example.com`.
+- **Do not use `title` or `aria-label`** instead of a visible label, unless the purpose is obvious from context. A search box next to a "Search" button is a fair exception.
+- **Labels should be short and specific:** "Email address," not "Please enter your email address here."
+
+## Group Related Fields
+
+When several fields answer **one question,** such as a set of radio buttons or an address, group them with **`fieldset`** and give the group a name with **`legend`:**
+
+```html
+<fieldset>
+  <legend>Delivery method</legend>
+  <label><input type="radio" name="delivery" value="standard"> Standard</label>
+  <label><input type="radio" name="delivery" value="express"> Express</label>
+</fieldset>
+```
+
+A screen reader reads the legend **with each option:** "Delivery method, Standard, radio button, 1 of 2." Without it, a person hears only "Standard," and has to guess what it is a choice **of.**
+
+Use groups for radio buttons, **sets of related checkboxes,** and blocks of connected fields (such as "Billing address"). Do **not** wrap everything in a `fieldset`. One for a whole form of unrelated fields adds noise. Keep legends short, because they are read many times.
+
+## Hints, Instructions, and Required Fields
+
+People should know **what is needed before they type,** not after they make a mistake.
+
+- **Put instructions before the field,** or attach them as hints.
+- **Connect hints with `aria-describedby`,** so a screen reader reads them after the name. (You will learn more in [aria-describedby](./aria-describedby).)
+- **Tell people which fields are required,** in words. An asterisk alone is not enough: many assistive tools do not announce it, and its meaning must be explained. Writing **"(required)"** in the label is clear to everyone. Another approach is to say once at the top that all fields are required, and mark the **optional** ones instead.
+- **Add the `required` attribute,** so browsers and assistive technology know it as well. (`aria-required` is not needed on a native field that already has `required`.)
+- **Show formats up front:** "Date, as day/month/year" **before** the field, not in an error afterwards.
+- **Do not rely on colour alone** to mark required fields or errors.
+
+:::info
+Browsers show their own built-in error bubbles for fields with `required` or `type="email"`. They are useful, but the wording and the look differ by browser and language, and are hard to style. Many teams add `novalidate` to the form, and show their **own** messages in the page, as in the lessons below. If you do that, you must do it properly: the message must be text on the page, connected to the field.
+:::
+
+## The Right Type and `autocomplete`
+
+Picking the right **type** changes what people get. On a phone, `type="email"` shows a keyboard with the @ sign, `type="tel"` shows a number pad, and `type="url"` shows a slash and a `.com` key. Browsers can also check the basic format.
+
+**`autocomplete`** tells the browser, and password managers, **what a field is for,** so they can fill it in. This is a WCAG requirement (**1.3.5 Identify Input Purpose**), and it matters hugely to people who find typing hard, who have memory or cognitive difficulties, or who use assistive technology.
+
+| Field | `type` | `autocomplete` |
+| :-- | :-- | :-- |
+| Full name | `text` | `name` |
+| Email | `email` | `email` |
+| Phone | `tel` | `tel` |
+| New password | `password` | `new-password` |
+| Current password | `password` | `current-password` |
+| One-time code | `text` | `one-time-code` |
+| Street address | `text` | `street-address` |
+| Postal code | `text` | `postal-code` |
+| Country | `select` | `country-name` |
+
+- **Never turn `autocomplete` off** for personal details or passwords. It blocks autofill and password managers, and makes forms harder, and passwords weaker.
+- **Use `type="number"` carefully.** It adds spinner buttons, changes values with the mouse wheel, and does not suit things like phone or card numbers. For digits that are not a quantity, use `type="text"` with `inputmode="numeric"`.
+- **Do not block pasting.** People use password managers, and some people cannot type a long code accurately.
+
+## Errors That Help
+
+When something goes wrong, the message should tell people **what is wrong,** **where,** and **how to fix it:**
+
+- **Say it in text,** not only with a red border or an icon (WCAG 1.4.1 and 3.3.1).
+- **Be specific and kind:** "Enter an email address that includes an @ sign," not "Invalid input."
+- **Suggest a fix** when you can (WCAG 3.3.3): "Did you mean name@gmail.com?"
+- **Connect the message to the field** with `aria-describedby`, and set **`aria-invalid="true"`.**
+- **Keep what the person typed.** Do not clear the form after an error.
+- **Tell people straight away** when a form fails: move focus to an **error summary** that links to each problem, or to the first invalid field. See [Focus Management](./focus-management).
+- **Start the message with a word such as "Error:"**, so it is clear without colour.
+
+```html
+<label for="email">Email address (required)</label>
+<input id="email" type="email" required
+       aria-invalid="true" aria-describedby="email-error">
+<p id="email-error"><strong>Error:</strong> Enter an email address that includes an @ sign.</p>
+```
+
+## When to Validate
+
+Checking a field too early can feel like being **nagged while you are still typing.** For a screen reader user, a message that is announced after every key is overwhelming. The lab below shows the difference.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<label for="email">Email address</label>
+<input id="email" type="email" aria-describedby="email-error">
+<p id="email-error" aria-live="polite"></p>
+
+<script>
+  const input = document.getElementById("email");
+  const error = document.getElementById("email-error");
+
+  // Check when the person leaves the field, not on every key
+  input.addEventListener("blur", () => {
+    const valid = input.value.includes("@");
+    input.setAttribute("aria-invalid", String(!valid));
+    error.textContent = valid ? "" : "Error: Include an @ sign in the email address.";
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Timing Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TimingLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Good habits for timing:
+
+- **Wait** until the person **leaves** the field, or presses Submit, before showing a first error.
+- **Remove the error as soon as it is fixed,** while they type. People then know it worked.
+- **Do not interrupt text entry.** For languages that use an input method editor (such as Chinese, Japanese, or Korean), never validate in the middle of composing a character.
+- **Use a polite live region** (`aria-live="polite"`) for messages that appear **while** someone is in a field, and an error summary (with focus) for a failed submit. See [ARIA Live Regions](./aria-live).
+
+## Help People Avoid Mistakes
+
+WCAG 2.2 has a few more rules that make forms kinder, especially for people with memory, attention, or cognitive differences:
+
+- **Review before you finish (3.3.4):** for payments, legal agreements, and anything that changes data, let people **check, confirm, or undo** before the final submit.
+- **Do not ask twice (3.3.7 Redundant Entry):** if you already know something from earlier in the same process (such as a delivery address), fill it in again, or offer "same as delivery address."
+- **Accessible sign-in (3.3.8):** do not require people to **remember** or **transcribe** something to log in (such as solving a puzzle, or retyping a code from memory). Allow **paste,** support **password managers,** and offer an alternative to anything difficult.
+- **Give enough time:** if a form times out, warn people and let them extend it. Save their progress where you can.
+
+## Other Controls and Layout
+
+- **Choose native controls:** `select`, `input type="checkbox"`, `type="radio"`, and `textarea`. They have keyboard support and screen reader support already. A custom dropdown must be rebuilt with great care.
+- **Dates:** a native `input type="date"` is accessible in most browsers, but its look varies. Three separate, clearly labelled fields for day, month, and year can be easier for known dates, such as a birth date.
+- **File uploads:** say which types and sizes are allowed **before** the upload. After upload, say what was chosen.
+- **Character counters:** do not announce every character. Announce when a limit is near, and when it is reached.
+- **One column,** with **labels above** the fields, works best on phones and when zoomed. The reading order must match the visual order.
+- **Make the submit button clear,** and put it **last.** Name it with a specific action: "Place order," not "Submit."
+- **Check at 400 percent zoom.** The form must reflow, with no horizontal scrolling and no hidden fields.
+
+## Check Your Forms
+
+The checker below reads a snippet of HTML and flags fields with no label, placeholder-only fields, mismatched label ids, wrong input types, missing or disabled `autocomplete`, blocked paste, ungrouped radio buttons, and invalid fields with no message.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FormChecker />
+</>
+</BrowserWindow>
+
+Then test the **real** form by hand:
+
+1. **Click each label.** Does the field get focus?
+2. **Tab through** the whole form, in order. Is every field reachable, with a visible focus?
+3. **Submit it empty.** Do you learn what is wrong, where, and how to fix it?
+4. **Fill it with a keyboard only,** including the submit.
+5. **Use a screen reader** on one pass. Are names, groups, hints, and errors announced?
+6. **Zoom to 200 and 400 percent.**
+7. **Try autofill and a password manager.**
+
+## Good Habits
+
+1. **Label every field** with a visible, connected `label`.
+2. **Group related fields** with `fieldset` and `legend`.
+3. **Say what is required,** in words, and give formats before the field.
+4. **Use the right `type`** and **`autocomplete`.**
+5. **Write errors that say what, where, and how to fix.**
+6. **Validate when people leave a field,** not on every key.
+7. **Keep what people have typed,** and never clear the form after an error.
+8. **Allow paste,** and support password managers.
+9. **Ask only for what you need,** and never ask twice.
+10. **Test with a keyboard, a screen reader, and a phone.**
+
+## Accessibility Checklist
+
+- [ ] Every field has a visible, connected label.
+- [ ] Related fields are in a `fieldset` with a `legend`.
+- [ ] Required fields are marked in text, and have the `required` attribute.
+- [ ] Hints and formats are shown before the field, and connected with `aria-describedby`.
+- [ ] Each field has a suitable `type` and `autocomplete` value.
+- [ ] Errors are shown in text, say how to fix the problem, and are linked to the field.
+- [ ] After a failed submit, focus moves to an error summary or the first problem.
+- [ ] Errors do not appear while someone is still typing.
+- [ ] Paste is allowed, and nothing in sign-in needs memory or a puzzle.
+- [ ] People can review, confirm, or undo important submissions.
+- [ ] The form works with a keyboard, and at 400 percent zoom.
+
+## Security and Privacy Notes
+
+- **Ask for as little as you can.** Every field is data you must protect, and a burden for the person. Never ask for sensitive information (such as health, religion, or ID numbers) unless it is necessary.
+- **Never put sensitive data in the URL.** Use `method="post"` for passwords and personal details. A `GET` form puts values in the address, history, and logs.
+- **Do not disable `autocomplete` for passwords.** Password managers make people safer. Use `new-password` and `current-password`, and `one-time-code` for codes.
+- **Do not block paste** in password or code fields. It pushes people to use weaker, easier passwords.
+- **Be careful with error messages at sign-in.** Saying "No account with that email" reveals who has an account. Many sites say "The email or password is incorrect." Weigh the privacy gain against the added confusion, and explain it in the page.
+- **Anti-spam traps ("honeypots")** are hidden fields that real people should not fill in. If you use one, hide it from **assistive technology too** (`aria-hidden="true"` and `tabindex="-1"`), or screen reader users will fill it in, and be treated as bots.
+- **CAPTCHAs** can block people who are blind, have low vision, or have cognitive differences. Prefer invisible checks, or offer an accessible alternative, and check what data a third-party service collects.
+- **Consent boxes** (marketing, cookies) must never be pre-ticked, and should be separate from the terms.
+- **Use HTTPS** for every page with a form, not only the page that receives it.
+
+## Global Audience Notes
+
+- **Do not force a first name and last name.** Many people have one name, several, or a different order. One "Full name" field is often best, with `autocomplete="name"`.
+- **Addresses differ** by country: some have no postal code, no state, or an unusual order. Make fields optional where you can, or change them by country.
+- **Phone numbers:** accept spaces, dashes, and the `+` country code. Do not demand one local format.
+- **Dates and numbers:** formats vary (day-month-year, month-day-year, decimal points and commas). Show an example and accept sensible forms, or use a native date control.
+- **Right-to-left languages:** mirror the layout, and use `dir="auto"` or `dir="ltr"` for email, URL, and number fields, so that Latin text does not scramble.
+- **Translate everything:** labels, hints, errors, and `aria-label` values. Leave room for longer text, and avoid fixed-width labels.
+- **Input methods:** people who type with an input method editor need freedom to compose text. Validate after the text is committed, not during.
+- **Avoid assumptions** in titles, gender options, or required "marital status." Provide an open text field, or "prefer not to say," and only if you truly need to ask.
+- **Slow or unreliable connections:** keep entered data if a submit fails, and show clear progress.
+
+## Common Mistakes to Avoid
+
+1. **Fields with only a placeholder.**
+2. **Labels that are not connected** (a missing or mismatched `for` and `id`).
+3. **Radio buttons with no `fieldset` and `legend`.**
+4. **Marking required fields only with a red asterisk.**
+5. **Error messages that say only "Invalid."**
+6. **Showing an error on every key press.**
+7. **Clearing the form after an error.**
+8. **`autocomplete="off"` on names, emails, and passwords.**
+9. **Blocking paste.**
+10. **Using `type="text"` for email and phone.**
+11. **Submit buttons that just say "Submit."**
+12. **Never testing with a keyboard or a screen reader.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the field builder to build all four field types, and read the spoken lines.
+2. In the timing lab, type a valid email in each mode, and count the messages.
+3. Run the checker on the messy form, fix every problem, and run it again.
+4. Take a form you have built, and click every label. Does each field get focus?
+5. Wrap a group of radio buttons in a `fieldset` and `legend`, and compare how it looks and sounds.
+6. Add `autocomplete` values to a sign-up form, and test autofill.
+7. Replace a placeholder-only field with a visible label and a hint.
+8. Write three error messages that say what, where, and how to fix.
+9. Add an error summary that links to each invalid field. (See [Focus Management](./focus-management).)
+10. Bonus: fill in a long form using only the keyboard, and note every moment where you got stuck.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why is a placeholder not a good label?</summary>
+
+It disappears when you type, usually has low contrast, and is only a weak fallback name. Use a visible `label` element.
+
+</details>
+
+<details>
+<summary>2. When do you use `fieldset` and `legend`?</summary>
+
+For groups of related fields that answer one question, such as radio buttons, related checkboxes, or an address. The legend is read with each option.
+
+</details>
+
+<details>
+<summary>3. How do you attach a hint to a field?</summary>
+
+Give the hint text an `id`, and put that id in the field's `aria-describedby`. The screen reader reads it after the name.
+
+</details>
+
+<details>
+<summary>4. Why use the right `type` and `autocomplete`?</summary>
+
+The right type gives the right keyboard and basic checks, and `autocomplete` lets browsers and password managers fill the field. It is also a WCAG requirement (1.3.5).
+
+</details>
+
+<details>
+<summary>5. What makes a good error message?</summary>
+
+It is text (not only colour), says what is wrong and how to fix it, is connected to the field with `aria-describedby` and `aria-invalid`, and keeps what the person typed.
+
+</details>
+
+<details>
+<summary>6. When should a first error appear?</summary>
+
+Usually when the person leaves the field, or presses Submit, and not on every key press. Remove the error as soon as it is fixed.
+
+</details>
+
+## Key Takeaways
+
+- **Every field needs a visible, connected label.** A placeholder is not one.
+- **Group** related fields with `fieldset` and `legend`.
+- **Tell people what is needed before they type:** required fields, formats, and hints.
+- **Use the right `type` and `autocomplete`.** Never block paste or autofill.
+- **Errors must say what, where, and how to fix it,** in text, linked to the field.
+- **Validate after people leave a field,** and keep their data when something fails.
+- **Make sign-in and long forms forgiving:** review steps, no repeat entry, no puzzles.
+- **Test the real form** with a keyboard, a screen reader, and zoom.
+
+Next, learn how to make data tables that make sense to everyone in [Accessible Tables](./accessible-tables).

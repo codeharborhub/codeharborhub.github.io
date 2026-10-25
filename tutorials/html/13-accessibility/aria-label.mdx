@@ -1,0 +1,542 @@
+---
+id: html-aria-label
+title: "Aria Label"
+sidebar_label: "Aria Label"
+sidebar_position: 17
+slug: /html/accessibility/aria-label
+description: "Learn when and how to use aria-label: naming icon-only buttons, search fields, repeated landmarks, and SVG images; when not to use it (elements that cannot be named, visible text that already works); the Label in Name rule; and how to write short, unique, translatable labels. Includes a name override lab, a label writing practice, and a live aria-label audit."
+keywords:
+  - aria-label
+  - accessible name
+  - icon button label
+  - label in name
+  - WCAG 2.5.3
+  - aria-label vs aria-labelledby
+  - aria-label on div
+  - landmark label
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, aria-label, accessible-name, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const roleWords = /\b(button|link|icon|image|picture|navigation|field)\b/i;
+
+export const labelScenarios = [
+  {id: "button", title: "A button with visible text", visible: "Search", role: "button", supports: true, needs: false, start: "Search recipes"},
+  {id: "icon", title: "An icon-only button", visible: "", role: "button", supports: true, needs: true, start: "Close"},
+  {id: "link", title: "A link that says Read more", visible: "Read more", role: "link", supports: true, needs: false, start: "Read more about rye bread"},
+  {id: "nav", title: "A second navigation area", visible: "", role: "navigation", supports: true, needs: true, start: "Footer links"},
+  {id: "input", title: "A search field with no visible label", visible: "", role: "search field", supports: true, needs: true, start: "Search recipes"},
+  {id: "svg", title: "A chart drawn with SVG", visible: "", role: "image", supports: true, needs: true, start: "Bar chart of weekly sales"},
+  {id: "div", title: "A plain div", visible: "Heads up!", role: "generic", supports: false, needs: false, start: "Warning"},
+];
+
+export function NameOverrideLab() {
+  const [index, setIndex] = useState(0);
+  const [label, setLabel] = useState(labelScenarios[0].start);
+  const scn = labelScenarios[index];
+  const text = label.trim();
+  const attr = text ? text : undefined;
+  const stop = (event) => event.preventDefault();
+  let heard = "";
+  if (!scn.supports) heard = "(no reliable name)";
+  else if (text) heard = text;
+  else heard = scn.visible || "(no name)";
+  const notes = [];
+  if (!scn.supports) notes.push("A plain div has no role, so a name is not reliably announced. Many screen readers ignore aria-label here. Use visible text, or give the element a proper role.");
+  if (scn.supports && scn.needs && !text) notes.push("FAIL: there is no visible text and no aria-label, so this has no accessible name.");
+  if (scn.supports && scn.visible && text && text.toLowerCase().indexOf(scn.visible.toLowerCase()) === -1) notes.push("WARNING: the visible text \"" + scn.visible + "\" is not in the name \"" + text + "\". Voice control users who say \"click " + scn.visible + "\" will not match it (WCAG 2.5.3).");
+  if (scn.supports && scn.visible && text && text.toLowerCase() === scn.visible.toLowerCase()) notes.push("The aria-label only repeats the visible text. You can remove it.");
+  if (scn.supports && text && roleWords.test(text)) notes.push("The label contains a role word (" + text.match(roleWords)[0] + "). Screen readers already say the role, so it would be said twice.");
+  if (text.length > 80) notes.push("This is long. A label should be a short name, not a sentence.");
+  if (notes.length === 0) notes.push("This works: a short name, with no repeated role, and any visible text is included.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="override-scenario">Pick an element</label><br />
+        <select id="override-scenario" value={index} onChange={(event) => { const next = Number(event.target.value); setIndex(next); setLabel(labelScenarios[next].start); }}>
+          {labelScenarios.map((item, i) => (<option key={item.id} value={i}>{item.title}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="override-label">aria-label (leave empty to remove it)</label><br />
+        <input id="override-label" type="text" value={label} onChange={(event) => setLabel(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem", marginBottom: "0.6rem"}}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>What people see:</strong></p>
+        <div style={{margin: "0 0 0.3rem"}}>
+          {scn.id === "button" ? <button type="button" aria-label={attr}>Search</button> : null}
+          {scn.id === "icon" ? <button type="button" aria-label={attr}><span aria-hidden="true">×</span></button> : null}
+          {scn.id === "link" ? <a href="#overridelab" aria-label={attr} onClick={stop}>Read more</a> : null}
+          {scn.id === "nav" ? <nav aria-label={attr}><a href="#overridelab-privacy" onClick={stop}>Privacy</a>{" | "}<a href="#overridelab-terms" onClick={stop}>Terms</a></nav> : null}
+          {scn.id === "input" ? <input type="search" aria-label={attr} placeholder="" style={{width: "14rem"}} /> : null}
+          {scn.id === "svg" ? <svg role="img" aria-label={attr} width="120" height="60" viewBox="0 0 120 60"><rect x="8" y="30" width="20" height="26" fill="#1d4ed8" /><rect x="40" y="18" width="20" height="38" fill="#1d4ed8" /><rect x="72" y="6" width="20" height="50" fill="#1d4ed8" /></svg> : null}
+          {scn.id === "div" ? <div aria-label={attr}>Heads up!</div> : null}
+        </div>
+        <p style={{margin: "0.4rem 0 0.3rem"}}><strong>What a screen reader may say:</strong> <code>{heard + ", " + scn.role}</code></p>
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {notes.map((note, i) => (<li key={i}>{note}</li>))}
+        </ul>
+      </div>
+      <p style={{margin: 0, fontSize: "0.9em", color: "#64748b"}}>
+        Notice that <code>aria-label</code> replaces the name from the content: sighted people see "Search" while a screen reader hears your label. That is useful when there is no visible text, and risky when there is, because the two can drift apart. The spoken line is a simplified example, and different tools word it differently.
+      </p>
+    </div>
+  );
+}
+
+export const writerScenarios = [
+  {prompt: "A dialog has a corner button that shows only an X. It closes the dialog.", role: "button", sample: "Close", check: (t) => (/(close|dismiss)/i.test(t) ? [] : ["Name the action: what does this button do?"])},
+  {prompt: "The header has a search field with a magnifying glass in it, and no visible label.", role: "search field", sample: "Search recipes", check: (t) => (/search/i.test(t) ? [] : ["Say what the field is for, such as searching."])},
+  {prompt: "The page has two navigation areas. The first is already named Main. Name the one in the footer.", role: "navigation", sample: "Footer links", check: (t) => [].concat(/^main/i.test(t) ? ["This is the same as the first nav. Each one needs a different name."] : []).concat(/(footer|legal|more|links|secondary|site)/i.test(t) ? [] : ["Say what is different about this one (for example, that it is in the footer)."])},
+  {prompt: "A heart icon button saves a recipe to your favourites. It is a toggle, and aria-pressed is already set for you.", role: "toggle button", sample: "Favourite", check: (t) => [].concat(/favou?rite/i.test(t) ? [] : ["Name what is being toggled."]).concat(/\b(add|remove|un|saved)/i.test(t) ? ["Do not put the state in the name. aria-pressed already says on or off."] : [])},
+  {prompt: "There is a trash icon in the table row for Rye bread. It deletes that recipe.", role: "button", sample: "Delete rye bread recipe", check: (t) => [].concat(/(delete|remove)/i.test(t) ? [] : ["Name the action."]).concat(/rye/i.test(t) ? [] : ["Add which item it affects, so every row's button is different."])},
+];
+
+export function LabelWriter() {
+  const [index, setIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [show, setShow] = useState(false);
+  const scn = writerScenarios[index];
+  const value = text.trim();
+  const notes = [];
+  let level = "ok";
+  if (value === "") {
+    level = "fail";
+    notes.push("Write a label. With no text and no aria-label, the control has no name.");
+  } else {
+    scn.check(value).forEach((note) => notes.push(note));
+    if (roleWords.test(value)) notes.push("Remove the role word (" + value.match(roleWords)[0] + "). The screen reader says it already.");
+    if (value.length > 50) notes.push("Shorter is better. Aim for two to four words.");
+    if (notes.length > 0) level = "warn";
+    if (notes.length === 0) notes.push("Good. It is short, names the action or purpose, and does not repeat the role.");
+  }
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="writer-scenario">Pick a situation</label><br />
+        <select id="writer-scenario" value={index} onChange={(event) => { setIndex(Number(event.target.value)); setText(""); setShow(false); }}>
+          {writerScenarios.map((item, i) => (<option key={i} value={i}>{"Situation " + (i + 1)}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}><strong>The situation:</strong> {scn.prompt}</p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="writer-label">Your aria-label</label><br />
+        <input id="writer-label" type="text" value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{(value || "(no name)") + ", " + scn.role}</code></p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Feedback: {level === "ok" ? "Good" : level === "warn" ? "Could be better" : "Needs work"}.</strong></p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}}>
+        {notes.map((note, i) => (<li key={i}>{note}</li>))}
+      </ul>
+      <button type="button" aria-expanded={show} onClick={() => setShow(!show)}>{show ? "Hide the sample answer" : "Show a sample answer"}</button>
+      {show ? <p style={{margin: "0.5rem 0 0"}}>Sample: <code>{'aria-label="' + scn.sample + '"'}</code></p> : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are simple rules of thumb. Other good answers exist, and the best label depends on the page around it.
+      </p>
+    </div>
+  );
+}
+
+export const labelSamples = {
+  messy: '<button aria-label="Find recipes">Search</button>\n<button aria-label="Close button">×</button>\n<a href="/rye" aria-label="Read more">Read more</a>\n<span aria-label="Warning">!</span>\n<nav aria-label="Navigation"><a href="/">Home</a></nav>\n<nav aria-label="Navigation"><a href="/privacy">Privacy</a></nav>\n<button aria-label="">Save</button>\n<label for="q">Search</label><input id="q" aria-label="Find">\n<div role="img" aria-label="">Chart</div>',
+  fixed: '<button type="button" aria-label="Search recipes">Search</button>\n<button type="button" aria-label="Close"><span aria-hidden="true">×</span></button>\n<a href="/rye" aria-label="Read more about rye bread">Read more</a>\n<span role="img" aria-label="Warning">⚠</span>\n<nav aria-label="Main"><a href="/">Home</a></nav>\n<nav aria-label="Footer links"><a href="/privacy">Privacy</a></nav>\n<label for="q">Search recipes</label><input id="q" type="search">',
+};
+
+export function labelTextOf(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (node.getAttribute("aria-hidden") === "true" || node.hasAttribute("hidden")) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  let out = "";
+  node.childNodes.forEach((child) => { out += " " + labelTextOf(child) + " "; });
+  return out;
+}
+
+export function LabelAuditInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(labelSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const elements = Array.from(doc.querySelectorAll("[aria-label]"));
+  const counts = {};
+  elements.forEach((el) => {
+    const key = el.tagName.toLowerCase() + (el.getAttribute("role") || "") + ":" + el.getAttribute("aria-label").trim().toLowerCase();
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  const rows = elements.map((el) => {
+    const tag = el.tagName.toLowerCase();
+    const role = el.getAttribute("role") || "";
+    const label = el.getAttribute("aria-label").trim();
+    const issues = [];
+    const notes = [];
+    const visible = labelTextOf(el).replace(/\s+/g, " ").trim();
+    const textual = tag === "button" || tag === "a" || role === "button" || role === "link";
+    if (label === "") issues.push("An empty aria-label does nothing.");
+    if (label !== "" && !role && /^(div|span|p|b|i|em|strong|small|u)$/.test(tag)) issues.push("A name on a plain " + tag + " (no role) is not reliably announced. Add a role, or use visible text.");
+    if (label !== "" && roleWords.test(label)) notes.push("The label contains a role word (" + label.match(roleWords)[0] + "). It would be said twice.");
+    if (label !== "" && textual && visible && label.toLowerCase().indexOf(visible.toLowerCase()) === -1) issues.push("The visible text \"" + visible + "\" is not in the name (WCAG 2.5.3).");
+    if (label !== "" && textual && visible && label.toLowerCase() === visible.toLowerCase()) notes.push("It repeats the visible text. Remove the aria-label.");
+    if (label !== "" && tag === "input" && el.getAttribute("id")) {
+      const found = Array.from(doc.querySelectorAll("label")).find((item) => item.getAttribute("for") === el.getAttribute("id"));
+      if (found) {
+        const shown = found.textContent.trim();
+        if (label.toLowerCase().indexOf(shown.toLowerCase()) === -1) issues.push("This overrides the visible label \"" + shown + "\" with a different name.");
+        else notes.push("A visible label exists already. The aria-label is not needed.");
+      }
+    }
+    if (label.length > 80) notes.push("Long. A label should be a short name.");
+    const key = tag + role + ":" + label.toLowerCase();
+    if (label !== "" && counts[key] > 1) issues.push("The same label is used on " + counts[key] + " elements. Make each one different.");
+    return {tag, role, label, issues, notes};
+  });
+  const bad = rows.reduce((sum, row) => sum + row.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(labelSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="label-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy labels</label>
+        <label><input type="radio" name="label-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="label-html">HTML to check (edit it freely)</label><br />
+        <textarea id="label-html" rows={9} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> elements use <code>aria-label</code>, with <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + (row.role ? " role=" + row.role : "") + ">"}</code> {row.label ? <code>{'"' + row.label + '"'}</code> : <em>empty</em>}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot judge whether a label is clear, or whether another way of naming (a visible label, or visible text) would be better. Treat it as a first pass.
+      </p>
+    </div>
+  );
+}
+
+export function LabelAudit() {
+  return <BrowserOnly>{() => <LabelAuditInner />}</BrowserOnly>;
+}
+
+Some things on a page have **no visible text** that could name them: a button with only an icon, a search field with a magnifying glass, a second navigation area, a chart drawn with SVG. Assistive technology still needs a name for each one. `aria-label` lets you **write that name directly** in an attribute.
+
+It is the simplest ARIA attribute, and the one most often used wrongly. In this lesson you will learn **exactly when** it helps, and when you should reach for something better.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **`aria-label`** does, and what it **overrides**
+- **When** to use it, and when **not** to
+- Which elements it works on, and which it does **not**
+- The **Label in Name** rule (WCAG 2.5.3)
+- How to write **short, unique, translatable** labels
+- How it compares with **visible text, `aria-labelledby`,** and **`title`**
+- How to **audit** your labels
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- An icon-only button -->
+<button type="button" aria-label="Close">
+  <svg aria-hidden="true" focusable="false">…</svg>
+</button>
+
+<!-- A search field with no visible label -->
+<input type="search" aria-label="Search recipes">
+
+<!-- Two navigation areas that need different names -->
+<nav aria-label="Main">…</nav>
+<nav aria-label="Footer links">…</nav>
+
+<!-- An SVG picture with a name -->
+<svg role="img" aria-label="Bar chart of weekly sales" viewBox="0 0 120 60">…</svg>
+
+<!-- Visible text that already names the control: no aria-label needed -->
+<button type="button">Save recipe</button>
+```
+
+</TabItem>
+<TabItem value="output" label="Name Override Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NameOverrideLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try every example in the lab. Empty the label, and watch the icon button lose its name. Then change the "Search" button to say something different, and read the warning.
+
+## What `aria-label` Does
+
+`aria-label` gives an element an **accessible name** as a plain **text string.** It is **invisible:** sighted people never see it. It is used by screen readers, voice control, and other assistive tools (see [Accessible Names](./accessible-names) for the full picture).
+
+Where it sits in the naming order matters:
+
+1. `aria-labelledby` (if present) wins.
+2. **`aria-label`** comes next.
+3. After that: native labels, the element's own content, `title`, and placeholders.
+
+This means **`aria-label` replaces** the name that would have come from the content. A button with the text "Search" and `aria-label="Find recipes"` is **called "Find recipes"** by a screen reader, even though everyone else sees "Search." That power is also the risk.
+
+## When to Use `aria-label`
+
+Use it when there is **no visible text** to name the thing, and adding visible text would not make sense:
+
+- **Icon-only buttons and links:** "Close," "Search," "Open menu."
+- **A search field** whose purpose is clear from a nearby button or icon.
+- **Repeated landmarks:** two `nav` elements, or two `aside` elements.
+- **Regions, groups, and toolbars** with no visible heading: `role="group"`, `role="toolbar"`.
+- **SVG images and emoji groups** with `role="img"`.
+- **Custom widgets** whose name has no visible source.
+- **Making a repeated link unique,** when you cannot change the text ("Read more" becomes "Read more about rye bread"), as long as the visible text stays at the start of the label.
+
+## When Not to Use `aria-label`
+
+Always ask first: **is there visible text I can use instead?** Visible text is better for everyone: it can be read, searched, translated, and zoomed.
+
+| Instead of this | Use this |
+| :-- | :-- |
+| `aria-label` on a field that needs a clear label | A visible `label` element |
+| `aria-label` repeating the button's visible text | Nothing. Remove it. |
+| `aria-label` when a visible heading names a section | `aria-labelledby` pointing at the heading |
+| `aria-label` to describe a long hint | `aria-describedby` |
+| `aria-label` on a plain `div` or `span` | A real element, a role, or visible text |
+| `aria-label` on a `p` or text to "add a tooltip" | `title` is no better. Use visible text, or a proper tooltip pattern. |
+| `aria-label` on an `iframe` | The `title` attribute |
+
+The next lesson, [aria-labelledby](./aria-labelledby), covers pointing a name at text that is already on the page.
+
+## Elements That Can and Cannot Be Named
+
+`aria-label` should only be used on elements that **have a role that accepts a name.**
+
+| Works well | Not reliable |
+| :-- | :-- |
+| `button`, `a`, `input`, `select`, `textarea` | A plain `div` or `span` (no role) |
+| Landmarks: `nav`, `aside`, `main`, `section`, `form` | `p`, `strong`, `em`, and other text elements |
+| Elements with a role: `role="img"`, `role="group"`, `role="dialog"`, `role="tablist"`, `role="tab"` | `code`, `b`, `i`, `u`, `small` |
+| `table`, `figure`, `fieldset` | Elements with `role="presentation"` or `role="none"` |
+
+In the current ARIA rules, a name is **prohibited** on roles such as `generic` (a plain `div` or `span`), `paragraph`, `presentation`, `strong`, `emphasis`, `code`, and a few more. Some screen readers still read them, others ignore them, and the results change between versions, so **do not depend on it.** If you want a `div` to have a name, give it a proper role, or restructure the HTML.
+
+## Label in Name: Match What People See
+
+WCAG success criterion **2.5.3 (Label in Name)** says: if a control has **visible text,** the accessible name must **contain** that text, ideally at the start.
+
+Why? **Voice control** users say what they see. If the screen shows "Search," they say "click Search." If your hidden name is "Find recipes," that command fails. People who use a screen reader together with sighted colleagues, or who read the screen and listen at the same time, hear something that does not match what is shown.
+
+```html
+<!-- Bad: the visible word is not in the name -->
+<button type="button" aria-label="Find recipes">Search</button>
+
+<!-- Good: the visible text comes first -->
+<button type="button" aria-label="Search recipes">Search</button>
+
+<!-- Good: a unique name for a repeated link -->
+<a href="/rye" aria-label="Read more about rye bread">Read more</a>
+```
+
+## Writing a Good Label
+
+1. **Name the action or the purpose,** not the picture: "Close," not "X" or "Cross icon."
+2. **Keep it short.** Two to four words is usually plenty. Put long help in a description.
+3. **Do not repeat the role.** "Close," not "Close button." "Main," not "Main navigation."
+4. **Make it unique** among things of the same kind. Two buttons that both say "Delete" need to say what they delete: "Delete rye bread recipe."
+5. **Do not put the state in the label.** If a toggle is "Favourite," use `aria-pressed` for on and off, instead of changing the label to "Unfavourite."
+6. **Include the visible text,** and start with it.
+7. **Write it in the page language,** in normal case, with no tricks like all capitals or symbols.
+8. **Avoid abbreviations** and jargon that a voice reading aloud may mispronounce.
+
+### Practice Writing Labels
+
+Try writing labels for five situations. You get instant feedback, and you can reveal a sample answer.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LabelWriter />
+</>
+</BrowserWindow>
+
+## `aria-label` or Something Else?
+
+| Method | Good for | Watch out for |
+| :-- | :-- | :-- |
+| **Visible text** (content or `label`) | Almost everything | Needs room in the design |
+| **Visually hidden text** (a screen-reader-only class) | Icon buttons, where you want the text to translate and be found like normal content | Needs a CSS class, and extra markup |
+| **`aria-label`** | Short names for things with no visible text | Invisible, ignored on plain `div` and `span`, may be skipped by some translation tools |
+| **`aria-labelledby`** | Naming something from text already on the page | The id must exist |
+| **`title`** | A tooltip for mouse users, as a last-resort name | Not reliably announced, not shown to keyboard or touch users |
+
+Visible text, or visually hidden text, is often the safest choice for **multilingual** sites, because translation tools reliably translate it. See the global notes below.
+
+## Audit Your Labels
+
+The audit below reads every element with an `aria-label` in a snippet of HTML, and flags empty labels, labels on plain `div` or `span`, role words in labels, labels that do not contain the visible text, labels that only repeat the visible text, labels that override a visible form label, and duplicates.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LabelAudit />
+</>
+</BrowserWindow>
+
+On a real site, you can also:
+
+1. **Search your code for `aria-label`,** and for each one ask: could visible text do this?
+2. **Open the Accessibility panel** in your browser's DevTools, and read each name.
+3. **Use a screen reader** on your icon buttons and landmarks. Do they make sense in a list of links, buttons, and landmarks?
+4. **Test voice control:** say "click" and the visible text of each control.
+5. **Run a checker** (axe, Lighthouse) for missing names and mismatches.
+
+## Good Habits
+
+1. **Use visible text first,** and `aria-label` only when there is none.
+2. **Keep labels short, unique, and action-focused.**
+3. **Start the label with the visible text** when there is any.
+4. **Never repeat the role** in the label.
+5. **Use `aria-label` only on elements that can have a name.**
+6. **Hide decorative icons** with `aria-hidden="true"` when you name the button.
+7. **Include labels in your translation process.**
+8. **Check names** in the Accessibility panel, and with voice control.
+
+## Accessibility Checklist
+
+- [ ] Every control with no visible text has a name (`aria-label` or hidden text).
+- [ ] No `aria-label` repeats visible text, or contradicts it.
+- [ ] Visible text is included at the start of the accessible name (WCAG 2.5.3).
+- [ ] Repeated landmarks have different names, and no role words.
+- [ ] `aria-label` is not used on plain `div` or `span` elements, or on text elements.
+- [ ] Labels are short, in the page language, and unique where needed.
+- [ ] Labels do not carry state (use `aria-pressed` and similar).
+- [ ] Decorative icons inside named controls are hidden.
+- [ ] Labels are part of the translation process.
+- [ ] Names were checked in the Accessibility panel and with real assistive technology.
+
+## Security and Privacy Notes
+
+- **`aria-label` is public.** Anyone can read it in the page source, and assistive technology reads it aloud. Do not put personal data, account numbers, tokens, or internal notes in it.
+- **Do not use it to mislead.** A label that says "Cancel" on a button that confirms a payment, or a hidden name that differs from the visible text in a harmful way, deceives people who cannot see the screen. It is also a form of clickjacking-style trickery.
+- **Be careful with names that include user data.** "Delete message from Sam" in a shared workspace may be read aloud to people nearby. Weigh it up for sensitive content.
+- **Escape user-generated text** before it goes into an attribute, to prevent script injection. Never place raw input inside `aria-label`.
+- **Do not use labels to detect assistive technology** (for example, by checking whether a hidden label is read). That could reveal a disability.
+- **Hidden text is not secret.** Do not use `aria-label` to hide content from sighted users that you would not want them to know about.
+
+## Global Audience Notes
+
+- **Translate `aria-label` with the rest of your page.** It is content, not code. Make sure your translation workflow includes attributes. Some automatic page-translation tools may not translate them, so test with the tools your readers use, or prefer visible or visually hidden text where translation matters.
+- **Keep labels short.** Translated words are often longer, and short, plain words translate better (and are easier for people reading in a second language).
+- **Set the page language** with `lang`, so the screen reader voice speaks your labels correctly. If a label contains a name or word from another language, wrap that in visible text with its own `lang` instead.
+- **Voice control users speak in their own language.** Another reason to include the visible text in the name.
+- **Avoid symbols and slang** in labels, such as "X," "hamburger," or "thumbs up." They may be read oddly, or not translate.
+- **Right-to-left languages:** write the label in the direction of its language, and test mixed text with numbers or Latin words, which can appear in an unexpected order.
+- **Do not repeat state words** such as "expanded" in the label. Screen readers say them in the user's own language.
+
+## Common Mistakes to Avoid
+
+1. **Icon-only buttons with no name at all.**
+2. **`aria-label` that does not contain the visible text.**
+3. **`aria-label` repeating the visible text.**
+4. **Role words in the label** ("Close button," "Navigation").
+5. **`aria-label` on a plain `div` or `span`** with no role.
+6. **The same label on several elements** ("Navigation," "Navigation").
+7. **An empty `aria-label=""`.**
+8. **Overriding a visible label** with a different hidden one.
+9. **Long, sentence-style labels.**
+10. **Changing the label to show state** ("Mute," then "Unmute," with `aria-pressed`).
+11. **Forgetting to translate labels.**
+12. **Never checking names in the Accessibility panel.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the name override lab for each element, and write down the name a screen reader would hear.
+2. Give the "Search" button a label that does not contain "Search," and read the warning. Then fix it.
+3. In the writing practice, write your own label for each situation before you look at the sample.
+4. Run the audit on the messy HTML, fix every problem, and run it again.
+5. Find three icon-only buttons in a project, and give each a good label.
+6. Give two `nav` elements different names, and check them in the Accessibility panel.
+7. Replace one `aria-label` with visually hidden text, and compare how it behaves with a page-translation tool.
+8. Use `aria-label` to make three "Read more" links unique, keeping "Read more" at the start.
+9. Turn on voice control (if you have it), and say "click" and a visible label.
+10. Bonus: search a site you like for icon buttons, and open DevTools to see which have good names.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `aria-label` do?</summary>
+
+It gives an element an invisible, text accessible name, which replaces the name that would come from its content.
+
+</details>
+
+<details>
+<summary>2. When should you use it?</summary>
+
+When there is no visible text to name a control, such as an icon-only button, a search field, a repeated landmark, or an SVG image.
+
+</details>
+
+<details>
+<summary>3. Why is `aria-label` on a plain `div` a problem?</summary>
+
+A plain `div` has no role that accepts a name, so the label is not reliably announced. Use a real element, give it a role, or use visible text.
+
+</details>
+
+<details>
+<summary>4. What does "Label in Name" require?</summary>
+
+The accessible name must contain the visible text of the control, ideally at the start, so voice control users can say what they see.
+
+</details>
+
+<details>
+<summary>5. Why not write "Close button" as a label?</summary>
+
+Screen readers already say "button," so it would be read twice. Write "Close."
+
+</details>
+
+<details>
+<summary>6. What is often safer than `aria-label` on a multilingual site?</summary>
+
+Visible text, or visually hidden text, because translation tools reliably translate it, and some may not translate attributes.
+
+</details>
+
+## Key Takeaways
+
+- **`aria-label` is an invisible name,** written as text. It replaces the name from the content.
+- **Use it only when there is no visible text,** and prefer visible text, a `label`, or `aria-labelledby` when you can.
+- **It works on named roles,** such as buttons, links, inputs, landmarks, and `role="img"`. It is **not reliable** on plain `div` and `span`.
+- **Include the visible text** in the name (WCAG 2.5.3).
+- **Keep labels short, unique, and free of role words and state.**
+- **Translate labels,** and consider hidden text for multilingual sites.
+- **Check names** in the Accessibility panel, and with voice control and a screen reader.
+
+Next, learn how to name something from text that is already on the page with [aria-labelledby](./aria-labelledby).

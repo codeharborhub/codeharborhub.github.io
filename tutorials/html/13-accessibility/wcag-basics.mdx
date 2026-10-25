@@ -1,0 +1,572 @@
+---
+id: html-wcag-basics
+title: "WCAG Basics: The Accessibility Standard"
+sidebar_label: "WCAG Basics"
+sidebar_position: 3
+slug: /html/accessibility/wcag-basics
+description: "Learn the Web Content Accessibility Guidelines (WCAG): the four principles, the three conformance levels A, AA and AAA, how success criteria work, the rules beginners meet most, and what is new in WCAG 2.2. Includes a searchable success-criteria explorer, a live text-spacing test, and a level drill."
+keywords:
+  - WCAG basics
+  - WCAG 2.2
+  - WCAG levels A AA AAA
+  - success criteria
+  - POUR principles
+  - text spacing 1.4.12
+  - target size 2.5.8
+  - accessibility standards
+  - accessibility compliance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, wcag, a11y, standards, frontend]
+---
+
+import {useState, useRef, useEffect} from 'react';
+
+export const criteria = [
+  {id: "1.1.1", name: "Non-text Content", level: "A", pour: "Perceivable", isNew: false, plain: "Give images, icons, and controls a text alternative that serves the same purpose.", html: "alt on img, accessible names on buttons, alt empty for decoration"},
+  {id: "1.2.2", name: "Captions (Prerecorded)", level: "A", pour: "Perceivable", isNew: false, plain: "Videos with speech need captions.", html: "track kind=captions on video"},
+  {id: "1.2.5", name: "Audio Description (Prerecorded)", level: "AA", pour: "Perceivable", isNew: false, plain: "Important visual information in a video is described in audio.", html: "an extra audio track, or a description in the narration"},
+  {id: "1.3.1", name: "Info and Relationships", level: "A", pour: "Perceivable", isNew: false, plain: "Structure shown visually must also exist in the code.", html: "headings, lists, tables with th, label for, fieldset and legend"},
+  {id: "1.3.2", name: "Meaningful Sequence", level: "A", pour: "Perceivable", isNew: false, plain: "The reading order in the code makes sense.", html: "write source order to match reading order"},
+  {id: "1.3.4", name: "Orientation", level: "AA", pour: "Perceivable", isNew: false, plain: "Do not lock the page to portrait or landscape.", html: "no forced orientation in CSS or script"},
+  {id: "1.3.5", name: "Identify Input Purpose", level: "AA", pour: "Perceivable", isNew: false, plain: "Tell the browser what personal information a field wants.", html: "autocomplete=\"email\", \"name\", \"postal-code\""},
+  {id: "1.4.1", name: "Use of Color", level: "A", pour: "Perceivable", isNew: false, plain: "Never use colour as the only way to show information.", html: "add text, icons, or underlines next to colour"},
+  {id: "1.4.3", name: "Contrast (Minimum)", level: "AA", pour: "Perceivable", isNew: false, plain: "Text contrast of at least 4.5 to 1, or 3 to 1 for large text.", html: "check colour pairs in CSS"},
+  {id: "1.4.4", name: "Resize Text", level: "AA", pour: "Perceivable", isNew: false, plain: "Text can be enlarged to 200 percent without losing content.", html: "use rem and em, avoid fixed heights"},
+  {id: "1.4.10", name: "Reflow", level: "AA", pour: "Perceivable", isNew: false, plain: "At 320 CSS pixels wide, content fits without sideways scrolling.", html: "responsive layout, viewport meta tag"},
+  {id: "1.4.11", name: "Non-text Contrast", level: "AA", pour: "Perceivable", isNew: false, plain: "Controls, icons, and focus indicators have at least 3 to 1 contrast.", html: "visible input borders and focus outlines"},
+  {id: "1.4.12", name: "Text Spacing", level: "AA", pour: "Perceivable", isNew: false, plain: "Content still works when users increase line, letter, word, and paragraph spacing.", html: "avoid fixed heights and clipped text"},
+  {id: "1.4.13", name: "Content on Hover or Focus", level: "AA", pour: "Perceivable", isNew: false, plain: "Pop-ups that appear on hover or focus can be dismissed, hovered, and stay put.", html: "tooltips that stay open and close with Escape"},
+  {id: "2.1.1", name: "Keyboard", level: "A", pour: "Operable", isNew: false, plain: "Everything that works with a mouse works with a keyboard.", html: "real buttons, links, and form controls"},
+  {id: "2.1.2", name: "No Keyboard Trap", level: "A", pour: "Operable", isNew: false, plain: "If focus can get in, it can get out.", html: "dialogs and widgets that close with Escape"},
+  {id: "2.2.1", name: "Timing Adjustable", level: "A", pour: "Operable", isNew: false, plain: "Let people extend or turn off time limits.", html: "warn before a session expires, offer more time"},
+  {id: "2.2.2", name: "Pause, Stop, Hide", level: "A", pour: "Operable", isNew: false, plain: "Moving or auto-updating content can be paused.", html: "pause button on carousels and animations"},
+  {id: "2.3.1", name: "Three Flashes or Below", level: "A", pour: "Operable", isNew: false, plain: "Nothing flashes more than three times in a second.", html: "avoid flashing content"},
+  {id: "2.4.1", name: "Bypass Blocks", level: "A", pour: "Operable", isNew: false, plain: "Let people skip repeated blocks, such as the menu.", html: "skip link, landmarks, headings"},
+  {id: "2.4.2", name: "Page Titled", level: "A", pour: "Operable", isNew: false, plain: "Every page has a title that describes it.", html: "a unique title element"},
+  {id: "2.4.3", name: "Focus Order", level: "A", pour: "Operable", isNew: false, plain: "Tab order follows a logical sequence.", html: "source order, and avoid positive tabindex"},
+  {id: "2.4.4", name: "Link Purpose (In Context)", level: "A", pour: "Operable", isNew: false, plain: "Link text tells you where it goes.", html: "avoid click here and read more on their own"},
+  {id: "2.4.6", name: "Headings and Labels", level: "AA", pour: "Operable", isNew: false, plain: "Headings and labels describe their topic or purpose.", html: "clear headings and form labels"},
+  {id: "2.4.7", name: "Focus Visible", level: "AA", pour: "Operable", isNew: false, plain: "Keyboard focus can always be seen.", html: "never remove outline without a replacement"},
+  {id: "2.4.11", name: "Focus Not Obscured (Minimum)", level: "AA", pour: "Operable", isNew: true, plain: "A focused item is not completely hidden by sticky headers or pop-ups.", html: "scroll-padding and careful sticky bars"},
+  {id: "2.5.3", name: "Label in Name", level: "A", pour: "Operable", isNew: false, plain: "The accessible name includes the visible label text.", html: "keep aria-label starting with the visible words"},
+  {id: "2.5.7", name: "Dragging Movements", level: "AA", pour: "Operable", isNew: true, plain: "Anything done by dragging can also be done with a simple click or tap.", html: "buttons beside sliders and sortable lists"},
+  {id: "2.5.8", name: "Target Size (Minimum)", level: "AA", pour: "Operable", isNew: true, plain: "Pointer targets are at least 24 by 24 CSS pixels, or have enough space around them.", html: "padding on small icon buttons"},
+  {id: "3.1.1", name: "Language of Page", level: "A", pour: "Understandable", isNew: false, plain: "The page language is set.", html: "lang on the html element"},
+  {id: "3.1.2", name: "Language of Parts", level: "AA", pour: "Understandable", isNew: false, plain: "Passages in other languages are marked.", html: "lang on the element"},
+  {id: "3.2.2", name: "On Input", level: "A", pour: "Understandable", isNew: false, plain: "Changing a field does not cause surprise changes of context.", html: "avoid auto-submitting on change"},
+  {id: "3.2.3", name: "Consistent Navigation", level: "AA", pour: "Understandable", isNew: false, plain: "Repeated navigation appears in the same order on every page.", html: "one shared layout"},
+  {id: "3.2.6", name: "Consistent Help", level: "A", pour: "Understandable", isNew: true, plain: "Help options are in the same place on each page.", html: "same footer or header help link"},
+  {id: "3.3.1", name: "Error Identification", level: "A", pour: "Understandable", isNew: false, plain: "Say in text which field has a problem, and what it is.", html: "error message linked with aria-describedby"},
+  {id: "3.3.2", name: "Labels or Instructions", level: "A", pour: "Understandable", isNew: false, plain: "Fields have labels or clear instructions.", html: "label for, and hint text"},
+  {id: "3.3.3", name: "Error Suggestion", level: "AA", pour: "Understandable", isNew: false, plain: "When an error is known, suggest a fix.", html: "Enter a date such as 21/10/2026"},
+  {id: "3.3.7", name: "Redundant Entry", level: "A", pour: "Understandable", isNew: true, plain: "Do not make people retype information they already gave in the same process.", html: "prefill, or offer a copy of earlier answers"},
+  {id: "3.3.8", name: "Accessible Authentication (Minimum)", level: "AA", pour: "Understandable", isNew: true, plain: "Logging in does not rely on remembering or transcribing, unless there is another way.", html: "allow paste and password managers, offer other login methods"},
+  {id: "4.1.2", name: "Name, Role, Value", level: "A", pour: "Robust", isNew: false, plain: "Every control exposes a name, a role, and its state.", html: "native elements, or correct ARIA"},
+  {id: "4.1.3", name: "Status Messages", level: "AA", pour: "Robust", isNew: false, plain: "Important updates are announced without moving focus.", html: "role=status or aria-live regions"},
+];
+
+export function CriteriaExplorer() {
+  const [pour, setPour] = useState("All");
+  const [level, setLevel] = useState("All");
+  const [query, setQuery] = useState("");
+  const [onlyNew, setOnlyNew] = useState(false);
+  const text = query.trim().toLowerCase();
+  const shown = criteria.filter((item) => (pour === "All" || item.pour === pour) && (level === "All" || item.level === level) && (!onlyNew || item.isNew) && (text === "" || (item.id + " " + item.name + " " + item.plain + " " + item.html).toLowerCase().indexOf(text) !== -1));
+  return (
+    <div>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "0.8rem", marginBottom: "0.6rem"}}>
+        <label>Principle<br /><select value={pour} onChange={(event) => setPour(event.target.value)}>
+          <option>All</option>
+          <option>Perceivable</option>
+          <option>Operable</option>
+          <option>Understandable</option>
+          <option>Robust</option>
+        </select></label>
+        <label>Level<br /><select value={level} onChange={(event) => setLevel(event.target.value)}>
+          <option>All</option>
+          <option>A</option>
+          <option>AA</option>
+        </select></label>
+        <label>Search<br /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="keyboard, colour, label…" /></label>
+        <label style={{alignSelf: "end"}}><input type="checkbox" checked={onlyNew} onChange={(event) => setOnlyNew(event.target.checked)} /> Only new in WCAG 2.2</label>
+      </div>
+      <p role="status" style={{margin: "0 0 0.4rem"}}>Showing <strong>{shown.length}</strong> of {criteria.length} commonly used criteria.</p>
+      <div style={{maxHeight: "24rem", overflow: "auto"}}>
+        <table style={{width: "100%"}}>
+          <thead>
+            <tr><th scope="col">Number</th><th scope="col">Name</th><th scope="col">Level</th><th scope="col">In plain words</th><th scope="col">In HTML</th></tr>
+          </thead>
+          <tbody>
+            {shown.map((item) => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.name}{item.isNew ? " (new in 2.2)" : ""}<br /><span style={{fontSize: "0.8em"}}>{item.pour}</span></td>
+                <td>{item.level}</td>
+                <td>{item.plain}</td>
+                <td style={{fontSize: "0.85em"}}>{item.html}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a hand-picked, simplified list of the criteria beginners meet most. It is not the full standard, and the plain-language summaries are shortened, so read the official wording at the W3C for anything that matters.
+      </p>
+    </div>
+  );
+}
+
+export function SpacingTest() {
+  const [apply, setApply] = useState(false);
+  const [fixed, setFixed] = useState(true);
+  const [clipped, setClipped] = useState(false);
+  const box = useRef(null);
+  useEffect(() => {
+    const element = box.current;
+    if (element) setClipped(element.scrollHeight > element.clientHeight + 1);
+  }, [apply, fixed]);
+  const spacing = apply ? {lineHeight: 1.5, letterSpacing: "0.12em", wordSpacing: "0.16em"} : {lineHeight: 1.2};
+  const paragraph = {margin: apply ? "0 0 2em" : "0 0 0.4em"};
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Options</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={apply} onChange={(event) => setApply(event.target.checked)} /> Apply the text spacing a reader might choose (line height 1.5, paragraphs 2 times the font size, letters 0.12em, words 0.16em)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={fixed} onChange={(event) => setFixed(event.target.checked)} /> The box has a fixed height (a common mistake)</label>
+      </fieldset>
+      <div ref={box} style={{...spacing, height: fixed ? "8.5rem" : "auto", overflow: fixed ? "hidden" : "visible", border: "2px solid #1d4ed8", borderRadius: "8px", padding: "0.6rem", background: "#eff6ff", color: "#1e293b"}}>
+        <p style={{...paragraph, marginTop: 0}}>Our bakery opens at seven every morning. The first loaves leave the oven at half past seven.</p>
+        <p style={paragraph}>Order before Friday noon to collect your sourdough on Saturday. Allergy information is available at the counter.</p>
+        <p style={{margin: 0, fontWeight: 700}}>Important: we are closed on public holidays.</p>
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {clipped ? "Failure: some text is cut off, including the last line. A reader who needs more spacing loses information." : apply ? "Pass: all the text is still visible with the extra spacing." : "The text is fully visible with the default spacing. Now turn on the extra spacing."}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The check is real: it measures whether the box's content is taller than the box. Exact results depend on your screen width and fonts. A flexible height fixes the problem, because the box grows with the text.
+      </p>
+    </div>
+  );
+}
+
+export function LevelDrill() {
+  const pool = ["1.1.1", "1.4.3", "2.1.1", "2.4.7", "3.1.1", "3.1.2", "3.3.1", "4.1.3", "1.2.5", "2.4.2"].map((id) => criteria.find((item) => item.id === id));
+  const [index, setIndex] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [score, setScore] = useState(0);
+  if (index >= pool.length) {
+    return (
+      <div>
+        <p role="status" style={{margin: "0 0 0.5rem"}}>Finished. Score: <strong>{score} out of {pool.length}</strong>.</p>
+        <button type="button" onClick={() => { setIndex(0); setPicked(null); setScore(0); }}>Try again</button>
+      </div>
+    );
+  }
+  const item = pool[index];
+  const choose = (choice) => {
+    if (picked !== null) return;
+    setPicked(choice);
+    if (choice === item.level) setScore(score + 1);
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.3rem", fontSize: "0.9em"}}>Question {index + 1} of {pool.length}</p>
+      <p style={{margin: "0 0 0.4rem", fontSize: "1.1em"}}><strong>{item.id} {item.name}</strong></p>
+      <p style={{margin: "0 0 0.6rem"}}>{item.plain}</p>
+      <p style={{margin: "0 0 0.5rem"}}>At which level is this criterion?</p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={() => choose("A")} disabled={picked !== null} style={{marginRight: "0.4rem"}}>Level A</button>
+        <button type="button" onClick={() => choose("AA")} disabled={picked !== null}>Level AA</button>
+      </p>
+      <div role="status">
+        {picked === null ? null : (<p style={{margin: "0 0 0.5rem"}}><strong>{picked === item.level ? "Correct." : "Not quite."}</strong> It is level {item.level}, in the {item.pour} principle.</p>)}
+      </div>
+      {picked !== null ? (<button type="button" onClick={() => { setPicked(null); setIndex(index + 1); }}>{index === pool.length - 1 ? "See my score" : "Next"}</button>) : null}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Levels are guidance for how essential and how achievable a rule is. Most laws and policies ask for A plus AA together.
+      </p>
+    </div>
+  );
+}
+
+If accessibility is the goal, **WCAG** is the map. Its full name is the **Web Content Accessibility Guidelines.** It is written by the World Wide Web Consortium (W3C), the same group that standardises HTML, and it is the standard that most laws, policies, and testers around the world rely on.
+
+WCAG can look intimidating: dozens of numbered rules, three levels, and long technical writing. This lesson gives you the **shape** of it, so you can find your way. You will not memorise every rule. You will learn how it is organised, which rules matter first, and how to read the rest when you need them.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What WCAG is, and its **versions**
+- The structure: **principles, guidelines, success criteria, techniques**
+- The three **levels:** A, AA, AAA
+- The **rules** beginners meet most
+- What is **new in WCAG 2.2**
+- How **conformance** works, and how to aim for it in practice
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">                                   <!-- 3.1.1 Language of Page -->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order bread | The Bread Bin</title>       <!-- 2.4.2 Page Titled -->
+</head>
+<body>
+  <a href="#main">Skip to main content</a>         <!-- 2.4.1 Bypass Blocks -->
+  <main id="main">
+    <h1>Order bread</h1>                           <!-- 1.3.1 Info and Relationships -->
+    <img src="loaf.jpg" alt="A golden sourdough loaf"> <!-- 1.1.1 Non-text Content -->
+
+    <label for="email">Email address</label>       <!-- 3.3.2 Labels or Instructions -->
+    <input id="email" type="email" autocomplete="email"> <!-- 1.3.5 Input Purpose -->
+    <button type="submit">Order</button>           <!-- 2.1.1 Keyboard, 4.1.2 Name, Role, Value -->
+  </main>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Criteria Explorer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CriteriaExplorer />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice how many WCAG rules are met just by writing ordinary, honest HTML. Use the explorer to filter by principle and level, or search for a topic such as "keyboard" or "colour".
+
+## A Short History
+
+| Version | Published | Notes |
+| :-- | :-- | :-- |
+| WCAG 1.0 | 1999 | The first version, tied to older technology |
+| WCAG 2.0 | 2008 | A new structure, independent of any one technology. Also an international standard |
+| WCAG 2.1 | 2018 | Added rules for mobile, low vision, and cognitive needs |
+| WCAG 2.2 | 2023 | Added rules for focus, dragging, target size, help, and login |
+| WCAG 3.0 | In development | A larger redesign. Not yet a finished standard when this was written, so check the W3C |
+
+The 2.x versions are **backward compatible:** a page that meets WCAG 2.2 also meets 2.1 and 2.0, apart from one rule (4.1.1 Parsing) that was removed in 2.2 because modern browsers handle it. Check which version your law or client requires, and whether newer versions are accepted.
+
+## How WCAG Is Organised
+
+WCAG has four layers, from broad to specific:
+
+| Layer | What it is | Example |
+| :-- | :-- | :-- |
+| **Principles** (4) | The big goals: Perceivable, Operable, Understandable, Robust | Perceivable |
+| **Guidelines** (13) | Themes under each principle | 1.1 Text Alternatives |
+| **Success criteria** (about 80 in 2.2) | Testable rules, each with a level | 1.1.1 Non-text Content (Level A) |
+| **Techniques** | Advice and examples for meeting criteria, written by W3C. They are **not** requirements | "Use alt on img" |
+
+The **success criteria** are the heart. Each one is written so that a person can check, "pass" or "fail". The numbers follow the pattern **principle . guideline . criterion**, so 1.4.3 is principle 1 (Perceivable), guideline 4 (Distinguishable), criterion 3 (Contrast).
+
+### Techniques
+
+For each criterion, W3C publishes three kinds of techniques:
+
+- **Sufficient:** ways that are known to meet the criterion.
+- **Advisory:** extra things that go beyond the minimum.
+- **Failures:** common mistakes that definitely fail the criterion.
+
+You do **not** have to use the sufficient techniques, but they are a reliable shortcut.
+
+## The Three Levels
+
+| Level | Meaning | Typical use |
+| :-- | :-- | :-- |
+| **A** | The **minimum.** Without these, some people cannot use the page at all | Always required |
+| **AA** | The **standard target.** Removes the biggest remaining barriers | What most laws and policies ask for: **A plus AA** |
+| **AAA** | The **highest.** Excellent, but some rules cannot be met for every kind of content | Pick the ones that fit, but do not expect whole-site AAA |
+
+Levels are cumulative: to meet AA, you meet **all** the A criteria **and** all the AA ones.
+
+:::note Level is not importance
+Level A is not "more important" in a simple way. It reflects how essential the rule is, how widely it applies, and how achievable it is without limiting design. Some AA rules (such as contrast) affect a huge number of people.
+:::
+
+## The Four Principles in More Detail
+
+### 1. Perceivable
+
+People must be able to take in the information with at least one of their senses.
+
+- **Text alternatives** for images and other non-text content (1.1.1)
+- **Captions** and transcripts for audio and video (1.2.x)
+- **Structure in the code,** not just in the look (1.3.1)
+- **Enough contrast,** and not colour alone (1.4.1, 1.4.3, 1.4.11)
+- **Resizable and reflowing text** (1.4.4, 1.4.10, 1.4.12)
+
+### 2. Operable
+
+People must be able to use all the controls and navigate the content, however they interact.
+
+- **Everything works with a keyboard** (2.1.1), with **no traps** (2.1.2)
+- **Enough time,** and control over moving content (2.2.x)
+- **No dangerous flashing** (2.3.1)
+- **Ways to find your way:** page titles, skip links, headings, focus order, visible focus (2.4.x)
+- **Easy pointer use:** no dependence on tricky gestures or tiny targets (2.5.x)
+
+### 3. Understandable
+
+People must be able to make sense of the content and how the interface works.
+
+- **Readable:** the language is set and marked (3.1.x)
+- **Predictable:** things behave consistently, and nothing surprising happens on focus or input (3.2.x)
+- **Input assistance:** labels, clear errors, and suggestions for fixing them (3.3.x)
+
+### 4. Robust
+
+The content must work for many tools, now and in the future.
+
+- **Name, role, and value** for every control (4.1.2)
+- **Status messages** announced without moving focus (4.1.3)
+
+## What Is New in WCAG 2.2
+
+WCAG 2.2 added nine criteria at A and AA (and a few at AAA). The ones beginners are most likely to meet:
+
+| Number | Name | Level | What it asks |
+| :-- | :-- | :-- | :-- |
+| 2.4.11 | Focus Not Obscured (Minimum) | AA | A focused item is not completely hidden behind sticky headers or banners |
+| 2.5.7 | Dragging Movements | AA | Anything you can drag also has a click or tap alternative |
+| 2.5.8 | Target Size (Minimum) | AA | Click and tap targets are at least 24 by 24 CSS pixels, or have enough space around them |
+| 3.2.6 | Consistent Help | A | Help links appear in the same place on each page |
+| 3.3.7 | Redundant Entry | A | Do not make people enter the same information twice in one process |
+| 3.3.8 | Accessible Authentication (Minimum) | AA | Logging in does not depend only on remembering or retyping something |
+
+In 3.3.8, allowing **paste** and **password managers**, and offering other login methods, helps a great deal.
+
+## Try It: A Rule You Can Feel (1.4.12 Text Spacing)
+
+Some people with dyslexia or low vision set their own text spacing to read comfortably. Criterion 1.4.12 says your page must **still work** when they do. The most common failure is a **fixed-height box:** the text grows, and the box does not, so words are cut off.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```css title="text-spacing.css"
+/* Fails: the box cannot grow, so extra spacing cuts off the text */
+.notice {
+  height: 8.5rem;
+  overflow: hidden;
+}
+
+/* Passes: the box grows with its content */
+.notice {
+  min-height: 8.5rem;
+}
+```
+
+</TabItem>
+<TabItem value="output" label="Text Spacing Test">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SpacingTest />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The general lesson: **leave room to grow.** Avoid fixed heights and `overflow: hidden` on anything that holds text.
+
+## Try It: Which Level?
+
+Test what you have learned so far:
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="levels.html"
+<!-- 3.1.1 Language of Page (A) -->
+<html lang="en">
+
+<!-- 3.1.2 Language of Parts (AA) -->
+<p>The French say <span lang="fr">bon appétit</span>.</p>
+
+<!-- 4.1.3 Status Messages (AA) -->
+<div role="status">3 results found</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Level Drill">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LevelDrill />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Conformance: What "Meeting WCAG" Means
+
+To claim conformance to a level, you must meet the following:
+
+1. **All success criteria** at that level (and the levels below it).
+2. **Whole pages.** You cannot claim conformance for half a page.
+3. **Complete processes.** If a page is a step in a process (such as checkout), all the steps must conform.
+4. **Only accessibility-supported uses** of technology, meaning ways that work with real assistive technology.
+5. **Non-interference.** Technologies that do not meet the rules must not block users from the rest of the page.
+
+Alternatives, such as a separate "accessible version", are allowed in limited cases, but they come with strict conditions, and are rarely a good idea.
+
+Most teams do not claim perfection. Instead, they **aim for WCAG 2.2 AA,** test regularly, publish an **accessibility statement,** and fix problems in order of impact.
+
+## A Practical Way to Use WCAG
+
+1. **Decide your target.** For most projects, WCAG 2.2 Level AA.
+2. **Build with semantic HTML.** It meets many criteria automatically.
+3. **Use a checklist** (like the explorer above) while designing, building, and reviewing.
+4. **Test with automatic tools** to catch the easy things. They find only part of the problems.
+5. **Test by hand:** keyboard, zoom, screen reader, and contrast.
+6. **Include real users** with disabilities when you can.
+7. **Record what you find,** and fix the highest-impact problems first.
+8. **Keep checking.** Every new feature is a chance to introduce a new barrier.
+
+## Good Habits
+
+1. **Learn the four principles first,** and the numbered rules gradually.
+2. **Use semantic HTML,** which satisfies many criteria for free.
+3. **Read the official wording** of any criterion you are unsure about.
+4. **Aim for AA,** and add AAA rules where they are easy.
+5. **Do not confuse a tool's pass with accessibility.**
+6. **Document your decisions** and known issues.
+7. **Test at the design stage,** not just at the end.
+8. **Keep up with new versions.**
+
+## Accessibility Checklist (A Beginner's Top Ten)
+
+- [ ] Page `lang` and a unique `<title>` (3.1.1, 2.4.2)
+- [ ] Alt text for meaningful images, and empty alt for decoration (1.1.1)
+- [ ] Headings, lists, and landmarks that reflect the real structure (1.3.1)
+- [ ] Contrast of at least 4.5 to 1 for text, and 3 to 1 for controls (1.4.3, 1.4.11)
+- [ ] Information not shown by colour alone (1.4.1)
+- [ ] Everything works with the keyboard, with no traps (2.1.1, 2.1.2)
+- [ ] A visible focus, and a logical order (2.4.7, 2.4.3)
+- [ ] Labels for every field, and helpful error messages (3.3.1, 3.3.2, 3.3.3)
+- [ ] The page works at 200 percent zoom and 320 CSS pixels wide (1.4.4, 1.4.10)
+- [ ] Controls have a name, a role, and a state (4.1.2)
+
+## Security and Privacy Notes
+
+- **A compliance report may expose details of your system.** Do not publish internal addresses, tools, or unfixed vulnerabilities in an accessibility statement.
+- **Accessible authentication (3.3.8) is a security gain,** not a risk. Allowing paste and password managers leads to stronger, unique passwords. Do not block paste in password fields.
+- **Time limits (2.2.1)** should be extended, not removed, for secure sessions. Warn people, and let them continue. Never silently log someone out in the middle of a form.
+- **Do not log assistive technology use.** Information about how people use your site can reveal a disability, which is sensitive personal data.
+- **Third-party "instant compliance" tools** may load scripts and collect data. Review what they do before adding them, and remember that they do not guarantee conformance.
+- **Error messages** (3.3.1) should help without giving away secrets, such as whether a certain email address has an account.
+
+## Global Audience Notes
+
+- **WCAG is used worldwide.** Many countries reference or adopt it. The European standard EN 301 549 includes WCAG 2.1 AA for web content, and many national laws point to WCAG levels. Laws change, so check your region. This is not legal advice.
+- **WCAG has official and unofficial translations** in many languages. Using one can help local teams, but check that it matches the English wording for exact requirements.
+- **Language of page and parts (3.1.1, 3.1.2)** are especially important on multilingual sites.
+- **Reading level:** the Level AAA criterion for reading level is about simple language. Plain writing is useful in every language.
+- **Different writing systems** may need different spacing and sizes. Test text spacing and zoom in each script you support.
+- **Networks and devices vary.** An accessible page is usually a light one, and that helps people on limited connections.
+
+## Common Mistakes to Avoid
+
+1. **Believing WCAG is only for large companies.**
+2. **Treating A as enough,** when most policies expect A and AA together.
+3. **Relying only on an automatic score.**
+4. **Memorising numbers instead of understanding the reasons.**
+5. **Fixed heights and widths** that break text spacing and zoom.
+6. **Contrast measured once,** and then broken by a new colour.
+7. **Dragging, hover, or gestures as the only way** to do something.
+8. **Hiding the focus,** or covering it with a sticky header.
+9. **Tiny tap targets** next to each other.
+10. **Making people retype information,** or remember a code, to log in.
+11. **Claiming conformance** for pages you have not tested.
+12. **Forgetting to retest** after changes.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the explorer, and list every Level A criterion about keyboards or focus.
+2. Find three criteria that are new in WCAG 2.2, and explain each in your own words.
+3. Use the text spacing test, and fix the failing box in your own CSS.
+4. Pick a page you built, and check it against the "top ten" list above.
+5. Open the W3C's official "How to Meet WCAG" quick reference, and find criterion 1.4.3.
+6. Read the "Understanding" document for one criterion, and note one technique and one failure.
+7. Check the size of the smallest button on one of your pages. Is it at least 24 by 24 CSS pixels?
+8. Try logging in to a site with a password manager. Does it work?
+9. Write a short accessibility statement for an imaginary site, with a contact address for reporting problems.
+10. Bonus: compare what your country's law says about accessibility with the WCAG level it requires.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the four WCAG principles?</summary>
+
+Perceivable, Operable, Understandable, and Robust, remembered as POUR.
+
+</details>
+
+<details>
+<summary>2. What is a success criterion?</summary>
+
+A testable rule in WCAG, with a number, a name, and a level (A, AA, or AAA). For example, 1.4.3 Contrast (Minimum) at level AA.
+
+</details>
+
+<details>
+<summary>3. Which level do most laws and policies require?</summary>
+
+Level AA, which includes all the Level A criteria as well.
+
+</details>
+
+<details>
+<summary>4. Are WCAG techniques requirements?</summary>
+
+No. Techniques are helpful ways to meet the criteria, written by W3C. Only the success criteria are requirements.
+
+</details>
+
+<details>
+<summary>5. Name two things that are new in WCAG 2.2.</summary>
+
+For example, Target Size (Minimum) of 24 by 24 CSS pixels, Dragging Movements needing an alternative, Focus Not Obscured, Consistent Help, Redundant Entry, and Accessible Authentication.
+
+</details>
+
+<details>
+<summary>6. Why should you avoid fixed-height text boxes?</summary>
+
+When people increase text spacing or size, the text grows, and a fixed-height box cuts it off. That fails text spacing and resize rules.
+
+</details>
+
+## Key Takeaways
+
+- **WCAG** is the W3C's international standard for accessible web content. The current version is **2.2.**
+- It has **4 principles,** **13 guidelines,** and about **80 success criteria,** plus **techniques** that help but are not required.
+- **Levels A, AA, AAA** are cumulative. **AA** is the usual target.
+- Many criteria are met by **honest, semantic HTML:** language, title, headings, labels, buttons, and links.
+- **WCAG 2.2** added rules for focus, dragging, target size, consistent help, redundant entry, and authentication.
+- Conformance applies to **whole pages and complete processes.**
+- Use automatic tools, manual tests, and real people. No single method is enough.
+- Leave room to grow: avoid **fixed heights** and **clipped text.**
+
+Now see how structure helps everyone, with [Semantic Accessibility](./semantic-accessibility).

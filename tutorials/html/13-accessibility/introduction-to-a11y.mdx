@@ -1,0 +1,573 @@
+---
+id: html-intro-a11y
+title: "Introduction to Accessibility (a11y)"
+sidebar_label: "Introduction to A11y"
+sidebar_position: 2
+slug: /html/accessibility/introduction-to-a11y
+description: "Learn what web accessibility (a11y) means, why it matters for people, law, business and quality, the common myths, and the one idea that explains everything: the accessibility tree. Includes a live keyboard test of fake and real buttons, a simplified accessibility tree viewer, and a ten-minute self-audit."
+keywords:
+  - what is a11y
+  - web accessibility introduction
+  - accessibility tree
+  - accessible button vs div
+  - accessibility myths
+  - inclusive design
+  - assistive technology
+  - accessibility for beginners
+  - accessible name and role
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, a11y, accessibility-tree, assistive-technology, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function ButtonTest() {
+  const [focusable, setFocusable] = useState(false);
+  const [keys, setKeys] = useState(false);
+  const [counts, setCounts] = useState({fakeFocus: 0, fakeMouse: 0, fakeKeyboard: 0, realFocus: 0, realMouse: 0, realKeyboard: 0});
+  const bump = (name) => setCounts((previous) => ({...previous, [name]: previous[name] + 1}));
+  const reset = () => setCounts({fakeFocus: 0, fakeMouse: 0, fakeKeyboard: 0, realFocus: 0, realMouse: 0, realKeyboard: 0});
+  const look = {display: "inline-block", background: "#1d4ed8", color: "#fff", padding: "0.5rem 1rem", borderRadius: "6px", border: 0, fontSize: "1em", cursor: "pointer"};
+  const onFakeKey = keys ? (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      bump("fakeKeyboard");
+    }
+  } : undefined;
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Try to fix the fake button, one step at a time</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={focusable} onChange={(event) => setFocusable(event.target.checked)} /> Add <code>tabindex="0"</code> to the fake button</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={keys} onChange={(event) => setKeys(event.target.checked)} /> Add Enter and Space handling to the fake button</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.4rem"}}>Press <kbd>Tab</kbd> to move around, then <kbd>Enter</kbd> or <kbd>Space</kbd> to press. You can use the mouse too.</p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <span {...(focusable ? {tabIndex: 0} : {})} onFocus={() => bump("fakeFocus")} onClick={() => bump("fakeMouse")} onKeyDown={onFakeKey} style={look}>Fake button (a span)</span>{" "}
+        <button type="button" onFocus={() => bump("realFocus")} onClick={(event) => bump(event.detail === 0 ? "realKeyboard" : "realMouse")} style={look}>Real button</button>
+      </p>
+      <table>
+        <caption>What each one really did</caption>
+        <thead>
+          <tr><th scope="col">Test</th><th scope="col">Fake button</th><th scope="col">Real button</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row" style={{textAlign: "start"}}>Reached with Tab</th><td>{counts.fakeFocus > 0 ? "Yes" : "No"}</td><td>{counts.realFocus > 0 ? "Yes" : "No"}</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Pressed with the mouse</th><td>{counts.fakeMouse} time(s)</td><td>{counts.realMouse} time(s)</td></tr>
+          <tr><th scope="row" style={{textAlign: "start"}}>Pressed with the keyboard</th><td>{counts.fakeKeyboard} time(s)</td><td>{counts.realKeyboard} time(s)</td></tr>
+        </tbody>
+      </table>
+      <p style={{margin: "0.5rem 0 0"}}><button type="button" onClick={reset}>Reset the counts</button></p>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>
+        {focusable && keys ? "The fake button now works with a keyboard. But a screen reader still does not know it is a button, it has no pressed or disabled state, and you had to write every behaviour yourself." : focusable ? "The fake button can now be reached, but Enter and Space still do nothing. Fixing one part is not enough." : "The fake button cannot be reached with Tab at all, so a keyboard user cannot even find it."}
+      </p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Both elements are real, and the counts come from real browser events. The real button needed no extra code. Whether the keyboard press counts as a click is decided by the browser, not by this demo.
+      </p>
+    </div>
+  );
+}
+
+export const treeSamples = {
+  bad: [
+    '<div class="btn" onclick="go()">Subscribe</div>',
+    '<img src="logo.png">',
+    '<input type="text" placeholder="Email">',
+    '<a href="/more"><img src="arrow.png"></a>',
+    '<span style="font-size:30px">Welcome</span>',
+  ].join("\n"),
+  good: [
+    "<header>",
+    "  <h1>The Bread Bin</h1>",
+    '  <nav aria-label="Main"><ul><li><a href="/recipes">Recipes</a></li></ul></nav>',
+    "</header>",
+    "<main>",
+    "  <h2>Join us</h2>",
+    "  <form>",
+    '    <label for="email">Email address</label>',
+    '    <input id="email" type="email">',
+    '    <button type="submit">Subscribe</button>',
+    "  </form>",
+    '  <img src="loaf.jpg" alt="A golden sourdough loaf">',
+    '  <img src="swirl.svg" alt="">',
+    '  <a href="/more">Read more</a>',
+    "</main>",
+    "<footer><p>Made with love</p></footer>",
+  ].join("\n"),
+};
+
+export const isHidden = (el) => el.hasAttribute("hidden") || el.getAttribute("aria-hidden") === "true" || /display\s*:\s*none/i.test(el.getAttribute("style") || "");
+
+export const textOf = (node) => {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (isHidden(node)) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  return Array.from(node.childNodes).map(textOf).join(" ");
+};
+
+export const nameOf = (el, doc) => {
+  const tag = el.tagName.toLowerCase();
+  const labelledby = el.getAttribute("aria-labelledby");
+  if (labelledby) {
+    const joined = labelledby.split(/\s+/).map((id) => { const target = doc.getElementById(id); return target ? textOf(target).replace(/\s+/g, " ").trim() : ""; }).filter(Boolean).join(" ");
+    if (joined) return joined;
+  }
+  const label = el.getAttribute("aria-label");
+  if (label && label.trim()) return label.trim();
+  if (tag === "img") return el.getAttribute("alt") || "";
+  if (tag === "input" || tag === "textarea" || tag === "select") {
+    const type = (el.getAttribute("type") || "text").toLowerCase();
+    if (tag === "input" && (type === "submit" || type === "button")) return el.getAttribute("value") || (type === "submit" ? "Submit" : "");
+    let lab = el.id ? doc.querySelector('label[for="' + el.id + '"]') : null;
+    if (!lab) lab = el.closest("label");
+    if (lab) return textOf(lab).replace(/\s+/g, " ").trim();
+    if (el.getAttribute("title")) return el.getAttribute("title");
+    if (el.getAttribute("placeholder")) return "";
+    return "";
+  }
+  const text = textOf(el).replace(/\s+/g, " ").trim();
+  return text || el.getAttribute("title") || "";
+};
+
+export const roleOf = (el) => {
+  const explicit = el.getAttribute("role");
+  if (explicit) return explicit.split(/\s+/)[0];
+  const tag = el.tagName.toLowerCase();
+  const inBody = el.parentElement && el.parentElement.tagName.toLowerCase() === "body";
+  if (/^h[1-6]$/.test(tag)) return "heading";
+  if (tag === "a") return el.hasAttribute("href") ? "link" : "generic";
+  if (tag === "button") return "button";
+  if (tag === "textarea") return "textbox";
+  if (tag === "select") return "combobox";
+  if (tag === "input") {
+    const type = (el.getAttribute("type") || "text").toLowerCase();
+    if (type === "hidden") return "none";
+    if (type === "checkbox") return "checkbox";
+    if (type === "radio") return "radio";
+    if (type === "range") return "slider";
+    if (type === "submit" || type === "button" || type === "reset") return "button";
+    return "textbox";
+  }
+  if (tag === "img") return el.getAttribute("alt") === "" ? "none" : "img";
+  if (tag === "nav") return "navigation";
+  if (tag === "main") return "main";
+  if (tag === "aside") return "complementary";
+  if (tag === "header") return inBody ? "banner" : "generic";
+  if (tag === "footer") return inBody ? "contentinfo" : "generic";
+  if (tag === "ul" || tag === "ol") return "list";
+  if (tag === "li") return "listitem";
+  if (tag === "table") return "table";
+  if (tag === "form") return "form";
+  return "generic";
+};
+
+export const interactiveRoles = ["link", "button", "textbox", "checkbox", "radio", "slider", "combobox"];
+
+export const buildTree = (parent, doc, depth, lines) => {
+  Array.from(parent.childNodes).forEach((node) => {
+    if (node.nodeType === 3) {
+      const text = node.textContent.replace(/\s+/g, " ").trim();
+      if (text) lines.push({depth, text: 'text "' + text + '"', warn: ""});
+      return;
+    }
+    if (node.nodeType !== 1 || isHidden(node)) return;
+    const role = roleOf(node);
+    if (role === "none") return;
+    const tag = node.tagName.toLowerCase();
+    if (role === "generic") {
+      if (node.hasAttribute("onclick")) lines.push({depth, text: "generic (has a click handler)", warn: "Clickable, but it exposes no role, so assistive technology cannot tell it can be pressed. It also cannot be reached with Tab. Use a real button or link."});
+      buildTree(node, doc, node.hasAttribute("onclick") ? depth + 1 : depth, lines);
+      return;
+    }
+    const name = nameOf(node, doc);
+    let line = role;
+    if (role === "heading") line += " level " + tag.charAt(1);
+    if (name) line += ' "' + name + '"';
+    let warn = "";
+    if (interactiveRoles.indexOf(role) !== -1 && !name) warn = "No accessible name. A screen reader user hears only the role" + (role === "textbox" && node.getAttribute("placeholder") ? ", and a placeholder is not a reliable label" : "") + ".";
+    if (role === "img" && !node.hasAttribute("alt")) warn = "No alt attribute. Some screen readers read the file name instead.";
+    lines.push({depth, text: line, warn});
+    if (role === "heading" || role === "link" || role === "button" || role === "img") return;
+    buildTree(node, doc, depth + 1, lines);
+  });
+};
+
+export function TreeViewer() {
+  const [source, setSource] = useState(treeSamples.bad);
+  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><body>" + source + "</body></html>", "text/html");
+  const lines = [];
+  buildTree(doc.body, doc, 0, lines);
+  const problems = lines.filter((line) => line.warn).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setSource(treeSamples.bad)}>Load the faulty sample</button>{" "}
+        <button type="button" onClick={() => setSource(treeSamples.good)}>Load the good sample</button>
+      </p>
+      <label htmlFor="tree-source">HTML to inspect (edit it freely)</label>
+      <textarea id="tree-source" rows={9} value={source} onChange={(event) => setSource(event.target.value)} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <p style={{margin: "0.5rem 0 0.2rem"}}><strong>What assistive technology is offered (simplified):</strong></p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "6px", padding: "0.5rem", maxHeight: "18rem", overflow: "auto"}}>
+        {lines.length === 0 ? (<p style={{margin: 0}}>(nothing)</p>) : lines.map((line, index) => (
+          <div key={index} style={{paddingLeft: line.depth * 1.2 + "rem", fontFamily: "monospace", fontSize: "0.85em"}}>
+            {line.text}
+            {line.warn ? (<div style={{paddingLeft: "1rem", fontFamily: "sans-serif", fontSize: "0.95em"}}><strong>Problem:</strong> {line.warn}</div>) : null}
+          </div>
+        ))}
+      </div>
+      <p role="status" style={{margin: "0.5rem 0 0"}}>{problems === 0 ? "No problems found by this simple check. That does not mean the page is fully accessible." : problems + " problem(s) found."}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a teaching simulation. Real browsers follow a longer specification, and screen readers add their own behaviour. To see the real tree, open your browser's developer tools and look for the Accessibility panel.
+      </p>
+    </div>
+  );
+}
+
+export const auditSteps = [
+  "Put the mouse aside. Press Tab repeatedly. Can you reach every link, button, and field?",
+  "Is the focus always visible? Can you tell where you are?",
+  "Zoom the page to 200 percent. Does anything overlap, disappear, or need sideways scrolling?",
+  "Look at the headings only. Do they tell the story of the page in order?",
+  "Is every image either described, or deliberately left empty because it is decoration?",
+  "Does every form field have a visible label that stays on screen?",
+  "Read each link out of context. Would 'Read more' or 'Click here' make sense in a list of links?",
+  "Is anything explained only by colour? Squint, or use a grayscale filter, to check.",
+  "Does the page have a language set and a clear, unique title?",
+  "Run one automatic checker, and then fix the first problem it finds.",
+];
+
+export function QuickAudit() {
+  const [done, setDone] = useState([]);
+  const toggle = (index) => setDone((previous) => (previous.indexOf(index) === -1 ? previous.concat(index) : previous.filter((item) => item !== index)));
+  const percent = Math.round((done.length / auditSteps.length) * 100);
+  return (
+    <div>
+      <ol style={{margin: "0 0 0.6rem", paddingLeft: 0, listStyle: "none"}}>
+        {auditSteps.map((step, index) => (
+          <li key={index} style={{marginBottom: "0.3rem"}}>
+            <label><input type="checkbox" checked={done.indexOf(index) !== -1} onChange={() => toggle(index)} /> {step}</label>
+          </li>
+        ))}
+      </ol>
+      <p role="status" style={{margin: 0}}>
+        <strong>{done.length} of {auditSteps.length} steps done ({percent} percent).</strong> {done.length === auditSteps.length ? "You have run a basic accessibility audit. Write down what you found, and fix the biggest problem first." : "Open any page you have built, and work through the steps."}
+      </p>
+    </div>
+  );
+}
+
+Welcome to the start of the accessibility section. Before any code, one question: **what is accessibility, in plain words?**
+
+It is making sure that **people can actually use what you build**. Not "people who see well, hear well, hold a mouse steadily, and read your language at your speed." Just **people.** Accessibility is the quality of being usable by the widest range of people in the widest range of situations.
+
+You will often see it written **a11y.** That is a numeronym: the letter **a**, then **11** letters, then **y** (a-c-c-e-s-s-i-b-i-l-it, 11 letters, then y). It saves typing, and is easy to search for.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What accessibility means, and **why it matters**
+- The **myths** that stop people from starting
+- How assistive technology sees your page: the **accessibility tree**
+- Why a **real button** beats a fake one
+- How to run a **ten-minute audit** on any page
+- The right **mindset**: build it in, not bolt it on
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A fake button: looks right, but is not a button -->
+<div class="btn" onclick="subscribe()">Subscribe</div>
+
+<!-- A real button: reachable, pressable, and announced correctly -->
+<button type="button" onclick="subscribe()">Subscribe</button>
+```
+
+</TabItem>
+<TabItem value="output" label="Keyboard Test">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ButtonTest />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Both look the same. But try pressing **Tab.** One of them is invisible to a keyboard. That single difference is the heart of accessibility: **what the page looks like is not the same as what it is.**
+
+## Why Accessibility Matters
+
+### 1. It is about people
+
+Roughly one in six people in the world lives with a significant disability, according to the World Health Organization. Add people who are temporarily injured, tired, in bright sunlight, using a slow phone, or reading in a second language, and the group becomes almost everyone, at some time. A page that does not work for them is a page that does not work.
+
+### 2. It is often the law
+
+Many countries have laws or policies that require accessible websites, especially for public services, shops, banks, education, and employers. Examples include the Americans with Disabilities Act and Section 508 in the United States, the European Accessibility Act and the EN 301 549 standard in the European Union, and equivalents in many other places. They usually point to the **Web Content Accessibility Guidelines (WCAG).** The details differ, and change over time, so check the rules for your own situation. This is not legal advice.
+
+### 3. It is good for business
+
+Accessible sites reach more customers, convert more visitors, and are cheaper to maintain, because clean, semantic code is easier to change. Many accessibility improvements overlap with search engine optimisation, mobile friendliness, and better overall usability.
+
+### 4. It is a sign of quality
+
+An accessible page is usually a **well-built** page: clear structure, honest HTML, readable text, predictable behaviour. Developers who build accessibly tend to build better in general.
+
+## Myths and Realities
+
+| Myth | Reality |
+| :-- | :-- |
+| "Accessibility is only for blind people." | It covers seeing, hearing, movement, thinking, and learning, plus temporary and situational limits |
+| "Nobody who is disabled uses my site." | You cannot know. Many people do not announce a disability, and inaccessible sites push users away before they ever tell you |
+| "It is expensive and slow." | Building it in from the start costs little. Fixing it later is what costs a lot |
+| "It makes sites ugly." | Accessible sites can be beautiful. Good contrast, clear layout, and readable type are also good design |
+| "An automatic tool can check everything." | Tools find only a portion of problems. They cannot judge whether your alt text is good, or whether the page makes sense |
+| "ARIA fixes any problem." | ARIA adds information. It does not add behaviour. The best fix is usually native HTML |
+| "I will do it after launch." | After launch, it is harder, costlier, and often forgotten |
+| "Text-only versions solve it." | Separate versions are usually out of date, and treat people unequally. Make the main site accessible |
+
+## The Key Idea: The Accessibility Tree
+
+When a browser reads your HTML, it builds the **DOM,** the tree of elements. It then builds a second, smaller tree for assistive technology: the **accessibility tree.** For each important element, it records four things:
+
+| Piece | Question it answers | Example |
+| :-- | :-- | :-- |
+| **Role** | What is it? | button, link, heading, checkbox |
+| **Name** | What is it called? | "Subscribe", "Email address" |
+| **State** | What is its condition? | checked, expanded, disabled, pressed |
+| **Value** | What does it contain? | the text in a field, the position of a slider |
+
+A screen reader does not look at your pixels. It reads this tree. When a native HTML element is used, the browser fills in the role, name, and state **for you.** When you build a fake control from a `div`, the tree shows only "generic", and you must add everything yourself.
+
+Try the viewer below. It is a **simplified** version of the real thing. Start with the faulty sample, and find the problems. Then load the good sample and compare.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="tree-example.html"
+<!-- The tree sees: button "Subscribe" -->
+<button type="submit">Subscribe</button>
+
+<!-- The tree sees: textbox "Email address" -->
+<label for="email">Email address</label>
+<input id="email" type="email">
+
+<!-- The tree sees: img "A golden sourdough loaf" -->
+<img src="loaf.jpg" alt="A golden sourdough loaf">
+
+<!-- The tree skips it: decoration -->
+<img src="swirl.svg" alt="">
+```
+
+</TabItem>
+<TabItem value="output" label="Tree Viewer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BrowserOnly>{() => <TreeViewer />}</BrowserOnly>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+You can see the real accessibility tree in your own browser: open developer tools, and look for an **Accessibility** panel, in the Elements area in most browsers.
+
+## The Good News
+
+You do not have to memorise hundreds of rules to start. A small number of habits fix most real-world problems:
+
+1. **Use the right element** for the job.
+2. **Give every control a name.**
+3. **Keep a logical heading structure.**
+4. **Describe meaningful images.**
+5. **Make everything work with a keyboard,** with a visible focus.
+6. **Use enough contrast,** and never rely on colour alone.
+7. **Say what went wrong,** in words, when something fails.
+
+The rest of this section teaches each of these in depth.
+
+## Your First Ten-Minute Audit
+
+Open any page you have built (or a favourite site), and work through these checks. You need no special tools. Tick each one as you go.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```text title="audit-notes.txt"
+Page: Home
+Date: ____
+
+Keyboard:   reached everything? ____   focus visible? ____
+Zoom 200%:  anything broken?    ____
+Headings:   logical outline?    ____
+Images:     alt text OK?       ____
+Forms:      every label OK?    ____
+First fix: ____________________
+```
+
+</TabItem>
+<TabItem value="output" label="Quick Audit">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<QuickAudit />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## The Right Mindset
+
+- **Build it in from the start.** Accessibility added at the end is slow and fragile. Accessibility designed in at the beginning is nearly free.
+- **Start with semantic HTML.** It gives you roles, names, keyboard support, and states with no extra work.
+- **Use progressive enhancement.** Make the core content and actions work with plain HTML. Then add styling and scripting on top.
+- **Test early and often,** with a keyboard, with zoom, and with a screen reader.
+- **Listen to disabled people.** Their experience is the real test, and the best teacher.
+- **Aim for progress, not perfection.** No site is perfect. Fix the biggest barriers first, and keep improving.
+- **Share responsibility.** Designers, writers, developers, testers, and managers all affect accessibility.
+
+## Inclusive Design: A Wider View
+
+**Accessibility** is usually about removing barriers, so that disabled people can use a product. **Inclusive design** goes a step further: it asks who might be left out, and designs for that range from the start. A helpful idea comes from the Microsoft inclusive design approach: **a permanent, temporary, or situational limit can look the same.** One arm cannot hold a phone, whether it is broken, whether you were born that way, or whether you are carrying a baby. Designing for one helps all three.
+
+## Good Habits
+
+1. **Use semantic HTML first.**
+2. **Use real buttons and links.**
+3. **Label every control.**
+4. **Check with the keyboard** before you share any page.
+5. **Zoom to 200 percent** as part of every review.
+6. **Write clear, plain content.**
+7. **Test with at least one automatic tool and one manual method.**
+8. **Keep learning.** Accessibility is a skill that grows with practice.
+
+## Accessibility Checklist
+
+- [ ] The page uses real headings, landmarks, lists, buttons, links, and form controls.
+- [ ] Every control and meaningful image has a **name.**
+- [ ] Everything can be done with a **keyboard,** with a visible **focus.**
+- [ ] Text has enough **contrast,** and meaning is never shown by colour alone.
+- [ ] The page works at **200 percent zoom.**
+- [ ] Media has **captions** and transcripts.
+- [ ] Errors and updates are **described in words,** and announced.
+- [ ] The page has a `lang` and a unique `<title>`.
+- [ ] You have tried at least one **screen reader.**
+
+## Security and Privacy Notes
+
+- **Treat disability information as sensitive.** Do not require people to disclose it, and do not store it without a clear purpose and consent.
+- **Do not profile people through their assistive technology.** Detecting screen readers or accessibility settings to track visitors is intrusive. Respond to their preferences with CSS (such as `prefers-reduced-motion`) and do not log them.
+- **Make security features accessible too.** Login steps, CAPTCHAs, and timeouts that exclude people create both a barrier and a risk, because people then look for unsafe workarounds. Offer secure, accessible alternatives, such as passkeys or one-time codes with enough time.
+- **Do not put private details in text that is read aloud,** such as a full card number in an error message, because other people can hear it.
+- **Accessibility overlays and plug-ins that promise instant fixes** often add scripts from third parties and still miss real problems. Be careful with them, and review what they load.
+
+## Global Audience Notes
+
+- **Accessibility needs differ across the world.** Many people use older phones, shared devices, slow networks, and free or built-in assistive tools. Lean, semantic HTML serves them best.
+- **Language matters.** Set `lang`, mark passages in other languages, and write plain text that translates well. Screen readers use `lang` to choose a voice.
+- **Right-to-left languages** need `dir="rtl"`, and testing with real assistive technology.
+- **Standards and laws vary,** but WCAG is used or referenced in many countries, which makes it a good common target.
+- **Different scripts need different text handling,** such as larger sizes for some writing systems. Test with real content in each language you support.
+- **Avoid assumptions** about names, dates, addresses, and abilities. Give people flexible ways to enter and read information.
+
+## Common Mistakes to Avoid
+
+1. **Treating accessibility as a checklist for the last week.**
+2. **Making a fake button from a `div`.**
+3. **Hiding the focus outline.**
+4. **Using placeholder text as the only label.**
+5. **Skipping alt text,** or writing "image of …".
+6. **Using colour alone** to show meaning.
+7. **Trusting an automatic tool as proof** of accessibility.
+8. **Adding ARIA without understanding it.**
+9. **Never trying a keyboard or a screen reader.**
+10. **Assuming your own way of using the web is the only one.**
+11. **Building a separate "accessible version".**
+12. **Giving up because nothing is perfect.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Do the ten-minute audit above on a page you built.
+2. Use the keyboard test above, and explain in one sentence why the fake button fails.
+3. Use the tree viewer to find all the problems in the faulty sample, and fix them one by one.
+4. Open your browser's Accessibility panel on a real page, and find a heading, a link, and a button.
+5. Replace one `div onclick` on your own site with a real button.
+6. Turn on a screen reader (such as the one built into your phone) for five minutes, and use a site you know.
+7. Write a one-paragraph summary of why accessibility matters, for a friend who is a business owner.
+8. List five situations when you have been temporarily limited (for example, bright light, noise, one hand free).
+9. Choose one myth from the table above, and write a short reply to it.
+10. Bonus: write a one-page accessibility promise for your next project, listing the habits you will keep.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a11y mean?</summary>
+
+It is short for "accessibility": the letter a, then 11 letters, then y.
+
+</details>
+
+<details>
+<summary>2. Who benefits from accessibility?</summary>
+
+People with permanent disabilities, people with temporary limits (such as a broken arm), people in difficult situations (such as bright sunlight or a noisy room), and often everyone else too.
+
+</details>
+
+<details>
+<summary>3. What is the accessibility tree?</summary>
+
+A tree the browser builds from your HTML for assistive technology. For each important element, it records a role, a name, a state, and a value.
+
+</details>
+
+<details>
+<summary>4. Why is a real button better than a div that looks like a button?</summary>
+
+A real button is reachable with Tab, works with Enter and Space, and is announced as a button, all without extra code. A div has none of that unless you build every part yourself.
+
+</details>
+
+<details>
+<summary>5. Can an automatic tool tell you if your site is accessible?</summary>
+
+No. Tools find only some problems. You also need manual checks, such as keyboard and screen reader testing, and ideally feedback from disabled users.
+
+</details>
+
+<details>
+<summary>6. When should you start thinking about accessibility?</summary>
+
+At the very beginning of a project. Building it in from the start is far cheaper and more reliable than fixing it later.
+
+</details>
+
+## Key Takeaways
+
+- **Accessibility (a11y)** means making things usable by the widest range of people, in the widest range of situations.
+- It matters for **people, the law, business, and quality.**
+- Browsers build an **accessibility tree** of **roles, names, states, and values** from your HTML. **Native elements fill it in for you.**
+- A fake control from a `div` fails the keyboard, and tells assistive technology nothing.
+- Start with a few habits: the **right element, a name for everything, logical headings, described images, keyboard support, good contrast, and clear errors.**
+- **Build it in early,** test with real methods, and listen to real people.
+- Be careful with the privacy of disability information, and with shortcuts that promise instant accessibility.
+
+Next, learn the standard that most of the world follows: [WCAG Basics](./wcag-basics).

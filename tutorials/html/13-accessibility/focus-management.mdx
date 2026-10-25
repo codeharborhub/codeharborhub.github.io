@@ -1,0 +1,693 @@
+---
+id: html-focus-management
+title: "Focus Management"
+sidebar_label: "Focus Management"
+sidebar_position: 7
+slug: /html/accessibility/focus-management
+description: "Learn how to move keyboard focus on purpose: how focus() and document.activeElement work, when to move focus (dialogs, deleted items, form errors, page changes), how to return focus, and how to avoid stealing it. Includes three live labs: a delete-and-lose-focus lab, a dialog focus lab, and a form error summary lab."
+keywords:
+  - focus management
+  - focus() method
+  - document.activeElement
+  - return focus
+  - dialog focus
+  - focus trap
+  - error summary
+  - tabindex -1
+  - single page app focus
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, focus, keyboard, dialog, forms, a11y, frontend]
+---
+
+import {useState, useRef, useEffect} from 'react';
+
+export function useFocusReadout() {
+  const [where, setWhere] = useState("nowhere yet. Click or Tab into the lab.");
+  useEffect(() => {
+    const onIn = (event) => {
+      const target = event.target;
+      const name = target.getAttribute("aria-label") || (target.textContent || "").trim().slice(0, 36) || target.getAttribute("name") || "";
+      setWhere("<" + target.tagName.toLowerCase() + "> " + name);
+    };
+    const onOut = (event) => {
+      if (!event.relatedTarget) setWhere("the page itself (nothing specific)");
+    };
+    document.addEventListener("focusin", onIn);
+    document.addEventListener("focusout", onOut);
+    return () => {
+      document.removeEventListener("focusin", onIn);
+      document.removeEventListener("focusout", onOut);
+    };
+  }, []);
+  return [where, setWhere];
+}
+
+export function Readout({where}) {
+  return (
+    <p style={{margin: "0.6rem 0 0"}}>
+      Focus is on: <code>{where}</code>
+    </p>
+  );
+}
+
+export const startItems = ["Sourdough", "Rye", "Focaccia", "Baguette"];
+
+export function DeleteFocusLab() {
+  const [items, setItems] = useState(startItems);
+  const [manage, setManage] = useState(true);
+  const [where, setWhere] = useFocusReadout();
+  const pending = useRef(null);
+  const refs = useRef({});
+  const headingRef = useRef(null);
+  const previousCount = useRef(startItems.length);
+  const remove = (name) => {
+    const index = items.indexOf(name);
+    const rest = items.filter((item) => item !== name);
+    if (manage) pending.current = rest.length === 0 ? "heading" : rest[Math.min(index, rest.length - 1)];
+    else pending.current = null;
+    setItems(rest);
+  };
+  useEffect(() => {
+    if (items.length === previousCount.current) return;
+    previousCount.current = items.length;
+    const target = pending.current;
+    pending.current = null;
+    if (target === "heading" && headingRef.current) headingRef.current.focus();
+    else if (target && refs.current[target]) refs.current[target].focus();
+    else if (document.activeElement === document.body) setWhere("the page itself (focus was lost)");
+  }, [items]);
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label><input type="checkbox" checked={manage} onChange={(event) => setManage(event.target.checked)} /> Manage focus after a remove</label>
+      </p>
+      <h4 ref={headingRef} tabIndex={-1} style={{margin: "0 0 0.4rem"}}>{items.length === 0 ? "Your basket is empty" : "Your basket (" + items.length + (items.length === 1 ? " item)" : " items)")}</h4>
+      <ul style={{listStyle: "none", padding: 0, margin: "0 0 0.5rem"}}>
+        {items.map((name) => (
+          <li key={name} style={{display: "flex", gap: "0.6rem", alignItems: "center", marginBottom: "0.3rem"}}>
+            <span style={{minWidth: "6rem"}}>{name}</span>
+            <button type="button" aria-label={"Remove " + name} ref={(element) => { refs.current[name] = element; }} onClick={() => remove(name)}>Remove</button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" onClick={() => setItems(startItems)}>Put the loaves back</button>
+      <Readout where={where} />
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Tab to a Remove button and press Enter. With management on, focus moves to the next item (or the heading when the list is empty). With it off, the button you were on disappears, and focus falls back to the page itself, so the next Tab starts again from the top (or from somewhere unpredictable, depending on the browser). Some browsers (Safari, and Firefox on macOS) do not focus a button when you click it, so use Tab and Enter for the most reliable test.
+      </p>
+    </div>
+  );
+}
+
+export function DialogFocusLab() {
+  const [open, setOpen] = useState(false);
+  const [moveIn, setMoveIn] = useState(true);
+  const [giveBack, setGiveBack] = useState(true);
+  const [trap, setTrap] = useState(true);
+  const [where, setWhere] = useFocusReadout();
+  const openerRef = useRef(null);
+  const dialogRef = useRef(null);
+  const fieldRef = useRef(null);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open && !wasOpen.current && moveIn && fieldRef.current) fieldRef.current.focus();
+    if (!open && wasOpen.current) {
+      if (giveBack && openerRef.current) openerRef.current.focus();
+      else if (document.activeElement === document.body) setWhere("the page itself (focus was lost)");
+    }
+    wasOpen.current = open;
+  }, [open]);
+  const onKeyDown = (event) => {
+    if (event.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (event.key !== "Tab" || !trap || !dialogRef.current) return;
+    const focusable = dialogRef.current.querySelectorAll("button, input, a[href], select, textarea");
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Turn each behaviour on or off</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={moveIn} onChange={(event) => setMoveIn(event.target.checked)} /> Move focus into the dialog when it opens</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={trap} onChange={(event) => setTrap(event.target.checked)} /> Keep Tab inside the dialog while it is open</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={giveBack} onChange={(event) => setGiveBack(event.target.checked)} /> Return focus to the opener when it closes</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem", display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        <button type="button">Home</button>
+        <button type="button">Recipes</button>
+        <button type="button" ref={openerRef} onClick={() => setOpen(true)}>Open the subscribe dialog</button>
+        <button type="button">Contact</button>
+      </p>
+      {open ? (
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="focuslab-dialog-title" onKeyDown={onKeyDown} style={{border: "2px solid #1d4ed8", borderRadius: "8px", padding: "0.8rem", background: "#f1f5f9", color: "#0f172a"}}>
+          <h4 id="focuslab-dialog-title" style={{margin: "0 0 0.5rem", color: "#0f172a"}}>Subscribe to the newsletter</h4>
+          <p style={{margin: "0 0 0.5rem"}}>
+            <label htmlFor="focuslab-email">Email address</label><br />
+            <input id="focuslab-email" ref={fieldRef} type="email" autoComplete="email" style={{width: "100%", maxWidth: "20rem"}} />
+          </p>
+          <button type="button" onClick={() => setOpen(false)}>Subscribe</button>{" "}
+          <button type="button" onClick={() => setOpen(false)}>Cancel</button>
+        </div>
+      ) : null}
+      <Readout where={where} />
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Try it three ways. First with everything on. Then turn off "move focus in" and open the dialog: focus stays on the button behind it, and Esc stops working, because the key press happens outside the dialog. Then turn off "keep Tab inside" and press Tab past Cancel: focus walks out into the page behind the dialog. This lab uses a hand-built dialog so you can switch each part off. The native <code>dialog</code> element does all three for you.
+      </p>
+    </div>
+  );
+}
+
+export function ErrorSummaryLab() {
+  const [move, setMove] = useState(true);
+  const [values, setValues] = useState({name: "", email: ""});
+  const [errors, setErrors] = useState({});
+  const [attempts, setAttempts] = useState(0);
+  const [done, setDone] = useState(false);
+  const [where] = useFocusReadout();
+  const summaryRef = useRef(null);
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const doneRef = useRef(null);
+  const submit = (event) => {
+    event.preventDefault();
+    const found = {};
+    if (values.name.trim() === "") found.name = "Enter your name.";
+    if (values.email.indexOf("@") === -1) found.email = "Enter an email address that includes an @ sign.";
+    setErrors(found);
+    setDone(Object.keys(found).length === 0);
+    setAttempts((count) => count + 1);
+  };
+  useEffect(() => {
+    if (attempts === 0 || !move) return;
+    if (done && doneRef.current) doneRef.current.focus();
+    else if (summaryRef.current) summaryRef.current.focus();
+  }, [attempts]);
+  const jumpTo = (ref) => (event) => {
+    event.preventDefault();
+    if (ref.current) ref.current.focus();
+  };
+  const reset = () => {
+    setValues({name: "", email: ""});
+    setErrors({});
+    setDone(false);
+    setAttempts(0);
+  };
+  const keys = Object.keys(errors);
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label><input type="checkbox" checked={move} onChange={(event) => setMove(event.target.checked)} /> Move focus after Submit</label>
+      </p>
+      {keys.length > 0 ? (
+        <div ref={summaryRef} tabIndex={-1} aria-labelledby="focuslab-summary-title" style={{border: "2px solid #b91c1c", borderRadius: "8px", padding: "0.6rem 0.8rem", marginBottom: "0.6rem"}}>
+          <h4 id="focuslab-summary-title" style={{margin: "0 0 0.3rem"}}>There {keys.length === 1 ? "is 1 problem" : "are " + keys.length + " problems"}</h4>
+          <ul style={{margin: 0}}>
+            {errors.name ? <li><a href="#focuslab-name" onClick={jumpTo(nameRef)}>{errors.name}</a></li> : null}
+            {errors.email ? <li><a href="#focuslab-contact-email" onClick={jumpTo(emailRef)}>{errors.email}</a></li> : null}
+          </ul>
+        </div>
+      ) : null}
+      {done ? (
+        <div ref={doneRef} tabIndex={-1} style={{border: "2px solid #15803d", borderRadius: "8px", padding: "0.6rem 0.8rem", marginBottom: "0.6rem"}}>
+          <strong>Thanks, {values.name}!</strong> Your subscription is confirmed. (This is a demo, so nothing is sent.)
+        </div>
+      ) : null}
+      <form onSubmit={submit} noValidate>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="focuslab-name">Name</label><br />
+          <input id="focuslab-name" ref={nameRef} type="text" autoComplete="name" value={values.name} aria-invalid={errors.name ? "true" : undefined} aria-describedby={errors.name ? "focuslab-name-error" : undefined} onChange={(event) => setValues({...values, name: event.target.value})} />
+          {errors.name ? <span id="focuslab-name-error" style={{display: "block"}}><strong>Error:</strong> {errors.name}</span> : null}
+        </p>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="focuslab-contact-email">Email</label><br />
+          <input id="focuslab-contact-email" ref={emailRef} type="email" autoComplete="email" value={values.email} aria-invalid={errors.email ? "true" : undefined} aria-describedby={errors.email ? "focuslab-email-error" : undefined} onChange={(event) => setValues({...values, email: event.target.value})} />
+          {errors.email ? <span id="focuslab-email-error" style={{display: "block"}}><strong>Error:</strong> {errors.email}</span> : null}
+        </p>
+        <button type="submit">Submit</button>{" "}
+        <button type="button" onClick={reset}>Start again</button>
+      </form>
+      <Readout where={where} />
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Leave both fields empty and press Submit. With focus management on, focus jumps to the problem summary, whose links take you to each field. With it off, focus stays on the Submit button, and the errors appear above it, where a keyboard or screen reader user may never notice them.
+      </p>
+    </div>
+  );
+}
+
+Where you put keyboard focus is where a keyboard or screen reader user's attention goes. Most of the time the browser looks after it for you: you press Tab, focus moves to the next control. But when your page **changes by itself** (a dialog opens, an item is deleted, a form shows errors, a new "page" loads without a refresh), the browser cannot know where the person should go next. If you do nothing, focus is often **lost**, and the person has to start again from the top of the page.
+
+**Focus management** means moving focus **on purpose,** at the right moments, to the right place. Done well, nobody notices it. Done badly, a page becomes exhausting, or unusable.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **focus** is, and how to read it with `document.activeElement`
+- How the **`focus()`** method works, and why it sometimes does nothing
+- **When** to move focus, and when to leave it alone
+- Making a heading or container **focusable by script** with `tabindex="-1"`
+- Managing focus in **dialogs,** and why the native `dialog` element helps
+- Handling **form errors** and **page changes** in single-page apps
+- Never **stealing** focus
+- How to **debug** and test focus
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<h2 id="basket-title" tabindex="-1">Your basket (4 items)</h2>
+
+<ul id="basket">
+  <li>
+    Sourdough
+    <button type="button" aria-label="Remove Sourdough">Remove</button>
+  </li>
+  <li>
+    Rye
+    <button type="button" aria-label="Remove Rye">Remove</button>
+  </li>
+</ul>
+
+<script>
+  function removeItem(button) {
+    const item = button.closest("li");
+    const next = item.nextElementSibling || item.previousElementSibling;
+
+    item.remove(); // the focused button disappears here
+
+    if (next) {
+      next.querySelector("button").focus(); // send focus to a neighbour
+    } else {
+      document.getElementById("basket-title").focus(); // or to the heading
+    }
+  }
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Delete Focus Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DeleteFocusLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+When you remove the element that has focus, the browser has nowhere to keep it, so focus drops back to the page itself. A keyboard user has lost their place. The fix is one line of script: **choose a sensible new home for focus.**
+
+## What Is Focus?
+
+At any moment, **at most one element** on the page has keyboard focus. That is the element that receives key presses, and the one a screen reader is looking at. When nothing specific has focus, the browser treats the `body` (the page itself) as focused.
+
+You can ask which element has focus at any time:
+
+```js
+document.activeElement; // the element with focus (the body if none)
+```
+
+| Code | What it does |
+| :-- | :-- |
+| `element.focus()` | Moves focus to the element, if it can be focused and is visible. |
+| `element.focus({ preventScroll: true })` | Moves focus without scrolling the page to it. |
+| `element.blur()` | Removes focus from the element. Rarely the right choice, because focus then falls to the page. |
+| `document.activeElement` | The element that currently has focus. |
+| `focusin` and `focusout` events | Fire when focus enters or leaves an element. Unlike `focus` and `blur`, they **bubble,** so one listener can watch a whole area. |
+
+### Why `focus()` Sometimes Does Nothing
+
+The `focus()` call fails silently when the element:
+
+- **is not focusable.** A plain `div` or `h2` has no `tabindex`. Add `tabindex="-1"` first.
+- **is hidden.** `display: none`, `visibility: hidden`, and the `hidden` attribute all prevent focus.
+- **is disabled or `inert`.**
+- **is not in the page yet.** In a framework, call `focus()` **after** the new content has been drawn (for example in `useEffect`, `nextTick`, or after the render step), not before.
+
+:::tip
+If `focus()` seems to be ignored, log `document.activeElement` right after the call. If it is still the old element, one of the four reasons above is almost always the cause.
+:::
+
+## Focus on Things That Are Not Controls
+
+Sometimes you want to move focus to something that is not a control: a **heading,** an **error summary,** a **dialog container,** or a **new page title.** Give it `tabindex="-1"`. That makes it focusable **by script,** but keeps it **out of the Tab order,** so keyboard users do not trip over it.
+
+```html
+<h1 id="page-title" tabindex="-1">Recipes</h1>
+
+<script>
+  document.getElementById("page-title").focus();
+</script>
+```
+
+Browsers may draw a focus ring on an element focused this way. That is fine, and often helpful, because it shows where you are. Do not hide it. If the ring looks odd on a big heading, style it with `:focus-visible` rather than removing it (see [Keyboard Accessibility](./keyboard-accessibility)).
+
+## When to Move Focus
+
+Not every change needs focus to move. Use this table as a guide:
+
+| Situation | What to do |
+| :-- | :-- |
+| A **modal dialog** opens | Move focus **into** the dialog (to its first field, or its heading). |
+| A dialog **closes** | **Return** focus to the element that opened it. |
+| The focused item is **deleted** | Move focus to the next item, the previous one, or the list heading. |
+| A **form is submitted** with errors | Move focus to an **error summary,** or to the first invalid field. |
+| A **form succeeds** | Move focus to the success message, or to the next step. |
+| A **single-page app changes "page"** | Move focus to the new page heading (or the main area), and update the title. |
+| A menu or accordion is **opened by the user** | Usually leave focus on the control. Move it only if the design needs it. |
+| A **toast, status, or search count** appears | **Do not** move focus. Use a live region instead. See [ARIA Live Regions](./aria-live). |
+| Content **loads in the background** | **Do not** move focus. The person is busy somewhere else. |
+
+A simple rule: **move focus when the person's action caused a change of context, and leave it when something just updates nearby.**
+
+## Dialogs
+
+A modal dialog is the clearest case for focus management. It needs **four** things:
+
+1. **Move focus in** when it opens.
+2. **Keep Tab inside** while it is open, so keyboard users do not wander into the page behind.
+3. **Close with Esc.**
+4. **Return focus** to the opener when it closes.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<button type="button" id="open-btn">Subscribe</button>
+
+<dialog id="subscribe-dialog" aria-labelledby="dialog-title">
+  <h2 id="dialog-title">Subscribe to the newsletter</h2>
+
+  <form method="dialog">
+    <label for="dialog-email">Email address</label>
+    <input id="dialog-email" type="email" autocomplete="email">
+
+    <button value="subscribe">Subscribe</button>
+    <button value="cancel" formnovalidate>Cancel</button>
+  </form>
+</dialog>
+
+<script>
+  const dialog = document.getElementById("subscribe-dialog");
+  document.getElementById("open-btn").addEventListener("click", () => {
+    dialog.showModal(); // modal: focus moves in, the page behind is inert
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Dialog Focus Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DialogFocusLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+The native `dialog` element, opened with `showModal()`, does a lot of this for you. In current browsers it moves focus into the dialog, makes the rest of the page **inert** (so Tab and screen readers cannot reach it), closes on Esc, and returns focus to the element that was focused before. Browser behaviour here has improved over the years, so **test in the browsers your audience uses.** If one of them does not return focus, store the opener yourself and call `focus()` in the dialog's `close` event.
+
+A few extra points:
+
+- **Choose the right starting point.** Normally focus goes to the first field or button. For a **destructive** question ("Delete this recipe?"), put the `autofocus` attribute on the **safe** button (Cancel), so an accidental Enter does no damage. For a long text dialog (such as terms), focus the **heading** (`tabindex="-1"`) so the reader starts at the top.
+- **Do not build your own unless you must.** A hand-built dialog needs a focus trap, an Esc handler, `aria-modal`, an inert background, and focus return, all tested with a screen reader. The lab above shows how many moving parts that is.
+- **A focus trap is not a keyboard trap.** Keeping Tab inside a modal is correct, **because there is a clear way out** (Esc, or a Close button). A keyboard trap is when there is **no** way out. See the [previous lesson](./keyboard-accessibility).
+- **Non-modal popups** (a small menu, a tooltip-like panel) should not trap focus. Let Tab continue, and close the popup when focus leaves it, or on Esc.
+
+## Forms and Errors
+
+When someone submits a form and it has errors, a mouse user **sees** the red messages. A keyboard or screen reader user, whose focus is still on the Submit button, may notice **nothing at all.** There are two good fixes:
+
+- **An error summary** at the top of the form: a short list of problems, each one a **link** to the field. Move focus to the summary when the form fails.
+- **Focus the first invalid field,** with its error message connected by `aria-describedby`.
+
+The summary is usually friendlier, because it tells you **how many** problems there are, and lets you jump between them.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<div id="error-summary" tabindex="-1" aria-labelledby="error-title" hidden>
+  <h2 id="error-title">There is a problem</h2>
+  <ul>
+    <li><a href="#email">Enter an email address that includes an @ sign.</a></li>
+  </ul>
+</div>
+
+<form id="signup" novalidate>
+  <label for="email">Email</label>
+  <input id="email" type="email" aria-invalid="true"
+         aria-describedby="email-error">
+  <span id="email-error"><strong>Error:</strong> Enter an email address that includes an @ sign.</span>
+
+  <button type="submit">Subscribe</button>
+</form>
+
+<script>
+  const form = document.getElementById("signup");
+  const summary = document.getElementById("error-summary");
+
+  form.addEventListener("submit", (event) => {
+    const hasErrors = !form.checkValidity();
+    if (hasErrors) {
+      event.preventDefault();
+      summary.hidden = false;
+      summary.focus(); // focus goes to the list of problems
+    }
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Error Summary Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ErrorSummaryLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Notice that the errors in the lab say **"Error:"** in words, not just in colour, and that each summary link points to a real `id`. Both help people who cannot see colour, and people who cannot use a mouse.
+
+## Single-Page Apps and Page Changes
+
+On a normal website, clicking a link loads a **new page.** The browser resets focus to the top, a screen reader announces the new title, and everyone knows something happened. In a **single-page app,** the script swaps the content without a reload, and **none of that happens.** Focus stays on the link that was clicked, which may no longer be in the page.
+
+After a route change, you need to do the browser's job yourself:
+
+```js
+function onRouteChange(newTitle) {
+  document.title = newTitle;                 // 1. update the title
+
+  const heading = document.querySelector("h1");
+  heading.setAttribute("tabindex", "-1");    // 2. make it focusable by script
+  heading.focus();                           // 3. move focus to the new page
+}
+```
+
+Most modern routers and frameworks have an accessibility option or plugin for this. Whatever you use, **test it with a keyboard and a screen reader.** Do the same for large changes such as "next step" in a checkout, or "load more" results (where focusing the first **new** result is a good idea).
+
+## Do Not Steal Focus
+
+Moving focus is powerful, which means it is easy to abuse. **Stealing focus** (moving it when the person did not ask) is one of the most disorienting things a page can do. A screen reader user suddenly hears a different part of the page. A keyboard user loses their place. A person typing is interrupted mid-word.
+
+- **`autofocus` on page load:** use it with great care. On a page whose **only purpose** is one field (a search page, a login page), it can help. On any other page it makes screen reader users skip the page content, and on phones it pops up the on-screen keyboard and hides the page.
+- **Focus changes from timers,** chat widgets, newsletter pop-ups, and cookie banners that grab focus in the middle of a task.
+- **Focus changes when content loads** in the background.
+- **Moving focus when the user is typing** in another field.
+
+The rule is: **only move focus in response to something the person did,** or at a clear change of context.
+
+:::warning
+Never use `blur()` to get rid of a focus outline after a click. It does not fix the "ugly outline" problem, it breaks keyboard navigation, and the focus lands on the page, which is exactly the "lost focus" problem this lesson is about.
+:::
+
+## Focus and Scrolling
+
+When you call `focus()`, the browser scrolls the element into view. That is usually what you want, but watch for these cases:
+
+- **Sticky headers** can cover the focused element. Fix it with `scroll-padding-top` on `html` (see the previous lesson).
+- **Huge jumps.** If you focus something far down the page, the sudden scroll can disorient people. Use `focus({ preventScroll: true })` only if you scroll to the right place yourself.
+- **Smooth scrolling** can cause motion discomfort. Respect the user's setting with `@media (prefers-reduced-motion: reduce)`.
+
+## Debugging Focus
+
+You cannot fix what you cannot see. Two handy tricks:
+
+```js
+// Paste this in your browser console, then press Tab through your page
+document.addEventListener("focusin", () => {
+  console.log("Focus is now on:", document.activeElement);
+});
+```
+
+In Chromium-based browsers, the DevTools console can also show a **live expression** of `document.activeElement`, which updates as you move around. Many browsers also have an **accessibility panel** in DevTools that shows an element's role and name. If focus is "lost," you will see `body` there.
+
+## Test With Your Own Keyboard
+
+Test each of these with **no mouse,** and once with a screen reader if you can:
+
+1. **Open a dialog.** Does focus move in? Does Tab stay inside? Does Esc close it?
+2. **Close it.** Does focus return to the button that opened it?
+3. **Delete an item,** or close a banner. Where does focus go? It must not vanish.
+4. **Submit a form with errors.** Are you taken to the problem? Can you jump to each field?
+5. **Navigate to another "page"** in your app. Is the new title announced, and does focus move to the new heading?
+6. **Load more results,** switch tabs, or open an accordion. Does focus behave as expected?
+7. **Look for stolen focus.** Does anything grab focus without you asking?
+8. **Look at the log.** After each step, is `document.activeElement` somewhere sensible, and never the `body`?
+
+## Good Habits
+
+1. **Use native elements** that manage focus for you, such as `dialog`, `details`, and links.
+2. **Always return focus** when you close something that you opened.
+3. **Never leave focus on an element you remove.** Move it first, or move it right after.
+4. **Use `tabindex="-1"`** for targets that only script should focus.
+5. **Move focus after the new content is in the page,** not before.
+6. **Give people a way to leave** anything that holds their focus.
+7. **Prefer a status message** (live region) over moving focus for small updates.
+8. **Only move focus after a person's own action.**
+9. **Test with a keyboard and a screen reader** every time you change an interaction.
+
+## Accessibility Checklist
+
+- [ ] Opening a modal moves focus into it, and closing it returns focus to the opener.
+- [ ] While a modal is open, the page behind it cannot be reached with Tab or a screen reader.
+- [ ] Every modal and popup can be closed with Esc, and with a visible Close button.
+- [ ] Removing or hiding the focused element moves focus somewhere sensible.
+- [ ] Failed forms move focus to an error summary or to the first invalid field.
+- [ ] Single-page apps update the title and move focus after each route change.
+- [ ] Nothing steals focus without a user action.
+- [ ] `autofocus` is used only where it clearly helps.
+- [ ] Focus is never lost to the `body` after an action.
+- [ ] Small updates use a live region instead of moving focus. See [ARIA Live Regions](./aria-live).
+
+## Security and Privacy Notes
+
+- **Do not use focus tricks to mislead.** Moving focus to a hidden or disguised button (so that an Enter press confirms something else) is a form of clickjacking, and is also an accessibility failure.
+- **Never auto-focus a sensitive field** (such as a password or card number) on a page that includes third-party content or adverts, because typing could be captured by the wrong element.
+- **Be careful with sensitive confirmations.** Focus the **safe** choice (Cancel) first in dialogs for deleting, paying, or sharing.
+- **Do not log focus or navigation patterns** to an analytics server without consent. How someone moves through a page can reveal that they use assistive technology, and that is sensitive information.
+- **Keep your debugging code out of production.** Console logging of `document.activeElement` can expose the names and contents of fields.
+- **Embedded frames:** a focus trap should not depend on content from another site. If an iframe from another origin is inside your dialog, you cannot control focus inside it, so test that people can leave it.
+
+## Global Audience Notes
+
+- **Slow networks and old devices:** if content loads slowly, move focus only **after** it has appeared. Moving focus to something that is not there yet makes it silently fail, and leaves people lost.
+- **Phones:** focusing a text field opens the on-screen keyboard, which uses much of the screen. Do it only when a person is clearly about to type.
+- **Right-to-left languages:** focus order follows the page source, and flips with the layout when you use `dir="rtl"`. Test your dialogs and error summaries in a right-to-left layout.
+- **Translation:** error summaries, headings, and dialog titles are the first things a screen reader reads after focus moves. Keep them short, translated correctly, and set the page language with `lang` so voices pronounce them correctly.
+- **Input methods:** for languages that use an input method editor (Chinese, Japanese, Korean), do not move focus while a person is still composing text.
+- **Varied abilities and devices:** people reach the web by keyboard, switch, voice, and touch screen readers. Focus management helps all of them, because it keeps a **single clear place** for attention.
+
+## Common Mistakes to Avoid
+
+1. **Deleting the focused element** and doing nothing.
+2. **Opening a dialog** and leaving focus behind it.
+3. **Closing a dialog** without returning focus.
+4. **Calling `focus()` before the element exists,** or while it is hidden.
+5. **Focusing a heading without `tabindex="-1"`.**
+6. **Errors that appear above the button,** while focus stays on the button.
+7. **Single-page apps that never move focus or change the title.**
+8. **Using `autofocus` everywhere.**
+9. **Using `blur()` to hide an outline.**
+10. **A focus trap with no way out.**
+11. **Moving focus for every little update** instead of using a live region.
+12. **Never testing with the keyboard.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the delete lab with focus management off. Press Tab after a delete and describe what happens.
+2. Use the dialog lab, and turn off one behaviour at a time. Write down what breaks.
+3. Open a native `dialog` with `showModal()`. Check where focus starts, and where it goes after closing.
+4. Put `autofocus` on the Cancel button in a "Delete this?" dialog. Does it feel safer?
+5. Add an error summary to a form you built before, with links that jump to each field.
+6. Write a small script that logs `document.activeElement` on `focusin`, and Tab through your own site.
+7. Make a heading focusable with `tabindex="-1"`, and call `focus()` on it from a button.
+8. Find a site with a cookie banner. Does it steal focus? Does it return focus when you close it?
+9. Build a "load more" button that moves focus to the first new item.
+10. Bonus: do the "Test With Your Own Keyboard" list on a page you made last month.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What happens to focus when the focused element is removed from the page?</summary>
+
+It falls back to the page itself (the `body`). Keyboard and screen reader users lose their place, so you should move focus to a sensible element yourself.
+
+</details>
+
+<details>
+<summary>2. Why would `focus()` do nothing?</summary>
+
+The element may not be focusable (no `tabindex`), may be hidden, disabled, or `inert`, or may not be in the page yet. Fix whichever one applies, and call `focus()` after the content is rendered.
+
+</details>
+
+<details>
+<summary>3. Why use `tabindex="-1"` on a heading?</summary>
+
+It makes the heading focusable by script (so you can move focus there), without adding it to the normal Tab order.
+
+</details>
+
+<details>
+<summary>4. What four things should a modal dialog do?</summary>
+
+Move focus in when it opens, keep Tab inside while it is open, close with Esc, and return focus to the opener when it closes.
+
+</details>
+
+<details>
+<summary>5. How should a form handle errors for keyboard and screen reader users?</summary>
+
+Move focus to an error summary (with links to each field), or to the first invalid field, and connect each error message to its field with `aria-describedby`. Do not rely on colour alone.
+
+</details>
+
+<details>
+<summary>6. When should you not move focus?</summary>
+
+When something just updates nearby (a toast, a status, a search count), when content loads in the background, or when the person did not cause the change. Use a live region for those.
+
+</details>
+
+## Key Takeaways
+
+- **Focus is attention.** When your page changes, it is your job to put it somewhere sensible.
+- **Never leave focus on an element that disappears.** Move it to a neighbour, a heading, or a container.
+- Use `tabindex="-1"` to make **headings and containers** focusable by script only.
+- **Dialogs** move focus in, keep Tab inside, close with Esc, and **return focus** to the opener. The native `dialog` element helps a lot.
+- **Failed forms** should lead people to an **error summary** or the first problem.
+- **Single-page apps** must update the title and move focus after route changes.
+- **Do not steal focus.** Move it only after something the person did.
+- Check `document.activeElement` while you test. It should never be the `body` after an action.
+
+Next, learn how elements get their names, and why those names matter, in [Accessible Names](./accessible-names).

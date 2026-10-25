@@ -1,0 +1,627 @@
+---
+id: html-accessible-links
+title: "Accessible Links"
+sidebar_label: "Accessible Links"
+sidebar_position: 10
+slug: /html/accessibility/accessible-links
+description: "Learn how to build links that everyone can understand and use: meaningful link text, links versus buttons, keyboard and focus, visual styling, links that open new tabs, file and email links, and safe external links. Includes a links-list lab, a link builder, and a live link checker."
+keywords:
+  - accessible links
+  - link text
+  - click here
+  - read more
+  - links vs buttons
+  - target blank
+  - WCAG 2.4.4 link purpose
+  - screen reader links list
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, links, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const vaguePattern = /^(click here|click|here|read more|more|learn more|link|this link|this|details|continue|go|more info|more information)\.?$/i;
+
+export const linkItems = [
+  {title: "Sourdough", blurb: "A tangy loaf with a crackly crust.", bad: "Read more", good: "Read the sourdough recipe"},
+  {title: "Rye", blurb: "Dark, dense, and a little sweet.", bad: "Read more", good: "Read the rye recipe"},
+  {title: "Focaccia", blurb: "Soft, oily, and full of herbs.", bad: "Read more", good: "Read the focaccia recipe"},
+  {title: "Baguette", blurb: "Thin, crisp, and best on the day.", bad: "Read more", good: "Read the baguette recipe"},
+  {title: "Newsletter", blurb: "Get one new recipe in your inbox every week.", bad: "click here", good: "Join the newsletter"},
+  {title: "Printable menu", blurb: "Our full menu, ready to print.", bad: "Download", good: "Download the menu (PDF, 1 MB)"},
+];
+
+export function LinkListLab() {
+  const [fixed, setFixed] = useState(false);
+  const [view, setView] = useState("page");
+  const names = linkItems.map((item) => (fixed ? item.good : item.bad));
+  const counts = {};
+  names.forEach((name) => { counts[name.toLowerCase()] = (counts[name.toLowerCase()] || 0) + 1; });
+  const sorted = names.slice().sort((a, b) => a.localeCompare(b));
+  const repeated = names.filter((name) => counts[name.toLowerCase()] > 1).length;
+  const stop = (event) => event.preventDefault();
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Choose how to look at the same page</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="linklab-view" checked={view === "page"} onChange={() => setView("page")} /> As it looks on the page</label>
+        <label><input type="radio" name="linklab-view" checked={view === "list"} onChange={() => setView("list")} /> As a list of links only</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label><input type="checkbox" checked={fixed} onChange={(event) => setFixed(event.target.checked)} /> Use clear link text</label>
+      </p>
+      {view === "page" ? (
+        <div>
+          {linkItems.map((item, index) => (
+            <p key={item.title} style={{margin: "0 0 0.4rem"}}><strong>{item.title}.</strong> {item.blurb} <a href={"#linklab-" + index} onClick={stop}>{names[index]}</a></p>
+          ))}
+        </div>
+      ) : (
+        <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem"}}>
+          <p style={{margin: "0 0 0.4rem"}}><strong>Links on this page, in alphabetical order:</strong></p>
+          <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+            {sorted.map((name, index) => (
+              <li key={index}>{name}{counts[name.toLowerCase()] > 1 ? " (one of " + counts[name.toLowerCase()] + " with the same name: which is which?)" : ""}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p style={{margin: "0.6rem 0 0"}}><strong>{repeated}</strong> of {names.length} links have a name that is shared with another link.</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Many screen readers can show or jump through a list of all the links on a page, without the text around them. The exact keys and the look differ, but the idea is the same. This lab shows why every link name must still make sense on its own. (The links here do not go anywhere, so you can try them safely.)
+      </p>
+    </div>
+  );
+}
+
+export const kindDefaults = {
+  page: {value: "/recipes/sourdough", text: "Read the sourdough recipe"},
+  external: {value: "https://example.org/guide", text: "Read the bread science guide"},
+  file: {value: "/downloads/menu.pdf", text: "Download the menu"},
+  email: {value: "hello@example.com", text: "Email hello@example.com"},
+  phone: {value: "+1 555 010 1234", text: "Call us on +1 555 010 1234"},
+};
+
+export function escapeAttr(value) {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+export function escapeBody(value) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+}
+
+export function LinkBuilder() {
+  const [kind, setKind] = useState("page");
+  const [text, setText] = useState(kindDefaults.page.text);
+  const [value, setValue] = useState(kindDefaults.page.value);
+  const [newTab, setNewTab] = useState(false);
+  const [warn, setWarn] = useState(true);
+  const [fileInfo, setFileInfo] = useState("PDF, 1 MB");
+  const changeKind = (next) => {
+    setKind(next);
+    setText(kindDefaults[next].text);
+    setValue(kindDefaults[next].value);
+    if (next === "email" || next === "phone") setNewTab(false);
+  };
+  let href = value.trim();
+  if (kind === "email") href = "mailto:" + href.replace(/^mailto:/i, "");
+  if (kind === "phone") href = "tel:" + href.replace(/^tel:/i, "").replace(/[\s()-]/g, "");
+  const canOpenNew = kind !== "email" && kind !== "phone";
+  const attrs = ['href="' + escapeAttr(href) + '"'];
+  if (kind === "file") attrs.push("download");
+  if (newTab && canOpenNew) { attrs.push('target="_blank"'); attrs.push('rel="noopener"'); }
+  const extras = [];
+  if (newTab && canOpenNew && warn) extras.push("opens in a new tab");
+  if (kind === "file" && fileInfo.trim()) extras.push(fileInfo.trim());
+  const label = text.trim() + (extras.length > 0 ? " (" + extras.join(", ") + ")" : "");
+  const code = "<a " + attrs.join(" ") + ">" + escapeBody(label) + "</a>";
+  const notes = [];
+  if (text.trim() === "") notes.push("The link has no text, so it has no name.");
+  if (vaguePattern.test(text.trim())) notes.push("This text is too vague. Say what the person will get.");
+  if (/^(https?:\/\/|www\.)/i.test(text.trim())) notes.push("A web address as link text is tiring to listen to. Use words.");
+  if (text.trim().length > 100) notes.push("Very long. Keep link text to a short phrase.");
+  if (newTab && canOpenNew && !warn) notes.push("This opens a new tab without saying so, which can confuse people who cannot see the screen change.");
+  if (kind === "file" && !fileInfo.trim()) notes.push("Say the file type and size, so people can decide before downloading.");
+  if (kind === "external" && !newTab) notes.push("Opening in the same tab is usually the best choice. People can open a new tab themselves.");
+  if (kind === "email") notes.push("Show the address in the text, so people who cannot open an email app can still copy it.");
+  if (kind === "phone") notes.push("Use the international format with the + and country code, so the number works everywhere.");
+  if (notes.length === 0) notes.push("This looks good.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="linkbuilder-kind">Where does the link go?</label><br />
+        <select id="linkbuilder-kind" value={kind} onChange={(event) => changeKind(event.target.value)}>
+          <option value="page">Another page on this site</option>
+          <option value="external">Another website</option>
+          <option value="file">A file to download</option>
+          <option value="email">An email address</option>
+          <option value="phone">A phone number</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="linkbuilder-text">Link text</label><br />
+        <input id="linkbuilder-text" type="text" value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="linkbuilder-value">{kind === "email" ? "Email address" : kind === "phone" ? "Phone number" : "Address (URL or path)"}</label><br />
+        <input id="linkbuilder-value" type="text" value={value} onChange={(event) => setValue(event.target.value)} style={{width: "100%"}} />
+      </p>
+      {kind === "file" ? (
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="linkbuilder-file">File type and size</label><br />
+          <input id="linkbuilder-file" type="text" value={fileInfo} onChange={(event) => setFileInfo(event.target.value)} />
+        </p>
+      ) : null}
+      {canOpenNew ? (
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label style={{marginRight: "1rem"}}><input type="checkbox" checked={newTab} onChange={(event) => setNewTab(event.target.checked)} /> Open in a new tab</label>
+          {newTab ? <label><input type="checkbox" checked={warn} onChange={(event) => setWarn(event.target.checked)} /> Say so in the link text</label> : null}
+        </p>
+      ) : null}
+      <p style={{margin: "0 0 0.3rem"}}><strong>HTML:</strong></p>
+      <pre style={{margin: "0 0 0.5rem", overflowX: "auto"}}><code>{code}</code></pre>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> <code>{'link, "' + label + '"'}</code></p>
+      <p style={{margin: "0 0 0.2rem"}}><strong>Feedback:</strong></p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {notes.map((note, index) => (<li key={index}>{note}</li>))}
+      </ul>
+    </div>
+  );
+}
+
+export const linkSamples = {
+  messy: '<p>To get recipes, <a href="#">click here</a>.</p>\n<p>Sourdough: <a href="/sourdough">Read more</a></p>\n<p>Rye: <a href="/rye">Read more</a></p>\n<a href="/news"><img src="news.png"></a>\n<a>Contact us</a>\n<a href="https://example.com/very/long/path?id=12345">https://example.com/very/long/path?id=12345</a>\n<a href="https://example.org" target="_blank">Our partner</a>\n<a href="javascript:void(0)">Open menu</a>\n<a href="/menu.pdf" download>Download</a>',
+  fixed: '<p>To get weekly recipes, <a href="/newsletter">join the newsletter</a>.</p>\n<p>Sourdough: <a href="/sourdough">Read the sourdough recipe</a></p>\n<p>Rye: <a href="/rye">Read the rye recipe</a></p>\n<a href="/news"><img src="news.png" alt="Latest bakery news"></a>\n<a href="/contact">Contact us</a>\n<a href="https://example.com/very/long/path?id=12345">Bread glossary</a>\n<a href="https://example.org" target="_blank" rel="noopener">Our partner (opens in a new tab)</a>\n<button type="button" aria-expanded="false">Open menu</button>\n<a href="/menu.pdf" download>Download the menu (PDF, 1 MB)</a>',
+};
+
+export function linkTextOf(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return "";
+  if (node.getAttribute("aria-hidden") === "true" || node.hasAttribute("hidden")) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  let out = "";
+  node.childNodes.forEach((child) => { out += " " + linkTextOf(child) + " "; });
+  return out;
+}
+
+export function LinkCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(linkSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const links = Array.from(doc.querySelectorAll("a"));
+  const rows = links.map((a) => {
+    const label = (a.getAttribute("aria-label") || "").trim();
+    const name = (label || linkTextOf(a)).replace(/\s+/g, " ").trim();
+    return {a, name, href: a.getAttribute("href"), issues: []};
+  });
+  const byName = {};
+  rows.forEach((row) => {
+    if (row.name && row.href) {
+      const key = row.name.toLowerCase();
+      byName[key] = byName[key] || {};
+      byName[key][row.href] = true;
+    }
+  });
+  rows.forEach((row) => {
+    const a = row.a;
+    if (row.href === null) row.issues.push("No href, so it is not a real link: it cannot be reached with Tab. Add an href, or use a button.");
+    else if (row.href.trim() === "#" || row.href.trim() === "" || /^javascript:/i.test(row.href.trim())) row.issues.push("A fake link (# or javascript:). If it does an action, use a button.");
+    if (!row.name) row.issues.push("No accessible name.");
+    else if (vaguePattern.test(row.name)) row.issues.push("Vague text. Say where the link goes.");
+    if (/^(https?:\/\/|www\.)/i.test(row.name)) row.issues.push("A web address as link text is hard to listen to. Use words.");
+    if (row.name.length > 100) row.issues.push("Very long link text.");
+    if (a.getAttribute("target") === "_blank") {
+      if (!/new (tab|window)/i.test(row.name)) row.issues.push("Opens a new tab without saying so.");
+      if (!/noopener/i.test(a.getAttribute("rel") || "")) row.issues.push("Add rel=\"noopener\" (modern browsers add it for you, but older ones may not).");
+    }
+    if (row.name && row.href && Object.keys(byName[row.name.toLowerCase()]).length > 1) row.issues.push("Same name as another link with a different destination.");
+    if (a.hasAttribute("download") && !/\(.*\d.*\)/.test(row.name)) row.issues.push("A download link should say the file type and size.");
+  });
+  const bad = rows.filter((row) => row.issues.length > 0).length;
+  const choose = (value) => { setWhich(value); setHtml(linkSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="link-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="link-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="link-html">HTML to check (edit it freely)</label><br />
+        <textarea id="link-html" rows={9} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> links found, <strong>{bad}</strong> with problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            {row.name ? <code>{'"' + (row.name.length > 50 ? row.name.slice(0, 50) + "..." : row.name) + '"'}</code> : <em>no name</em>}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {row.issues.join(" ")}</span>}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This checks the HTML only, and nothing is loaded or followed. It cannot tell whether a name is truly clear, or whether a link goes where it says. Read each name and ask: would this make sense on its own?
+      </p>
+    </div>
+  );
+}
+
+export function LinkChecker() {
+  return <BrowserOnly>{() => <LinkCheckerInner />}</BrowserOnly>;
+}
+
+Links are the **threads** of the web. Everything people do online, from reading an article to paying a bill, depends on following links. Yet links are also one of the places where accessibility most often goes wrong: "click here" text that means nothing out of context, buttons dressed up as links, links that cannot be reached with a keyboard, and links that open new tabs without warning.
+
+The good news: the `a` element is **accessible by default.** It can be focused, activated with Enter, announced as a "link," and listed by screen readers. Your job is to **not break that,** and to give every link a **clear name** and a **clear look.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How to write **link text** that makes sense on its own
+- When to use a **link** and when to use a **button**
+- Why a link needs an **`href`**
+- How to make links **visible,** and not rely on colour alone
+- How to handle **new tabs, downloads, email,** and **phone** links
+- How to keep **external links** safe
+- How to **check** your links
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Bad: the text means nothing out of context -->
+<p>To get recipes, <a href="/newsletter">click here</a>.</p>
+<p>Sourdough: <a href="/sourdough">Read more</a></p>
+<p>Rye: <a href="/rye">Read more</a></p>
+
+<!-- Good: each name says where it goes -->
+<p>To get weekly recipes, <a href="/newsletter">join the newsletter</a>.</p>
+<p>Sourdough: <a href="/sourdough">Read the sourdough recipe</a></p>
+<p>Rye: <a href="/rye">Read the rye recipe</a></p>
+```
+
+</TabItem>
+<TabItem value="output" label="Links List Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkListLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch the lab to "a list of links only," first with the vague text, and then with clear text. The second list is one you could actually use.
+
+## Link Text That Works
+
+Screen reader users often jump from link to link, or call up a **list of all the links** on a page, **without** the text around them. Sighted users skim too, and voice control users say the link text to click it. So the best link text is meaningful **on its own.**
+
+1. **Say where the link goes,** or what it does: "Read the sourdough recipe," not "click here."
+2. **Avoid "click here," "here," "read more," "more," and "link."** If you must use "Read more," add the subject: "Read more about sourdough."
+3. **Be unique.** Links that go to **different places** should have **different names.**
+4. **Put the important words first.** "Sourdough recipe" is easier to skim than "Read the recipe for sourdough."
+5. **Do not include the word "link."** The screen reader already says it.
+6. **Keep it short,** a phrase and not a sentence.
+7. **Do not use a web address as the link text,** unless the address itself is what you are teaching. A screen reader reads "h t t p s colon slash slash...", letter by letter.
+8. **Link the right words.** Link the **whole phrase** that describes the destination, not one random word, and do not run several links together.
+9. **Use the same name for the same destination,** and different names for different destinations, across the whole site.
+
+:::info
+WCAG success criterion **2.4.4 (Link Purpose, In Context)** allows a link's purpose to be worked out from the **surrounding text** (the sentence, paragraph, or list item). Clear link text is still better, because it works in a links list, and in every other situation too.
+:::
+
+### When "Read more" Is the Design
+
+Sometimes a design needs short repeating text such as "Read more" on every card. You still have options:
+
+```html
+<!-- Option 1: visually hidden text (using your framework's sr-only class) -->
+<a href="/rye">Read more<span class="sr-only"> about rye bread</span></a>
+
+<!-- Option 2: aria-label that STARTS with the visible text -->
+<a href="/rye" aria-label="Read more about rye bread">Read more</a>
+```
+
+Both keep "Read more" visible, and give the link a unique name. In option 2, the name **contains the visible text,** which is required by WCAG 2.5.3 (see [Accessible Names](./accessible-names)). One caution: some automatic translation tools may not translate `aria-label`, so option 1 is often safer for multilingual sites. Test with the tools your audience uses.
+
+## Link or Button?
+
+The question is: **does it take you somewhere, or does it do something?**
+
+| If it... | Use |
+| :-- | :-- |
+| Goes to **another page,** or another place on the page | A link: `a href` |
+| Does an **action** (submit, open a menu, save, delete) | A button: `button` |
+| **Toggles** something open or closed | A button, with `aria-expanded` |
+| Downloads a file | A link, with `download` |
+
+Why does it matter? Because they **behave differently:**
+
+- A **link** is activated with **Enter.** A **button** is activated with **Enter and Space.**
+- A screen reader announces "link" or "button," which sets an expectation: a link **takes you somewhere,** a button **does something.**
+- Links can be opened in a new tab, copied, and bookmarked. Buttons cannot.
+
+```html
+<!-- Bad: not focusable, not announced, no keyboard support -->
+<span class="link" onclick="goTo('/recipes')">Recipes</span>
+<a href="#" onclick="openMenu()">Menu</a>
+
+<!-- Good -->
+<a href="/recipes">Recipes</a>
+<button type="button" aria-expanded="false">Menu</button>
+```
+
+An `a` **without an `href`** is not a link at all: it is not in the Tab order, and it is not announced as a link. And `href="#"` or `href="javascript:..."` are fake links. Use a **real URL** for navigation, and a **button** for actions. The next lesson, [Accessible Buttons](./accessible-buttons), goes further.
+
+## Make Links Easy to See
+
+Links must be recognizable **without relying on colour alone** (WCAG 1.4.1). About one in twelve men has some colour vision difference, and many people use screens in bright sunlight.
+
+- **Keep the underline** in body text. It is the strongest signal that something is a link.
+- If you remove the underline, the link needs a **contrast of at least 3:1** against the surrounding text, **plus** another cue on hover and focus (such as a bold or underline). And the link colour must have **4.5:1** against the background.
+- **Show a clear focus style.** Never remove the outline without a better replacement. See [Keyboard Accessibility](./keyboard-accessibility).
+- **Make hover, focus, and visited states distinct,** but do not depend on colour for the difference between them.
+- **Give links room.** Small, tight links are hard to tap. WCAG 2.2 adds a minimum target size (24 by 24 CSS pixels, with exceptions, including links inside a sentence), but bigger is kinder, especially in lists and menus.
+
+```css
+a {
+  color: #0b5cad;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  text-decoration-thickness: 0.15em;
+}
+
+a:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 3px;
+}
+```
+
+## Links That Open New Tabs
+
+Opening a link in a **new tab or window** (`target="_blank"`) can confuse people: a screen reader user may not realise a new tab has opened, and the Back button no longer works. Many users also **prefer to choose** for themselves, and can already open any link in a new tab.
+
+- **Prefer the same tab** in most cases.
+- If you do open a new tab, **say so** in the link, with text such as "(opens in a new tab)."
+- **Add `rel="noopener"`.** Modern browsers treat `target="_blank"` this way by default, but older ones may not, so it is a safe habit.
+- **Never open new windows** automatically, or without a clear reason, such as a form in the middle of being filled out.
+
+Use the builder below to see how the pieces fit together, and what the feedback says.
+
+## Files, Email, and Phone Links
+
+Links are not just for pages. The link text should always say what will happen:
+
+- **Downloads:** include the **file type and size,** such as "Download the menu (PDF, 1 MB)." People on slow or metered connections can then choose. The `download` attribute only works for same-site files in most browsers.
+- **Email:** use `mailto:`, and show the address in the text so people can copy it if their device has no email app.
+- **Phone numbers:** use `tel:`, with the international format (`+1 555 010 1234`), so it works from anywhere.
+- **Other languages:** when a link goes to a page in another language, say so, and add `hreflang` to the link. If the link text is in another language, mark it with `lang`.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A new tab, announced in the text -->
+<a href="https://example.org/guide" target="_blank" rel="noopener">
+  Bread science guide (opens in a new tab)
+</a>
+
+<!-- A file download, with its type and size -->
+<a href="/downloads/menu.pdf" download>Download the menu (PDF, 1 MB)</a>
+
+<!-- Email and phone -->
+<a href="mailto:hello@example.com">Email hello@example.com</a>
+<a href="tel:+15550101234">Call us on +1 555 010 1234</a>
+
+<!-- A page in another language -->
+<a href="/es/" hreflang="es" lang="es">Leer en español</a>
+```
+
+</TabItem>
+<TabItem value="output" label="Link Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Links Inside the Same Page
+
+Links that jump to another part of the **same page** (a table of contents, a "skip to content" link) use a fragment, such as `href="#recipes"`, with a matching `id`:
+
+```html
+<a href="#recipes">Jump to the recipes</a>
+
+<h2 id="recipes" tabindex="-1">Recipes</h2>
+```
+
+Browsers usually move keyboard focus to the target as well, but behaviour has differed in the past. Adding `tabindex="-1"` to a **heading** or section that you link to is a safe way to make the next Tab press start from the right place. See [Focus Management](./focus-management).
+
+## Links and Images, and the Current Page
+
+- **An image in a link:** its alt text becomes the link's name, so describe **where the link goes.** See [Alt Text](./alt-text).
+- **Icon-only links** (a social media icon, say) need a name too: `aria-label="Baker's Corner on Instagram"`.
+- **In a navigation menu,** mark the link for the **current page** with `aria-current="page"`. Screen readers say "current page," and you can style it with `a[aria-current="page"]`.
+- **Group related links** in a `nav` (with a name if there are several) and a list, so screen reader users hear "list, 5 items."
+
+```html
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/" aria-current="page">Home</a></li>
+    <li><a href="/recipes">Recipes</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+## Check Your Links
+
+The checker below reads every `a` in a snippet of HTML, and flags missing hrefs, fake links, vague text, web addresses as text, unannounced new tabs, same-name links with different destinations, and downloads with no file details.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkChecker />
+</>
+</BrowserWindow>
+
+On a real site, you can also:
+
+1. **Press Tab** through the page. Is every link reachable, and clearly marked when focused?
+2. **Use your screen reader's links list,** or the Accessibility panel in DevTools, and read the names without the page.
+3. **Run an automated checker** (such as Lighthouse or axe) for empty links and low contrast.
+4. **Check them with voice control:** say "click" and the link text.
+
+## Good Habits
+
+1. **Write link text that works on its own.**
+2. **Use a real `a href` for navigation,** and a `button` for actions.
+3. **Keep the underline** for links inside text.
+4. **Show a clear focus style.**
+5. **Tell people** when a link opens a new tab, downloads a file, or leaves your site.
+6. **Say the file type and size** for downloads.
+7. **Give identical names to identical destinations,** and different names to different ones.
+8. **Mark the current page** with `aria-current="page"`.
+9. **Check your links** with the keyboard, a links list, and an automated tool.
+
+## Accessibility Checklist
+
+- [ ] Every link has meaningful text, or an accessible name that makes sense on its own.
+- [ ] There are no "click here" or bare "read more" links.
+- [ ] Links with different destinations have different names.
+- [ ] Links are real `a` elements with an `href`, and actions use buttons.
+- [ ] Links can be reached and used with a keyboard, and the focus is clearly visible.
+- [ ] Links are not identified by colour alone, and have enough contrast.
+- [ ] New tabs, downloads, and other surprises are announced in the link text.
+- [ ] Links to files give the type and size.
+- [ ] Links to pages in another language are marked with `hreflang` and `lang`.
+- [ ] The link to the current page is marked with `aria-current="page"`.
+
+## Security and Privacy Notes
+
+- **Keep link text honest.** Do not show a trusted address (`yourbank.com`) as the text of a link that goes somewhere else. It is a common phishing trick, and it can also fool screen reader users, who cannot see the real address on hover.
+- **Use `rel="noopener"`** for `target="_blank"` links, so the new page cannot control your page through `window.opener`. Add `noreferrer` if you do not want to send your address as the referrer, but remember that it also hides where your visitors came from.
+- **Never use `javascript:` links.** They are hard to make accessible, they can be abused, and they are blocked by a strict Content Security Policy.
+- **Do not put private data in URLs.** Tokens, email addresses, and session IDs in a link can be read aloud, saved in browser history, shared by accident, and sent to other sites as referrers. Use POST requests or short-lived tokens instead.
+- **Be careful with `mailto:`.** Addresses in plain HTML are collected by spam bots. Use a contact form if spam is a concern, and tell people if you do.
+- **The `download` attribute** only works for same-origin files in most browsers, so do not rely on it for files hosted elsewhere.
+- **Link to trustworthy sites,** and tell people when they are leaving yours.
+
+## Global Audience Notes
+
+- **Translate link text with the page,** and avoid words like "here" and "more," which translate badly and give no context. A clear phrase survives translation.
+- **Set `lang` and `hreflang`** for links to content in other languages, so voices pronounce them correctly, and people know what they will find.
+- **Web addresses with non-Latin characters** (internationalized domain names) can be read strangely by screen readers. Use words as the link text, and keep the address in the `href`.
+- **Right-to-left languages:** link punctuation, parentheses (such as "(PDF, 1 MB)"), and mixed English words can display in an unexpected order. Test your links in a right-to-left layout.
+- **Slow or costly data:** always give file sizes. A 50 MB download can be expensive for people on mobile data plans.
+- **Phone numbers:** use international format with the country code. Local formats only work for people in your country.
+- **Do not use symbols alone** (arrows, icons) as link names. They can be read oddly in different languages, or not at all.
+
+## Common Mistakes to Avoid
+
+1. **"Click here" and "read more" links.**
+2. **Several different links with the same name.**
+3. **Using `a` with no `href`,** or `href="#"`, for actions.
+4. **Using `div` or `span` with a click handler** as a link.
+5. **Removing the underline,** with no other cue.
+6. **Removing the focus outline.**
+7. **Opening new tabs without saying so.**
+8. **Using a web address as link text.**
+9. **A downloadable file with no type or size.**
+10. **Image links with empty alt text and no other text.**
+11. **Link text that does not match the destination page.**
+12. **Never testing with a keyboard or a links list.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the links list lab with and without clear text. Describe the difference.
+2. Rewrite five "Read more" links on a page you built so each one makes sense alone.
+3. Use the link builder for each of its five kinds, and read the feedback.
+4. Run the checker on the messy page, fix every item, and run it again.
+5. Replace a `span` with an `onclick` by a real link or button, as fits.
+6. Add `aria-current="page"` to your navigation, and style it.
+7. Open a screen reader's links list (or DevTools) on a site you like. Which names are weak?
+8. Remove the underline from your links, then measure the contrast with the surrounding text.
+9. Add a `download` link with the file type and size.
+10. Bonus: Tab through your site with no mouse. Write down every link with weak text or weak focus.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What makes good link text?</summary>
+
+It says where the link goes, or what it does, and makes sense on its own, because people often hear or see links without the text around them.
+
+</details>
+
+<details>
+<summary>2. When do you use a link, and when a button?</summary>
+
+A link takes you somewhere (`a href`). A button does something (submit, open, save, toggle).
+
+</details>
+
+<details>
+<summary>3. Why is an `a` without an `href` a problem?</summary>
+
+It is not a real link: it is not reachable with Tab, and it is not announced as a link.
+
+</details>
+
+<details>
+<summary>4. How should you handle a link that opens a new tab?</summary>
+
+Prefer the same tab. If you do open a new one, say so in the link text, and add `rel="noopener"`.
+
+</details>
+
+<details>
+<summary>5. Why keep the underline on links in text?</summary>
+
+Links must not rely on colour alone to be recognised (WCAG 1.4.1). The underline is the clearest cue.
+
+</details>
+
+<details>
+<summary>6. What should a download link tell you?</summary>
+
+The file type and size, such as "Download the menu (PDF, 1 MB)."
+
+</details>
+
+## Key Takeaways
+
+- **Links take you somewhere. Buttons do something.** Use the right one.
+- **Link text must make sense out of context.** Avoid "click here" and bare "read more."
+- **Every link needs an `href`,** and a visible name.
+- **Do not rely on colour alone.** Keep the underline, and a clear focus style.
+- **Tell people about surprises:** new tabs, downloads (with type and size), and other languages.
+- **Keep links honest and safe:** use `rel="noopener"`, no private data in URLs, and no misleading text.
+- **Test** by keyboard, with a links list, and with an automated checker.
+
+Next, learn how to build buttons that work for everyone in [Accessible Buttons](./accessible-buttons).

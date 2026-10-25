@@ -1,0 +1,679 @@
+---
+id: html-aria-hidden
+title: "Aria Hidden"
+sidebar_label: "Aria Hidden"
+sidebar_position: 20
+slug: /html/accessibility/aria-hidden
+description: "Learn what aria-hidden really does, when it is safe, and when it quietly breaks your page. Compare hidden, display none, visibility hidden, aria-hidden, inert, and visually hidden text. Never put aria-hidden on something focusable. Includes a hiding-methods lab with real focus tests, a modal background lab, and a live aria-hidden checker."
+keywords:
+  - aria-hidden
+  - hide from screen readers
+  - decorative icons accessibility
+  - inert attribute
+  - hidden attribute
+  - visually hidden text
+  - sr-only
+  - aria-hidden focusable
+  - modal background accessibility
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, aria-hidden, inert, icons, modals, a11y, frontend]
+---
+
+import {useState, useRef, useEffect} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const hideMethods = [
+  {id: "none", label: "Nothing (normal)", screen: "Yes", tree: "Yes", focus: "Yes", note: "The button is shown, it is in the accessibility tree, and the keyboard can reach it. This is the starting point."},
+  {id: "hidden", label: "The hidden attribute", screen: "No", tree: "No", focus: "No", note: "The element is gone for everyone. This is the simplest, safest way to hide something from everybody."},
+  {id: "display", label: "CSS display: none", screen: "No", tree: "No", focus: "No", note: "Same result as the hidden attribute, but set from CSS. Gone for everyone."},
+  {id: "visibility", label: "CSS visibility: hidden", screen: "No", tree: "No", focus: "No", note: "The space is kept, but the content is gone for everyone, and cannot be focused."},
+  {id: "aria", label: 'aria-hidden="true"', screen: "Yes", tree: "No", focus: "Yes", note: "Still on screen, and still focusable. Only the screen reader loses it. A keyboard user can land on a control that a screen reader cannot see. This is the trap."},
+  {id: "inert", label: "The inert attribute", screen: "Yes", tree: "No", focus: "No", note: "Still on screen, but it cannot be focused, clicked, or selected, and browsers also hide it from assistive technology. It is the right tool for 'visible but switched off'."},
+  {id: "sronly", label: "Visually hidden (sr-only CSS)", screen: "No", tree: "Yes", focus: "Yes", note: "The opposite of aria-hidden: invisible on screen, but still read by a screen reader. Used for extra text that only a listener needs."},
+];
+
+export function HidingMethodsLab() {
+  const [method, setMethod] = useState("none");
+  const [result, setResult] = useState("");
+  const boxRef = useRef(null);
+  const btnRef = useRef(null);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    box.removeAttribute("hidden");
+    box.removeAttribute("aria-hidden");
+    box.removeAttribute("inert");
+    box.style.cssText = "";
+    if (method === "hidden") box.setAttribute("hidden", "");
+    if (method === "display") box.style.display = "none";
+    if (method === "visibility") box.style.visibility = "hidden";
+    if (method === "aria") box.setAttribute("aria-hidden", "true");
+    if (method === "inert") box.setAttribute("inert", "");
+    if (method === "sronly") box.style.cssText = "position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;";
+    setResult("");
+  }, [method]);
+  const current = hideMethods.find((item) => item.id === method);
+  const testFocus = () => {
+    const button = btnRef.current;
+    if (!button) return;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    button.focus();
+    const reached = document.activeElement === button;
+    if (reached) {
+      setResult(method === "aria" ? "Focus reached the button. A keyboard user can land here, but a screen reader is told nothing is there. That mismatch is the problem." : "Focus reached the button.");
+    } else {
+      setResult("Focus could not reach the button. It cannot be used by keyboard, and nothing is left to confuse anyone.");
+    }
+  };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Choose how to hide the button</legend>
+        {hideMethods.map((item) => (
+          <label key={item.id} style={{display: "block"}}>
+            <input type="radio" name="hide-method" checked={method === item.id} onChange={() => setMethod(item.id)} /> {item.label}
+          </label>
+        ))}
+      </fieldset>
+      <div style={{position: "relative", minHeight: "3.2rem", padding: "0.6rem", border: "1px dashed #94a3b8", borderRadius: "6px", marginBottom: "0.6rem"}}>
+        <div ref={boxRef}>
+          <button type="button" ref={btnRef}>Add to basket</button>
+        </div>
+      </div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <button type="button" onClick={testFocus}>Test: can focus reach the button?</button>
+      </p>
+      <p role="status" style={{margin: "0 0 0.6rem", minHeight: "1.4rem"}}>{result}</p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}}>
+        <li><strong>Seen on screen:</strong> {current.screen}</li>
+        <li><strong>In the accessibility tree (screen readers):</strong> {current.tree}</li>
+        <li><strong>Can receive keyboard focus:</strong> {current.focus}</li>
+      </ul>
+      <p style={{margin: "0 0 0.4rem"}}>{current.note}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The focus test is real: it tries to focus the actual button on this page. The three lines above describe what the standards and current browsers normally do, and they cannot be measured from inside the page. Details can vary a little between browsers and screen readers, so test the pages you build.
+      </p>
+    </div>
+  );
+}
+
+export function ModalBackgroundLab() {
+  const [mode, setMode] = useState("inert");
+  const [open, setOpen] = useState(false);
+  const [report, setReport] = useState("");
+  const bgRef = useRef(null);
+  const openerRef = useRef(null);
+  const closeRef = useRef(null);
+  const targetRef = useRef(null);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    const bg = bgRef.current;
+    if (!bg) return;
+    bg.removeAttribute("aria-hidden");
+    bg.removeAttribute("inert");
+    if (open && mode === "aria") bg.setAttribute("aria-hidden", "true");
+    if (open && mode === "inert") bg.setAttribute("inert", "");
+    setReport("");
+  }, [open, mode]);
+  useEffect(() => {
+    if (open && closeRef.current) closeRef.current.focus();
+    if (!open && wasOpen.current && openerRef.current) openerRef.current.focus();
+    wasOpen.current = open;
+  }, [open]);
+  const tryEscape = () => {
+    const target = targetRef.current;
+    if (!target) return;
+    target.focus();
+    const escaped = document.activeElement === target;
+    setReport(escaped ? "Focus escaped to the page behind the dialog. A keyboard user can now operate hidden controls, and a screen reader says nothing about them." : "Blocked. Focus stayed inside the dialog.");
+    if (escaped) target.blur();
+  };
+  const onKey = (event) => {
+    if (event.key === "Escape") setOpen(false);
+  };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>How should the page behind the dialog be handled?</legend>
+        <label style={{display: "block"}}><input type="radio" name="modal-mode" checked={mode === "none"} onChange={() => setMode("none")} /> Do nothing</label>
+        <label style={{display: "block"}}><input type="radio" name="modal-mode" checked={mode === "aria"} onChange={() => setMode("aria")} /> aria-hidden="true" only</label>
+        <label style={{display: "block"}}><input type="radio" name="modal-mode" checked={mode === "inert"} onChange={() => setMode("inert")} /> inert (recommended)</label>
+      </fieldset>
+      <div ref={bgRef} style={{padding: "0.7rem", border: "1px solid #94a3b8", borderRadius: "6px", marginBottom: "0.6rem", opacity: open ? 0.6 : 1}}>
+        <p style={{margin: "0 0 0.4rem"}}><strong>The page behind</strong></p>
+        <button type="button" ref={targetRef} style={{marginRight: "0.5rem"}}>Recipes</button>
+        <button type="button" style={{marginRight: "0.5rem"}}>Settings</button>
+        <button type="button" ref={openerRef} onClick={() => setOpen(true)}>Open dialog</button>
+      </div>
+      {open ? (
+        <div role="dialog" aria-labelledby="mbl-title" onKeyDown={onKey} style={{padding: "0.7rem", border: "2px solid #0f172a", borderRadius: "6px", marginBottom: "0.6rem", background: "#ffffff", color: "#0f172a"}}>
+          <h4 id="mbl-title" style={{margin: "0 0 0.4rem"}}>Delete recipe?</h4>
+          <p style={{margin: "0 0 0.5rem"}}>Press Tab to move around. Press Esc to close.</p>
+          <button type="button" ref={closeRef} onClick={() => setOpen(false)} style={{marginRight: "0.5rem"}}>Close</button>
+          <button type="button" onClick={tryEscape}>Test: try to focus "Recipes" behind</button>
+        </div>
+      ) : null}
+      <p role="status" style={{margin: "0 0 0.4rem", minHeight: "1.4rem"}}>{report}</p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Open the dialog, then press Tab several times. With "Do nothing" or "aria-hidden only," focus can leave the dialog and wander into the page behind. With <code>inert</code>, it cannot. This small dialog is only a demonstration. A real modal also needs a focus trap or inert background, a close button, Esc handling, and focus returned to the opener. See <a href="./focus-management">Focus Management</a>.
+      </p>
+    </div>
+  );
+}
+
+export const hiddenSamples = {
+  messy: '<button aria-hidden="true">Close</button>\n<div aria-hidden="true"><a href="/menu">Menu</a></div>\n<span class="icon" aria-hidden="true">★</span> Favourite\n<svg viewBox="0 0 10 10"><path d="M0 0h10v10z"/></svg> Download\n<img src="chart.png" alt="Sales rose 40 percent" aria-hidden="true">\n<p id="hint" aria-hidden="true">At least 12 characters.</p>\n<input id="pw" type="password" aria-describedby="hint">\n<h2 aria-hidden="true">Section title</h2>\n<div aria-hidden="false">Maybe visible</div>\n<div hidden aria-hidden="true">Already hidden</div>\n<div aria-hidden="">Empty value</div>\n<div aria-hidden="true" tabindex="-1"><button>Next slide</button></div>',
+  fixed: '<button type="button">Close</button>\n<nav><a href="/menu">Menu</a></nav>\n<span class="icon" aria-hidden="true">★</span> Favourite\n<svg viewBox="0 0 10 10" aria-hidden="true" focusable="false"><path d="M0 0h10v10z"/></svg> Download\n<img src="chart.png" alt="Sales rose 40 percent">\n<p id="hint">At least 12 characters.</p>\n<input id="pw" type="password" aria-describedby="hint">\n<h2>Section title</h2>\n<div>Visible to everyone</div>\n<div hidden>Hidden from everyone</div>\n<div inert><button>Next slide</button></div>',
+};
+
+export const hiddenFocusSelector = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex], [contenteditable=""], [contenteditable="true"]';
+
+export function hiddenFocusables(root) {
+  const all = [root].concat(Array.from(root.querySelectorAll(hiddenFocusSelector)));
+  return all.filter((el) => el.matches(hiddenFocusSelector) && !el.hasAttribute("disabled"));
+}
+
+export function HiddenCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(hiddenSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const referenced = {};
+  Array.from(doc.querySelectorAll("[aria-labelledby], [aria-describedby]")).forEach((el) => {
+    ((el.getAttribute("aria-labelledby") || "") + " " + (el.getAttribute("aria-describedby") || "")).split(/\s+/).filter(Boolean).forEach((id) => { referenced[id] = true; });
+  });
+  const rows = [];
+  Array.from(doc.querySelectorAll("[aria-hidden]")).forEach((el) => {
+    const tag = el.tagName.toLowerCase();
+    const value = el.getAttribute("aria-hidden");
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    const issues = [];
+    const notes = [];
+    if (value !== "true" && value !== "false") issues.push("The value \"" + value + "\" is not valid. Use aria-hidden=\"true\", or remove the attribute.");
+    if (value === "false") notes.push("aria-hidden=\"false\" is not a reliable way to show something. If the element is hidden another way, it stays hidden. Remove the attribute, and fix the real cause.");
+    if (value === "true") {
+      const focusables = hiddenFocusables(el);
+      const reachable = focusables.filter((item) => !(item.hasAttribute("tabindex") && parseInt(item.getAttribute("tabindex"), 10) < 0) && !item.closest("[inert], [hidden]"));
+      const scripted = focusables.filter((item) => reachable.indexOf(item) === -1 && !item.closest("[inert], [hidden]"));
+      if (reachable.length > 0) issues.push("Contains " + reachable.length + " focusable item" + (reachable.length > 1 ? "s" : "") + " (" + reachable.map((item) => item.tagName.toLowerCase()).join(", ") + "). A keyboard user can reach them, but a screen reader cannot see them. Use hidden or inert, or remove the aria-hidden.");
+      if (scripted.length > 0) notes.push("Contains " + scripted.length + " item" + (scripted.length > 1 ? "s" : "") + " with tabindex=\"-1\". They are out of the Tab order, but a click or a script can still focus them. Prefer inert.");
+      if (el.hasAttribute("hidden") || /display\s*:\s*none/i.test(el.getAttribute("style") || "")) notes.push("Already hidden for everyone, so aria-hidden does nothing extra. Remove it.");
+      if (/^h[1-6]$/.test(tag) || el.querySelector("h1, h2, h3, h4, h5, h6") || ["main", "nav", "header", "footer", "aside"].indexOf(tag) !== -1) notes.push("This hides a heading or a landmark, so screen reader users lose a way to navigate. Only do this if the same structure is available elsewhere.");
+      if (tag === "img" && (el.getAttribute("alt") || "").trim() !== "") notes.push("The image has alt text (\"" + el.getAttribute("alt") + "\"), but aria-hidden stops it being read. Either the image is decorative (use alt=\"\" and remove aria-hidden) or it carries meaning (remove aria-hidden).");
+      if (el.id && referenced[el.id]) notes.push("Another element points to this one with aria-labelledby or aria-describedby. It is still used for the name or description even though it is hidden. Check that is what you want, and that sighted users can also see the help.");
+      if (text.length > 40 && /[a-zA-Z]{4,}/.test(text)) notes.push("This is a lot of real text (" + text.length + " characters). Check that listeners are not missing something important.");
+    }
+    rows.push({tag, text, issues, notes});
+  });
+  Array.from(doc.querySelectorAll("svg, i, span")).forEach((el) => {
+    const tag = el.tagName.toLowerCase();
+    if (el.closest("[aria-hidden='true']")) return;
+    const cls = (el.getAttribute("class") || "");
+    const looksLikeIcon = tag === "svg" || (/icon|fa-|glyph/i.test(cls) && !/[a-zA-Z0-9]/.test(el.textContent || ""));
+    if (!looksLikeIcon) return;
+    if (el.hasAttribute("aria-label") || el.hasAttribute("aria-labelledby") || el.hasAttribute("role") || el.querySelector("title")) return;
+    rows.push({tag: tag + (cls ? "." + cls.split(/\s+/)[0] : ""), text: "", issues: [], notes: ["An icon with no name and no aria-hidden. If it is decoration, add aria-hidden=\"true\"" + (tag === "svg" ? " and focusable=\"false\"" : "") + ". If it carries meaning, give it a name."]});
+  });
+  if (/<body[^>]*aria-hidden/i.test(html)) rows.push({tag: "body", text: "", issues: ["aria-hidden on the body hides the whole page from screen readers."], notes: []});
+  const bad = rows.reduce((sum, row) => sum + row.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(hiddenSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="hd-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy aria-hidden</label>
+        <label><input type="radio" name="hd-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="hd-html">HTML to check (edit it freely)</label><br />
+        <textarea id="hd-html" rows={11} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> items checked, <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + ">"}</code> {row.text ? <span><code>{'"' + (row.text.length > 40 ? row.text.slice(0, 40) + "..." : row.text) + '"'}</code>{" "}</span> : null}
+            {row.issues.length === 0 && row.notes.length === 0 ? <strong>OK</strong> : null}
+            {row.issues.length > 0 ? <span><strong>Problem:</strong> {row.issues.join(" ")}</span> : null}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot see CSS from your stylesheets or changes made by scripts, and it cannot tell whether hidden content is important. Test the real page with a keyboard and a screen reader.
+      </p>
+    </div>
+  );
+}
+
+export function HiddenChecker() {
+  return <BrowserOnly>{() => <HiddenCheckerInner />}</BrowserOnly>;
+}
+
+You have probably met `aria-hidden` already, usually on a little icon: `<span aria-hidden="true">★</span>`. It looks harmless, and used well, it is. But it is also one of the **most misused** attributes in ARIA, and a single wrong use can make a button invisible to a screen reader while still sitting in the keyboard's path.
+
+`aria-hidden="true"` has one job: **it tells assistive technology to ignore an element and everything inside it.** It does not hide anything on screen. It does not stop the keyboard. It only edits what the screen reader is told. Once you understand that, you will know exactly when to use it, and when to reach for something else.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **`aria-hidden="true"`** does, and what it does **not** do
+- The safest rule: **never put it on something focusable**
+- When it is **right:** decorative icons, duplicated content, and hidden slides
+- How it differs from **`hidden`, `display: none`, `visibility: hidden`, `inert`,** and **visually hidden text**
+- How to treat the **page behind a modal** dialog
+- How hidden content still affects **names and descriptions**
+- How to **check** your pages
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Decorative icon: hide it, the text already says it all -->
+<button type="button">
+  <svg aria-hidden="true" focusable="false" width="16" height="16"><!-- star --></svg>
+  Add to favourites
+</button>
+
+<!-- Decorative emoji next to real text -->
+<h2><span aria-hidden="true">🍞</span> Rye bread</h2>
+
+<!-- WRONG: a focusable control hidden from screen readers -->
+<button type="button" aria-hidden="true">Close</button>
+
+<!-- Better: hide it from EVERYONE if it should not be used -->
+<button type="button" hidden>Close</button>
+
+<!-- Page behind a modal: inert switches the whole area off -->
+<main inert> ... </main>
+<div role="dialog" aria-labelledby="dlg-title"> ... </div>
+```
+
+</TabItem>
+<TabItem value="output" label="Hiding Methods Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HidingMethodsLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Pick each method in turn, then press the focus test. Watch what happens with `aria-hidden`: the button is still on screen, and focus can still land on it.
+
+:::info What it does, in one sentence
+`aria-hidden="true"` removes an element, and **everything inside it,** from the **accessibility tree.** Nothing else changes: it is still drawn, still clickable, and still reachable with Tab.
+:::
+
+## The Rule That Matters Most
+
+The ARIA rules say it plainly: **do not use `aria-hidden="true"` on a focusable element, or on an element that contains one.**
+
+Why? Think of what happens to a keyboard and screen reader user:
+
+1. They press Tab and land on the button.
+2. The screen reader has been told that button does not exist.
+3. They hear **nothing,** or something confusing like "blank." They are now focused on a control they cannot identify, and cannot tell why.
+
+That is a **ghost control.** It is worse than a missing one, because the user feels lost.
+
+Some browsers now **warn in the developer tools,** or even refuse to apply `aria-hidden`, when the focused element is inside a hidden area. Do not rely on that. Avoid the situation.
+
+### Fixing it
+
+| If you want... | Use... |
+| :-- | :-- |
+| It gone for **everyone** | The `hidden` attribute (or `display: none`) |
+| It **visible but switched off** (a dimmed page behind a dialog) | `inert` |
+| It **removed from the screen reader only,** and it is not focusable | `aria-hidden="true"` |
+| It **invisible on screen** but read to listeners | Visually hidden ("sr-only") text |
+
+## How the Hiding Methods Compare
+
+| Method | Seen on screen? | Read by screen readers? | Focusable? |
+| :-- | :-- | :-- | :-- |
+| `hidden` or `display: none` | No | No | No |
+| `visibility: hidden` | No (space kept) | No | No |
+| `aria-hidden="true"` | **Yes** | **No** | **Yes** (danger) |
+| `inert` | Yes (can be dimmed) | No | No |
+| Visually hidden ("sr-only") | **No** | **Yes** | Yes, if it is a control |
+| `opacity: 0` or moved off-screen with no other care | No | **Yes** | Yes, if it is a control |
+
+Two things to notice:
+
+- **`aria-hidden` and visually hidden text are opposites.** One hides from listeners but not viewers. The other hides from viewers but not listeners.
+- **Only the first three rows remove focus.** `aria-hidden` does not.
+
+(These are the normal results. Browsers and assistive technology can differ in small ways, so always test.)
+
+## Safe Uses
+
+`aria-hidden="true"` is the right choice when an element is **not focusable** and would only **add noise or repeat** something a listener already has.
+
+### Decorative icons and emoji
+
+If an icon sits next to text that already says the same thing, hide the icon. Otherwise, a screen reader may read out something like "star" or the emoji's name, before "Add to favourites."
+
+```html
+<button type="button">
+  <svg aria-hidden="true" focusable="false" width="16" height="16"></svg>
+  Download
+</button>
+```
+
+For **inline SVG,** add `focusable="false"` too. Old versions of Internet Explorer and Edge made SVG focusable by default, and the habit is harmless in modern browsers.
+
+For an `<img>`, you do not need `aria-hidden`. Use an **empty alt** (`alt=""`) for decoration, as covered in [Alt Text](./alt-text).
+
+:::warning Do not hide an icon that is the only label
+If a button contains **only** an icon, hiding the icon leaves the button **with no name,** which is a serious failure. Give the button a name with `aria-label` or visually hidden text, and then hide the icon. See [Accessible Names](./accessible-names).
+
+```html
+<button type="button" aria-label="Close">
+  <svg aria-hidden="true" focusable="false"></svg>
+</button>
+```
+:::
+
+### Decoration that would be read as noise
+
+Dividers made of characters (`* * *`), fancy bullets, "breadcrumb" separators (`>` or `/`), and repeated arrows are good candidates. For lists and breadcrumbs, prefer CSS (`::before` with a separator) so there is no extra text in the page at all.
+
+### Duplicate content
+
+Sometimes the same text appears twice: a visible, styled version, and a plain one for screen readers. Hide one of them so it is not read twice.
+
+### Carousel slides and tab panels that are off-screen
+
+A slide that is not showing should be hidden from **everyone,** not only from listeners. Use `hidden` or `display: none`. If you must keep it on the page for an animation, use `inert` so the controls inside cannot be reached, and (optionally) `aria-hidden="true"` for older assistive technology. More in [ARIA Roles](./aria-roles) for tabs and carousels.
+
+### The page behind a modal
+
+A dialog that takes over the screen should make the page behind it **unavailable.** The modern, simple way is **`inert`** on the page behind. Try it in the lab below.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="modal.html"
+<!-- The page behind -->
+<div id="page">
+  <button type="button" id="open">Open dialog</button>
+  ...
+</div>
+
+<!-- The dialog (a sibling, not inside the page) -->
+<div role="dialog" aria-labelledby="dlg-title" id="dlg" hidden>
+  <h2 id="dlg-title">Delete recipe?</h2>
+  <button type="button" id="close">Close</button>
+</div>
+
+<script>
+  const page = document.getElementById("page");
+  const dlg = document.getElementById("dlg");
+  document.getElementById("open").addEventListener("click", () => {
+    page.inert = true;
+    dlg.hidden = false;
+    document.getElementById("close").focus();
+  });
+  document.getElementById("close").addEventListener("click", () => {
+    dlg.hidden = true;
+    page.inert = false;
+    document.getElementById("open").focus();
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Modal Background Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ModalBackgroundLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, choose "aria-hidden only," open the dialog, and press **Test: try to focus "Recipes" behind.** Focus escapes. That is the trap. Now try `inert`: blocked.
+
+:::tip Prefer inert, or the native dialog
+The native `<dialog>` element, opened with `showModal()`, already makes the rest of the page inert and traps focus for you. If you can use it, start there. If you cannot, set `inert` on the content behind the dialog. Use `aria-hidden` there only as a backup for very old browsers, and never as the only protection.
+:::
+
+:::info Browser support for inert
+`inert` is supported in the current versions of the major browsers, but older browsers and some embedded web views may lack it. Check a current support table such as MDN or Can I Use, and test in the browsers your readers use.
+:::
+
+## Visually Hidden Text: The Opposite Trick
+
+Sometimes a listener needs more than a viewer sees. A common example is an icon-only button, or a link that says "Read more" with a hidden suffix: "Read more **about rye bread**."
+
+Hide the text **visually,** keep it in the accessibility tree. This is often called a **"sr-only"** or **"visually-hidden"** class:
+
+```css title="style.css"
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+```
+
+```html title="index.html"
+<a href="/rye">Read more<span class="visually-hidden"> about rye bread</span></a>
+```
+
+**Do not** use `display: none` or `hidden` for this. Those remove the text from screen readers too. And do not use `opacity: 0` or `font-size: 0`, which behave unpredictably.
+
+:::warning Visually hidden is not "invisible ink"
+Use it for **short, real help** for listeners. Do not hide long text, keyword lists, or content that sighted users would object to if they could see it. It is poor practice and search engines can penalise it.
+:::
+
+## aria-hidden and Names
+
+Hidden does not always mean **ignored.** Two rules to remember:
+
+- **A hidden element can still name something.** If `aria-labelledby` or `aria-describedby` points to an element that is hidden (even with `aria-hidden="true"` or `hidden`), the text is **still used.** That is useful, because you can keep a label off-screen. It is also a trap if you forgot the label was there. See [aria-labelledby](./aria-labelledby).
+- **Children are hidden too.** You cannot hide a parent and show a child. Once `aria-hidden="true"` is on a container, **everything inside it is gone,** whatever the children say.
+
+## aria-hidden="false" Is Not a Fix
+
+You might expect `aria-hidden="false"` to say "show this." It does not work that way:
+
+- If an element is hidden another way (`display: none`, `hidden`), `aria-hidden="false"` **does not bring it back.**
+- Its effect inside a parent that is `aria-hidden="true"` is **not reliable.**
+
+If you want something visible to everyone, **remove the attribute** and fix the real cause.
+
+## Keep It in Sync
+
+If you toggle `aria-hidden` with JavaScript, tie it to **the same state as the visual change.** The common bug is one of these:
+
+- A panel is closed on screen, but `aria-hidden` is still `false`. Listeners hear content that does not exist.
+- A panel is open on screen, but `aria-hidden` is still `true`. Listeners miss the main content.
+
+Better still, **use `hidden` or `inert`.** They change what the screen shows, what the keyboard can reach, **and** what the screen reader hears, together. There is one state to keep correct, not three.
+
+## Check Your Pages
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="check.html"
+<!-- Things the checker looks for -->
+<button aria-hidden="true">Close</button>        <!-- focusable and hidden -->
+<div aria-hidden="true"><a href="/x">Menu</a></div>   <!-- link inside -->
+<img src="a.png" alt="Sales up" aria-hidden="true">   <!-- alt hidden -->
+<div aria-hidden="false">Maybe</div>              <!-- not reliable -->
+<svg viewBox="0 0 10 10"></svg>                   <!-- icon with no name -->
+```
+
+</TabItem>
+<TabItem value="output" label="aria-hidden Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HiddenChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Run the messy sample, fix every problem in the box, then try the fixed version.
+
+### Check it by hand
+
+1. **Search your code for `aria-hidden`.** For each one, ask: *is it focusable, or does it contain something focusable?*
+2. **Tab through the page.** Does focus ever land on something with no visible or spoken name?
+3. **Open each dialog and menu.** Can Tab reach the page behind?
+4. **Turn on a screen reader.** Walk over your icons. Do you hear noise like "graphic, star"?
+5. **Browser developer tools:** the **Accessibility** panel shows what is, and is not, in the tree for the selected element.
+6. **Run an automated tool** such as axe DevTools, Lighthouse, or WAVE. They flag many focusable `aria-hidden` cases.
+
+## Good Habits
+
+- **Use `hidden` or `inert` first.** Only reach for `aria-hidden` for decoration and duplicates.
+- **Never on focusable elements,** or on a parent of one.
+- **Never on the `<body>`** or on the main content.
+- **Hide icons that sit beside text,** but give icon-only buttons a name.
+- **Add `focusable="false"` to decorative inline SVG.**
+- **Use visually hidden text** when only listeners need more.
+- **Keep `aria-hidden` and the visible state in sync,** or avoid toggling it at all.
+- **Test with a keyboard and a screen reader.**
+
+## Accessibility Checklist
+
+- [ ] No `aria-hidden="true"` on, or around, anything focusable
+- [ ] Hidden slides, panels, and menus use `hidden`, `display: none`, or `inert`
+- [ ] The page behind a modal is inert (or the native `<dialog>` is used)
+- [ ] Decorative icons and emoji are hidden, and their text is still there
+- [ ] Icon-only buttons and links still have a name
+- [ ] No `aria-hidden="false"` used as a way to show things
+- [ ] No important content (headings, landmarks, alt text) is hidden by mistake
+- [ ] Visually hidden text is short, real, and helpful
+- [ ] `aria-hidden` always matches the visible state
+- [ ] Tested with a keyboard and a screen reader
+
+## Security and Privacy Notes
+
+- **Hiding is not protecting.** `hidden`, `aria-hidden`, `inert`, and CSS hiding only change how a page is **shown.** The content is still in the HTML. Anyone can read it with "view source," developer tools, or a scraper. Never put passwords, keys, or private data in a page just because you hid it.
+- **Invisible text is still read.** Text that is hidden from sight, but kept for screen readers, can also be read by search engines and by automated tools such as AI crawlers and summarisers. Do not hide instructions or claims there that you would not show to a person.
+- **Do not hide important notices from listeners** (cookie consent choices, charges, terms). Hiding information from some users while showing it to others is unfair, and may be a legal problem in some places. This is not legal advice. Check the rules that apply to you.
+- **Hiding something does not disable it for a determined user.** Disabled or hidden buttons can be re-enabled in developer tools. Always check permissions on the server.
+
+## Global Audience Notes
+
+- **Emoji are read in the listener's language,** and different screen readers read them differently. A decorative emoji can be noisy ("bread," "loaf of bread") in every language. If it only decorates, hide it. If it carries meaning (a status, a mood), give it text.
+- **Translation tools translate hidden text too.** Visually hidden text and `aria-label` values are usually translated with the page, so write them as short, plain words that translate well.
+- **Right-to-left languages:** arrows and chevrons may need to be mirrored. Decorative ones are hidden from listeners either way, but check them visually.
+- **Icon fonts can fail on slow networks,** showing empty boxes or odd letters. Where possible, use inline SVG, and keep a real text label beside the icon.
+- **Not every device has inert support.** If your readers use older phones or embedded browsers, test your modals there.
+
+## Common Mistakes to Avoid
+
+1. **`aria-hidden="true"` on a button or link.** This is the big one: a ghost control.
+2. **Hiding a whole container that contains links or buttons.**
+3. **Using `aria-hidden` to hide something "for everyone."** It does not hide it on screen. Use `hidden`.
+4. **Using `aria-hidden` alone for the page behind a dialog.** Focus can still escape. Use `inert`.
+5. **Hiding the only label of a control,** such as the icon in an icon-only button.
+6. **`aria-hidden="false"` expecting it to reveal something.**
+7. **`display: none` for visually hidden text.** It removes it from screen readers too.
+8. **Hiding headings or landmarks,** which breaks navigation.
+9. **Hiding `alt` text by putting `aria-hidden` on an image that carries meaning.**
+10. **Forgetting that hidden labels are still used,** and then leaving stale text behind.
+11. **Out-of-sync toggles:** the screen shows one thing and `aria-hidden` says another.
+12. **Never testing with a keyboard.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the hiding methods lab. For each method, press the focus test, and write down what happens.
+2. In the modal lab, choose each mode in turn. Which mode lets focus escape, and why?
+3. Run the checker on the messy sample, fix every problem, and run it again.
+4. Search a page you built for `aria-hidden`. Find one use that is wrong.
+5. Give an icon-only button a name, and then hide its icon properly.
+6. Build a "Read more" link with visually hidden text, and listen to it with a screen reader.
+7. Replace a closed panel's `aria-hidden` toggle with the `hidden` attribute.
+8. Open your browser's Accessibility panel, select a hidden element, and look at the tree.
+9. Turn on a screen reader and walk through a page full of emoji. Which ones should be hidden?
+10. Bonus: build a modal with the native `<dialog>` element, then with `inert`, and compare how they behave.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `aria-hidden="true"` do?</summary>
+
+It removes an element, and everything inside it, from the accessibility tree, so screen readers ignore it. It does not hide it on screen, and it does not stop the keyboard.
+
+</details>
+
+<details>
+<summary>2. Why must you never put it on a focusable element?</summary>
+
+A keyboard user can still Tab onto the control, but the screen reader has been told it does not exist. They land on a "ghost" with no name, and cannot tell what it is.
+
+</details>
+
+<details>
+<summary>3. Which should you use to hide something from everyone?</summary>
+
+The `hidden` attribute, or `display: none`. Both remove it from the screen, the accessibility tree, and the focus order.
+
+</details>
+
+<details>
+<summary>4. What is the best way to switch off the page behind a modal?</summary>
+
+Set `inert` on the content behind the dialog, or use the native `&lt;dialog&gt;` element with `showModal()`. `aria-hidden` alone does not stop focus escaping.
+
+</details>
+
+<details>
+<summary>5. How is visually hidden text different from aria-hidden?</summary>
+
+Visually hidden text is invisible on screen but still read by screen readers. `aria-hidden` is the opposite: visible on screen, but ignored by screen readers.
+
+</details>
+
+<details>
+<summary>6. Does a hidden element still work as a label?</summary>
+
+Yes. If `aria-labelledby` or `aria-describedby` points to a hidden element, its text is still used for the name or description.
+
+</details>
+
+## Key Takeaways
+
+- **`aria-hidden="true"` only edits what screen readers hear.** It does not hide anything on screen, and does not block the keyboard.
+- **Never use it on, or around, a focusable element.** That creates ghost controls.
+- **Use `hidden` or `inert` to really switch something off.** Use `aria-hidden` for decoration and duplicates.
+- **Hide decorative icons, but name icon-only buttons.**
+- **The page behind a modal should be `inert`,** or use the native `<dialog>`.
+- **Visually hidden text is the opposite trick:** seen by listeners, not by viewers.
+- **Hidden is not secure.** The content is still in the page.
+- **Test with a keyboard and a screen reader.**
+
+Next, learn how to announce changes to people who cannot see them happen, in [aria-live](./aria-live).

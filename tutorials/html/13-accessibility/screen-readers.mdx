@@ -1,0 +1,643 @@
+---
+id: html-screen-readers
+title: "Screen Readers: How Blind and Low-Vision Users Browse"
+sidebar_label: "Screen Readers"
+sidebar_position: 5
+slug: /html/accessibility/screen-readers
+description: "Learn what screen readers are, how they turn HTML into speech and braille, which ones people use, what they announce for headings, links, buttons, forms and images, and how to try one yourself. Includes a live reader that speaks a page using your browser's built-in speech, and a drill that matches code to what is announced."
+keywords:
+  - screen readers
+  - NVDA JAWS VoiceOver TalkBack
+  - how screen readers work
+  - screen reader testing
+  - browse mode focus mode
+  - screen reader announcements
+  - accessible name role state
+  - web speech API
+  - assistive technology
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, screen-readers, a11y, assistive-technology, frontend]
+---
+
+import {useState, useEffect} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const readerSamples = {
+  bad: [
+    '<div class="btn" onclick="go()">Subscribe</div>',
+    '<img src="IMG_4032.jpg">',
+    '<input type="text" placeholder="Email">',
+    '<a href="/more"><img src="arrow.png"></a>',
+    '<a href="/shop">Click here</a>',
+  ].join("\n"),
+  good: [
+    '<header><nav aria-label="Main"><ul><li><a href="/recipes">Recipes</a></li><li><a href="/shop" aria-current="page">Shop</a></li></ul></nav></header>',
+    '<main>',
+    '  <h1>Join The Bread Bin</h1>',
+    '  <img src="loaf.jpg" alt="A golden sourdough loaf on a wooden board">',
+    '  <img src="swirl.svg" alt="">',
+    '  <form>',
+    '    <label for="email">Email address</label>',
+    '    <input id="email" type="email" required>',
+    '    <input type="checkbox" id="news"> <label for="news">Send me the weekly newsletter</label>',
+    '    <button type="submit">Subscribe</button>',
+    '  </form>',
+    '  <button type="button" aria-expanded="false">More options</button>',
+    '</main>',
+  ].join("\n"),
+};
+
+export const readerHidden = (el) => el.hasAttribute("hidden") || el.getAttribute("aria-hidden") === "true" || /display\s*:\s*none/i.test(el.getAttribute("style") || "");
+
+export const readerText = (node) => {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1 || readerHidden(node)) return "";
+  if (node.tagName.toLowerCase() === "img") return node.getAttribute("alt") || "";
+  return Array.from(node.childNodes).map(readerText).join(" ");
+};
+
+export const readerName = (el, doc) => {
+  const tag = el.tagName.toLowerCase();
+  const by = el.getAttribute("aria-labelledby");
+  if (by) {
+    const joined = by.split(/\s+/).map((id) => { const target = doc.getElementById(id); return target ? readerText(target).replace(/\s+/g, " ").trim() : ""; }).filter(Boolean).join(" ");
+    if (joined) return {text: joined, weak: false};
+  }
+  const label = el.getAttribute("aria-label");
+  if (label && label.trim()) return {text: label.trim(), weak: false};
+  if (tag === "img") return {text: el.getAttribute("alt") || "", weak: false};
+  if (tag === "input" || tag === "textarea" || tag === "select") {
+    const type = (el.getAttribute("type") || "text").toLowerCase();
+    if (tag === "input" && (type === "submit" || type === "button")) return {text: el.getAttribute("value") || (type === "submit" ? "Submit" : ""), weak: false};
+    let lab = el.id ? doc.querySelector('label[for="' + el.id + '"]') : null;
+    if (!lab) lab = el.closest("label");
+    if (lab) return {text: readerText(lab).replace(/\s+/g, " ").trim(), weak: false};
+    if (el.getAttribute("title")) return {text: el.getAttribute("title"), weak: true};
+    if (el.getAttribute("placeholder")) return {text: el.getAttribute("placeholder"), weak: true};
+    return {text: "", weak: false};
+  }
+  const text = readerText(el).replace(/\s+/g, " ").trim();
+  return {text: text || el.getAttribute("title") || "", weak: false};
+};
+
+export const readerRole = (el) => {
+  const explicit = el.getAttribute("role");
+  if (explicit) return explicit.split(/\s+/)[0];
+  const tag = el.tagName.toLowerCase();
+  const top = el.parentElement && el.parentElement.tagName.toLowerCase() === "body";
+  if (/^h[1-6]$/.test(tag)) return "heading";
+  if (tag === "a") return el.hasAttribute("href") ? "link" : "generic";
+  if (tag === "button") return "button";
+  if (tag === "textarea") return "textbox";
+  if (tag === "select") return "combobox";
+  if (tag === "input") {
+    const type = (el.getAttribute("type") || "text").toLowerCase();
+    if (type === "hidden") return "none";
+    if (type === "checkbox") return "checkbox";
+    if (type === "radio") return "radio";
+    if (type === "submit" || type === "button" || type === "reset") return "button";
+    return "textbox";
+  }
+  if (tag === "img") return el.getAttribute("alt") === "" ? "none" : "img";
+  if (tag === "nav") return "navigation";
+  if (tag === "main") return "main";
+  if (tag === "aside") return "complementary";
+  if (tag === "header" && top) return "banner";
+  if (tag === "footer" && top) return "contentinfo";
+  if (tag === "ul" || tag === "ol") return "list";
+  return "generic";
+};
+
+export const buildSpeech = (parent, doc, out) => {
+  Array.from(parent.childNodes).forEach((node) => {
+    if (node.nodeType === 3) {
+      const text = node.textContent.replace(/\s+/g, " ").trim();
+      if (text) out.push({say: text, warn: ""});
+      return;
+    }
+    if (node.nodeType !== 1 || readerHidden(node)) return;
+    const role = readerRole(node);
+    if (role === "none") return;
+    const info = readerName(node, doc);
+    const name = info.text;
+    const weak = info.weak ? " The name came only from a placeholder or title, which is not a reliable label." : "";
+    if (role === "heading") { out.push({say: (name || "blank") + ", heading level " + node.tagName.charAt(1), warn: name ? "" : "Empty heading."}); return; }
+    if (role === "link") {
+      const current = node.getAttribute("aria-current") ? ", current page" : "";
+      const vague = /^(click here|here|read more|more|link|learn more)$/i.test(name);
+      out.push({say: (name || "link") + ", link" + current, warn: !name ? "A link with no name. The user hears only the word link." : vague ? "Vague link text. Out of context, it means nothing." : ""});
+      return;
+    }
+    if (role === "button") {
+      const expanded = node.getAttribute("aria-expanded");
+      const pressed = node.getAttribute("aria-pressed");
+      const state = (expanded === "true" ? ", expanded" : expanded === "false" ? ", collapsed" : "") + (pressed === "true" ? ", pressed" : pressed === "false" ? ", not pressed" : "") + (node.hasAttribute("disabled") ? ", unavailable" : "");
+      out.push({say: (name || "unlabelled") + ", button" + state, warn: name ? "" : "A button with no name."});
+      return;
+    }
+    if (role === "textbox" || role === "combobox") {
+      out.push({say: (name || "blank") + ", " + (role === "combobox" ? "combo box" : "edit text") + (node.hasAttribute("required") ? ", required" : "") + (node.hasAttribute("disabled") ? ", unavailable" : ""), warn: name ? weak.trim() : "No label. The user hears only edit text."});
+      return;
+    }
+    if (role === "checkbox" || role === "radio") {
+      out.push({say: (name || "unlabelled") + ", " + (role === "radio" ? "radio button" : "checkbox") + ", " + (node.hasAttribute("checked") ? "checked" : "not checked"), warn: name ? "" : "No label."});
+      return;
+    }
+    if (role === "img") {
+      if (name) out.push({say: name + ", graphic", warn: ""});
+      else {
+        const file = (node.getAttribute("src") || "image").split("/").pop();
+        out.push({say: file + ", graphic", warn: "No alt attribute. Many screen readers read the file name instead."});
+      }
+      return;
+    }
+    if (["navigation", "main", "complementary", "banner", "contentinfo", "form", "region", "search"].indexOf(role) !== -1) {
+      out.push({say: (name ? name + ", " : "") + role + " landmark", warn: ""});
+      buildSpeech(node, doc, out);
+      return;
+    }
+    if (role === "list") {
+      out.push({say: "list with " + node.children.length + " items", warn: ""});
+      buildSpeech(node, doc, out);
+      return;
+    }
+    if (node.hasAttribute("onclick")) {
+      const text = readerText(node).replace(/\s+/g, " ").trim();
+      out.push({say: text, warn: "This is only plain text to a screen reader. It is not announced as a button, and cannot be reached with Tab."});
+      return;
+    }
+    buildSpeech(node, doc, out);
+  });
+};
+
+export function SpeechReader() {
+  const [source, setSource] = useState(readerSamples.bad);
+  const [index, setIndex] = useState(-1);
+  const [rate, setRate] = useState(1);
+  const [supported, setSupported] = useState(true);
+  useEffect(() => {
+    setSupported(typeof window !== "undefined" && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined");
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+  }, []);
+  const doc = new DOMParser().parseFromString("<!DOCTYPE html><html><body>" + source + "</body></html>", "text/html");
+  const items = [];
+  buildSpeech(doc.body, doc, items);
+  const stop = () => {
+    if (supported) window.speechSynthesis.cancel();
+  };
+  const say = (text) => {
+    if (!supported) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = rate;
+    window.speechSynthesis.speak(utterance);
+  };
+  const go = (position) => {
+    if (items.length === 0) return;
+    const next = Math.max(0, Math.min(items.length - 1, position));
+    setIndex(next);
+    say(items[next].say);
+  };
+  const readAll = () => {
+    if (!supported || items.length === 0) return;
+    window.speechSynthesis.cancel();
+    items.forEach((item, position) => {
+      const utterance = new SpeechSynthesisUtterance(item.say);
+      utterance.rate = rate;
+      utterance.onstart = () => setIndex(position);
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+  const load = (key) => {
+    stop();
+    setSource(readerSamples[key]);
+    setIndex(-1);
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => load("bad")}>Faulty sample</button>{" "}
+        <button type="button" onClick={() => load("good")}>Good sample</button>
+      </p>
+      <label htmlFor="reader-source">HTML to read (edit it freely)</label>
+      <textarea id="reader-source" rows={8} value={source} onChange={(event) => { stop(); setSource(event.target.value); setIndex(-1); }} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85em"}} />
+      <p style={{margin: "0.5rem 0 0.4rem"}}>
+        <button type="button" onClick={() => go(index - 1)}>Previous item</button>{" "}
+        <button type="button" onClick={() => go(index + 1)}>Next item</button>{" "}
+        <button type="button" onClick={readAll}>Read everything</button>{" "}
+        <button type="button" onClick={stop}>Stop</button>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label>Speech speed: <strong>{rate.toFixed(1)}</strong> times normal{" "}
+          <input type="range" min="0.8" max="3" step="0.1" value={rate} onChange={(event) => setRate(Number(event.target.value))} />
+        </label>
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}>
+        {supported ? "Your browser can speak. Turn your sound on, and press Next item." : "Your browser does not offer speech here, so only the text of each announcement is shown."}
+      </p>
+      <ol style={{margin: 0, paddingLeft: "1.4rem"}}>
+        {items.length === 0 ? (<li>(nothing to read)</li>) : items.map((item, position) => (
+          <li key={position} aria-current={position === index ? "true" : undefined} style={{background: position === index ? "#fef3c7" : "transparent", color: position === index ? "#1e293b" : "inherit", padding: "0.1rem 0.3rem", borderRadius: "4px"}}>
+            <strong>{item.say}</strong>
+            {item.warn ? (<span style={{display: "block", fontSize: "0.9em"}}>Problem: {item.warn}</span>) : null}
+          </li>
+        ))}
+      </ol>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This uses your browser's built-in speech voice, and a simplified model of what screen readers say. Real screen readers differ from each other in wording, order, and detail, and add commands that this demo does not. Treat it as a way to hear the idea, not as a replacement for the real thing.
+      </p>
+    </div>
+  );
+}
+
+export const announceQuiz = [
+  {code: '<button type="button">Save draft</button>', options: ["Save draft, link", "Save draft, button", "Save draft"], answer: 1, why: "A real button is announced with its name and its role."},
+  {code: '<img src="chart.png" alt="">', options: ["chart.png, graphic", "Empty image", "Nothing. It is skipped as decoration"], answer: 2, why: "An empty alt tells the screen reader that the image is decoration, so it skips it."},
+  {code: '<input type="checkbox" id="n">\n<label for="n">Send me news</label>', options: ["Send me news, checkbox, not checked", "Checkbox", "Send me news, edit text"], answer: 0, why: "The label gives the name, the type gives the role, and the checked state is announced."},
+  {code: '<div onclick="buy()">Buy now</div>', options: ["Buy now, button", "Buy now, link", "Buy now, as plain text only"], answer: 2, why: "A div has no role. It is read as ordinary text, and a keyboard user cannot even reach it."},
+  {code: '<h2>Ingredients</h2>', options: ["Ingredients, heading level 2", "Ingredients, bold", "Ingredients, list"], answer: 0, why: "Headings are announced with their level, and users can jump between them."},
+  {code: '<a href="/shop">\n  <img src="cart.svg" alt="Shopping cart">\n</a>', options: ["Link, graphic", "Shopping cart, link", "cart.svg, link"], answer: 1, why: "A link takes its name from the content inside it, including the alt text of an image."},
+];
+
+export function AnnounceDrill() {
+  const [index, setIndex] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [score, setScore] = useState(0);
+  if (index >= announceQuiz.length) {
+    return (
+      <div>
+        <p role="status" style={{margin: "0 0 0.5rem"}}>Finished. Score: <strong>{score} out of {announceQuiz.length}</strong>.</p>
+        <button type="button" onClick={() => { setIndex(0); setPicked(null); setScore(0); }}>Try again</button>
+      </div>
+    );
+  }
+  const item = announceQuiz[index];
+  const choose = (position) => {
+    if (picked !== null) return;
+    setPicked(position);
+    if (position === item.answer) setScore(score + 1);
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.3rem", fontSize: "0.9em"}}>Question {index + 1} of {announceQuiz.length}</p>
+      <pre style={{margin: "0 0 0.5rem", fontSize: "0.85em"}}><code>{item.code}</code></pre>
+      <p style={{margin: "0 0 0.4rem"}}>What does a screen reader say?</p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {item.options.map((option, position) => (
+          <button key={option} type="button" onClick={() => choose(position)} disabled={picked !== null} style={{display: "block", marginBottom: "0.3rem", textAlign: "start"}}>{option}</button>
+        ))}
+      </p>
+      <div role="status">
+        {picked === null ? null : (<p style={{margin: "0 0 0.5rem"}}><strong>{picked === item.answer ? "Correct." : "Not quite. The best answer is: " + item.options[item.answer] + "."}</strong> {item.why}</p>)}
+      </div>
+      {picked !== null ? (<button type="button" onClick={() => { setPicked(null); setIndex(index + 1); }}>{index === announceQuiz.length - 1 ? "See my score" : "Next question"}</button>) : null}
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Exact wording varies between screen readers and settings. The idea (name, then role, then state) is the same.
+      </p>
+    </div>
+  );
+}
+
+Everything in this section so far has led here. You know about roles, names, headings, and landmarks. But what does that really **sound** like? How does a person who cannot see the screen read your page, find the button, and fill in the form?
+
+The answer is a **screen reader:** software that reads out what is on the screen, and lets the user move around and act with the keyboard, a touch screen, or a braille device. In this lesson you will learn how they work, which ones people use, and how to try one yourself. There is no better way to understand accessibility than to listen to your own page.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a **screen reader** is, and who uses it
+- How it gets information from your HTML: **name, role, state, value**
+- The main screen readers and the browsers they pair with
+- **Modes** and **navigation** commands
+- What gets announced for **common elements**
+- How to **try one yourself,** and how to test
+- The common mistakes that make pages **hard to hear**
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<nav aria-label="Main">
+  <ul>
+    <li><a href="/recipes">Recipes</a></li>
+    <li><a href="/shop" aria-current="page">Shop</a></li>
+  </ul>
+</nav>
+
+<main>
+  <h1>Join The Bread Bin</h1>
+  <label for="email">Email address</label>
+  <input id="email" type="email" required>
+  <button type="submit">Subscribe</button>
+</main>
+```
+
+</TabItem>
+<TabItem value="output" label="Hear a Page">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BrowserOnly>{() => <SpeechReader />}</BrowserOnly>
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Load the **faulty sample** first, and press **Next item** a few times with your sound on. Then try the **good sample.** Pay attention to what is missing in the first one: names, roles, and a way to know what is a button.
+
+## What Is a Screen Reader?
+
+A **screen reader** converts what is on the screen into **speech** or **braille.** It does not read pixels. It talks to the browser, and reads the **accessibility tree,** with a role, a name, a state, and a value for each element, as you learned in the introduction.
+
+Who uses one?
+
+- People who are **blind.**
+- People with **low vision,** who use speech alongside magnification.
+- People with **reading difficulties,** such as dyslexia, who hear text read aloud.
+- People with **cognitive or attention differences** who find listening easier.
+- **Developers and testers,** to check their work.
+- People who simply **prefer** to listen, for example while driving or cooking, in simple forms of read-aloud.
+
+Many experienced users listen at **very high speeds,** far faster than most sighted people expect. They also depend on **navigation shortcuts,** not on listening to everything in order. This is why structure matters so much.
+
+## The Main Screen Readers
+
+| Screen reader | Platform | Cost | Notes |
+| :-- | :-- | :-- | :-- |
+| **NVDA** | Windows | Free and open source | Very widely used, and a good first choice for testing |
+| **JAWS** | Windows | Paid | Long established, and common in workplaces |
+| **Narrator** | Windows | Built in | Improving, and always there |
+| **VoiceOver** | macOS and iOS | Built in | Used with Safari. The main screen reader on iPhones |
+| **TalkBack** | Android | Built in | The main screen reader on Android phones |
+| **Orca** | Linux | Free | For Linux desktops |
+| **ChromeVox** | ChromeOS | Built in | For Chromebooks |
+
+Which screen reader and browser people use together varies, and surveys change from year to year. As a start, many people use NVDA or JAWS with Chrome, Firefox, or Edge, and VoiceOver with Safari. Phone screen readers are very widely used, so **do not forget mobile.** Check recent surveys, such as the WebAIM screen reader user survey, for current numbers.
+
+## What a Screen Reader Announces
+
+The usual pattern is: **name, role, state, and (sometimes) extra help.**
+
+| Element | Example of what you may hear |
+| :-- | :-- |
+| Heading | "Ingredients, heading level 2" |
+| Link | "Recipes, link". A link to the current page may add "current page" |
+| Button | "Subscribe, button". With a state: "More options, button, collapsed" |
+| Text field | "Email address, edit text, required" |
+| Checkbox | "Send me the newsletter, checkbox, not checked" |
+| Image | "A golden sourdough loaf, graphic". An empty `alt` is skipped |
+| Landmark | "Main, navigation landmark" |
+| List | "List with 5 items" |
+| Table cell | "Price, column 2, row 3, 4 dollars" (with the right header cells) |
+
+The exact words, the order of name and role, and the amount of detail **vary** between screen readers, and users can change their settings. What does not vary is the information they rely on. If your HTML does not supply it, they cannot hear it.
+
+### Try It: Match the Code to the Sound
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="announcements.html"
+<!-- "Save draft, button" -->
+<button type="button">Save draft</button>
+
+<!-- Skipped: decoration -->
+<img src="swirl.svg" alt="">
+
+<!-- "Shopping cart, link" -->
+<a href="/cart"><img src="cart.svg" alt="Shopping cart"></a>
+
+<!-- Only plain text: no role, no keyboard access -->
+<div onclick="buy()">Buy now</div>
+```
+
+</TabItem>
+<TabItem value="output" label="Announcement Drill">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AnnounceDrill />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Two Ways of Moving Around
+
+On desktop screen readers such as NVDA and JAWS, there are two main modes:
+
+| Mode | What it is for | How it feels |
+| :-- | :-- | :-- |
+| **Browse mode** (also called virtual cursor) | Reading and exploring a page | Arrow keys and letter keys move through the content. You can press H for the next heading |
+| **Focus mode** (also called forms mode) | Typing into a field | Keys go to the page, so you can type letters, even ones that are shortcuts in browse mode |
+
+The screen reader usually switches automatically when you reach a text field. This is one reason why **real form controls** are so important. A made-up control may not trigger the switch. On Mac and iPhone, VoiceOver uses different ideas (such as the **rotor,** which lets you choose to move by headings, links, form controls, and so on), and phone screen readers use **touch gestures:** swipe right or left to move through items, and double-tap to activate.
+
+### Common Shortcuts
+
+These are only a few examples. They differ by screen reader and settings, and keyboard layouts differ too, so check the documentation of the one you use.
+
+| Task | NVDA and JAWS (browse mode) | VoiceOver on Mac |
+| :-- | :-- | :-- |
+| Start or stop the screen reader | Run the program | Command + F5 |
+| Stop speech | Control | Control |
+| Next heading | H (Shift + H for previous) | VO + Command + H |
+| Next landmark | D | Use the rotor (VO + U) |
+| Next link | K | Use the rotor |
+| Next form field | F | VO + Command + J |
+| Next button | B | Use the rotor |
+| Next table | T | Use the rotor |
+| Next list | L | Use the rotor |
+| List headings, links, or landmarks | Insert + F7 (NVDA) | VO + U (rotor) |
+
+On a phone, turn the screen reader on in the accessibility settings, then **swipe** to move and **double-tap** to press. On iPhone, it is called VoiceOver. On Android, it is TalkBack.
+
+## What Makes a Page Hard to Hear
+
+These problems come up again and again in real testing:
+
+| Problem | What the user hears | Fix |
+| :-- | :-- | :-- |
+| Image with no `alt` | The file name, such as "IMG 4032 dot jpg" | Add a meaningful `alt`, or `alt=""` for decoration |
+| Icon-only button with no name | "Button" | Add an accessible name |
+| Link text "click here" | "Click here, link" (and a list of 20 identical links) | Descriptive link text |
+| Input with no label | "Edit text" | Add a real `label` |
+| `div` made into a button | Plain text | Use `button` |
+| Heading used only for size | Wrong outline | Use the right level |
+| Updates that do not announce | Silence, or a stale page | Use a live region, or move focus |
+| Page jumps when a dialog opens | Lost in the page | Move focus into the dialog |
+| Auto-playing audio | Competes with the screen reader's voice | Do not autoplay. Offer a control |
+| Everything is read twice | Duplicated text | Remove redundant hidden text and labels |
+| Table without headers | Cells with no context | Use `th` and `scope` |
+
+## Try It Yourself: Your First Ten Minutes
+
+You do not need to be an expert. Spend ten minutes on each of these, and you will learn a great deal.
+
+1. **Choose one.** NVDA (free) on Windows, VoiceOver on a Mac or an iPhone, or TalkBack on Android.
+2. **Learn how to stop it.** Know how to silence it, and how to turn it off, before you start.
+3. **Turn off the screen,** or close your eyes, or use the "screen curtain" feature if it has one. Resist the urge to look.
+4. **Open a simple page,** such as one you built, and move by **headings.**
+5. **List the links** and the **landmarks.** Do they make sense?
+6. **Fill in a form** with the keyboard only. Are the labels spoken? What happens when you make a mistake?
+7. **Open a menu or a dialog.** Does focus move into it? Can you get out again?
+8. **Slow down.** Listen at a normal speed first. Speed comes later.
+9. **Write down** every moment you felt lost or confused.
+10. **Fix one thing,** and listen again.
+
+:::tip Do not judge by your first minutes
+Everyone sounds clumsy with a screen reader at first. Experts are fast and efficient, and their experience of your page is very different from yours as a beginner. Your goal is not to become an expert, but to catch obvious problems, and to learn what the information in your HTML sounds like.
+:::
+
+## Testing With Screen Readers: Good Practice
+
+- **Test more than one combination,** such as NVDA with Firefox, VoiceOver with Safari, and TalkBack with Chrome. They do not behave identically.
+- **Test on mobile as well as desktop.**
+- **Test the important journeys:** sign-up, search, checkout, and error recovery.
+- **Do not copy what one screen reader says as the standard.** Follow the HTML and ARIA specifications, and use real tests to find problems.
+- **Pair testing with users who use screen readers every day.** They find problems that you never will.
+- **Combine with automatic checks and keyboard tests,** which find different problems.
+
+## Good Habits
+
+1. **Write semantic HTML,** so the right information reaches the screen reader.
+2. **Give every control and meaningful image a name.**
+3. **Use headings, landmarks, and lists** so people can navigate.
+4. **Use real form controls,** and real labels.
+5. **Announce dynamic changes** with live regions or by moving focus.
+6. **Avoid duplicate and redundant text.**
+7. **Do not autoplay audio.**
+8. **Listen to your own pages** regularly.
+9. **Test on more than one screen reader and browser,** desktop and mobile.
+
+## Accessibility Checklist
+
+- [ ] Every image has an `alt`, or is deliberately empty.
+- [ ] Every link, button, and field has a clear accessible name.
+- [ ] Headings and landmarks give a usable map of the page.
+- [ ] Form fields have labels, and errors are announced.
+- [ ] Dynamic updates are announced, or focus is moved to the new content.
+- [ ] Dialogs and menus move focus in and out correctly.
+- [ ] Tables have headers, captions where needed, and no layout tables.
+- [ ] Nothing important is only in a background image, or only in colour.
+- [ ] No audio plays automatically.
+- [ ] The page has been heard with at least one real screen reader.
+
+## Security and Privacy Notes
+
+- **Screen reader use is private information.** Detecting whether someone uses a screen reader can reveal a disability. Do not try to detect it, track it, or store it. Design so that it is not needed.
+- **Do not serve a different page to screen reader users,** which is neither reliable nor fair.
+- **What is spoken can be overheard.** Avoid reading out sensitive details such as full account numbers, passwords, or health information in error messages and status updates. Mask or abbreviate them.
+- **Password fields** are normally announced as protected, and the characters are not read. Make sure you never expose a password in plain text in a label, a hint, or a live region.
+- **Hidden text is still text.** Content that you make visually hidden for screen readers can also be read by search engines, scrapers, and anyone who views the page source. Never put secrets in it.
+- **Authentication should work with assistive technology.** Do not make a login depend only on an image puzzle. See WCAG 3.3.8 (Accessible Authentication).
+
+## Global Audience Notes
+
+- **Screen readers speak in many languages,** but they need to know which. Set `lang` on `<html>`, and on passages in other languages, or text may be pronounced in the wrong voice and become unintelligible.
+- **Voice quality and language support vary** between screen readers and operating systems. Some languages have fewer or lower-quality voices, so clear structure matters even more.
+- **Braille is used worldwide,** in many languages and codes. Good text alternatives and clean structure help braille users too.
+- **Many people use free or built-in tools,** often on older phones and shared devices. Lean, semantic pages work best.
+- **Write plain, short labels and alt text** that translate well, and are pronounced clearly.
+- **Numbers, dates, abbreviations, and symbols** may be read in unexpected ways. Test them in each language you support, and write out anything that could be misheard.
+- **Right-to-left languages** need `dir="rtl"`, so the reading order is correct.
+
+## Common Mistakes to Avoid
+
+1. **Never listening to your own pages.**
+2. **Assuming a screen reader user can see the layout.**
+3. **Using "click here" and "read more" as link text.**
+4. **Icon buttons with no name.**
+5. **Unlabelled form fields,** or placeholders as the only label.
+6. **Missing or filename-style alt text.**
+7. **Faking buttons and links with `div`.**
+8. **Silent updates** that screen readers never announce.
+9. **Moving focus** to the wrong place, or nowhere.
+10. **Over-using ARIA,** so that it contradicts the HTML.
+11. **Testing with only one screen reader,** and treating it as the truth.
+12. **Treating screen reader users as one group** with one set of needs.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the reader above, and fix every problem in the faulty sample, one by one.
+2. Add a checkbox with a label to the good sample, and listen to it.
+3. Turn on a screen reader on your phone, and use your favourite app for five minutes.
+4. Install NVDA (or turn on VoiceOver), and move through a page of your own by headings.
+5. List the headings, landmarks, and links of a site you use, with the screen reader's list feature.
+6. Find an icon-only button on a real site, and see what it announces.
+7. Fill in and submit a form with an error, and listen to how the error is announced.
+8. Change the speech speed, and notice how much information you can take in.
+9. Replace three "read more" links with descriptive text.
+10. Bonus: ask a screen reader user, if they are willing, to walk you through how they browse a site.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a screen reader read?</summary>
+
+The accessibility tree that the browser builds from your HTML, with each element's role, name, state, and value. It does not read the pixels of the screen.
+
+</details>
+
+<details>
+<summary>2. Name three screen readers.</summary>
+
+For example NVDA and JAWS on Windows, VoiceOver on Mac and iPhone, and TalkBack on Android.
+
+</details>
+
+<details>
+<summary>3. What is the usual order of an announcement?</summary>
+
+The name of the element, then its role, then its state, for example "Subscribe, button" or "Send me news, checkbox, not checked". The exact wording varies.
+
+</details>
+
+<details>
+<summary>4. How do screen reader users usually find content?</summary>
+
+By jumping between headings, landmarks, links, and form fields, rather than by listening to the whole page from the top.
+
+</details>
+
+<details>
+<summary>5. What does an empty `alt=""` do?</summary>
+
+It marks an image as decorative, so the screen reader skips it.
+
+</details>
+
+<details>
+<summary>6. Why is it a bad idea to detect screen reader users?</summary>
+
+Their use can reveal a disability, which is sensitive information. It is also unreliable and unfair to serve a different page. Design one accessible page for everyone.
+
+</details>
+
+## Key Takeaways
+
+- A **screen reader** turns the **accessibility tree** into speech or braille. It reads **name, role, state, and value.**
+- People mostly **navigate by structure:** headings, landmarks, links, lists, and form fields.
+- Desktop screen readers have **browse mode** and **focus mode.** Phone screen readers use **gestures.**
+- **NVDA, JAWS, VoiceOver, and TalkBack** are the main ones. Test more than one, on desktop and on mobile.
+- The usual problems are **missing names, missing alt text, fake controls, silent updates, and wrong `lang`.**
+- **Listen to your own pages** regularly, and involve screen reader users when you can.
+- Protect privacy: do not detect or track assistive technology, and do not read sensitive details aloud.
+
+Next, learn the other major way people use the web without a mouse: [Keyboard Accessibility](./keyboard-accessibility).
