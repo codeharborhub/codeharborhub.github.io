@@ -1,0 +1,589 @@
+---
+id: html-accessibility-testing
+title: "Accessibility Testing"
+sidebar_label: "Accessibility Testing"
+sidebar_position: 22
+slug: /html/accessibility/accessibility-testing
+description: "Learn how to test a web page for accessibility: automated tools, a five-minute keyboard and zoom check, screen reader checks, and testing with real people. Understand what automation can and cannot catch, how to report and fix problems, and how to keep them from coming back. Includes a manual test plan lab, a what-can-a-tool-catch quiz, and a live mini page auditor."
+keywords:
+  - accessibility testing
+  - a11y testing
+  - axe DevTools
+  - Lighthouse accessibility
+  - WAVE
+  - keyboard testing
+  - screen reader testing
+  - manual accessibility testing
+  - accessibility audit
+  - WCAG testing
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, testing, axe, lighthouse, screen-readers, audit, a11y, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const planSteps = [
+  {id: "kb", group: "Keyboard", text: "Put the mouse away. Can you reach and use every link, button, and field with Tab, Shift+Tab, Enter, Space, and arrow keys?", fix: "Use real buttons and links, and fix any custom widgets."},
+  {id: "focus", group: "Keyboard", text: "Can you always see where focus is?", fix: "Never remove the outline without a clear replacement."},
+  {id: "order", group: "Keyboard", text: "Does the focus order match the reading order, and is there no keyboard trap?", fix: "Fix the DOM order rather than using positive tabindex."},
+  {id: "zoom", group: "Zoom and reflow", text: "Zoom the browser to 200 percent, then to 400 percent (or make the window 320 pixels wide). Is everything still readable, with no sideways scrolling for ordinary text?", fix: "Use relative units and flexible layouts."},
+  {id: "text", group: "Zoom and reflow", text: "Increase the text size only. Is anything cut off or overlapping?", fix: "Avoid fixed heights on text containers."},
+  {id: "contrast", group: "Colour", text: "Check text and key controls with a contrast checker. Is any text too faint?", fix: "Darken text or lighten the background until it passes."},
+  {id: "colour", group: "Colour", text: "Look at the page in greyscale. Is anything understood only by colour?", fix: "Add text, an icon, or a pattern."},
+  {id: "sr", group: "Screen reader", text: "Turn on a screen reader and listen to the main task. Does every control have a clear name, role, and state?", fix: "Add labels, correct roles, and states."},
+  {id: "headings", group: "Screen reader", text: "List the headings and landmarks. Does the outline make sense by itself?", fix: "Fix heading levels and add landmarks."},
+  {id: "live", group: "Screen reader", text: "Trigger an error and a success message. Are they announced without moving focus around?", fix: "Use a live region or move focus to the error summary."},
+  {id: "motion", group: "Motion and media", text: "Turn on 'reduce motion' in your system. Do animations calm down? Do videos have captions, and does nothing flash?", fix: "Respect the reduced-motion setting and add captions."},
+  {id: "forms", group: "Forms", text: "Submit a form with mistakes. Are the errors clear, near the field, and linked to it?", fix: "Add text errors, aria-invalid, and aria-describedby."},
+];
+
+export function TestPlanLab() {
+  const [results, setResults] = useState({});
+  const set = (id, value) => setResults({...results, [id]: value});
+  const done = planSteps.filter((step) => results[step.id] !== undefined).length;
+  const passes = planSteps.filter((step) => results[step.id] === "pass").length;
+  const fails = planSteps.filter((step) => results[step.id] === "fail");
+  const groups = planSteps.reduce((list, step) => (list.indexOf(step.group) === -1 ? list.concat(step.group) : list), []);
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>Open any page you built, and go through these checks. Mark each one as you test it.</p>
+      {groups.map((group) => (
+        <fieldset key={group} style={{margin: "0 0 0.6rem"}}>
+          <legend>{group}</legend>
+          {planSteps.filter((step) => step.group === group).map((step) => (
+            <div key={step.id} style={{marginBottom: "0.5rem"}}>
+              <p style={{margin: "0 0 0.2rem"}}>{step.text}</p>
+              <label style={{marginRight: "0.8rem"}}><input type="radio" name={"plan-" + step.id} checked={results[step.id] === "pass"} onChange={() => set(step.id, "pass")} /> Pass</label>
+              <label><input type="radio" name={"plan-" + step.id} checked={results[step.id] === "fail"} onChange={() => set(step.id, "fail")} /> Fail</label>
+            </div>
+          ))}
+        </fieldset>
+      ))}
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{done}</strong> of {planSteps.length} checks done. <strong>{passes}</strong> passed, <strong>{fails.length}</strong> failed.</p>
+      {fails.length > 0 ? (
+        <div>
+          <p style={{margin: "0 0 0.2rem"}}><strong>Your to-fix list:</strong></p>
+          <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+            {fails.map((step) => (<li key={step.id}>{step.group}: {step.fix}</li>))}
+          </ul>
+        </div>
+      ) : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a starter plan, not a full audit, and passing it does not prove a page meets WCAG. It is a fast way to find the biggest problems. Nothing here is saved.
+      </p>
+    </div>
+  );
+}
+
+export const catchItems = [
+  {id: "alt-missing", text: "An image has no alt attribute at all", answer: "tool", why: "A tool can see that the attribute is missing."},
+  {id: "alt-bad", text: "An image has alt text \"image123.png\"", answer: "partly", why: "Some tools flag suspicious file names, but only a person can tell whether the text is useful."},
+  {id: "label-missing", text: "A form field has no label", answer: "tool", why: "The missing name can be found in the code."},
+  {id: "label-bad", text: "A label says \"Field\" for the email box", answer: "human", why: "A tool sees a label. Only a person sees that it is unhelpful."},
+  {id: "contrast", text: "Grey text on white has low contrast", answer: "tool", why: "Contrast is a calculation. Tools are good at it, except over images and gradients."},
+  {id: "keyboard-trap", text: "Focus gets stuck inside a pop-up and cannot leave", answer: "human", why: "This needs real keyboard use."},
+  {id: "focus-order", text: "Tab order jumps around the page in a confusing way", answer: "human", why: "A tool can warn about positive tabindex, but judging the order needs a person."},
+  {id: "lang", text: "The page has no lang attribute", answer: "tool", why: "A simple presence check."},
+  {id: "heading-skip", text: "A heading jumps from h2 to h4", answer: "tool", why: "The order can be read from the code. Whether the headings are meaningful is for a person."},
+  {id: "instructions", text: "Instructions say \"click the red button\"", answer: "human", why: "Sensory-only instructions need human reading."},
+  {id: "captions", text: "A video has captions that are wrong or out of sync", answer: "human", why: "A tool can see a track exists, not whether it is accurate."},
+  {id: "button-empty", text: "A button contains only an icon, with no name", answer: "tool", why: "The empty accessible name is found by a tool."},
+];
+
+export function CatchQuiz() {
+  const [guesses, setGuesses] = useState({});
+  const [shown, setShown] = useState(false);
+  const labels = {tool: "A tool can catch it", partly: "A tool can partly help", human: "A person must check"};
+  const right = catchItems.filter((item) => guesses[item.id] === item.answer).length;
+  const answered = Object.keys(guesses).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>For each problem, decide whether an automated tool can find it.</p>
+      {catchItems.map((item) => (
+        <fieldset key={item.id} style={{margin: "0 0 0.5rem"}}>
+          <legend>{item.text}</legend>
+          {Object.keys(labels).map((key) => (
+            <label key={key} style={{marginRight: "0.8rem", display: "inline-block"}}>
+              <input type="radio" name={"catch-" + item.id} checked={guesses[item.id] === key} onChange={() => setGuesses({...guesses, [item.id]: key})} /> {labels[key]}
+            </label>
+          ))}
+          {shown && guesses[item.id] ? (
+            <p style={{margin: "0.3rem 0 0"}}><strong>{guesses[item.id] === item.answer ? "Correct." : "Not quite: " + labels[item.answer] + "."}</strong> {item.why}</p>
+          ) : null}
+        </fieldset>
+      ))}
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my answers</button>{" "}
+        <button type="button" onClick={() => { setGuesses({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? "You got " + right + " of " + answered + " answered correctly." : ""}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Different tools check different things, so treat the answers as general guidance. The big lesson: tools find the mechanical problems, and people find the human ones.
+      </p>
+    </div>
+  );
+}
+
+export const auditSamples = {
+  messy: '<img src="hero.jpg">\n<a href="/more"></a>\n<a href="/a">click here</a>\n<button><svg></svg></button>\n<input type="email" placeholder="Email">\n<h1>Rye Bread</h1>\n<h1>Ingredients</h1>\n<h4>Steps</h4>\n<div tabindex="3">Skip</div>\n<div id="x">One</div>\n<div id="x">Two</div>\n<button aria-hidden="true">Close</button>',
+  fixed: '<main>\n<img src="hero.jpg" alt="A loaf of rye bread on a board">\n<a href="/more">Read more about rye bread</a>\n<a href="/a">Download the recipe</a>\n<button type="button" aria-label="Search"><svg aria-hidden="true" focusable="false"></svg></button>\n<label for="e">Email</label>\n<input id="e" type="email">\n<h1>Rye Bread</h1>\n<h2>Ingredients</h2>\n<h3>Steps</h3>\n<div id="x">One</div>\n<div id="y">Two</div>\n<button type="button" hidden>Close</button>\n</main>',
+};
+
+export function auditText(el) {
+  return (el.textContent || "").replace(/\s+/g, " ").trim();
+}
+
+export function auditHasName(el, doc) {
+  if ((el.getAttribute("aria-label") || "").trim()) return true;
+  const by = (el.getAttribute("aria-labelledby") || "").split(/\s+/).filter(Boolean);
+  if (by.some((id) => doc.getElementById(id) && auditText(doc.getElementById(id)))) return true;
+  if (auditText(el)) return true;
+  if (el.querySelector("img[alt]:not([alt=''])")) return true;
+  if ((el.getAttribute("title") || "").trim()) return true;
+  return false;
+}
+
+export function PageAuditorInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(auditSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const found = [];
+  const add = (rule, message, tag) => found.push({rule, message, tag});
+  Array.from(doc.querySelectorAll("img")).forEach((el) => {
+    if (!el.hasAttribute("alt")) add("Images", "An image has no alt attribute. Add alt text, or alt=\"\" if it is decoration.", "img");
+  });
+  Array.from(doc.querySelectorAll("a[href]")).forEach((el) => {
+    if (!auditHasName(el, doc)) add("Links", "A link has no name. Add text, or an aria-label.", "a");
+    else if (/^(click here|here|read more|more|link)$/i.test(auditText(el))) add("Links", "The link text \"" + auditText(el) + "\" does not make sense out of context. Say where it goes.", "a");
+  });
+  Array.from(doc.querySelectorAll("button, [role='button']")).forEach((el) => {
+    if (el.closest("[aria-hidden='true'], [hidden]")) return;
+    if (!auditHasName(el, doc)) add("Buttons", "A button has no name. Add text or an aria-label.", "button");
+  });
+  Array.from(doc.querySelectorAll("input:not([type='hidden']):not([type='submit']):not([type='button']), select, textarea")).forEach((el) => {
+    const id = el.getAttribute("id");
+    const hasLabel = (id && doc.querySelector('label[for="' + id + '"]')) || el.closest("label") || el.hasAttribute("aria-label") || el.hasAttribute("aria-labelledby");
+    if (!hasLabel) add("Forms", "A form field has no label" + (el.hasAttribute("placeholder") ? " (a placeholder is not a label)" : "") + ". Add a label connected to it.", el.tagName.toLowerCase());
+  });
+  const h1s = doc.querySelectorAll("h1");
+  if (h1s.length > 1) add("Headings", "There are " + h1s.length + " h1 headings. Most pages should have one.", "h1");
+  let last = 0;
+  Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")).forEach((el) => {
+    const level = parseInt(el.tagName.charAt(1), 10);
+    if (last && level > last + 1) add("Headings", "The heading level jumps from h" + last + " to h" + level + ". Do not skip levels.", el.tagName.toLowerCase());
+    last = level;
+  });
+  Array.from(doc.querySelectorAll("[tabindex]")).forEach((el) => {
+    if (parseInt(el.getAttribute("tabindex"), 10) > 0) add("Focus", "A positive tabindex (" + el.getAttribute("tabindex") + ") creates a confusing focus order. Use 0 or -1.", el.tagName.toLowerCase());
+  });
+  const ids = {};
+  Array.from(doc.querySelectorAll("[id]")).forEach((el) => { ids[el.id] = (ids[el.id] || 0) + 1; });
+  Object.keys(ids).forEach((id) => { if (ids[id] > 1) add("IDs", "The id \"" + id + "\" is used " + ids[id] + " times. Ids must be unique.", "id"); });
+  Array.from(doc.querySelectorAll("[aria-hidden='true']")).forEach((el) => {
+    if (el.matches("a[href], button, input, select, textarea, [tabindex]") || el.querySelector("a[href], button, input, select, textarea, [tabindex]")) add("ARIA", "aria-hidden=\"true\" on something focusable. Use hidden or inert instead.", el.tagName.toLowerCase());
+  });
+  if (doc.querySelectorAll("*").length > 6 && !doc.querySelector("main, [role='main']")) add("Landmarks", "No main landmark. Wrap the main content in a main element.", "main");
+  const choose = (value) => { setWhich(value); setHtml(auditSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to audit?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="au-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="au-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="au-html">HTML to audit (edit it freely)</label><br />
+        <textarea id="au-html" rows={12} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{found.length}</strong> {found.length === 1 ? "problem" : "problems"} found.</p>
+      {found.length === 0 ? <p style={{margin: 0}}>No problems found by these simple checks. That does <strong>not</strong> mean the page is accessible. Now test it by hand.</p> : (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {found.map((item, index) => (
+            <li key={index} style={{marginBottom: "0.3rem"}}><strong>{item.rule}:</strong> {item.message}</li>
+          ))}
+        </ul>
+      )}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a small teaching tool with a handful of checks, not a replacement for axe, Lighthouse, or WAVE. It reads HTML only, so it cannot judge colours, layout, scripts, or how a page feels to use.
+      </p>
+    </div>
+  );
+}
+
+export function PageAuditor() {
+  return <BrowserOnly>{() => <PageAuditorInner />}</BrowserOnly>;
+}
+
+You have built the pages. You have added labels, roles, and live regions. But how do you **know** it works?
+
+You **test.** Accessibility testing is not one big exam at the end. It is a habit: a quick check as you build, a sturdier check before you ship, and a conversation with real people whenever you can. This lesson gives you a toolkit for all three, and a plain look at what each one can and cannot tell you.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The **three layers** of accessibility testing
+- What **automated tools** catch, and what they miss
+- A fast **keyboard, zoom, and colour** test you can do in five minutes
+- How to test with a **screen reader**
+- Why testing with **real people** matters
+- How to **report, prioritise, and fix** problems
+- How to stop them **coming back**
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A page that automated tools will like... -->
+<button type="button" aria-label="Close">
+  <svg aria-hidden="true" focusable="false"></svg>
+</button>
+
+<!-- ...but a human still has to check: -->
+<!-- Does "Close" make sense here? Does focus return somewhere sensible? -->
+<!-- Is it visible when focused? Is the target big enough to tap? -->
+```
+
+</TabItem>
+<TabItem value="output" label="Mini Page Auditor">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PageAuditor />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Run the messy page, fix every problem in the box, and then run it again. Then read on to see why a clean result is only the beginning.
+
+## The Three Layers of Testing
+
+| Layer | What it is | Good at | Weak at |
+| :-- | :-- | :-- | :-- |
+| **Automated** | Tools that scan the code or page | Fast, repeatable, catches missing labels, alt, contrast, and bad markup | Cannot judge meaning, order, or ease of use |
+| **Manual** | You test with a keyboard, zoom, and a screen reader | Finds focus, structure, and flow problems | Slower, and needs practice |
+| **With people** | Disabled and older users try real tasks | Finds the problems you did not think of | Takes planning, time, and care |
+
+You need **all three.** Automated testing is the cheapest and fastest, so it goes first. But it is only the start.
+
+## Layer 1: Automated Tools
+
+Automated tools scan your page and report problems they can detect from the code. Some of the most widely used:
+
+- **axe DevTools** (browser extension, and the `axe-core` library for your own tests)
+- **Lighthouse** (built into Chrome DevTools; gives an accessibility score)
+- **WAVE** (a browser extension that overlays icons on the page)
+- **Accessibility Insights** (a free tool with a guided manual check)
+- **Browser developer tools** (the Accessibility panel shows the tree, names, and roles)
+- **Linters** such as `eslint-plugin-jsx-a11y`, which flag problems as you type
+- **pa11y** and `jest-axe`, for running checks in automated builds
+
+### What they are good at
+
+Missing `alt`, missing form labels, empty buttons and links, low contrast, a missing `lang`, duplicate ids, bad ARIA attribute names and values, and skipped heading levels.
+
+### What they cannot do
+
+A tool can tell whether a label **exists.** It cannot tell whether it is **helpful.** It does not know whether your focus order makes sense, whether a modal traps focus, or whether your instructions depend on colour. Widely quoted estimates say automated tools find **only a portion of real problems,** often less than half. The exact number depends on the tool and the page.
+
+:::warning A perfect score is not "accessible"
+A Lighthouse score of 100 means the checks it ran did not fail. It does not mean the page is accessible. Treat the score as a smoke alarm, not a safety certificate.
+:::
+
+Try it yourself: for each problem below, decide whether a tool can catch it.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CatchQuiz />
+</>
+</BrowserWindow>
+
+### A first automated test
+
+If you use JavaScript, `axe-core` runs in a few lines:
+
+```js title="a11y-check.js"
+// npm install axe-core
+import axe from "axe-core";
+
+const results = await axe.run(document);
+
+results.violations.forEach((violation) => {
+  console.log(violation.id, violation.help);
+  violation.nodes.forEach((node) => console.log("  ", node.target));
+});
+```
+
+Or open **Chrome DevTools, then Lighthouse, tick "Accessibility," and run it** on any page, with no setup.
+
+## Layer 2: Manual Testing
+
+You can find the biggest problems in **about five minutes,** with no special software.
+
+### The keyboard test
+
+1. **Put the mouse away.**
+2. Press **Tab** through the whole page. Can you reach every link, button, and field?
+3. Can you **always see** where you are?
+4. Does the order make sense?
+5. Can you **operate** each control: Enter for links and buttons, Space for buttons and checkboxes, arrows for menus, tabs, and radios?
+6. Do menus and dialogs let you leave with **Esc,** and does focus return to where you were?
+7. Is there a **skip link** at the start, and does it work?
+
+Most serious failures show up here. See [Keyboard Accessibility](./keyboard-accessibility) and [Focus Management](./focus-management).
+
+### The zoom and reflow test
+
+1. Zoom your browser to **200 percent,** then **400 percent,** or make the window **320 CSS pixels** wide.
+2. Is everything still readable and usable?
+3. Do you need to scroll **sideways** to read ordinary text? (Wide tables and maps may be exceptions.)
+4. Increase **text size only.** Is anything cut off or overlapping?
+
+### The colour test
+
+1. Use a **contrast checker** (such as the one in the browser tools) on body text, buttons, and form borders.
+2. View the page in **greyscale.** Can you still tell the states apart without colour?
+3. Try **dark mode** and **high contrast** or **forced colours** mode, if your system has it.
+
+### The motion and media test
+
+1. Turn on your system's **reduce motion** setting. Do animations calm down?
+2. Do videos have **captions,** and do audio clips have a **transcript**?
+3. Does anything **flash** more than three times per second?
+
+### The screen reader test
+
+You do not need to be an expert. Even a few minutes of listening will teach you a lot. Common choices (check current versions and combinations):
+
+| System | Screen reader | Often paired with |
+| :-- | :-- | :-- |
+| Windows | **NVDA** (free) | Firefox or Chrome |
+| Windows | **JAWS** (paid) | Chrome or Edge |
+| Windows | **Narrator** (built in) | Edge |
+| Mac and iPhone | **VoiceOver** (built in) | Safari |
+| Android | **TalkBack** (built in) | Chrome |
+
+Then try this:
+
+1. Listen to the page from the top. Does it make sense?
+2. Open the **headings list** and the **landmarks list.** Is the outline sensible?
+3. Complete your page's **main task** (sign up, search, check out) using only the screen reader and keyboard.
+4. Cause an **error** and a **success message.** Are they announced?
+5. Walk through your **icons and images.** Any noise, or missing names?
+
+:::tip You will sound clumsy at first, and that is fine
+Learn four or five commands: start and stop, next item, next heading, next link, and list of headings. Expert users move much faster than you will, so do not judge by your own pace. Use your testing to find missing names and broken structure, not to measure how fast someone can go.
+:::
+
+### Make a plan
+
+Here is a starter test plan. Use it on any page you build:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TestPlanLab />
+</>
+</BrowserWindow>
+
+## Layer 3: Test with Real People
+
+No checklist replaces watching a person use your product. Disabled and older users find things that tools and experts miss, because **they live with the barriers every day.**
+
+- **Recruit a range:** people who use screen readers, magnifiers, voice control, switch devices, captions, and people with cognitive differences.
+- **Pay them** for their time and expertise.
+- **Give them real tasks,** not a tour: "Find a recipe and save it."
+- **Watch, do not rescue.** Note where they struggle, but do not explain the page. If you have to explain it, that is the finding.
+- **Ask for consent** before recording anything, and explain what you will keep.
+- **Keep the sessions short and kind.**
+
+If you cannot run formal sessions, offer a **feedback route** on your site (an email address or form) and a public **accessibility statement** that says what is supported and how to report a problem. Then answer the messages.
+
+## Reporting and Fixing Problems
+
+A good bug report is easy to act on. Write down:
+
+1. **Where:** the page and the part of the page.
+2. **What happened,** and what you expected.
+3. **How to reproduce it,** step by step, with the browser and assistive technology used (for example, "NVDA with Firefox").
+4. **Why it matters:** who is blocked, and from what task.
+5. **The rule it breaks,** if you know it (for example, a WCAG success criterion).
+6. **A suggested fix,** if you have one.
+
+### Deciding what to fix first
+
+Fix problems in this order, as a general guide:
+
+1. **Blockers:** people cannot finish a key task at all (a keyboard trap, an unlabelled "Pay" button).
+2. **Major:** people can finish, but with great difficulty or help.
+3. **Minor:** annoying, but there is a workaround.
+4. **Polish:** small improvements.
+
+Also consider how **many people** hit the problem, and how **central** the page is.
+
+## Stop Problems Coming Back
+
+A fixed bug can come back with the next release. To keep it fixed:
+
+- **Run a linter** in your editor, so common mistakes are caught as you type.
+- **Add automated checks** to your build or pull requests (`axe-core`, `pa11y`, or `jest-axe`).
+- **Test components once,** and reuse them. A well-tested button, dialog, and form field help every page.
+- **Add a keyboard and screen reader pass** to your "definition of done."
+- **Re-test after big design changes,** and after upgrading frameworks or libraries.
+- **Train the team.** Designers, writers, and developers all affect accessibility.
+- **Track problems** like any other bug, with an owner and a date.
+
+:::info Test early
+The cheapest time to fix an accessibility problem is **while you are designing it.** Check sketches for contrast, focus, and labels before any code is written.
+:::
+
+## Standards and Reports
+
+Teams often test against **WCAG** (usually 2.1 or 2.2, at level AA). You can write up the results in an **accessibility conformance report** (sometimes called a VPAT), and publish an **accessibility statement.** Requirements differ between countries, sectors, and contracts, so check what applies to you. This is not legal advice.
+
+For more on levels and success criteria, see [WCAG Basics](./wcag-basics).
+
+## Good Habits
+
+- **Test as you build,** not only at the end.
+- **Start with a keyboard,** and then add a screen reader.
+- **Use at least one automated tool,** and keep it in your build.
+- **Fix the cause,** not only the symptom: a bad component makes the same bug everywhere.
+- **Test on real devices,** especially phones.
+- **Test with several browsers and assistive technologies.**
+- **Write down** what you tested, with versions.
+- **Listen to real users,** and thank them.
+
+## Accessibility Checklist
+
+- [ ] Automated checks run with no serious errors (axe, Lighthouse, or WAVE)
+- [ ] The whole page works with a keyboard, with visible focus
+- [ ] The page works at 200 and 400 percent zoom (or 320 pixels wide)
+- [ ] Text and controls have enough contrast, and nothing depends on colour alone
+- [ ] The page works with reduce motion on, and videos have captions
+- [ ] The main task works with a screen reader
+- [ ] Errors and status messages are announced
+- [ ] Headings and landmarks give a sensible outline
+- [ ] Mobile checked with a screen reader and touch
+- [ ] An accessibility statement and a way to give feedback are published
+- [ ] Checks are part of the build and the "definition of done"
+
+## Security and Privacy Notes
+
+- **Do not paste private pages into online checkers.** A page behind a login can contain personal data. Use local tools or a test account.
+- **Use test data.** Never test with real customers' records, and mask personal details in screenshots and recordings.
+- **Check extension permissions.** Browser extensions can read the pages you visit. Install testing tools only from trusted sources, and turn them off for sensitive sites.
+- **Be careful with recordings.** A recording of a screen reader session may capture names, emails, or messages. Get consent, store it safely, and delete it when you no longer need it.
+- **Consent and fairness:** compensate participants, explain how their data is used, and let them stop at any time.
+- **Do not rely on "overlay" widgets** that promise to fix accessibility automatically. Many do not work, and some collect user data. Fix the code instead.
+
+## Global Audience Notes
+
+- **Test in each language you support.** Labels, error messages, and live announcements need real translations, and the `lang` attribute must match.
+- **Test right-to-left layouts,** including focus order, icons, and zoom.
+- **Test on common, modest devices and slow networks.** An accessible page that never loads is not accessible.
+- **Screen reader availability and popularity differ around the world.** Ask your own users which tools they use.
+- **Test with input methods** used locally: on-screen keyboards, voice input, and IME typing for languages such as Japanese, Chinese, and Korean.
+- **Check regional rules,** as accessibility laws and standards differ by country.
+
+## Common Mistakes to Avoid
+
+1. **Trusting a score.** A Lighthouse 100 is not proof of accessibility.
+2. **Only testing with a mouse.**
+3. **Only testing one browser,** one device, or one screen reader.
+4. **Testing once, at the very end,** when fixes are most expensive.
+5. **Treating automated warnings as noise,** or "fixing" them just to silence the tool.
+6. **Never listening to a screen reader.**
+7. **Judging screen reader speed** by your own beginner pace.
+8. **Skipping real users,** or testing only with colleagues.
+9. **Using overlay "fix-it" widgets** instead of fixing the code.
+10. **Not writing bugs down,** so they are forgotten.
+11. **Fixing symptoms,** not the shared component that causes them.
+12. **No accessibility statement and no feedback route.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Run the mini page auditor on the messy page, fix every problem, and run it again.
+2. Take the "what can a tool catch" quiz. Which answer surprised you?
+3. Install axe DevTools or WAVE, and run it on a page you built.
+4. Run Lighthouse on the same page. Compare what it finds with axe.
+5. Do the five-minute keyboard test on your own site, and write down every problem.
+6. Zoom to 400 percent. What breaks?
+7. Turn on a screen reader and complete one task. What did you learn?
+8. Write one bug report using the six points above.
+9. Add `eslint-plugin-jsx-a11y` or `pa11y` to a project.
+10. Bonus: ask a friend who uses assistive technology (with their consent and a fair reward) to try your main task, and watch without helping.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the three layers of accessibility testing?</summary>
+
+Automated tools, manual testing (keyboard, zoom, screen reader), and testing with real people. You need all three.
+
+</details>
+
+<details>
+<summary>2. What can automated tools find, and what can't they?</summary>
+
+They find mechanical problems, such as missing alt text, missing labels, low contrast, and bad markup. They cannot judge whether a label is helpful, whether the focus order makes sense, or how usable the page really is.
+
+</details>
+
+<details>
+<summary>3. What is the fastest useful manual test?</summary>
+
+Put the mouse away and use the page with the keyboard alone, with visible focus, a logical order, and no traps.
+
+</details>
+
+<details>
+<summary>4. Which zoom levels should you check?</summary>
+
+Check 200 percent and 400 percent (or a 320 CSS pixel wide window), looking for cut-off text, overlapping, and sideways scrolling for ordinary text.
+
+</details>
+
+<details>
+<summary>5. Why test with real people?</summary>
+
+They find problems that tools and checklists miss, because they live with those barriers. It is the best way to learn what actually works.
+
+</details>
+
+<details>
+<summary>6. How do you stop accessibility bugs coming back?</summary>
+
+Add linters and automated checks to your build, reuse well-tested components, include keyboard and screen reader checks in your "definition of done," and track bugs like any others.
+
+</details>
+
+## Key Takeaways
+
+- **Test early, often, and in three layers:** tools, hands-on checks, and real people.
+- **Automated tools are fast but limited.** A clean score is not proof.
+- **The keyboard test finds the biggest problems** in minutes.
+- **Zoom, contrast, motion, and screen reader checks** cover the rest of the basics.
+- **Write clear bug reports,** and fix the worst problems first.
+- **Put checks into your build,** so fixed bugs stay fixed.
+- **Protect privacy** when you test, and avoid "fix-it" overlays.
+- **Listen to the people who use your site.**
+
+You have now finished the accessibility section. Go back to the [section overview](/tutorials/html/accessibility), and pick any lesson you want to revisit. Then take what you learned and test one of your own pages today.

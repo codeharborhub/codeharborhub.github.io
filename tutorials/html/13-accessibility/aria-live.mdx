@@ -1,0 +1,605 @@
+---
+id: html-aria-live
+title: "ARIA Live"
+sidebar_label: "ARIA Live"
+sidebar_position: 21
+slug: /html/accessibility/aria-live
+description: "Learn how aria-live and live region roles announce changes to screen reader users without moving focus: status messages, errors, search results, chat, and timers. Understand polite versus assertive, aria-atomic, aria-relevant, and why a live region must exist before it changes. Includes a live region lab with real regions, an atomic lab, and a live aria-live checker."
+keywords:
+  - aria-live
+  - live region
+  - role status
+  - role alert
+  - role log
+  - aria-atomic
+  - aria-relevant
+  - aria-busy
+  - status messages
+  - WCAG 4.1.3
+  - screen reader announcements
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, accessibility, aria, aria-live, live-regions, status-messages, a11y, frontend]
+---
+
+import {useState, useRef, useEffect} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function LiveRegionLab() {
+  const [mode, setMode] = useState("polite");
+  const [ready, setReady] = useState(true);
+  const [count, setCount] = useState(0);
+  const [text, setText] = useState("");
+  const [log, setLog] = useState([]);
+  const send = (message) => {
+    const next = count + 1;
+    setCount(next);
+    setText(message);
+    setLog((old) => [{n: next, message, mode, ready}].concat(old).slice(0, 5));
+  };
+  const regionProps = mode === "off" ? {} : {"aria-live": mode, "aria-atomic": "true"};
+  const region = (
+    <div key={ready ? "stable" : "fresh-" + count} {...regionProps} style={{minHeight: "2.2rem", padding: "0.5rem 0.7rem", border: "1px solid #94a3b8", borderRadius: "6px", marginBottom: "0.6rem"}}>
+      {text}
+    </div>
+  );
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.5rem"}}>
+        <legend>aria-live value</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="live-mode" checked={mode === "off"} onChange={() => setMode("off")} /> off (no attribute)</label>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="live-mode" checked={mode === "polite"} onChange={() => setMode("polite")} /> polite</label>
+        <label><input type="radio" name="live-mode" checked={mode === "assertive"} onChange={() => setMode("assertive")} /> assertive</label>
+      </fieldset>
+      <label style={{display: "block", margin: "0 0 0.6rem"}}>
+        <input type="checkbox" checked={ready} onChange={(event) => setReady(event.target.checked)} /> The region is already in the page before its text changes
+      </label>
+      {region}
+      <p style={{margin: "0 0 0.6rem"}}>
+        <button type="button" onClick={() => send("Recipe saved.")} style={{marginRight: "0.5rem"}}>Save recipe</button>
+        <button type="button" onClick={() => send("Could not save. Check your connection.")} style={{marginRight: "0.5rem"}}>Cause an error</button>
+        <button type="button" onClick={() => { setText(""); }}>Clear</button>
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>What was sent:</strong></p>
+      <ol reversed style={{margin: "0 0 0.5rem", paddingLeft: "1.4rem"}}>
+        {log.length === 0 ? <li>Nothing yet. Press a button.</li> : null}
+        {log.map((item) => (
+          <li key={item.n}>"{item.message}" with <code>{item.mode === "off" ? "no live attribute" : 'aria-live="' + item.mode + '"'}</code>, region {item.ready ? "already present" : "created together with the text"}.</li>
+        ))}
+      </ol>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The box above is a real live region on this page. If you use a screen reader, switch it on and try each setting. In general, a polite region waits for the reader to finish speaking, an assertive one interrupts, and one with no attribute is silent, but exact behaviour differs between screen readers and browsers. When the box is created at the same moment as its text (untick the checkbox), many screen readers say nothing at all. This is the most common live region bug.
+      </p>
+    </div>
+  );
+}
+
+export function AtomicLab() {
+  const [atomic, setAtomic] = useState(true);
+  const [items, setItems] = useState(3);
+  const [last, setLast] = useState("");
+  const change = (delta) => {
+    const next = Math.max(0, Math.min(10, items + delta));
+    if (next === items) return;
+    setItems(next);
+    setLast(atomic ? "Basket: " + next + " items, total " + (next * 4) + " dollars" : String(next));
+  };
+  return (
+    <div>
+      <label style={{display: "block", margin: "0 0 0.6rem"}}>
+        <input type="checkbox" checked={atomic} onChange={(event) => setAtomic(event.target.checked)} /> aria-atomic="true" (read the whole region each time)
+      </label>
+      <div role="status" aria-atomic={atomic ? "true" : "false"} style={{padding: "0.5rem 0.7rem", border: "1px solid #94a3b8", borderRadius: "6px", marginBottom: "0.6rem"}}>
+        <span>Basket: </span><span>{items}</span><span> items, total </span><span>{items * 4}</span><span> dollars</span>
+      </div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <button type="button" onClick={() => change(1)} style={{marginRight: "0.5rem"}}>Add an item</button>
+        <button type="button" onClick={() => change(-1)}>Remove an item</button>
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A screen reader may say:</strong> {last ? '"' + last + '"' : "Press a button."}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The status box is real, but the "may say" line is a simplified simulation. With <code>aria-atomic="true"</code> the whole region is read, so the message makes sense. With <code>false</code>, a screen reader may read only the parts that changed, here just the number (the total changes too, so you may hear two numbers with no words). Real screen readers vary, so test yours.
+      </p>
+    </div>
+  );
+}
+
+export function LiveTypesLab() {
+  const [pick, setPick] = useState("status");
+  const [entries, setEntries] = useState([]);
+  const [message, setMessage] = useState("");
+  const [seconds, setSeconds] = useState(10);
+  const [running, setRunning] = useState(false);
+  useEffect(() => {
+    if (!running) return undefined;
+    const id = setInterval(() => {
+      setSeconds((old) => {
+        if (old <= 1) { setRunning(false); return 0; }
+        return old - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running]);
+  const info = {
+    status: {role: "status", live: "polite", use: "Saved, loading finished, 12 results found. Not urgent."},
+    alert: {role: "alert", live: "assertive", use: "A serious error, or time-critical warning. Interrupts the reader."},
+    log: {role: "log", live: "polite", use: "A history where new items are added at the end: chat, activity feed."},
+    timer: {role: "timer", live: "off", use: "A running clock. Not announced on every tick. Keep it from being noisy."},
+  };
+  const current = info[pick];
+  const act = () => {
+    if (pick === "status") setMessage("12 results found.");
+    if (pick === "alert") setMessage("Error: Your session ends in one minute.");
+    if (pick === "log") setEntries((old) => old.concat("Message " + (old.length + 1) + " from Sam").slice(-4));
+    if (pick === "timer") { setSeconds(10); setRunning(true); }
+  };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Choose a live role</legend>
+        {Object.keys(info).map((key) => (
+          <label key={key} style={{marginRight: "1rem"}}><input type="radio" name="live-type" checked={pick === key} onChange={() => { setPick(key); setMessage(""); }} /> role="{key}"</label>
+        ))}
+      </fieldset>
+      <div style={{minHeight: "3rem", padding: "0.5rem 0.7rem", border: "1px solid #94a3b8", borderRadius: "6px", marginBottom: "0.6rem"}}>
+        {pick === "status" ? <div role="status">{message}</div> : null}
+        {pick === "alert" ? <div role="alert">{message}</div> : null}
+        {pick === "log" ? <div role="log">{entries.map((entry, index) => <p key={index} style={{margin: 0}}>{entry}</p>)}</div> : null}
+        {pick === "timer" ? <div role="timer" aria-label="Time left">{seconds} seconds left</div> : null}
+      </div>
+      <p style={{margin: "0 0 0.5rem"}}><button type="button" onClick={act}>{pick === "log" ? "Add a message" : pick === "timer" ? "Start the timer" : "Trigger it"}</button></p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}}>
+        <li><strong>Implied aria-live:</strong> {current.live}</li>
+        <li><strong>Use it for:</strong> {current.use}</li>
+      </ul>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are real live roles. Note that the status, alert and log containers here are swapped in when you choose a role, so the very first message after switching may not be announced. In your own pages, keep the region in the HTML from the start. The listed live values are the defaults the ARIA specification gives each role. A few screen readers handle alerts and timers a little differently.
+      </p>
+    </div>
+  );
+}
+
+export const liveSamples = {
+  messy: '<div class="toast">Saved!</div>\n<div aria-live="loud">Updating...</div>\n<div role="alert" aria-live="polite">Error saving</div>\n<div aria-live="polite" hidden>Hidden status</div>\n<div aria-live="assertive">Result 1</div>\n<div aria-live="assertive">Result 2</div>\n<div aria-live="polite" aria-atomic="yes">Total: 4</div>\n<div id="results" aria-live="polite">\n  <p>Found 3 recipes.</p>\n  <ul><li><a href="/a">Rye bread</a></li><li><a href="/b">Flatbread</a></li></ul>\n  <button>Load more</button>\n</div>\n<div role="status" aria-relevant="all">12 items</div>',
+  fixed: '<div role="status" class="toast"></div>\n<div role="status" aria-live="polite">Updating...</div>\n<div role="alert">Error saving</div>\n<div role="status" aria-atomic="true">Total: 4</div>\n<p id="count" role="status">Found 3 recipes.</p>\n<ul><li><a href="/a">Rye bread</a></li><li><a href="/b">Flatbread</a></li></ul>\n<button type="button">Load more</button>\n<div role="log"></div>',
+};
+
+export function LiveCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(liveSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const rows = [];
+  const liveValues = ["off", "polite", "assertive"];
+  const liveRoles = ["status", "alert", "log", "timer", "marquee"];
+  const selector = "[aria-live], " + liveRoles.map((r) => '[role="' + r + '"]').join(", ");
+  const regions = Array.from(doc.querySelectorAll(selector));
+  const assertiveCount = regions.filter((el) => el.getAttribute("aria-live") === "assertive" || el.getAttribute("role") === "alert").length;
+  regions.forEach((el) => {
+    const tag = el.tagName.toLowerCase();
+    const role = el.getAttribute("role");
+    const live = el.getAttribute("aria-live");
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    const issues = [];
+    const notes = [];
+    if (live !== null && liveValues.indexOf(live) === -1) issues.push("aria-live=\"" + live + "\" is not a valid value. Use polite, assertive, or off.");
+    if (role === "alert" && live === "polite") issues.push("role=\"alert\" is assertive by default, but aria-live=\"polite\" overrides it. Remove one.");
+    if (el.hasAttribute("hidden") || /display\s*:\s*none/i.test(el.getAttribute("style") || "")) issues.push("A hidden live region is not in the accessibility tree, so changes are not announced. Keep it present, and hide it visually (not with display: none) if needed.");
+    const atomic = el.getAttribute("aria-atomic");
+    if (atomic !== null && atomic !== "true" && atomic !== "false") issues.push("aria-atomic=\"" + atomic + "\" is not valid. Use true or false.");
+    if (el.querySelector("a[href], button, input, select, textarea")) notes.push("Contains links or controls. Live regions are for short messages. Keep interactive content outside the region.");
+    if (text.length > 160) notes.push("This region holds a lot of text (" + text.length + " characters). Announcements should be short.");
+    else if (text.length > 0 && (live !== null || role !== null)) notes.push("It already contains text in the HTML. Text that is present at page load is usually not announced. Only changes after load are.");
+    if (el.getAttribute("aria-relevant") && /all/.test(el.getAttribute("aria-relevant"))) notes.push("aria-relevant=\"all\" also announces removals, which is noisy. The default (additions and text) is usually right.");
+    if (role === "timer" && live === "assertive") notes.push("An assertive timer would interrupt every tick. Keep timers quiet, and announce only key moments.");
+    rows.push({tag: tag + (role ? "[role=" + role + "]" : "") + (live ? "[aria-live=" + live + "]" : ""), text, issues, notes});
+  });
+  if (assertiveCount > 1) rows.push({tag: "page", text: "", issues: [], notes: [assertiveCount + " assertive regions on the page. Too many interruptions are tiring. Reserve assertive for real emergencies."]});
+  Array.from(doc.querySelectorAll('[class*="toast"], [class*="snackbar"], [class*="notification"], [class*="flash"]')).forEach((el) => {
+    if (el.matches(selector) || el.closest(selector)) return;
+    rows.push({tag: el.tagName.toLowerCase() + "." + (el.getAttribute("class") || "").split(/\s+/)[0], text: (el.textContent || "").trim(), issues: ["Looks like a toast or message but has no live role. Screen reader users will not hear it. Add role=\"status\" (or alert), and keep the element in the page before it is filled."], notes: []});
+  });
+  const bad = rows.reduce((sum, row) => sum + row.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(liveSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="lv-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy live regions</label>
+        <label><input type="radio" name="lv-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="lv-html">HTML to check (edit it freely)</label><br />
+        <textarea id="lv-html" rows={12} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> items checked, <strong>{bad}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {rows.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{"<" + row.tag + ">"}</code> {row.text ? <span><code>{'"' + (row.text.length > 40 ? row.text.slice(0, 40) + "..." : row.text) + '"'}</code>{" "}</span> : null}
+            {row.issues.length === 0 && row.notes.length === 0 ? <strong>OK</strong> : null}
+            {row.issues.length > 0 ? <span><strong>Problem:</strong> {row.issues.join(" ")}</span> : null}
+            {row.notes.length > 0 ? <span> <em>Note:</em> {row.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot see changes made by scripts, so it cannot tell whether a region is present before it updates, or what is actually announced. Test with a real screen reader.
+      </p>
+    </div>
+  );
+}
+
+export function LiveChecker() {
+  return <BrowserOnly>{() => <LiveCheckerInner />}</BrowserOnly>;
+}
+
+You click "Save," and a little message flashes: "Saved!" A sighted person sees it at once. A screen reader user hears **nothing,** because focus never moved, and the screen reader only reads what you point it at.
+
+That gap is what **live regions** fix. A live region is a part of the page that a screen reader **watches.** When its content changes, the change is **announced,** without moving focus and without the user going to look for it. Search results, form errors, "added to basket," chat messages, and countdowns all rely on this.
+
+Live regions are powerful, and easy to get wrong. Most of the trouble comes from one detail you will learn early in this lesson: **the region must already be in the page before its text changes.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a **live region** is, and when you need one
+- The difference between **polite** and **assertive**
+- The built-in live roles: **`status`, `alert`, `log`,** and **`timer`**
+- How **`aria-atomic`, `aria-relevant`,** and **`aria-busy`** change what is read
+- Why a live region must **exist before it changes**
+- How to write **short, useful** announcements
+- How this meets **WCAG 4.1.3 Status Messages**
+- How to **check** your live regions
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A polite status message. It is in the page from the start, and empty -->
+<div role="status" id="save-status"></div>
+
+<!-- An urgent error. Interrupts the reader -->
+<div role="alert" id="save-error"></div>
+
+<!-- Same as role="status", written as an attribute -->
+<div aria-live="polite" aria-atomic="true" id="count"></div>
+
+<button type="button" id="save">Save recipe</button>
+
+<script>
+  document.getElementById("save").addEventListener("click", () => {
+    // Change the text AFTER the page has loaded
+    document.getElementById("save-status").textContent = "Recipe saved.";
+  });
+</script>
+```
+
+</TabItem>
+<TabItem value="output" label="Live Region Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LiveRegionLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try each setting. Then untick the box that says the region is already present, and press Save again. If you use a screen reader, you may notice the message disappear from the speech.
+
+:::tip The golden rule
+**Put the live region in the HTML first. Fill it with text later.** Do not create a new region and put the message into it at the same moment. Many screen readers will say nothing.
+:::
+
+## Polite or Assertive?
+
+`aria-live` takes three values:
+
+| Value | What it does | Use it for |
+| :-- | :-- | :-- |
+| `off` | The default. Changes are not announced | Most content |
+| `polite` | Waits until the reader has stopped speaking, then announces | Saved, search results, progress, "added to basket" |
+| `assertive` | Interrupts whatever is being spoken | Serious errors, a session about to expire |
+
+**Default to polite.** An interruption in the middle of a sentence is jarring, and the user may lose their place. Reserve **assertive** for messages the user must hear **right now.** If everything is urgent, nothing is.
+
+## The Live Roles
+
+You do not always need to write `aria-live` yourself. Several roles **come with** the right behaviour.
+
+| Role | Implied behaviour | Use it for |
+| :-- | :-- | :-- |
+| `status` | Polite, atomic | Saved, loaded, "12 results found" |
+| `alert` | Assertive, atomic | Errors and urgent warnings |
+| `log` | Polite, not atomic | Chat, activity feeds, a growing list |
+| `timer` | Off | Countdowns and clocks, not read on every tick |
+| `marquee` | Off | Rarely used; scrolling values like a ticker |
+
+See them in action:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LiveTypesLab />
+</>
+</BrowserWindow>
+
+### Which should I pick?
+
+- **Result of an action, not urgent** (saved, deleted, loaded): `role="status"`.
+- **Something went wrong, or action is needed now:** `role="alert"`.
+- **A running list of items:** `role="log"`.
+- **Not sure:** `role="status"`. It is the gentlest choice.
+
+:::info role or aria-live?
+`role="status"` and `aria-live="polite"` behave almost the same, but the role also tells assistive technology *what* the region is. When a role fits, use the role. Use `aria-live` on its own when you only need to set the politeness, such as on a custom widget.
+:::
+
+## Make the Whole Message Make Sense: aria-atomic
+
+When part of a live region changes, should the screen reader read **just the changed bit,** or **the whole region?**
+
+- **`aria-atomic="true"`:** read the **whole** region every time.
+- **`aria-atomic="false"`:** read only the **changed** parts. This is the default for `aria-live` on its own.
+
+It matters when a message is made of pieces. If only the number changes in "Basket: 3 items, total 12 dollars," reading only "4" would be baffling.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AtomicLab />
+</>
+</BrowserWindow>
+
+The simplest fix is to **keep the message as one piece of text** and replace the whole thing. Then atomic or not does not matter.
+
+## Other Controls
+
+### aria-relevant
+
+`aria-relevant` says **which kinds of change** to announce. Its values are `additions`, `removals`, `text`, and `all`. The default (`additions text`) is right nearly always. Setting it to `all` makes a screen reader announce **removals** as well, which is usually just noise. Support also varies, so do not rely on it.
+
+### aria-busy
+
+`aria-busy="true"` tells assistive technology: "I am still updating, please **wait** and read it all at the end." It is useful while a list loads in pieces.
+
+```html
+<div id="results" role="status" aria-busy="true"></div>
+<!-- ...fill it... -->
+<script>
+  const box = document.getElementById("results");
+  box.textContent = "12 recipes found.";
+  box.setAttribute("aria-busy", "false");
+</script>
+```
+
+Remember to set it back to `false`. Forget, and the region stays silent forever.
+
+## Where Live Regions Fit
+
+### Status messages (WCAG 4.1.3)
+
+**WCAG 2.1 success criterion 4.1.3 (Status Messages, Level AA)** says that when a message tells you the result of an action, or the state of the page, and **focus does not move to it,** assistive technology must be able to **announce** it. A live region is how. (Check the exact wording and level at w3.org before you rely on it.)
+
+### Search and filter results
+
+When a user types in a filter and the list changes, tell them how many results there are. Do not read the whole list.
+
+```html
+<label for="q">Search recipes</label>
+<input id="q" type="search">
+<p id="count" role="status"></p>
+<ul id="list">...</ul>
+```
+
+When results change, set `count` to "5 recipes found." The list itself stays quiet.
+
+### Form errors
+
+Form errors need care. After a failed submit, a good pattern is to **move focus** to an error summary (see [Focus Management](./focus-management)). For single-field errors, link the message with `aria-describedby` (see [aria-describedby](./aria-describedby)), and you can also use `role="alert"` for brief, urgent ones.
+
+### Chat and feeds
+
+A chat box is a classic `role="log"`: new messages are added, and the reader hears each one. For busy chats, give users a way to **pause or slow** announcements.
+
+### Loading and progress
+
+Announce the start ("Loading...") only if it takes a while, and the finish ("12 recipes loaded"). Avoid announcing every percent.
+
+### Toasts and snackbars
+
+A "toast" is a small message that pops up and disappears. For a screen reader, it needs `role="status"` (or `alert`), **in the page before it fills,** and it must stay long enough to be heard. A message that vanishes in 2 seconds can be missed by anyone, and is a problem for people who read slowly.
+
+## Writing Good Announcements
+
+- **Short.** "Recipe saved." is better than a paragraph.
+- **Clear on their own.** Include the thing: "Rye bread added to basket." not just "Added."
+- **Plain text.** No links, buttons, or lists inside. Live regions are not for things people need to *operate.*
+- **Not repeated.** Setting the same text again may not be announced. If you must repeat it, clear the region, then set the text again a moment later.
+- **Rare.** Announce **outcomes,** not every keystroke or hover.
+- **In the page language,** matching the rest of the page.
+
+## What Not to Do
+
+- **Do not announce what focus already says.** If focus moves to the new content, the screen reader reads it. A live region on top makes a double announcement.
+- **Do not put a live region around a big block.** `aria-live` on `<main>` or on a long list can make a screen reader read **everything** on each change.
+- **Do not hide a live region with `display: none`.** It then leaves the accessibility tree. (A visually hidden region, described in [aria-hidden](./aria-hidden), is fine.)
+- **Do not use `aria-live="assertive"` on lots of things.** It becomes an alarm that never stops.
+- **Do not use live regions for essential, permanent instructions.** Messages disappear. If the user needs it, show it as normal text, too.
+- **Do not make a toast the only place an important error appears.** Keep the message visible until fixed.
+
+## Check Your Live Regions
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="check.html"
+<!-- Things the checker looks for -->
+<div class="toast">Saved!</div>                   <!-- no live role -->
+<div aria-live="loud">Updating</div>              <!-- invalid value -->
+<div role="alert" aria-live="polite">Error</div>  <!-- conflicting -->
+<div aria-live="polite" hidden>Status</div>       <!-- hidden region -->
+<div aria-live="polite" aria-atomic="yes">...</div> <!-- bad atomic value -->
+```
+
+</TabItem>
+<TabItem value="output" label="aria-live Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LiveChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Run the messy sample, fix every problem, then try the fixed version.
+
+### Check it by hand
+
+1. **Turn on a screen reader** (NVDA or JAWS on Windows, VoiceOver on Mac and iPhone, TalkBack on Android). Trigger each message with the keyboard.
+2. **Listen carefully.** Is the message heard once? Is it complete? Is it too early or too late?
+3. **Try more than one screen reader and browser.** Live regions are one of the less consistent areas of ARIA.
+4. **Test the same message twice.** Is it announced the second time?
+5. **Check your page after a page load.** Is the region in the HTML, empty, from the start?
+6. **Use the browser's Accessibility panel** to see which elements have a live role or `aria-live`.
+
+## Good Habits
+
+- **Add the region to the HTML first,** empty, and update its text later.
+- **Use the role that fits** (`status`, `alert`, `log`) before writing `aria-live` by hand.
+- **Default to polite.** Keep assertive for emergencies.
+- **Keep messages short, plain, and complete.**
+- **Make the message visible too,** for people who do not use a screen reader.
+- **Use one region for many messages** instead of creating a new one each time.
+- **Do not combine live regions with focus changes** for the same message.
+- **Test with real screen readers.**
+
+## Accessibility Checklist
+
+- [ ] Every important status message has a live region (`status`, `alert`, or `aria-live`)
+- [ ] The live region is in the HTML before it is filled
+- [ ] Polite is the default, and assertive is rare
+- [ ] Messages are short, complete, and plain text
+- [ ] No links or buttons inside live regions
+- [ ] Live regions are not hidden with `display: none` or `hidden`
+- [ ] Toasts stay on screen long enough, and can be dismissed
+- [ ] The same message is not also announced by a focus move
+- [ ] Important errors stay visible until fixed
+- [ ] Tested with at least one real screen reader
+
+## Security and Privacy Notes
+
+- **Announcements are spoken aloud.** A live region can read out text in a public place, on a speaker, or in a screen-sharing call. Do not announce passwords, card numbers, health details, or other private information.
+- **Never put untrusted text into a live region with `innerHTML`.** If the message includes user input (a username in a chat), use `textContent` so a script cannot be injected.
+- **Do not let messages from other users flood a region.** A chat or notification feed that anyone can post to can be used to drown out or distract a screen reader user. Limit and filter it.
+- **Do not use announcements to mislead.** A message that says "Payment confirmed" must be true, and must match what is on screen.
+
+## Global Audience Notes
+
+- **Announcements are read in the page language** (the `lang` attribute), or in the user's screen reader voice. Set `lang` correctly, and mark foreign words with their own `lang`.
+- **Translate your messages,** and keep them short. Auto-translation may change the wording, so avoid depending on exact phrases.
+- **Numbers, dates, and currencies** should follow the user's local format, so they are read correctly.
+- **Right-to-left languages:** live regions work the same, but check that mixed text (numbers inside Arabic or Hebrew) reads in the right order.
+- **Slow connections:** announce "Loading" early, and the result when it finishes, so the user is not left in silence. But do not announce every step.
+- **Screen readers differ by country and device.** Free options like NVDA and TalkBack are widely used worldwide. Test with the tools your readers have.
+
+## Common Mistakes to Avoid
+
+1. **Creating the live region and its text at the same time.** The most common bug.
+2. **Using `display: none` or `hidden` on the region.**
+3. **Making everything `assertive`.**
+4. **Putting `aria-live` on a huge container,** like the whole main area.
+5. **`role="alert"` with `aria-live="polite"`,** which contradicts itself.
+6. **Messages that are too long, or have links or buttons in them.**
+7. **Toasts that disappear in a couple of seconds.**
+8. **Announcing the same thing with focus and a live region.**
+9. **Forgetting `aria-busy="false"`.**
+10. **Repeating the same text and expecting it to be read again.**
+11. **No visible version of the message** for people who do not use a screen reader.
+12. **Never testing with a screen reader.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the live region lab with each setting. If you can, listen with a screen reader.
+2. Untick "already in the page," and compare it with the ticked version.
+3. In the atomic lab, switch `aria-atomic` on and off, and explain why it matters.
+4. Use the live types lab. For each role, say when you would use it.
+5. Run the checker on the messy HTML, fix every problem, and run it again.
+6. Add a "Saved" message to a form in a page you built, using `role="status"`.
+7. Add a result count to a filterable list.
+8. Turn an existing toast into one that works for a screen reader, and stays long enough.
+9. Make a chat box with `role="log"`.
+10. Bonus: build a countdown that only announces at one minute, ten seconds, and zero.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a live region?</summary>
+
+A part of the page that a screen reader watches. When its content changes, the change is announced without moving focus.
+
+</details>
+
+<details>
+<summary>2. What is the difference between `polite` and `assertive`?</summary>
+
+Polite waits until the screen reader has finished speaking. Assertive interrupts. Use polite by default, and assertive only for urgent messages.
+
+</details>
+
+<details>
+<summary>3. Which role would you use for "Recipe saved"?</summary>
+
+`role="status"`. It is polite and atomic, and fits results that are not urgent. Use `role="alert"` for serious errors.
+
+</details>
+
+<details>
+<summary>4. Why must the live region exist before its text changes?</summary>
+
+Screen readers watch for *changes* inside a region they already know about. A region created together with its text is often not announced at all.
+
+</details>
+
+<details>
+<summary>5. What does `aria-atomic="true"` do?</summary>
+
+It makes the screen reader read the whole region each time, instead of only the part that changed, so the message makes sense.
+
+</details>
+
+<details>
+<summary>6. Which WCAG criterion covers status messages?</summary>
+
+4.1.3 Status Messages (Level AA in WCAG 2.1). Messages that report results or state, without taking focus, must be announced by assistive technology.
+
+</details>
+
+## Key Takeaways
+
+- **A live region announces changes without moving focus.**
+- **Put the region in the page first, empty,** then update its text later.
+- **Default to `polite`.** Use `assertive` or `role="alert"` rarely.
+- **Use the roles** `status`, `alert`, `log`, and `timer` where they fit.
+- **Keep messages short, plain, and complete,** and show them on screen too.
+- **Do not hide live regions with `display: none`,** or wrap big blocks in them.
+- **Do not announce secrets,** and use `textContent` for any user text.
+- **Test with real screen readers.** Behaviour varies.
+
+Next, learn how to test everything you have built in this section, in [Accessibility Testing](./accessibility-testing).
