@@ -1,0 +1,630 @@
+---
+id: html-seo-international
+title: "International SEO"
+sidebar_label: "International SEO"
+sidebar_position: 12
+slug: /html/seo/international-seo
+description: "Learn the basics of international SEO with HTML: the lang attribute, hreflang alternate links, language and region codes, x-default, reciprocal links, URL structures, canonical links for each version, and good localisation habits. Includes an hreflang builder with sitemap output, a return-link matrix that finds missing links, and a live hreflang checker."
+keywords:
+  - international SEO
+  - hreflang
+  - lang attribute
+  - x-default
+  - multilingual SEO
+  - language and region codes
+  - ccTLD vs subfolder
+  - localization
+  - return links
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, international-seo, hreflang, i18n, localization, multilingual, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const knownLanguages = ["af", "ar", "bg", "bn", "ca", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi", "fil", "fr", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "kn", "ko", "lt", "lv", "ml", "mr", "ms", "nb", "nl", "no", "pa", "pl", "pt", "ro", "ru", "sk", "sl", "sr", "sv", "sw", "ta", "te", "th", "tr", "uk", "ur", "vi", "zh"];
+
+export const commonFixes = {
+  "en-uk": "en-GB",
+  "jp": "ja",
+  "cz": "cs",
+  "gr": "el",
+  "se": "sv",
+  "dk": "da",
+  "ua": "uk",
+  "kr": "ko",
+  "cn": "zh-CN",
+  "iw": "he",
+};
+
+export function checkHreflang(code) {
+  const raw = code.trim();
+  if (raw === "") return {ok: false, text: "The code is empty."};
+  if (raw.toLowerCase() === "x-default") return {ok: raw === "x-default", text: raw === "x-default" ? "The fallback for readers who match no other version." : "Write x-default in lowercase."};
+  const lower = raw.toLowerCase().replace(/_/g, "-");
+  if (raw.indexOf("_") !== -1) return {ok: false, text: "Use a hyphen, not an underscore. Try \"" + raw.replace(/_/g, "-") + "\"."};
+  if (commonFixes[lower]) return {ok: false, text: "\"" + raw + "\" is a common mistake. Use \"" + commonFixes[lower] + "\"."};
+  const parts = raw.split("-");
+  const language = parts[0];
+  if (!/^[a-z]{2,3}$/.test(language)) return {ok: false, text: "The language part should be two or three lowercase letters, such as en or fr. A region on its own (such as GB) is not allowed."};
+  const notes = [];
+  if (knownLanguages.indexOf(language) === -1) notes.push("The language \"" + language + "\" is not in this tool's short list. Check it against the ISO 639 codes.");
+  if (parts.length > 1) {
+    const second = parts[1];
+    if (/^[A-Za-z]{4}$/.test(second)) {
+      if (!/^[A-Z][a-z]{3}$/.test(second)) notes.push("A script such as Hans or Hant is written with a capital first letter.");
+    } else if (/^[A-Za-z]{2}$/.test(second)) {
+      if (second !== second.toUpperCase()) notes.push("Write the region in capitals, such as en-GB.");
+    } else if (!/^\d{3}$/.test(second)) {
+      return {ok: false, text: "\"" + second + "\" is not a valid region or script. Use a two-letter country code, such as GB."};
+    }
+  }
+  if (parts.length > 3) notes.push("This code has many parts. Most sites only need a language, with an optional region.");
+  return notes.length > 0 ? {ok: false, text: notes.join(" ")} : {ok: true, text: "A valid-looking code."};
+}
+
+export function HreflangBuilder() {
+  const [rows, setRows] = useState([
+    {code: "en", url: "https://thebreadbin.example/recipes/rye-bread"},
+    {code: "en-GB", url: "https://thebreadbin.example/uk/recipes/rye-bread"},
+    {code: "fr", url: "https://thebreadbin.example/fr/recettes/pain-de-seigle"},
+    {code: "hi", url: "https://thebreadbin.example/hi/rye-bread"},
+  ]);
+  const [fallback, setFallback] = useState("0");
+  const update = (index, field, value) => setRows(rows.map((row, i) => (i === index ? {...row, [field]: value} : row)));
+  const escAttr = (value) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const tags = rows.filter((row) => row.code.trim() && row.url.trim()).map((row) => '<link rel="alternate" hreflang="' + escAttr(row.code.trim()) + '" href="' + escAttr(row.url.trim()) + '">');
+  if (fallback !== "" && rows[parseInt(fallback, 10)]) tags.push('<link rel="alternate" hreflang="x-default" href="' + escAttr(rows[parseInt(fallback, 10)].url.trim()) + '">');
+  const sitemap = ["<url>", "  <loc>" + escAttr(rows[0] ? rows[0].url.trim() : "") + "</loc>"].concat(rows.filter((row) => row.code.trim() && row.url.trim()).map((row) => '  <xhtml:link rel="alternate" hreflang="' + escAttr(row.code.trim()) + '" href="' + escAttr(row.url.trim()) + '"/>')).concat(["</url>"]);
+  const problems = [];
+  const seen = {};
+  rows.forEach((row, index) => {
+    const result = checkHreflang(row.code);
+    if (!result.ok) problems.push("Row " + (index + 1) + ": " + result.text);
+    if (row.code.trim()) {
+      const key = row.code.trim().toLowerCase();
+      if (seen[key]) problems.push("Row " + (index + 1) + ": the code \"" + row.code + "\" is used twice.");
+      seen[key] = true;
+    }
+    if (row.url.trim() && !/^https?:\/\/\S+$/.test(row.url.trim())) problems.push("Row " + (index + 1) + ": use a full address starting with https://.");
+  });
+  if (fallback === "") problems.push("No x-default. It is a good idea to name a version for readers who match none of the others.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>One row for each version of the page, including the page you are on.</p>
+      {rows.map((row, index) => (
+        <p key={index} style={{margin: "0 0 0.4rem", display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+          <label htmlFor={"hb-code-" + index}>Language code {index + 1}</label>
+          <input id={"hb-code-" + index} type="text" value={row.code} onChange={(event) => update(index, "code", event.target.value)} style={{width: "6rem"}} />
+          <label htmlFor={"hb-url-" + index}>Address {index + 1}</label>
+          <input id={"hb-url-" + index} type="text" value={row.url} onChange={(event) => update(index, "url", event.target.value)} style={{flex: "1 1 14rem"}} />
+        </p>
+      ))}
+      <p style={{margin: "0.4rem 0 0.6rem", display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+        <button type="button" onClick={() => setRows(rows.concat({code: "", url: ""}))} disabled={rows.length >= 8}>Add a version</button>
+        <button type="button" onClick={() => { setRows(rows.slice(0, -1)); if (parseInt(fallback, 10) >= rows.length - 1) setFallback(""); }} disabled={rows.length <= 2}>Remove the last version</button>
+      </p>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="hb-default">Which version is the x-default fallback?</label>{" "}
+        <select id="hb-default" value={fallback} onChange={(event) => setFallback(event.target.value)}>
+          <option value="">None</option>
+          {rows.map((row, index) => (<option key={index} value={String(index)}>{row.code || "Row " + (index + 1)}</option>))}
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Put this same block in the head of every version:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{tags.join("\n")}</code></pre>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Or put it in your sitemap, for this page:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{sitemap.join("\n")}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{problems.length}</strong> {problems.length === 1 ? "thing" : "things"} to check.</p>
+      {problems.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {problems.map((problem, index) => (<li key={index}>{problem}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>No problems found by these simple checks.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Try changing a code to en-UK, jp, or fr_FR, and see the advice. The sitemap form also needs the xhtml namespace on the urlset element, and one block per page. Use one method (tags, headers, or sitemap), and keep it consistent. Search engines treat hreflang as a hint.
+      </p>
+    </div>
+  );
+}
+
+export function ReturnLinkMatrix() {
+  const pages = [{id: "en", label: "English page"}, {id: "fr", label: "French page"}, {id: "hi", label: "Hindi page"}];
+  const initial = {};
+  pages.forEach((from) => pages.forEach((to) => { initial[from.id + ">" + to.id] = !(from.id === "hi" && to.id === "en"); }));
+  const [links, setLinks] = useState(initial);
+  const toggle = (key) => setLinks({...links, [key]: !links[key]});
+  const missing = [];
+  const selfMissing = [];
+  pages.forEach((from) => {
+    if (!links[from.id + ">" + from.id]) selfMissing.push(from);
+    pages.forEach((to) => {
+      if (from.id !== to.id && links[from.id + ">" + to.id] && !links[to.id + ">" + from.id]) missing.push({from, to});
+    });
+  });
+  const fixAll = () => {
+    const next = {};
+    pages.forEach((from) => pages.forEach((to) => { next[from.id + ">" + to.id] = true; }));
+    setLinks(next);
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>Each row is a page. Tick the versions that page lists in its hreflang links, including itself.</p>
+      <table style={{marginBottom: "0.6rem"}}>
+        <thead>
+          <tr>
+            <th scope="col">This page links to...</th>
+            {pages.map((to) => (<th key={to.id} scope="col">{to.label}</th>))}
+          </tr>
+        </thead>
+        <tbody>
+          {pages.map((from) => (
+            <tr key={from.id}>
+              <th scope="row">{from.label}</th>
+              {pages.map((to) => (
+                <td key={to.id} style={{textAlign: "center"}}>
+                  <input type="checkbox" checked={links[from.id + ">" + to.id]} onChange={() => toggle(from.id + ">" + to.id)} aria-label={from.label + " lists " + to.label} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={{margin: "0 0 0.6rem"}}><button type="button" onClick={fixAll}>Link every page to every page</button></p>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{missing.length + selfMissing.length}</strong> {missing.length + selfMissing.length === 1 ? "problem" : "problems"} found.</p>
+      {missing.length + selfMissing.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {missing.map((item, index) => (<li key={"m" + index}>The {item.from.label} points to the {item.to.label}, but the {item.to.label} does not point back. Search engines may ignore this pair.</li>))}
+          {selfMissing.map((item, index) => (<li key={"s" + index}>The {item.label} does not list itself. Every version should include a link to itself.</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>Every link is returned, and every page lists itself. This is what you want.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The rule: if page A says "B is my Hindi version," then B must say "A is my English version." These are called return links, and search engines usually need both sides before they trust the pair.
+      </p>
+    </div>
+  );
+}
+
+export const hlSamples = {
+  messy: {url: "https://thebreadbin.example/recipes/rye-bread", html: '<!doctype html>\n<html>\n<head>\n<title>Rye Bread</title>\n<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread-uk">\n<link rel="alternate" hreflang="en-UK" href="https://thebreadbin.example/uk/recipes/rye-bread">\n<link rel="alternate" hreflang="jp" href="/jp/rye-bread">\n<link rel="alternate" hreflang="fr_FR" href="https://thebreadbin.example/fr/pain-de-seigle">\n<link rel="alternate" hreflang="fr" href="https://thebreadbin.example/fr/pain-de-seigle">\n</head>\n<body></body>\n</html>'},
+  fixed: {url: "https://thebreadbin.example/recipes/rye-bread", html: '<!doctype html>\n<html lang="en">\n<head>\n<title>Rye Bread Recipe | The Bread Bin</title>\n<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">\n<link rel="alternate" hreflang="en" href="https://thebreadbin.example/recipes/rye-bread">\n<link rel="alternate" hreflang="en-GB" href="https://thebreadbin.example/uk/recipes/rye-bread">\n<link rel="alternate" hreflang="fr" href="https://thebreadbin.example/fr/pain-de-seigle">\n<link rel="alternate" hreflang="ja" href="https://thebreadbin.example/ja/rye-bread">\n<link rel="alternate" hreflang="x-default" href="https://thebreadbin.example/recipes/rye-bread">\n</head>\n<body></body>\n</html>'},
+};
+
+export function HreflangCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [pageUrl, setPageUrl] = useState(hlSamples.messy.url);
+  const [html, setHtml] = useState(hlSamples.messy.html);
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const issues = [];
+  const notes = [];
+  const htmlLang = doc.documentElement.getAttribute("lang");
+  if (!htmlLang) issues.push("The html element has no lang attribute. Add one, such as lang=\"en\", for screen readers, translation tools, and browsers.");
+  const alts = Array.from(doc.querySelectorAll('link[rel~="alternate"][hreflang]'));
+  if (alts.length === 0) notes.push("No hreflang links. That is fine for a single-language site. A multilingual site needs them.");
+  const seen = {};
+  const hrefs = {};
+  alts.forEach((el) => {
+    const code = el.getAttribute("hreflang") || "";
+    const href = (el.getAttribute("href") || "").trim();
+    const result = checkHreflang(code);
+    if (!result.ok) issues.push("hreflang=\"" + code + "\": " + result.text);
+    if (seen[code.toLowerCase()]) issues.push("hreflang=\"" + code + "\" appears more than once.");
+    seen[code.toLowerCase()] = true;
+    if (!/^https?:\/\//i.test(href)) issues.push("hreflang=\"" + code + "\": the address \"" + href + "\" is not a full address. Use https://.");
+    if (hrefs[href] && hrefs[href] !== code) notes.push("The address \"" + href + "\" is used for both \"" + hrefs[href] + "\" and \"" + code + "\". Each version should have its own address.");
+    hrefs[href] = code;
+  });
+  if (alts.length > 0) {
+    const self = alts.find((el) => (el.getAttribute("href") || "").trim() === pageUrl.trim());
+    if (!self) issues.push("This page (" + pageUrl + ") does not list itself. Every version should include a link to itself.");
+    else if (htmlLang && (self.getAttribute("hreflang") || "").toLowerCase().split("-")[0] !== htmlLang.toLowerCase().split("-")[0] && (self.getAttribute("hreflang") || "") !== "x-default") issues.push("The page's own hreflang (\"" + self.getAttribute("hreflang") + "\") does not match its lang attribute (\"" + htmlLang + "\").");
+    if (!alts.some((el) => el.getAttribute("hreflang") === "x-default")) notes.push("No x-default. It is a good idea to name a fallback version.");
+    notes.push("Each page in the list must link back to this one with its own hreflang block. This tool can only see this page, so check the others too.");
+  }
+  const canonical = doc.querySelector('link[rel~="canonical"]');
+  if (canonical && alts.length > 0) {
+    const value = (canonical.getAttribute("href") || "").trim();
+    if (value !== pageUrl.trim()) issues.push("The canonical (" + value + ") is not this page. Each language version should have a canonical that points to itself, not to another language.");
+  }
+  const choose = (value) => { setWhich(value); setPageUrl(hlSamples[value].url); setHtml(hlSamples[value].html); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="hl-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="hl-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="hl-url">The address of this page</label><br />
+        <input id="hl-url" type="text" value={pageUrl} onChange={(event) => setPageUrl(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="hl-html">Page HTML (edit it freely)</label><br />
+        <textarea id="hl-html" rows={12} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{alts.length}</strong> hreflang links found. <strong>{issues.length}</strong> problems, <strong>{notes.length}</strong> suggestions.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {issues.map((issue, index) => (<li key={"i" + index}><strong>Problem:</strong> {issue}</li>))}
+        {notes.map((note, index) => (<li key={"n" + index}><strong>Suggestion:</strong> {note}</li>))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This checks one page only. It cannot fetch the other versions, so it cannot confirm return links. Use Search Console, a crawler tool, or a sitemap validator to check the whole set.
+      </p>
+    </div>
+  );
+}
+
+export function HreflangChecker() {
+  return <BrowserOnly>{() => <HreflangCheckerInner />}</BrowserOnly>;
+}
+
+The web is not in one language. Someone in Paris searches in French. Someone in Pune searches in Hindi or English. Someone in Lagos, Lima, or Lahore searches in their own words too, in their own way, with their own spellings, prices, and habits.
+
+If your site speaks to more than one of them, **international SEO** is how you tell search engines (and browsers, and screen readers) **which version is for whom.** Done well, a reader sees your page in the right language. Done badly, a French reader lands on your English page, and a Hindi reader never finds your Hindi one at all.
+
+This is the last lesson in the SEO section, and it ties together almost everything before it: titles, descriptions, canonical links, and Open Graph tags, all repeated, for every language.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- The difference between a **language** and a **region**
+- The **`lang`** attribute, and what it is for
+- How to use **`hreflang`** links, including **`x-default`** and **return links**
+- The right **codes** (and the common wrong ones)
+- How to choose a **URL structure**
+- How **canonical, titles,** and **Open Graph** fit with each version
+- **Localisation** beyond translation
+- How to **check** your setup
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="https://thebreadbin.example/recipes/rye-bread"
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Rye Bread Recipe | The Bread Bin</title>
+  <link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+
+  <link rel="alternate" hreflang="en" href="https://thebreadbin.example/recipes/rye-bread">
+  <link rel="alternate" hreflang="en-GB" href="https://thebreadbin.example/uk/recipes/rye-bread">
+  <link rel="alternate" hreflang="fr" href="https://thebreadbin.example/fr/recettes/pain-de-seigle">
+  <link rel="alternate" hreflang="hi" href="https://thebreadbin.example/hi/rye-bread">
+  <link rel="alternate" hreflang="x-default" href="https://thebreadbin.example/recipes/rye-bread">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="hreflang Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HreflangBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Edit the codes and addresses. Try the common mistakes, and watch the advice change.
+
+## Language, Region, and Script
+
+A **language** is what people speak and read. A **region** is where they live. They are not the same, and sometimes both matter.
+
+| Code | Meaning | Why you might separate them |
+| :-- | :-- | :-- |
+| `en` | English, any region | One English version for everybody |
+| `en-GB` | English for the United Kingdom | Spelling (colour), currency (pounds), units |
+| `en-US` | English for the United States | Spelling (color), currency (dollars) |
+| `pt-BR` | Portuguese for Brazil | Different words and grammar from Portugal |
+| `zh-Hans` and `zh-Hant` | Chinese, simplified and traditional script | Different writing systems |
+| `fr` | French, any region | One French version for everybody |
+
+You do not need a region for every language. Add one **only** when the content really differs, such as prices, laws, spelling, or shipping.
+
+### The codes
+
+- **Language:** two or three lowercase letters, from the **ISO 639** list (`en`, `fr`, `hi`, `ja`).
+- **Region:** two uppercase letters, from the **ISO 3166-1** list (`GB`, `US`, `IN`, `BR`).
+- **Script (rare):** four letters with a capital first, such as `Hans` or `Hant`.
+- **Separator:** a hyphen, never an underscore: `en-GB`, not `en_GB`.
+- **Region alone is not allowed.** `GB` is not a code. You need the language: `en-GB`.
+
+Common wrong codes: `en-UK` (it should be `en-GB`), `jp` (it should be `ja`), `cz` (should be `cs`), `gr` (should be `el`), `ua` (should be `uk`), and `fr_FR` with an underscore.
+
+## The lang Attribute
+
+```html
+<html lang="fr">
+```
+
+The `lang` attribute on the `html` element says what language the page is written in. It matters for:
+
+- **Screen readers,** which choose the right voice and pronunciation.
+- **Browsers,** for hyphenation, spell-check, quotation marks, and font choices.
+- **Translation tools,** which can offer or skip translation.
+- **Styling,** with the `:lang()` CSS selector.
+
+Search engines mostly work out a page's language from its **text,** and do not rely on `lang` for it. So `lang` is not a ranking tool, but you should always set it, for people. For a passage in another language, put `lang` on that element:
+
+```html
+<p>The French call it <span lang="fr">pain de seigle</span>.</p>
+```
+
+For right-to-left languages, add `dir="rtl"` as well: `<html lang="ar" dir="rtl">`.
+
+## hreflang: Pointing to Your Other Versions
+
+`hreflang` tells search engines: *"This page has the same content in these other languages and regions, here are the addresses."* They can then show each reader the version that matches them best.
+
+```html
+<link rel="alternate" hreflang="fr" href="https://thebreadbin.example/fr/recettes/pain-de-seigle">
+```
+
+### The rules
+
+1. **Include every version, including the page itself.** The block is the same on every version.
+2. **Return links are required.** If the English page points to the French page, the French page must point back to the English page. Search engines usually ignore one-way links.
+3. **Use full addresses,** with `https://`.
+4. **Use correct codes.**
+5. **Add one `x-default`,** pointing to the version for readers who match none of the others (often the English page, or a language chooser).
+6. **Use it for real alternatives** only: pages with the same content in a different language or region. Do not link unrelated pages.
+7. **Keep it consistent** with your canonical links and sitemap.
+
+Check the return links yourself:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ReturnLinkMatrix />
+</>
+</BrowserWindow>
+
+### Three ways to add it
+
+| Method | Where | Good for |
+| :-- | :-- | :-- |
+| **Link tags** | In the head of each page | Small and medium sites |
+| **HTTP headers** | Sent by the server | PDFs and non-HTML files |
+| **Sitemap** | In your XML sitemap | Large sites, where editing every head is hard |
+
+Pick **one** method, and keep it correct. Mixing methods that disagree causes confusion. The [Link element lesson](/tutorials/html/html-head/link) has more on the tag itself.
+
+:::info hreflang is a hint
+Like canonical, `hreflang` is a hint, not a command. Search engines may still show a different version. The better your content, signals, and consistency, the more likely they are to follow it.
+:::
+
+## Canonical and hreflang Together
+
+Each language version should have a **canonical that points to itself,** not to the English page:
+
+```html
+<!-- On the French page -->
+<link rel="canonical" href="https://thebreadbin.example/fr/recettes/pain-de-seigle">
+```
+
+If you point every translation's canonical to the English page, you are telling search engines **to ignore the translations.** See [Canonical Links](./canonical-links).
+
+Pages in the **same language** for **different regions** (such as `en-US` and `en-GB`) can look nearly identical. That is fine, as long as the details (currency, spelling, shipping) really differ, and the `hreflang` links are correct.
+
+## Choosing a URL Structure
+
+| Structure | Example | Good | Think about |
+| :-- | :-- | :-- | :-- |
+| **Country domain (ccTLD)** | `thebreadbin.fr` | A very strong signal for a country | Costly, and every site is separate |
+| **Subdomain** | `fr.thebreadbin.example` | Can be hosted separately | Treated as a separate site by some tools |
+| **Subfolder** | `thebreadbin.example/fr/` | One site, simple to manage | Same hosting for all |
+| **URL parameter** | `thebreadbin.example/?lang=fr` | Easy to build | **Not recommended.** Hard to read and crawl |
+
+For most sites, **subfolders** are the simplest and most practical choice. Whatever you choose, **be consistent,** and keep each language on its own stable addresses.
+
+## Translation and Localisation
+
+Translation changes the words. **Localisation** changes everything that people in a place expect.
+
+- **Translate the whole page,** including the title, description, headings, image alt text, buttons, and error messages. Do not mix languages on a page.
+- **Use a good translation.** Raw machine translation can be awkward or wrong. Have a native speaker review the pages that matter.
+- **Research local words.** People in different places search for the same thing with different terms. Translate the **meaning,** and check what locals actually type.
+- **Show local formats:** dates, times, numbers, currency, units, phone numbers, and addresses.
+- **Check images and colours.** Pictures, gestures, and symbols can mean different things in different places. Text inside images needs a version per language.
+- **Support the language's needs:** right-to-left layout for Arabic, Hebrew, Persian, and Urdu; fonts that include the right characters (Indic scripts, CJK); and room for longer or shorter text.
+- **Use UTF-8** everywhere, so every character displays.
+- **Offer local ways to pay and contact,** where relevant.
+- **Follow local rules** about privacy, advertising, and consumer rights. This is not legal advice.
+
+## Make Each Version Complete
+
+Every version needs its own:
+
+- **`lang` attribute.**
+- **Title and meta description,** written in that language. See [Title (SEO)](./title-seo) and [Meta Description](./meta-description).
+- **Headings and content,** not a copy of the English.
+- **Open Graph and Twitter tags,** with `og:locale` set, and `og:locale:alternate` for the others. See [Open Graph](./open-graph).
+- **Structured data,** with `inLanguage`, if used.
+- **Canonical link** pointing to itself.
+- **Sitemap entry.**
+
+A translated page that keeps its English title and description is only half translated.
+
+## Language Switchers and Redirects
+
+- **Use real links** in your language switcher, so crawlers and people can follow them. See [HTML SEO Basics](./html-seo-basics).
+- **Label each language in its own language:** "Français," "हिन्दी," "العربية," not "French," "Hindi," "Arabic."
+- **Do not force a redirect based on a visitor's location or language.** Search engine crawlers usually visit from one place, so they may never see your other versions. And people travel, use a VPN, or speak a different language from the country they are in. Instead, **suggest** the right version with a banner, and let the person choose. Then **remember** their choice.
+- **Do not hide content behind a language cookie.** Every version should have its own address.
+
+## Local Search Engines and Signals
+
+- **Google and Bing** are widely used, but **Baidu** (China), **Yandex** (Russia and nearby), **Naver** (Korea), and others matter in their regions. Each has its own guidelines and tools, and some do not use `hreflang` in the same way. Check the ones your readers use.
+- **Country targeting.** Search Console has had country-targeting settings for some site types. Check what is currently available.
+- **Local signals** such as a local domain, local hosting speed, local addresses and phone numbers, and local links all help a page seem relevant to that place.
+- **Speed matters.** A content delivery network (CDN) can serve your pages quickly from near your readers.
+
+## Check Your Setup
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HreflangChecker />
+</>
+</BrowserWindow>
+
+### Check it for real
+
+1. **"View source"** on each version, and search for `hreflang`.
+2. **Make a table:** every version, its address, its code, and the list of alternates it names. Check that the lists match.
+3. **Search Console** has reports and tools for international targeting. Check the current names.
+4. **A crawler tool** can check return links across a whole site.
+5. **Search in each language,** from each country if you can, and see which version appears.
+6. **Ask native speakers** to read each version.
+
+## Good Habits
+
+- **Set `lang` on every page,** and `dir` for right-to-left languages.
+- **Give every version its own address,** stable and linked.
+- **Use correct `hreflang` codes,** include the page itself, and add `x-default`.
+- **Check return links.**
+- **Point each version's canonical to itself.**
+- **Translate everything,** including titles, descriptions, and alt text.
+- **Localise** formats, currency, images, and examples.
+- **Suggest, do not force,** a language.
+- **Test with native speakers** and real devices.
+
+## International SEO Checklist
+
+- [ ] Every page has the right `lang` (and `dir` where needed)
+- [ ] Each language or region has its own stable address
+- [ ] `hreflang` links list every version, including the page itself
+- [ ] Return links exist in both directions
+- [ ] Codes are valid, hyphenated, and correctly capitalised
+- [ ] There is an `x-default`
+- [ ] Each version's canonical points to itself
+- [ ] Titles, descriptions, headings, alt text, and tags are translated
+- [ ] Open Graph tags have `og:locale`, with alternates
+- [ ] A language switcher with real links, labelled in each language
+- [ ] No forced redirects by location or browser language
+- [ ] Dates, currency, units, and formats are localised
+- [ ] A native speaker reviewed the key pages
+
+## Security and Privacy Notes
+
+- **Do not use `hreflang` with untrusted addresses.** If an address in a link tag comes from user input or a database, an attacker could inject a link to a bad site, or break your HTML. Build the tags from fixed, validated data, and escape the output. The builder above does this.
+- **Be careful with automatic language detection.** Guessing a person's language or country from their address, or their browser, reveals something about them. Use it only to make a suggestion, collect no more than you need, and do not store it without a reason.
+- **Language cookies and preferences** can be personal data in some places. Tell people what you store, and give them a way to change it. This is not legal advice.
+- **Different regions have different rules.** Privacy laws (such as the GDPR in Europe), advertising rules, and consumer rights vary. A page for one country may have to say something different from another.
+- **Do not block or cloak content by country** in a way that shows crawlers something different from visitors. It can look like a trick, and may be penalised.
+- **Check that private or draft translations are protected.** Unfinished language versions on a public address can be found and indexed.
+- **Beware of machine-translated spam.** Auto-translated pages created in bulk, with no review, can be treated as low-quality, and a hacked site is sometimes filled with them. Check your site for languages you do not offer.
+
+## Global Audience Notes
+
+- **This whole lesson is about reaching a world audience, so remember the person behind every code.** Behind `hi` is someone who may read your page on a small phone, on a slow connection, and in a script your design never tested.
+- **Use real language names** in your switcher, and let people change language from any page.
+- **Do not assume one language per country.** India, Switzerland, Canada, Belgium, and many others have several. A person's language is their choice, not their address.
+- **Plan for text growth.** German and Finnish words run long, and some languages run short. Test your layout with real translations.
+- **Names, forms, and addresses** differ widely. Do not require a "first name" and "last name," or a ZIP code, for everyone.
+- **Fonts and encodings:** use UTF-8, and a font family with fallbacks for each script you support.
+- **Right-to-left pages** need mirrored layouts, and care with numbers, icons, and mixed-direction text.
+- **Time and calendars:** show time zones, and consider local calendars where they matter.
+- **Accessibility needs translation too.** Alt text, labels, error messages, and captions in each language.
+- **Test on real devices in real places,** or with people who live there.
+
+## Common Mistakes to Avoid
+
+1. **No `lang` attribute,** or the wrong one (English on a French page).
+2. **Wrong codes:** `en-UK`, `jp`, `fr_FR`, or a region alone.
+3. **Missing return links.**
+4. **No self-reference** in the hreflang list.
+5. **Canonical pointing every translation to the English page.**
+6. **Translating the body but not the title, description, or alt text.**
+7. **Forcing redirects by location or browser language.**
+8. **Language chosen by a cookie or parameter,** with no address of its own.
+9. **Relative addresses** in hreflang.
+10. **Mixing hreflang methods** that disagree.
+11. **Raw machine translation** with no review.
+12. **Never checking** the versions with native speakers.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the hreflang builder with four versions. Then try `en-UK`, `jp`, `fr_FR`, and `GB` alone. What does it say about each?
+2. Switch the x-default to a different version. What changes in the tags?
+3. Use the return-link matrix. Fix the problem by hand, then try "Link every page to every page."
+4. Run the checker on the messy page, fix every problem, and run it again.
+5. Add `lang` to a page, and a `lang` on a phrase in another language. Listen to it with a screen reader if you can.
+6. Choose a URL structure for a site you imagine, and write down why.
+7. Translate a page title and description into a language you know, and check the length.
+8. Look at three multilingual sites. How do their language switchers work?
+9. Search for the same thing in two languages. Which version of a site appears for each?
+10. Bonus: build a three-language version of a one-page site, with correct `lang`, `hreflang`, canonical, and Open Graph tags for each.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the lang attribute for?</summary>
+
+It says which language the page is written in, so screen readers, browsers, and translation tools can behave correctly. It is for people and tools. Search engines mostly work the language out from your text.
+
+</details>
+
+<details>
+<summary>2. What does hreflang do?</summary>
+
+It tells search engines which other language or region versions of a page exist, and where, so each reader can be shown the best match.
+
+</details>
+
+<details>
+<summary>3. What is a return link, and why does it matter?</summary>
+
+If page A lists page B as an alternate, page B must list page A back. Search engines usually ignore one-way links.
+
+</details>
+
+<details>
+<summary>4. What is x-default?</summary>
+
+A fallback version for readers who match none of your listed languages or regions. It is often the main language page, or a language chooser.
+
+</details>
+
+<details>
+<summary>5. Where should a translated page's canonical point?</summary>
+
+To itself. Pointing every translation to the English page tells search engines to ignore the translations.
+
+</details>
+
+<details>
+<summary>6. Why not redirect people automatically by their location?</summary>
+
+Crawlers may never see the other versions, and people travel, use a VPN, or speak a different language from their location. Suggest a version, and let the person choose.
+
+</details>
+
+## Key Takeaways
+
+- **Set `lang` on every page,** for people and tools.
+- **Use `hreflang` to link every version,** including the page itself, with return links and an `x-default`.
+- **Use correct codes:** language in lowercase, region in capitals, joined with a hyphen.
+- **Each version has its own address and its own self-pointing canonical.**
+- **Translate everything,** including titles, descriptions, alt text, and tags, and localise formats.
+- **Suggest, do not force,** a language.
+- **Subfolders are the simplest URL structure** for most sites.
+- **Test with native speakers,** and remember the person behind every code.
+
+You have finished the SEO section. Go back to the [section overview](/tutorials/html/seo), pick any lesson to revisit, and then check one of your own pages from title to hreflang.

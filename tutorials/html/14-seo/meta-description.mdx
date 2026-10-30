@@ -1,0 +1,500 @@
+---
+id: html-seo-meta-description
+title: "Meta Description"
+sidebar_label: "Meta Description"
+sidebar_position: 4
+slug: /html/seo/meta-description
+description: "Learn how to write meta descriptions that earn clicks: what they are, why they are not a ranking factor, how search engines choose snippets, the right length, a simple writing formula, and how to avoid duplicates and mistakes. Includes a description writer with desktop and mobile previews, a snippet chooser simulation, and a site-wide description audit."
+keywords:
+  - meta description
+  - meta description SEO
+  - search snippet
+  - meta description length
+  - write meta description
+  - duplicate meta descriptions
+  - click through rate
+  - nosnippet
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, meta-description, snippets, search-results, ctr, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function checkDescription(text, title) {
+  const value = text.trim();
+  const results = [];
+  if (value === "") {
+    results.push({ok: false, text: "The description is empty."});
+    return results;
+  }
+  results.push({ok: value.length >= 70, text: value.length >= 70 ? "Long enough to say something (" + value.length + " characters)." : "Quite short (" + value.length + " characters). You have room to say more."});
+  results.push({ok: value.length <= 160, text: value.length <= 160 ? "Short enough to usually fit on desktop." : "Long (" + value.length + " characters). The end may be cut off."});
+  results.push({ok: !/<[a-z][^>]*>/i.test(value), text: /<[a-z][^>]*>/i.test(value) ? "Contains HTML tags. Descriptions are plain text." : "Plain text, with no HTML tags."});
+  results.push({ok: !(title && title.trim() !== "" && value.toLowerCase() === title.trim().toLowerCase()), text: title && title.trim() !== "" && value.toLowerCase() === title.trim().toLowerCase() ? "Identical to the title. Add something new." : "Does not just repeat the title."});
+  const words = value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((word) => word.length > 3);
+  const counts = {};
+  words.forEach((word) => { counts[word] = (counts[word] || 0) + 1; });
+  const repeated = Object.keys(counts).filter((word) => counts[word] >= 4);
+  results.push({ok: repeated.length === 0, text: repeated.length === 0 ? "No word is repeated again and again." : "The word \"" + repeated[0] + "\" appears " + counts[repeated[0]] + " times. That looks like keyword stuffing."});
+  results.push({ok: !/(click here|best .* ever|#1|guaranteed|!!)/i.test(value), text: /(click here|best .* ever|#1|guaranteed|!!)/i.test(value) ? "Sounds like hype. Plain, honest wording earns more trust." : "No hype words found."});
+  results.push({ok: /[.!?]$/.test(value), text: /[.!?]$/.test(value) ? "Ends like a finished sentence." : "Does not end like a sentence. Finish it with a full stop."});
+  return results;
+}
+
+export function DescriptionWriter() {
+  const [what, setWhat] = useState("Bake a crusty rye loaf at home with five simple ingredients.");
+  const [who, setWho] = useState("No kneading and no special tools.");
+  const [action, setAction] = useState("Get the step-by-step guide.");
+  const [title] = useState("Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin");
+  const [view, setView] = useState("desktop");
+  const parts = [what.trim(), who.trim(), action.trim()].filter(Boolean);
+  const description = parts.join(" ");
+  const limit = view === "desktop" ? 155 : 120;
+  const shown = description.length > limit ? description.slice(0, limit - 1).trim() + "…" : description;
+  const safe = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const results = checkDescription(description, title);
+  const bad = results.filter((item) => !item.ok).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="dw-what">1. What is on the page? (the main promise)</label><br />
+        <input id="dw-what" type="text" value={what} onChange={(event) => setWhat(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="dw-who">2. A helpful detail or benefit (who it is for, what makes it different)</label><br />
+        <input id="dw-who" type="text" value={who} onChange={(event) => setWho(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.7rem"}}>
+        <label htmlFor="dw-action">3. A gentle next step (optional)</label><br />
+        <input id="dw-action" type="text" value={action} onChange={(event) => setAction(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Preview on</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="dw-view" checked={view === "desktop"} onChange={() => setView("desktop")} /> Desktop</label>
+        <label><input type="radio" name="dw-view" checked={view === "mobile"} onChange={() => setView("mobile")} /> Mobile (shorter)</label>
+      </fieldset>
+      <div style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "0.6rem", maxWidth: view === "desktop" ? "100%" : "20rem", background: "#ffffff", color: "#0f172a"}}>
+        <div style={{fontSize: "0.85em", color: "#475569"}}>thebreadbin.example › recipes › rye-bread</div>
+        <div style={{fontSize: "1.1em", color: "#1d4ed8", margin: "0.15rem 0"}}>{title}</div>
+        <div style={{fontSize: "0.92em", color: "#334155"}}>{shown || "(no description)"}</div>
+      </div>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", whiteSpace: "pre-wrap", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{'<meta name="description" content="' + safe + '">'}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{description.length}</strong> characters. <strong>{bad}</strong> {bad === 1 ? "thing" : "things"} to improve.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {results.map((item, index) => (
+          <li key={index}><strong>{item.ok ? "OK:" : "Improve:"}</strong> {item.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The cut-off points are rough. Real results are cut by pixel width, and vary by device and search engine. Notice how quote marks in the text are turned into <code>&amp;quot;</code> so they do not break the attribute.
+      </p>
+    </div>
+  );
+}
+
+export const pageParagraphs = [
+  "Rye flour has less gluten than wheat flour, so a rye dough is stickier and does not need kneading. Mix it, rest it, and bake.",
+  "You will need 500 g of rye flour, 350 ml of warm water, 7 g of salt, and 3 g of dried yeast. Keep a bowl of cold water nearby for your hands.",
+  "Bake the loaf at 230 degrees for 15 minutes, then lower the heat to 200 degrees for another 30 minutes. Let it cool fully before slicing.",
+];
+
+export const pageDescription = "Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools.";
+
+export function highlight(text, words) {
+  if (words.length === 0) return [text];
+  const pattern = new RegExp("(" + words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "gi");
+  return text.split(pattern).map((part, index) => (index % 2 === 1 ? <strong key={index}>{part}</strong> : part));
+}
+
+export function SnippetChooser() {
+  const [query, setQuery] = useState("how long to bake rye bread");
+  const words = query.toLowerCase().split(/\s+/).filter((word) => word.length > 2 && ["the", "how", "for", "and", "what", "does"].indexOf(word) === -1);
+  const score = (text) => words.filter((word) => text.toLowerCase().indexOf(word) !== -1).length;
+  const candidates = [{label: "Your meta description", text: pageDescription}].concat(pageParagraphs.map((text, index) => ({label: "Paragraph " + (index + 1) + " of the page", text})));
+  const scored = candidates.map((item) => ({...item, score: score(item.text)}));
+  const best = scored.reduce((top, item) => (item.score > top.score ? item : top), scored[0]);
+  const chosen = best.score === 0 ? scored[0] : best;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sc-query">What does the searcher type?</label><br />
+        <input id="sc-query" type="text" value={query} onChange={(event) => setQuery(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The page the snippet comes from:</strong></p>
+      <ul style={{margin: "0 0 0.6rem", paddingLeft: "1.2rem"}}>
+        {scored.map((item) => (
+          <li key={item.label}><strong>{item.label}</strong> (matches {item.score} of {words.length} words): {item.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0 0 0.3rem"}}><strong>A snippet a search engine might show:</strong></p>
+      <div aria-live="polite" style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.7rem 0.9rem", background: "#ffffff", color: "#0f172a"}}>
+        <div style={{fontSize: "1.1em", color: "#1d4ed8", marginBottom: "0.15rem"}}>Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin</div>
+        <div style={{fontSize: "0.92em", color: "#334155"}}>{highlight(chosen.text, words)}</div>
+      </div>
+      <p style={{margin: "0.5rem 0 0"}}>Chosen from: <strong>{chosen.label}</strong>.</p>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simulation with very simple rules. Real search engines use far more signals. The lesson it shows is real: if your description matches what people search for, it is likely to be used. If not, a search engine may pick text from the page, so your page text matters too.
+      </p>
+    </div>
+  );
+}
+
+export const descAuditSample = "/ :: The Bread Bin shares easy, tested bread recipes for beginners, with clear steps and honest tips.\n/recipes/rye-bread :: Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools.\n/recipes/sourdough :: Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools.\n/recipes/bagels :: bagels bagels bagels best bagels buy bagels bagel recipe bagels\n/about ::\n/blog/baking-tips :: Short.";
+
+export function DescriptionAudit() {
+  const [text, setText] = useState(descAuditSample);
+  const rows = text.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+    const index = line.indexOf("::");
+    if (index === -1) return {path: line, desc: "", invalid: true};
+    return {path: line.slice(0, index).trim(), desc: line.slice(index + 2).trim(), invalid: false};
+  });
+  const counts = {};
+  rows.forEach((row) => { if (!row.invalid && row.desc !== "") counts[row.desc.toLowerCase()] = (counts[row.desc.toLowerCase()] || 0) + 1; });
+  const report = rows.map((row) => {
+    if (row.invalid) return {...row, issues: ["Use the format: /path :: description"]};
+    const issues = checkDescription(row.desc, "").filter((item) => !item.ok).map((item) => item.text);
+    if (row.desc !== "" && counts[row.desc.toLowerCase()] > 1) issues.push("Used on " + counts[row.desc.toLowerCase()] + " pages. Write a different one for each page.");
+    return {...row, issues};
+  });
+  const withIssues = report.filter((row) => row.issues.length > 0).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="da-input">Your pages, one per line, in the form <code>/path :: description</code></label><br />
+        <textarea id="da-input" rows={8} value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> pages checked. <strong>{withIssues}</strong> with something to improve.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {report.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{row.path}</code> {row.desc ? <span>({row.desc.length} characters)</span> : null}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Improve:</strong> {row.issues.join(" ")}</span>}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The audit runs in your browser. Nothing is sent anywhere. It cannot tell whether a description is accurate, or matches what the page really says.
+      </p>
+    </div>
+  );
+}
+
+Right under the title in a search result, there is usually a short block of text. That text is called the **snippet,** and it is your chance to tell a stranger, in a sentence or two, **why your page is worth their time.**
+
+The `<meta name="description">` tag is how you suggest what that snippet should say. It is small, and it is not magic, but a good one can make the difference between a click and a scroll-past.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the **meta description** is, and what it is **not**
+- How search engines **choose** the snippet
+- The right **length,** and what happens when it is too long
+- A simple **formula** for writing a good one
+- How to handle **quotes, templates, and duplicates**
+- How to control or **limit snippets**
+- How to **audit** a whole site
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <title>Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin</title>
+
+  <!-- Missing: search engines pick their own snippet -->
+
+  <!-- Weak: vague, and the same on every page -->
+  <meta name="description" content="Welcome to our website.">
+
+  <!-- Stuffed: keywords, not sentences -->
+  <meta name="description" content="bread, rye bread, best bread, bread recipe, buy bread">
+
+  <!-- Good: specific, honest, and written for people -->
+  <meta name="description" content="Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools. Get the step-by-step guide.">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Description Writer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DescriptionWriter />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Fill in the three parts, switch between desktop and mobile, and watch the preview and the tag.
+
+## What It Is, and What It Is Not
+
+**It is** a short summary of a page, written in plain text, that a search engine **may** use as the snippet under your title. It may also be used by some other tools, such as link previews in apps.
+
+**It is not:**
+
+- **A direct ranking factor.** Google has said it does not use the description to rank pages. (Other search engines may differ, and details can change.) The real value is **click-through:** a clear, honest description helps more of the right people choose your result.
+- **A guarantee.** Search engines often show a different snippet.
+- **A place for keywords.** The old "meta keywords" tag is ignored by major search engines, and stuffing a description does not help.
+- **A summary of the whole site.** Write one for each page.
+
+:::info A description is an invitation
+Think of it as a line on a shop window. It does not make the shop better. It helps the right person decide to walk in.
+:::
+
+## How Search Engines Choose the Snippet
+
+A search engine looks at your page and the search, and chooses the text that answers best. It might use your meta description, or it might take sentences from your page, or mix the two. Often it will use your description **when it describes the page well,** and take page text when the description does not match what was searched.
+
+Try it. Type different searches, and see which text a simple simulation would pick:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SnippetChooser />
+</>
+</BrowserWindow>
+
+Two lessons:
+
+1. **Write a description that fits the page's main purpose.** That is when it is most likely to be shown.
+2. **Good page text matters too.** Clear, well-organised paragraphs give a search engine good snippet material, whatever the description says.
+
+## How Long Should It Be?
+
+There is no official limit. Search engines cut text to fit the space, and the space is measured in **pixels.** As a rough guide:
+
+- **Desktop:** about **150 to 160 characters** often fits.
+- **Mobile:** often **shorter,** around 120 characters.
+- **Too short** (under about 70 characters) wastes space you could use.
+
+So put the **most important words first,** and keep the whole thing to one or two sentences. It is better to be clear and slightly long than short and vague. Do not worry about exact numbers.
+
+## A Simple Formula
+
+Most good descriptions answer three small questions:
+
+1. **What is on the page?** (the main promise)
+2. **Why should I care?** (a detail, a benefit, who it is for)
+3. **What can I do next?** (a gentle step, optional)
+
+| Page | Description |
+| :-- | :-- |
+| Recipe | Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools. |
+| Product | A solid beech bread bin with a bamboo lid. Keeps loaves fresh for up to five days. Free returns for 30 days. |
+| Guide | Not sure which bread knife to buy? We tested eight and explain when a serrated blade beats a straight one. |
+| Home | Easy, tested bread recipes for beginners, with clear steps, honest tips, and no fancy equipment. |
+
+(Claims such as "free returns" must be true. See the notes below.)
+
+### Writing tips
+
+- **Use plain, active language.** Write like you are speaking to one person.
+- **Include the words people search for,** naturally. A search engine often **bolds** matching words in the snippet, which draws the eye.
+- **Be specific.** Numbers, names, and details beat "great," "best," and "ultimate."
+- **Be honest.** Say what the page really offers.
+- **Do not repeat the title.** Add something new.
+- **Finish your sentences.** A cut-off sentence looks unfinished, but a full one cut at the end still reads well.
+- **Avoid hype and shouting.**
+
+## Quotes, Characters, and Templates
+
+- **A double quote can break the tag.** Inside `content="..."`, a `"` ends the value too early. Use `&quot;`, or use single quotes in the text.
+- **Write `&amp;` for an ampersand,** when you write it by hand.
+- **Use plain text only.** HTML tags are not understood, and are shown as text or ignored.
+- **One description tag per page.** If there are several, search engines may use only one.
+- **Avoid line breaks** inside the value.
+- **Check the output of your templates.** In a CMS or framework, a description is often filled in from a field. Make sure it is not empty, and not the same for every page.
+
+```html
+<!-- Breaks: the quote ends the value early -->
+<meta name="description" content="Our "famous" rye loaf.">
+
+<!-- Fixed -->
+<meta name="description" content="Our &quot;famous&quot; rye loaf.">
+<meta name="description" content="Our famous rye loaf.">
+```
+
+## Unique, Not Copied
+
+Every page should have **its own description.** The same one on many pages tells search engines (and people) nothing about what makes each page different.
+
+- **No description is better than a copied one.** A search engine can then choose a snippet from the page.
+- **For large sites,** write descriptions by hand for your most important pages. For the rest, a template that fills in details (such as a product's name and price) can work, as long as the results read naturally.
+- **Do not auto-generate nonsense.** Descriptions that are cut-and-pasted from the page's first lines often read badly.
+
+## Controlling Snippets
+
+Sometimes you want to **limit** what search engines show. A few options exist, and they vary by search engine, so check each one's documentation:
+
+- **`nosnippet`** in the robots meta tag asks that no text snippet be shown. Use it rarely, since it can lower your click-through.
+- **`max-snippet:N`** limits the snippet to N characters.
+- **`data-nosnippet`** is an attribute you can put on parts of a page to ask Google not to use that text in snippets.
+
+These are covered further in [Robots Meta](./robots-meta).
+
+## Description, Social, and Accessibility
+
+- **`og:description`** is the description used when your link is **shared** in social apps. It can be written separately, and can be warmer or shorter. See [Open Graph](./open-graph).
+- **`aria-describedby`** and similar attributes describe controls on a page for screen readers. They are different things. See [aria-describedby](/tutorials/html/accessibility/aria-describedby).
+- **Do not hide important information in the description.** It should repeat, not replace, what is on the page.
+
+## Descriptions in Docusaurus
+
+In Docusaurus, set a `description` in each page's frontmatter, and it becomes the meta description. Every page in this course has one. Write each one by hand, and keep them unique. Docusaurus also lets you set a site-wide default, but a page-specific one is always better. Check the current Docusaurus documentation for the exact options.
+
+## Audit a Whole Site
+
+A common problem is not a bad description but a **missing or copied** one. Paste your own pages below, or use the sample:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DescriptionAudit />
+</>
+</BrowserWindow>
+
+To find real descriptions on a site, use a crawler tool, Search Console, or "view source" on key pages.
+
+## Good Habits
+
+- **Write one for every important page,** by hand.
+- **Make each unique,** specific, and true.
+- **Use one or two clear sentences,** roughly 70 to 160 characters.
+- **Put the key points first.**
+- **Use natural wording,** including the words people search for.
+- **Escape quotes** and ampersands.
+- **Check what search engines actually show,** and improve weak snippets.
+- **Do not rely on it for ranking.** Think of it as a click-winner.
+
+## Meta Description Checklist
+
+- [ ] The page has exactly one meta description
+- [ ] It is unique to this page
+- [ ] It says what the page offers, in plain words
+- [ ] It is roughly 70 to 160 characters, with key points first
+- [ ] It does not just repeat the title
+- [ ] It has no hype, no stuffing, and no false claims
+- [ ] Quotes and ampersands are escaped
+- [ ] It is plain text, with no HTML
+- [ ] Translated pages have descriptions in their own language
+- [ ] It does not contain private data
+
+## Security and Privacy Notes
+
+- **Do not put private data in descriptions.** Descriptions are public. Names, emails, prices only for members, and anything private can appear in search results, caches, and shared links.
+- **Be careful with user-generated descriptions.** If a description is filled from user input (a profile, a listing), escape it, and never build the tag from raw input. A stray quote could break your HTML, or inject unwanted content.
+- **No false claims.** Promises like "free," "official," "certified," or "guaranteed" must be true. False claims can harm people, and may break advertising rules. This is not legal advice.
+- **Do not impersonate other brands** or copy their wording to draw clicks.
+- **Old descriptions can linger.** Search engines cache snippets. If a page has been removed or changed, an old snippet may still show for a while.
+- **Spam and injection.** If your site has been hacked, attackers sometimes insert spam into descriptions. Check what shows in search results for your site, from time to time.
+
+## Global Audience Notes
+
+- **Write the description in the language of the page.** And set `lang` to match. See [International SEO](./international-seo).
+- **Translate the meaning,** not word for word, and use the terms local readers search for.
+- **Lengths differ by script.** Chinese, Japanese, and Korean characters are wide, so descriptions are usually shorter in characters. Test how they look.
+- **Use UTF-8,** so accents and non-Latin scripts display correctly.
+- **Right-to-left languages** such as Arabic and Hebrew need correct direction in previews. Check them.
+- **Currencies, dates, and units** should match the region.
+- **Avoid idioms and humour** that do not translate well.
+
+## Common Mistakes to Avoid
+
+1. **No description at all,** on important pages.
+2. **The same description on every page.**
+3. **Keyword stuffing,** or lists of keywords.
+4. **Repeating the title.**
+5. **Hype and false promises.**
+6. **A description that does not match the page.**
+7. **Unescaped quotes** that break the tag.
+8. **HTML tags** inside the description.
+9. **Too long,** with the important words at the end.
+10. **Too short and vague,** such as "Welcome."
+11. **Treating it as a ranking trick.**
+12. **Never checking** what search engines really show.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the description writer. Make a good one, and then make a bad one on purpose. What does the checker say?
+2. Switch between desktop and mobile. What gets cut?
+3. Use the snippet chooser with five different searches. When is your description used?
+4. Write descriptions for a recipe, a product, a guide, and a home page.
+5. Paste five pages from a site you built into the audit. Fix every problem.
+6. Add a double quote to a description by hand, and check the tag in the output. How do you fix it?
+7. Search for something you know well. Compare each result's snippet. Which ones make you want to click?
+8. Find a result where the snippet looks like it came from the page, not the description. Why?
+9. Open Search Console, and find a page with many impressions and few clicks. Rewrite its description.
+10. Bonus: write two different descriptions for one page, and compare their click-through rates over a month.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a meta description?</summary>
+
+A short, plain-text summary of a page, in a `&lt;meta name="description"&gt;` tag, that search engines may use as the snippet under your title.
+
+</details>
+
+<details>
+<summary>2. Is it a ranking factor?</summary>
+
+Google has said it does not use it for ranking. Its value is in winning clicks, by helping the right people choose your result.
+
+</details>
+
+<details>
+<summary>3. Will a search engine always show your description?</summary>
+
+No. It may choose text from the page instead, especially when your description does not match what was searched.
+
+</details>
+
+<details>
+<summary>4. How long should it be?</summary>
+
+Roughly 70 to 160 characters, with the key points first. Desktop shows more than mobile, and cut-offs depend on pixel width.
+
+</details>
+
+<details>
+<summary>5. How can a quote break your description tag?</summary>
+
+A double quote inside `content="..."` ends the value early. Write `&quot;`, or avoid the quote.
+
+</details>
+
+<details>
+<summary>6. What is the problem with copying one description to many pages?</summary>
+
+It does not tell people or search engines what makes each page different. Write a unique one for each page, or leave it out and let the search engine choose.
+
+</details>
+
+## Key Takeaways
+
+- **A meta description is a short, honest pitch** for one page.
+- **It is not a ranking factor,** but a good one wins clicks.
+- **Search engines may rewrite it,** so match it to the page.
+- **Aim for roughly 70 to 160 characters,** and put the key points first.
+- **Use the formula:** what, why you should care, and what next.
+- **Make each unique,** and escape quotes.
+- **No stuffing, hype, or false claims.**
+- **Audit your site,** and check what search engines show.
+
+Next, learn how headings help both readers and search engines understand your page, in [Headings and SEO](./headings-and-seo).

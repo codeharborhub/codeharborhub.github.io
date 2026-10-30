@@ -1,0 +1,577 @@
+---
+id: html-seo-open-graph
+title: "Open Graph"
+sidebar_label: "Open Graph"
+sidebar_position: 10
+slug: /html/seo/open-graph
+description: "Learn Open Graph tags: the four essential properties, og:type and article extras, how to choose and size a share image, absolute URLs, fallbacks, caching, and why scrapers need tags in the server HTML. Includes an Open Graph builder with a share-card preview, an image crop lab, and a live Open Graph checker."
+keywords:
+  - Open Graph
+  - og:title
+  - og:image
+  - og:description
+  - og:type
+  - social sharing preview
+  - share image size
+  - link preview
+  - Facebook Sharing Debugger
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, open-graph, social-sharing, link-preview, og-image, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function escAttr(value) {
+  return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export function OgBuilder() {
+  const [type, setType] = useState("article");
+  const [title, setTitle] = useState("Easy No-Knead Rye Bread");
+  const [desc, setDesc] = useState("Bake a crusty rye loaf at home with five simple ingredients, and no kneading.");
+  const [url, setUrl] = useState("https://thebreadbin.example/recipes/rye-bread");
+  const [image, setImage] = useState("https://thebreadbin.example/img/rye-1200x630.jpg");
+  const [alt, setAlt] = useState("A rye loaf cooling on a wooden board");
+  const [width, setWidth] = useState("1200");
+  const [height, setHeight] = useState("630");
+  const [site, setSite] = useState("The Bread Bin");
+  const [locale, setLocale] = useState("en_US");
+  const [published, setPublished] = useState("2026-03-12");
+  const tags = [];
+  tags.push('<meta property="og:type" content="' + escAttr(type) + '">');
+  if (title) tags.push('<meta property="og:title" content="' + escAttr(title) + '">');
+  if (desc) tags.push('<meta property="og:description" content="' + escAttr(desc) + '">');
+  if (url) tags.push('<meta property="og:url" content="' + escAttr(url) + '">');
+  if (image) {
+    tags.push('<meta property="og:image" content="' + escAttr(image) + '">');
+    if (width) tags.push('<meta property="og:image:width" content="' + escAttr(width) + '">');
+    if (height) tags.push('<meta property="og:image:height" content="' + escAttr(height) + '">');
+    if (alt) tags.push('<meta property="og:image:alt" content="' + escAttr(alt) + '">');
+  }
+  if (site) tags.push('<meta property="og:site_name" content="' + escAttr(site) + '">');
+  if (locale) tags.push('<meta property="og:locale" content="' + escAttr(locale) + '">');
+  if (type === "article" && published) tags.push('<meta property="article:published_time" content="' + escAttr(published) + '">');
+  const problems = [];
+  if (!title.trim()) problems.push("og:title is empty.");
+  else if (title.length > 70) problems.push("The title is " + title.length + " characters. Many apps cut it around 60 to 70.");
+  if (!desc.trim()) problems.push("og:description is empty. Some apps will fall back to the page description, and some will show nothing.");
+  else if (desc.length > 200) problems.push("The description is long (" + desc.length + " characters). Many apps show only the first part.");
+  if (!/^https?:\/\/\S+$/.test(url.trim())) problems.push("og:url should be a full address starting with https://.");
+  if (!/^https?:\/\/\S+$/.test(image.trim())) problems.push("og:image must be a full address starting with https://. Relative paths do not work.");
+  else if (/\.svg(\?|$)/i.test(image)) problems.push("SVG images are not accepted by most share previews. Use JPG, PNG, or WebP.");
+  if (image && !alt.trim()) problems.push("Add og:image:alt, so the picture has a text description.");
+  const w = parseInt(width, 10);
+  const h = parseInt(height, 10);
+  let ratio = null;
+  if (w > 0 && h > 0) {
+    ratio = w / h;
+    if (w < 600 || h < 315) problems.push("The image is small (" + w + " by " + h + "). Many apps show a small thumbnail instead of a large card. Aim for 1200 by 630.");
+    else if (Math.abs(ratio - 1.91) > 0.15) problems.push("The image shape is " + ratio.toFixed(2) + " to 1. The usual large card is about 1.91 to 1, so the picture may be cropped.");
+  }
+  if (type === "article" && published && !/^\d{4}-\d{2}-\d{2}(T\S+)?$/.test(published)) problems.push("article:published_time should be an ISO date, such as 2026-03-12.");
+  let domain = "thebreadbin.example";
+  try { domain = new URL(url).hostname; } catch (error) { domain = "your-site.example"; }
+  const cardRatio = ratio && ratio > 0 ? ratio : 1.91;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="og-type">Type</label>{" "}
+        <select id="og-type" value={type} onChange={(event) => setType(event.target.value)}>
+          <option value="website">website (home pages and general pages)</option>
+          <option value="article">article (posts, recipes, news)</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="og-title">Title</label><br /><input id="og-title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="og-desc">Description</label><br /><textarea id="og-desc" rows={2} value={desc} onChange={(event) => setDesc(event.target.value)} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="og-url">Page address</label><br /><input id="og-url" type="text" value={url} onChange={(event) => setUrl(event.target.value)} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="og-image">Image address</label><br /><input id="og-image" type="text" value={image} onChange={(event) => setImage(event.target.value)} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem", display: "flex", gap: "0.6rem", flexWrap: "wrap"}}>
+        <span><label htmlFor="og-w">Image width</label>{" "}<input id="og-w" type="text" value={width} onChange={(event) => setWidth(event.target.value)} style={{width: "5rem"}} /></span>
+        <span><label htmlFor="og-h">Image height</label>{" "}<input id="og-h" type="text" value={height} onChange={(event) => setHeight(event.target.value)} style={{width: "5rem"}} /></span>
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="og-alt">Image description (alt text)</label><br /><input id="og-alt" type="text" value={alt} onChange={(event) => setAlt(event.target.value)} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem", display: "flex", gap: "0.6rem", flexWrap: "wrap"}}>
+        <span><label htmlFor="og-site">Site name</label>{" "}<input id="og-site" type="text" value={site} onChange={(event) => setSite(event.target.value)} /></span>
+        <span><label htmlFor="og-locale">Locale</label>{" "}<input id="og-locale" type="text" value={locale} onChange={(event) => setLocale(event.target.value)} style={{width: "6rem"}} /></span>
+        {type === "article" ? <span><label htmlFor="og-pub">Published</label>{" "}<input id="og-pub" type="text" value={published} onChange={(event) => setPublished(event.target.value)} style={{width: "8rem"}} /></span> : null}
+      </p>
+      <p style={{margin: "0.6rem 0 0.3rem"}}><strong>How a share card might look:</strong></p>
+      <div style={{border: "1px solid #cbd5e1", borderRadius: "10px", overflow: "hidden", maxWidth: "22rem", background: "#ffffff", color: "#0f172a", marginBottom: "0.6rem"}}>
+        {image ? (
+          <div style={{width: "100%", aspectRatio: String(Math.min(Math.max(cardRatio, 1), 2.2)), background: "linear-gradient(135deg, #cbd5e1, #94a3b8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8em", color: "#334155", textAlign: "center", padding: "0.4rem"}}>
+            Your image goes here{ratio ? " (" + width + " by " + height + ")" : ""}
+          </div>
+        ) : <div style={{padding: "0.4rem 0.8rem", fontSize: "0.8em", color: "#64748b"}}>No image, so the card is text only.</div>}
+        <div style={{padding: "0.6rem 0.8rem"}}>
+          <div style={{fontSize: "0.75em", color: "#64748b", textTransform: "uppercase"}}>{domain}</div>
+          <div style={{fontWeight: "bold", margin: "0.15rem 0"}}>{title.length > 70 ? title.slice(0, 69) + "…" : title || "(no title)"}</div>
+          <div style={{fontSize: "0.88em", color: "#475569"}}>{desc.length > 120 ? desc.slice(0, 119) + "…" : desc}</div>
+        </div>
+      </div>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The tags for your head:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{tags.join("\n")}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{problems.length}</strong> {problems.length === 1 ? "thing" : "things"} to check.</p>
+      {problems.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {problems.map((problem, index) => (<li key={index}>{problem}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>No problems found by these simple checks.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Every app draws cards a little differently, and the sizes and limits change. This preview is a rough guide, and it shows a grey block where your image would be, because this page cannot fetch it. Use each platform's own debugging tool for the real result. Values are escaped, so quotes and angle brackets cannot break the tags.
+      </p>
+    </div>
+  );
+}
+
+export function ImageCropLab() {
+  const shapes = [
+    {id: "wide", label: "Wide, 1200 by 630 (about 1.91 to 1)", ratio: 1.91},
+    {id: "square", label: "Square, 1000 by 1000", ratio: 1},
+    {id: "portrait", label: "Portrait, 800 by 1000", ratio: 0.8},
+    {id: "panorama", label: "Very wide, 1600 by 400", ratio: 4},
+  ];
+  const [shape, setShape] = useState("square");
+  const current = shapes.find((item) => item.id === shape);
+  const boxW = 300;
+  const boxH = Math.round(boxW / 1.91);
+  const a = current.ratio;
+  let imgW;
+  let imgH;
+  if (a >= 1.91) { imgH = boxH; imgW = Math.round(boxH * a); } else { imgW = boxW; imgH = Math.round(boxW / a); }
+  const shown = Math.round(((boxW * boxH) / (imgW * imgH)) * 100);
+  const full = {width: 150, height: Math.round(150 / a)};
+  const mark = {position: "absolute", fontSize: "0.7em", fontWeight: "bold", background: "rgba(15,23,42,0.75)", color: "#ffffff", padding: "0.1rem 0.3rem", borderRadius: "3px"};
+  const art = (w, h) => (
+    <div style={{position: "relative", width: w, height: h, background: "linear-gradient(135deg, #fde68a, #f59e0b)"}}>
+      <span style={{...mark, top: 4, left: 4}}>Corner text</span>
+      <span style={{...mark, top: "50%", left: "50%", transform: "translate(-50%, -50%)"}}>Main subject</span>
+      <span style={{...mark, bottom: 4, right: 4}}>Logo</span>
+    </div>
+  );
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Choose the shape of your share image</legend>
+        {shapes.map((item) => (
+          <label key={item.id} style={{display: "block"}}><input type="radio" name="crop-shape" checked={shape === item.id} onChange={() => setShape(item.id)} /> {item.label}</label>
+        ))}
+      </fieldset>
+      <div style={{display: "flex", gap: "1.2rem", flexWrap: "wrap", alignItems: "flex-start", marginBottom: "0.6rem"}}>
+        <div>
+          <p style={{margin: "0 0 0.3rem"}}><strong>Your full image</strong></p>
+          {art(full.width, full.height)}
+        </div>
+        <div>
+          <p style={{margin: "0 0 0.3rem"}}><strong>What a large card may show</strong></p>
+          <div style={{width: boxW, height: boxH, overflow: "hidden", position: "relative", border: "1px solid #cbd5e1"}}>
+            <div style={{position: "absolute", left: (boxW - imgW) / 2, top: (boxH - imgH) / 2}}>
+              {art(imgW, imgH)}
+            </div>
+          </div>
+        </div>
+      </div>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>About {shown} percent</strong> of the picture is visible in a wide card.</p>
+      <p style={{margin: "0 0 0.3rem"}}>{shown >= 95 ? "Everything fits. This is the safest shape." : shown >= 50 ? "Parts of the edges are cut off. Keep important text and logos near the middle." : "Most of the picture is cut off. Use a wide image, or keep everything important in the centre."}</p>
+      <p style={{margin: "0.4rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This simulates one common way of fitting a picture into a wide card, which is to fill the space and trim the edges. Some apps instead show a small square thumbnail, or add bars. Always keep text and key details in the middle, and test the real result.
+      </p>
+    </div>
+  );
+}
+
+export const ogSamples = {
+  messy: '<head>\n<meta name="og:title" content="Home">\n<meta property="og:type" content="blog">\n<meta property="og:image" content="/img/rye.jpg">\n<meta property="og:image" content="https://thebreadbin.example/img/rye.svg">\n<meta property="og:url" content="http://thebreadbin.example/rye?utm_source=x">\n<meta property="og:description" content="">\n<meta property="article:published_time" content="March 12">\n<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">\n</head>',
+  fixed: '<head>\n<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">\n<meta property="og:type" content="article">\n<meta property="og:title" content="Easy No-Knead Rye Bread">\n<meta property="og:description" content="Bake a crusty rye loaf at home with five simple ingredients, and no kneading.">\n<meta property="og:url" content="https://thebreadbin.example/recipes/rye-bread">\n<meta property="og:image" content="https://thebreadbin.example/img/rye-1200x630.jpg">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta property="og:image:alt" content="A rye loaf cooling on a wooden board">\n<meta property="og:site_name" content="The Bread Bin">\n<meta property="og:locale" content="en_US">\n<meta property="article:published_time" content="2026-03-12">\n</head>',
+};
+
+export const ogTypes = ["website", "article", "book", "profile", "music.song", "music.album", "music.playlist", "music.radio_station", "video.movie", "video.episode", "video.tv_show", "video.other"];
+
+export function OgCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(ogSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html>" + html, "text/html");
+  const issues = [];
+  const notes = [];
+  const wrongName = Array.from(doc.querySelectorAll('meta[name^="og:"]'));
+  wrongName.forEach((el) => issues.push("<meta name=\"" + el.getAttribute("name") + "\"> uses name. Open Graph tags should use property=\"" + el.getAttribute("name") + "\"."));
+  const tags = Array.from(doc.querySelectorAll('meta[property]'));
+  const byProp = {};
+  tags.forEach((el) => {
+    const key = el.getAttribute("property").trim();
+    (byProp[key] = byProp[key] || []).push((el.getAttribute("content") || "").trim());
+  });
+  ["og:title", "og:type", "og:image", "og:url"].forEach((key) => {
+    if (!byProp[key] && !(key === "og:title" && wrongName.some((el) => el.getAttribute("name") === key))) issues.push("Missing " + key + ", one of the four essential properties.");
+  });
+  ["og:title", "og:type", "og:url", "og:description"].forEach((key) => {
+    if (byProp[key] && byProp[key].length > 1) issues.push(key + " appears " + byProp[key].length + " times. Use it once.");
+  });
+  if (byProp["og:description"] && byProp["og:description"][0] === "") issues.push("og:description is empty.");
+  if (!byProp["og:description"]) notes.push("No og:description. Some apps fall back to the page's meta description, and some show nothing.");
+  if (byProp["og:type"] && byProp["og:type"][0] && ogTypes.indexOf(byProp["og:type"][0]) === -1) issues.push("og:type \"" + byProp["og:type"][0] + "\" is not a standard type. Common ones are website and article.");
+  (byProp["og:image"] || []).forEach((value) => {
+    if (!/^https?:\/\//i.test(value)) issues.push("og:image \"" + value + "\" is not a full address. Use https://.");
+    else if (/\.svg(\?|$)/i.test(value)) issues.push("og:image \"" + value + "\" is an SVG. Most share previews do not accept SVG. Use JPG, PNG, or WebP.");
+  });
+  if ((byProp["og:image"] || []).length > 1) notes.push("There are " + byProp["og:image"].length + " og:image tags. The first is usually the one used, so put the best one first.");
+  if (byProp["og:image"] && !byProp["og:image:alt"]) notes.push("No og:image:alt. Add a text description of the image.");
+  if (byProp["og:image"] && (!byProp["og:image:width"] || !byProp["og:image:height"])) notes.push("No og:image:width and og:image:height. They help apps show the card on the first share, before they have downloaded the image.");
+  const url = byProp["og:url"] && byProp["og:url"][0];
+  if (url) {
+    if (!/^https:\/\//i.test(url)) issues.push("og:url \"" + url + "\" should be a full https address.");
+    if (/[?&](utm_|fbclid|gclid|sessionid)/i.test(url)) issues.push("og:url contains tracking or session parameters. Use the clean address.");
+    const canonical = doc.querySelector('link[rel~="canonical"]');
+    if (canonical && canonical.getAttribute("href") && canonical.getAttribute("href").trim() !== url) notes.push("og:url differs from the canonical link. They should normally match. See Canonical Links.");
+  }
+  const articleTags = Object.keys(byProp).filter((key) => key.indexOf("article:") === 0);
+  const type = byProp["og:type"] && byProp["og:type"][0];
+  if (articleTags.length > 0 && type !== "article") notes.push("There are article: tags, but og:type is not \"article\".");
+  (byProp["article:published_time"] || []).concat(byProp["article:modified_time"] || []).forEach((value) => {
+    if (!/^\d{4}-\d{2}-\d{2}(T\S+)?$/.test(value)) issues.push("The date \"" + value + "\" is not in ISO format (YYYY-MM-DD).");
+  });
+  if (!byProp["og:site_name"]) notes.push("No og:site_name. Some apps show it above the title.");
+  if (!byProp["og:locale"]) notes.push("No og:locale. Add one, such as en_US, if your page is not in English or you serve several languages.");
+  const choose = (value) => { setWhich(value); setHtml(ogSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="ogc-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="ogc-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="ogc-html">HTML head (edit it freely)</label><br />
+        <textarea id="ogc-html" rows={12} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{issues.length}</strong> problems, <strong>{notes.length}</strong> suggestions.</p>
+      {issues.length === 0 && notes.length === 0 ? <p style={{margin: 0}}>Nothing to report.</p> : null}
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {issues.map((issue, index) => (<li key={"i" + index}><strong>Problem:</strong> {issue}</li>))}
+        {notes.map((note, index) => (<li key={"n" + index}><strong>Suggestion:</strong> {note}</li>))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot fetch your image, check its size, or see what an app has cached. Test the live page with the sharing debuggers.
+      </p>
+    </div>
+  );
+}
+
+export function OgChecker() {
+  return <BrowserOnly>{() => <OgCheckerInner />}</BrowserOnly>;
+}
+
+Paste a link into a chat and, a moment later, a neat **card** appears with a picture, a title, and a short line of text. That card was not made by magic, and it was not made by the chat app guessing. It was built from a few small tags in your page's head, called **Open Graph** tags.
+
+If you do not add them, apps take a guess, and the guess is often a blurry image (or none at all) and the wrong words. If you add them, **you** decide how your page introduces itself to the world.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **Open Graph** is, and who reads it
+- The **four essential tags,** and the helpful extras
+- How to choose and size a **share image**
+- Why you need **full addresses** and **server-side HTML**
+- How **caching** works, and how to refresh a preview
+- How Open Graph relates to **title, description,** and **canonical**
+- How to **test** your tags
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <title>Easy No-Knead Rye Bread | The Bread Bin</title>
+
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Easy No-Knead Rye Bread">
+  <meta property="og:description" content="Bake a crusty rye loaf at home with five simple ingredients, and no kneading.">
+  <meta property="og:url" content="https://thebreadbin.example/recipes/rye-bread">
+  <meta property="og:image" content="https://thebreadbin.example/img/rye-1200x630.jpg">
+  <meta property="og:image:alt" content="A rye loaf cooling on a wooden board">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Open Graph Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OgBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Change the title, the image shape, and the type. Watch the card, the tags, and the checks.
+
+## What Open Graph Is
+
+**Open Graph** is a small set of tags first created by Facebook, and now read by many other apps: social networks, chat apps, collaboration tools, and link-preview services. When someone shares your link, the app **fetches your page,** reads the tags, and draws a card.
+
+- **It is not for search rankings.** Open Graph does not directly help your search position. Its job is to make shared links look good, and a good-looking link gets more clicks.
+- **It uses `property`, not `name`.** Open Graph tags are written `property="og:title"`. (Many parsers also accept `name`, but follow the standard.)
+- **It lives in the head.** Like all meta tags.
+
+## The Four Essential Tags
+
+| Tag | What it says | Example |
+| :-- | :-- | :-- |
+| `og:title` | The headline of the card | Easy No-Knead Rye Bread |
+| `og:type` | What kind of thing this is | `article` or `website` |
+| `og:image` | The picture for the card | A full https address |
+| `og:url` | The main address of the page | The canonical address |
+
+Add these, and you have the foundation. Then add the helpful extras:
+
+| Extra | Why |
+| :-- | :-- |
+| `og:description` | One or two lines under the title |
+| `og:image:alt` | A text description of the picture, for accessibility |
+| `og:image:width` and `og:image:height` | Helps apps lay out the card on the first share |
+| `og:site_name` | The name of your site, shown above or below the title |
+| `og:locale` | The language and region, such as `en_US` or `fr_FR` |
+| `article:published_time` | The date, for articles (ISO format) |
+| `article:author` and `article:section` | More about an article |
+
+### Choosing og:type
+
+- **`website`** for your home page and general pages.
+- **`article`** for blog posts, recipes, and news. It unlocks the `article:` tags.
+- **Others,** such as `book`, `profile`, `video.movie`, and `music.song`, exist for those kinds of content.
+
+If you are unsure, `website` is a safe default. Some apps ignore the type altogether.
+
+## Choosing a Share Image
+
+The image is the part of the card that people notice first, and the one that most often goes wrong.
+
+- **Use a wide image,** about **1200 by 630 pixels** (roughly 1.91 to 1). This is a common size that many apps display as a large card. Check each platform's current guidance, as sizes change.
+- **Use JPG, PNG, or WebP.** Most apps do not accept SVG.
+- **Keep the file size sensible.** Large files may be skipped by some apps, and are slow on mobile data. A few hundred kilobytes is usually plenty.
+- **Make it a full address,** starting with `https://`. Relative paths such as `/img/rye.jpg` do not work, because the app is not on your site.
+- **The image must be public.** If it is behind a login, the app cannot fetch it.
+- **Keep the important parts in the middle.** Cards crop images in different ways.
+- **Put text in the image carefully.** It must be large and short, because the card is small. It should also be in the page's text somewhere, for accessibility.
+- **Always add `og:image:alt`.**
+- **Do not use the same image for every page.** A unique image per page makes shared links much more recognisable.
+
+See how different shapes crop:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ImageCropLab />
+</>
+</BrowserWindow>
+
+## Full Addresses and Clean URLs
+
+- **All addresses must be absolute,** with `https://`. This goes for `og:image` and `og:url`.
+- **`og:url` should be the canonical address,** with no tracking parameters, so that every share of the same page is counted and displayed as one. See [Canonical Links](./canonical-links).
+- **Do not point `og:url` at a redirect,** or at a different page.
+
+## What Apps Do When Tags Are Missing
+
+Most apps have a **fallback** chain:
+
+- No `og:title`: use the page's `<title>`.
+- No `og:description`: use the meta description, or text from the page.
+- No `og:image`: look for another image on the page, or show a text-only card.
+
+That is why a page with no Open Graph tags still gets a preview, and why the preview is so often poor. Fallbacks vary by app, and are not guaranteed.
+
+## Open Graph, Title, and Meta Description
+
+These often hold similar text, but they are **different tags for different audiences:**
+
+| Tag | Audience | Notes |
+| :-- | :-- | :-- |
+| `<title>` | People choosing a search result | Include your brand. See [Title (SEO)](./title-seo) |
+| `meta name="description"` | People reading a search snippet | See [Meta Description](./meta-description) |
+| `og:title` | People seeing a shared link | Can be shorter and friendlier, and often leaves out the brand |
+| `og:description` | People seeing a shared link | Can be warmer, or add a hook |
+
+They should agree on the topic, but they do not have to match word for word.
+
+## Scrapers Do Not Run Your JavaScript
+
+When an app fetches your link, it usually downloads the HTML and reads it **without running scripts.** So:
+
+- **Open Graph tags must be in the HTML the server sends,** not added later by JavaScript.
+- **Single-page apps** often fail here. Everyone sees the same default card, whatever page is shared. The fix is server-side rendering, static generation, or a pre-rendering service.
+- **Docusaurus** builds static HTML for each page, so tags in the head are in the file when it is served. Always check the built page with "view source."
+
+## Caching: Why the Preview Will Not Update
+
+Apps **save** your preview after the first share. If you change your tags or image afterwards, the old card may keep appearing, sometimes for days.
+
+- **Use a debugger tool to refresh it.** For example, Facebook's Sharing Debugger and LinkedIn's Post Inspector let you fetch a page again and clear the old card. (Tool names change, so check the platform's help.)
+- **Use a new image address** when you change a picture (for example, add a version number to the file name). Apps cache by address.
+- **Chat apps** cache too, and some offer no way to refresh. Test your page **before** you share it widely.
+
+## Check Your Tags
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OgChecker />
+</>
+</BrowserWindow>
+
+### Check it for real
+
+1. **"View source"** on the live page, and search for `og:`.
+2. **Use the platforms' debuggers,** such as the Facebook Sharing Debugger and the LinkedIn Post Inspector, to see what they read.
+3. **Share the link privately** in a chat app (to yourself) and look at the card.
+4. **Check that the image address opens** in a private browser window, without being logged in.
+5. **Check the file** on a phone, on a slow connection.
+
+## Open Graph in Docusaurus
+
+Docusaurus lets you set a social card image for the whole site, in `docusaurus.config.js`, and uses a page's `title` and `description` for the matching tags. You can set a page's own image in its frontmatter (`image`), or add tags directly with the `Head` component. The tags end up in the built HTML. Details change between versions, so check the current documentation, and inspect the output.
+
+## Good Habits
+
+- **Add the four essentials** to every page.
+- **Use a 1200 by 630 image,** unique to the page where you can.
+- **Use full https addresses.**
+- **Add `og:image:alt`** and `og:site_name`.
+- **Make `og:url` match the canonical address.**
+- **Put the tags in server-rendered HTML.**
+- **Write titles and descriptions for sharing,** not only for search.
+- **Test before you share,** and refresh with the debuggers.
+
+## Open Graph Checklist
+
+- [ ] `og:title`, `og:type`, `og:image`, and `og:url` are present
+- [ ] Tags use `property`, and each appears once (except images)
+- [ ] The image is JPG, PNG, or WebP, about 1200 by 630, and public
+- [ ] All addresses are absolute, and use https
+- [ ] `og:url` matches the canonical address, with no tracking parameters
+- [ ] `og:image:alt` is set
+- [ ] Dates use ISO format
+- [ ] `og:locale` is right for the page
+- [ ] The tags are in the HTML the server sends
+- [ ] A preview was tested in a debugger or a private chat
+- [ ] No private data is in any tag
+
+## Security and Privacy Notes
+
+- **Escape everything.** If a title or description comes from a database or a user, a stray quote or angle bracket can break your tags, and may inject content. Escape values before you put them in `content="..."`. The builder above does this.
+- **Do not leak private pages.** If someone shares a link to a private or logged-in page, the app may fetch it, and show the title and image to everyone who sees the card. Do not put private details in the tags of private pages. Use a generic title and image for pages behind a login.
+- **Pictures can reveal more than you expect.** A share image can include names, faces, and locations. Get permission, and check what is in the picture. Also strip hidden location data (EXIF) from photos.
+- **Do not mislead.** A card that says one thing while the page says another is deceptive, and could be treated as spam or a scam by the platform.
+- **Do not copy another brand's name or look** in your tags. This is not legal advice.
+- **Apps may fetch your page and image** from their own servers. This shows in your logs. It is normal, but if you restrict access by address, allow the platforms you use.
+- **Watch for tampering.** A hacked page can have its tags changed, so that shares show spam. Check your live tags from time to time.
+
+## Global Audience Notes
+
+- **Set `og:locale`** to the page's language and region (for example `fr_FR`). For other languages of the same page, add `og:locale:alternate` tags.
+- **Write the tags in the language of the page.** Each translation needs its own title, description, and ideally its own image.
+- **Text in images is not translated.** If your share image has words in it, make a version per language, or keep the image free of text.
+- **Right-to-left languages** need an image and text that read correctly in the card. Test them.
+- **Titles and descriptions get cut at different lengths** in different scripts, so check the preview in each language.
+- **Platforms differ by country.** The app that matters in one country may not exist in another. Open Graph is widely read, but check where your readers share.
+- **Slow networks:** a large image may not load in time on a poor connection, and the card may appear without it. Keep files small.
+
+## Common Mistakes to Avoid
+
+1. **No Open Graph tags at all.**
+2. **A relative image address.**
+3. **A tiny or square image** that gets cropped or shrunk.
+4. **An SVG** as the share image.
+5. **The same image on every page.**
+6. **Using `name` instead of `property`.**
+7. **Tags added only by JavaScript.**
+8. **`og:url` with tracking parameters,** or different from the canonical.
+9. **A private or login-protected image.**
+10. **A stale preview** that is never refreshed.
+11. **Missing `og:image:alt`.**
+12. **Never testing** the card before sharing.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the builder with `website` and with `article`. What changes in the tags?
+2. Enter a small image size and a square one. What do the checks say?
+3. Use the crop lab with each shape. Where would you place a logo so it is never cut off?
+4. Run the checker on the messy page, fix every problem, and run it again.
+5. Create a 1200 by 630 image for a page you built, and keep the title text large and in the middle.
+6. Add the four essential tags to a page, and check them with "view source."
+7. Share a link in a private chat, and look at the card.
+8. Open the Facebook Sharing Debugger or LinkedIn Post Inspector, and fetch your page.
+9. Change an image on a page, and see how long the old one lingers. Then rename the file, and compare.
+10. Bonus: build a page that shows a different Open Graph image for each language version.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are Open Graph tags for?</summary>
+
+They tell apps how to draw a card when your link is shared: its title, description, image, and address. They do not directly affect search ranking.
+
+</details>
+
+<details>
+<summary>2. What are the four essential tags?</summary>
+
+`og:title`, `og:type`, `og:image`, and `og:url`.
+
+</details>
+
+<details>
+<summary>3. What size should a share image be?</summary>
+
+Roughly 1200 by 630 pixels (about 1.91 to 1), in JPG, PNG, or WebP, at a sensible file size, with the key content in the middle. Check each platform's current guidance.
+
+</details>
+
+<details>
+<summary>4. Why must the image address be a full address?</summary>
+
+The app fetching your page is not on your site, so a relative path such as `/img/rye.jpg` cannot be found. Use a full `https://` address.
+
+</details>
+
+<details>
+<summary>5. Why might your Open Graph tags work in "view source" but not in a share?</summary>
+
+Apps usually do not run JavaScript. If the tags are added by a script, the app never sees them. They must be in the HTML the server sends.
+
+</details>
+
+<details>
+<summary>6. How do you refresh a stale preview?</summary>
+
+Use the platform's debugger tool to fetch the page again, or change the image's address. Apps cache by address.
+
+</details>
+
+## Key Takeaways
+
+- **Open Graph controls how a shared link looks.** It does not boost search rankings by itself.
+- **Always set `og:title`, `og:type`, `og:image`, and `og:url`.**
+- **Use a wide, public, 1200 by 630 image** with full https addresses.
+- **Keep `og:url` equal to the canonical address.**
+- **Tags must be in server-sent HTML.**
+- **Previews are cached.** Use debuggers, or change the image address.
+- **Escape values, and never expose private pages in cards.**
+- **Test before you share.**
+
+Next, learn how X (Twitter) uses these tags and adds its own, in [Twitter Cards](./twitter-cards).

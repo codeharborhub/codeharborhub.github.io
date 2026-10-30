@@ -1,0 +1,526 @@
+---
+id: html-seo-semantic
+title: "Semantic HTML and SEO"
+sidebar_label: "Semantic HTML and SEO"
+sidebar_position: 6
+slug: /html/seo/semantic-html-and-seo
+description: "Learn how semantic HTML helps search engines and other tools understand a page: main content versus boilerplate, landmarks, articles, sections, figures, dates, lists, tables, and breadcrumbs. Be honest about what semantics do and do not do for ranking. Includes a live semantic page analyzer, an element picker quiz, and a breadcrumb builder with matching structured data."
+keywords:
+  - semantic HTML SEO
+  - semantic elements
+  - main article nav aside
+  - div soup
+  - breadcrumbs HTML
+  - time element
+  - landmarks
+  - boilerplate detection
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, semantic-html, landmarks, breadcrumbs, structure, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const semanticSamples = {
+  soup: '<div class="header"><div class="logo">The Bread Bin</div><div class="menu"><div><a href="/">Home</a></div><div><a href="/recipes">Recipes</a></div></div></div>\n<div class="content">\n<div class="title">Rye Bread</div>\n<div class="date">Published 12 March 2026</div>\n<div class="text">Bake a crusty rye loaf at home with five simple ingredients. Rye flour has less gluten than wheat flour, so the dough is sticky and needs no kneading. Mix it, rest it overnight, and bake it in a hot oven until the crust is deep brown.</div>\n<div onclick="share()">Share</div>\n</div>\n<div class="sidebar"><div class="box">Subscribe to our newsletter</div></div>\n<div class="footer">Copyright The Bread Bin</div>',
+  semantic: '<header>\n<p>The Bread Bin</p>\n<nav aria-label="Main">\n<ul><li><a href="/">Home</a></li><li><a href="/recipes">Recipes</a></li></ul>\n</nav>\n</header>\n<main>\n<article>\n<h1>Rye Bread</h1>\n<p>Published <time datetime="2026-03-12">12 March 2026</time></p>\n<p>Bake a crusty rye loaf at home with five simple ingredients. Rye flour has less gluten than wheat flour, so the dough is sticky and needs no kneading. Mix it, rest it overnight, and bake it in a hot oven until the crust is deep brown.</p>\n<button type="button">Share</button>\n</article>\n<aside aria-label="Newsletter"><p>Subscribe to our newsletter</p></aside>\n</main>\n<footer><p>Copyright The Bread Bin</p></footer>',
+};
+
+export function wordCount(text) {
+  return (text || "").split(/\s+/).filter(Boolean).length;
+}
+
+export function SemanticAnalyzerInner() {
+  const [which, setWhich] = useState("soup");
+  const [html, setHtml] = useState(semanticSamples.soup);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const body = doc.body;
+  const total = wordCount(body.textContent);
+  const mains = doc.querySelectorAll("main, [role='main']");
+  const main = mains[0] || null;
+  const mainWords = main ? wordCount(main.textContent) : 0;
+  const share = total > 0 ? Math.round((mainWords / total) * 100) : 0;
+  const names = ["header", "nav", "main", "article", "section", "aside", "footer", "figure", "time", "ul", "ol", "table"];
+  const found = names.map((name) => ({name, count: doc.querySelectorAll(name).length})).filter((item) => item.count > 0);
+  const divs = doc.querySelectorAll("div, span").length;
+  const meaningful = found.filter((item) => ["header", "nav", "main", "article", "section", "aside", "footer", "figure", "time"].indexOf(item.name) !== -1).reduce((sum, item) => sum + item.count, 0);
+  const notes = [];
+  if (mains.length === 0) notes.push("No main element. A machine has to guess where the main content starts.");
+  if (mains.length > 1) notes.push(mains.length + " main elements. A page should have only one visible main.");
+  if (!doc.querySelector("nav") && doc.querySelectorAll("a[href]").length > 2) notes.push("Several links but no nav element. Mark your menus with nav.");
+  const navs = doc.querySelectorAll("nav");
+  if (navs.length > 1 && Array.from(navs).some((el) => !el.hasAttribute("aria-label") && !el.hasAttribute("aria-labelledby"))) notes.push("More than one nav, and at least one has no label. Add aria-label to tell them apart.");
+  if (!doc.querySelector("header") && !doc.querySelector("footer") && total > 20) notes.push("No header or footer. Mark the top and bottom of the page.");
+  Array.from(doc.querySelectorAll("article, section")).forEach((el) => {
+    if (!el.querySelector("h1, h2, h3, h4, h5, h6") && !el.hasAttribute("aria-label") && !el.hasAttribute("aria-labelledby")) notes.push("A " + el.tagName.toLowerCase() + " with no heading. Give it one, so people and tools know what it is.");
+  });
+  Array.from(doc.querySelectorAll("div[onclick], span[onclick]")).forEach((el) => notes.push("\"" + (el.textContent || "").trim() + "\" is a clickable " + el.tagName.toLowerCase() + ". Use a button or a link, so it works with the keyboard and tools."));
+  const dateRegex = /\b(\d{1,2}\s(January|February|March|April|May|June|July|August|September|October|November|December)\s\d{4}|\d{4}-\d{2}-\d{2})\b/;
+  if (dateRegex.test(body.textContent || "") && !doc.querySelector("time[datetime]")) notes.push("A date is written in the text, but not in a time element with a datetime. Tools cannot read it reliably.");
+  if (doc.querySelectorAll("img").length > 0 && doc.querySelectorAll("figure").length === 0 && Array.from(doc.querySelectorAll("img")).some((el) => el.nextElementSibling && /^(p|div|span|small)$/i.test(el.nextElementSibling.tagName) && wordCount(el.nextElementSibling.textContent) < 15)) notes.push("An image followed by short text may be a caption. Consider figure and figcaption.");
+  const choose = (value) => { setWhich(value); setHtml(semanticSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to analyse?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="sa-sample" checked={which === "soup"} onChange={() => choose("soup")} /> A "div soup" page</label>
+        <label><input type="radio" name="sa-sample" checked={which === "semantic"} onChange={() => choose("semantic")} /> The semantic version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sa-html">HTML to analyse (edit it freely)</label><br />
+        <textarea id="sa-html" rows={12} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>What a machine can tell about the page:</strong></p>
+      <ul style={{margin: "0 0 0.6rem", paddingLeft: "1.2rem"}}>
+        <li><strong>Main content:</strong> {main ? "found. " + mainWords + " of " + total + " words (" + share + " percent of the page)" : "not marked, so tools must guess"}</li>
+        <li><strong>Meaningful elements:</strong> {meaningful === 0 ? "none" : found.map((item) => item.name + " x" + item.count).join(", ")}</li>
+        <li><strong>Generic div and span elements:</strong> {divs}</li>
+      </ul>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{notes.length}</strong> {notes.length === 1 ? "suggestion" : "suggestions"}.</p>
+      {notes.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {notes.map((note, index) => (<li key={index}>{note}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>The page is clearly marked up.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a teaching tool, and it reads HTML only. It does not copy any search engine's real method. It simply shows the kind of structure that tools can use.
+      </p>
+    </div>
+  );
+}
+
+export function SemanticAnalyzer() {
+  return <BrowserOnly>{() => <SemanticAnalyzerInner />}</BrowserOnly>;
+}
+
+export const pickScenarios = [
+  {id: "p1", text: "The site menu, with links to the main pages", expect: "nav"},
+  {id: "p2", text: "The one block of content that is unique to this page", expect: "main"},
+  {id: "p3", text: "A blog post that would make sense on its own, if shared", expect: "article"},
+  {id: "p4", text: "A themed group of content inside a post, with its own heading", expect: "section"},
+  {id: "p5", text: "A box of related links beside the main content", expect: "aside"},
+  {id: "p6", text: "A photo with a caption", expect: "figure"},
+  {id: "p7", text: "The publish date, in a form a machine can read", expect: "time"},
+  {id: "p8", text: "A wrapper used only so CSS can lay things out", expect: "div"},
+  {id: "p9", text: "The copyright notice and contact links at the very bottom", expect: "footer"},
+];
+
+export function ElementPicker() {
+  const [picks, setPicks] = useState({});
+  const [shown, setShown] = useState(false);
+  const right = pickScenarios.filter((item) => picks[item.id] === item.expect).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>Choose the best element for each job.</p>
+      {pickScenarios.map((item) => (
+        <p key={item.id} style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor={"pick-" + item.id}>{item.text}</label>{" "}
+          <select id={"pick-" + item.id} value={picks[item.id] || ""} onChange={(event) => setPicks({...picks, [item.id]: event.target.value})}>
+            <option value="">Choose...</option>
+            {["main", "nav", "article", "section", "aside", "figure", "time", "footer", "div"].map((name) => (<option key={name} value={name}>{name}</option>))}
+          </select>
+          {shown && picks[item.id] ? <span> <strong>{picks[item.id] === item.expect ? "Good." : "Better: " + item.expect + "."}</strong></span> : null}
+        </p>
+      ))}
+      <p style={{margin: "0.4rem 0"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my choices</button>{" "}
+        <button type="button" onClick={() => { setPicks({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? right + " of " + pickScenarios.length + " match the usual choice." : ""}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Some jobs have more than one reasonable answer. The point is to choose the element that matches the meaning, and to use a plain div only when nothing else fits.
+      </p>
+    </div>
+  );
+}
+
+export function BreadcrumbBuilder() {
+  const [crumbs, setCrumbs] = useState([
+    {name: "Home", path: "/"},
+    {name: "Recipes", path: "/recipes"},
+    {name: "Rye Bread", path: "/recipes/rye-bread"},
+  ]);
+  const base = "https://thebreadbin.example";
+  const update = (index, field, value) => setCrumbs(crumbs.map((item, i) => (i === index ? {...item, [field]: value} : item)));
+  const esc = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const items = crumbs.map((crumb, index) => {
+    const last = index === crumbs.length - 1;
+    return last ? '    <li aria-current="page">' + esc(crumb.name) + "</li>" : '    <li><a href="' + esc(crumb.path) + '">' + esc(crumb.name) + "</a></li>";
+  });
+  const htmlOut = '<nav aria-label="Breadcrumb">\n  <ol>\n' + items.join("\n") + "\n  </ol>\n</nav>";
+  const json = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, index) => ({"@type": "ListItem", position: index + 1, name: crumb.name, item: base + crumb.path})),
+  };
+  const jsonOut = JSON.stringify(json, null, 2).replace(/</g, "\\u003c");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>Edit the trail from the home page down to the current page. The last item is the page you are on.</p>
+      {crumbs.map((crumb, index) => (
+        <p key={index} style={{margin: "0 0 0.4rem", display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+          <label htmlFor={"bc-name-" + index}>Name {index + 1}</label>
+          <input id={"bc-name-" + index} type="text" value={crumb.name} onChange={(event) => update(index, "name", event.target.value)} />
+          <label htmlFor={"bc-path-" + index}>Path {index + 1}</label>
+          <input id={"bc-path-" + index} type="text" value={crumb.path} onChange={(event) => update(index, "path", event.target.value)} />
+        </p>
+      ))}
+      <p style={{margin: "0.4rem 0 0.7rem"}}>
+        <button type="button" onClick={() => setCrumbs(crumbs.concat({name: "New level", path: "/new"}))} disabled={crumbs.length >= 5}>Add a level</button>{" "}
+        <button type="button" onClick={() => setCrumbs(crumbs.slice(0, -1))} disabled={crumbs.length <= 2}>Remove the last level</button>
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>What people see:</strong></p>
+      <p style={{margin: "0 0 0.7rem", padding: "0.5rem 0.7rem", border: "1px solid #cbd5e1", borderRadius: "6px"}}>{crumbs.map((crumb) => crumb.name).join(" › ")}</p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The HTML:</strong></p>
+      <pre style={{margin: "0 0 0.7rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{htmlOut}</code></pre>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Matching structured data (optional):</strong></p>
+      <pre style={{margin: 0, padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{'<script type="application/ld+json">\n' + jsonOut + "\n</script>"}</code></pre>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The structured data must match the visible breadcrumb. Search engines change which rich results they show, so treat it as a helpful extra, not a promise. See the lesson on structured data. The characters are escaped so that nothing in a name can break out of the script.
+      </p>
+    </div>
+  );
+}
+
+Search engines are not people. They cannot look at your page and see that the box at the top is the menu, the big block in the middle is the article, and the strip at the bottom is the footer. They read **code.**
+
+If the code is a heap of `div` elements, all of them look the same. If the code uses **meaningful elements,** the structure announces itself: **this is navigation, this is the main content, this is a self-contained article, this is a footer.** That is the idea behind **semantic HTML.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How semantic HTML helps **search engines and other tools**
+- A **fair view** of what it does, and does not, do for ranking
+- The key elements: **header, nav, main, article, section, aside, footer**
+- **Figures, dates, lists,** and **tables**
+- Building **breadcrumbs**
+- How semantics, **accessibility,** and SEO work together
+- How to **check** your page
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Div soup: every box looks the same to a machine -->
+<div class="header">...</div>
+<div class="menu">...</div>
+<div class="content">
+  <div class="title">Rye Bread</div>
+  <div class="date">12 March 2026</div>
+</div>
+<div class="footer">...</div>
+
+<!-- Semantic: the structure is in the code -->
+<header>...</header>
+<nav aria-label="Main">...</nav>
+<main>
+  <article>
+    <h1>Rye Bread</h1>
+    <p><time datetime="2026-03-12">12 March 2026</time></p>
+  </article>
+</main>
+<footer>...</footer>
+```
+
+</TabItem>
+<TabItem value="output" label="Semantic Analyzer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SemanticAnalyzer />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch between the two pages, and compare what a machine can tell. Then edit the HTML yourself, and watch the results change.
+
+## Does Semantic HTML Improve Rankings?
+
+An honest answer: **it is not a switch that boosts your ranking.** Search engines have said they can understand pages without perfect markup, and they do not publish a list of "semantic bonuses." So do not expect `main` to lift you to number one.
+
+But semantic HTML still matters, for solid reasons:
+
+- **It separates the main content from boilerplate.** A search engine wants to index what is **unique** to your page, not the menu and footer repeated on every page. Clear structure makes that easier.
+- **It helps tools beyond search.** Reader modes, translation tools, voice assistants, social previews, and AI summarisers all work better with clear structure.
+- **It supports accessibility,** and accessible pages tend to be easier to use, which people (and search) reward.
+- **It makes pages easier to maintain.** You and your team read the code faster.
+- **It prepares you for rich results.** Dates, authors, breadcrumbs, and products are easier to mark up, when the basic structure is right.
+
+:::info Aim to be unambiguous
+You do not use semantic elements to impress a search engine. You use them to **leave nothing to guesswork,** for every tool that reads your page.
+:::
+
+## The Key Elements
+
+| Element | Use it for |
+| :-- | :-- |
+| `header` | Introductory content for the page, or for an article or section |
+| `nav` | A set of main navigation links |
+| `main` | The central content unique to this page. Use it once. |
+| `article` | A complete, self-contained piece: a post, a recipe, a news story |
+| `section` | A themed group of content, with its own heading |
+| `aside` | Related but separate content, such as a sidebar or note |
+| `footer` | Closing content for the page, or for an article or section |
+| `figure` and `figcaption` | An image, chart, or code sample with a caption |
+| `time` | A date or time that machines can read |
+
+For the details of each element, see [Semantic HTML](/tutorials/html/semantic-html/why-semantic-html), [main](/tutorials/html/semantic-html/main), [article](/tutorials/html/semantic-html/article), [section](/tutorials/html/semantic-html/section), [nav](/tutorials/html/semantic-html/nav), and [aside](/tutorials/html/semantic-html/aside).
+
+### Main versus boilerplate
+
+Every page has **boilerplate:** things repeated across the site, like the logo, menu, and footer. And it has **main content:** the text, images, and tools that are unique to this page. Wrapping the second in `main` (and the first in `header`, `nav`, and `footer`) leaves no doubt which is which.
+
+### Article, section, or div?
+
+- **`article`** if you could lift it out and it would still make sense (a blog post, a product card, a comment).
+- **`section`** if it is a themed part of something bigger and has a heading.
+- **`div`** if it exists only so CSS can lay things out. That is what `div` is for, and it is fine.
+
+Try matching jobs to elements:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ElementPicker />
+</>
+</BrowserWindow>
+
+## Figures, Dates, Lists, and Tables
+
+### Figures and captions
+
+```html
+<figure>
+  <img src="rye.jpg" alt="A rye loaf cooling on a wooden board" width="800" height="600">
+  <figcaption>Let the loaf cool fully before you slice it.</figcaption>
+</figure>
+```
+
+A `figure` links an image to its caption. The caption also gives search engines more words about the image. Keep the `alt` text too. See [Alt Text](/tutorials/html/accessibility/alt-text).
+
+### Dates and times
+
+```html
+<p>Published <time datetime="2026-03-12">12 March 2026</time></p>
+<p>Updated <time datetime="2026-04-02T09:30">2 April 2026, 9:30</time></p>
+```
+
+The human-readable text can be in any language and format, while `datetime` is always a standard, machine-readable value. Make sure the dates are **true.** A page that pretends to be recently updated, when it is not, misleads readers.
+
+### Lists
+
+Use `ul`, `ol`, and `dl` for real lists, such as ingredients, steps, and features. A list tells a machine that these items belong together, and a numbered list tells it **the order matters.** Do not fake a list with `br` tags or lines starting with a dash.
+
+### Tables
+
+Use a `table` for **data** with rows and columns, with `th` headers and a `caption`. Do not use tables for page layout. See [Table Accessibility](/tutorials/html/tables/table-accessibility).
+
+### Quotes and emphasis
+
+- `blockquote` with `cite` for quoted material.
+- `strong` for **important** text, and `em` for **stress.** These have meaning. `b` and `i` are only visual.
+- Do not overuse emphasis. If everything is important, nothing is.
+
+## Breadcrumbs
+
+A **breadcrumb trail** shows where a page sits in the site: Home › Recipes › Rye Bread. It helps people find their way, and it gives search engines a clear picture of your site's structure. Marked up well, it can also appear in search results.
+
+Build one, and see the HTML and the matching structured data:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BreadcrumbBuilder />
+</>
+</BrowserWindow>
+
+Notes:
+
+- **Use `nav` with a label,** and an **ordered list** (`ol`), since the order matters.
+- **Mark the last item with `aria-current="page"`.** It is the page you are on, and often not a link.
+- **Keep the visible trail and the structured data in step.** They must agree.
+- **Use real links,** so crawlers can follow them. See [HTML SEO Basics](./html-seo-basics).
+
+## Navigation and Links
+
+- **Wrap menus in `nav`,** and give each one a label when there are several (`aria-label="Main"`, `aria-label="Footer"`).
+- **You do not need `nav` around every group of links.** Use it for the main blocks of navigation.
+- **Paging and "next" links** are normal `a` elements. Search engines no longer use the old `rel="next"` and `rel="prev"` hints, as far as they have publicly said, but they remain harmless, and some tools still read them.
+- **Skip links** help keyboard users. See [Keyboard Accessibility](/tutorials/html/accessibility/keyboard-accessibility).
+
+## Div Soup and Its Costs
+
+A page built mostly from `div` and `span` is called "div soup." It works in a browser, but:
+
+- A machine sees **no structure.**
+- Screen reader users get **no landmarks** to jump between.
+- **Click handlers on divs** are invisible to the keyboard, and to tools.
+- **CSS class names** like `header` or `menu` carry meaning only for you. A crawler treats them as nothing in particular.
+
+You do not need to remove every div. Just ask, for each one: *is there an element that says what this really is?* If so, use it.
+
+## Semantics, Accessibility, and SEO Together
+
+The three goals pull in the same direction:
+
+| You write | A screen reader user gets | A search engine gets |
+| :-- | :-- | :-- |
+| `main` | A landmark to jump to | The main content |
+| `nav` with a label | A list of menus | Where the site's links are |
+| `h1` to `h6` | A way to skim by heading | The outline of the page |
+| `time` with `datetime` | A clear date | A machine-readable date |
+| `button` for actions | A control that works | An action, not a link |
+| `alt` text | A description | An image description |
+
+When something is good for all three, it is usually the right thing to do. See [Semantic Accessibility](/tutorials/html/accessibility/semantic-accessibility).
+
+## Check Your Page
+
+1. **Run the analyzer** on your HTML. Read the notes.
+2. **Turn off CSS.** Does the page still read in a sensible order? (Browser extensions and developer tools can do this.)
+3. **Use a screen reader or an outline tool** to list landmarks and headings. Are they clear?
+4. **Try reader mode** in your browser. Does it find your main content?
+5. **Validate your HTML** with a validator, to catch broken structure.
+6. **Check in Search Console** how your pages appear.
+
+## Good Habits
+
+- **Choose the element that matches the meaning.**
+- **Use `main` once,** and wrap the page's unique content in it.
+- **Mark menus with `nav`,** and label them when there are several.
+- **Give `article` and `section` a heading.**
+- **Use `time` for dates,** and make them true.
+- **Use real lists, tables, and figures.**
+- **Use `div` and `span` only when nothing else fits.**
+- **Keep breadcrumb markup and data in step.**
+
+## Semantic SEO Checklist
+
+- [ ] The page has one `main`
+- [ ] Header, nav, and footer are marked with their elements
+- [ ] Each `nav` is labelled when there are several
+- [ ] Each `article` and `section` has a heading
+- [ ] Dates use `time` with a correct `datetime`
+- [ ] Images with captions use `figure` and `figcaption`
+- [ ] Lists use list elements, and data uses tables with headers
+- [ ] Buttons and links are real `button` and `a` elements
+- [ ] Breadcrumbs use `nav`, `ol`, and `aria-current`
+- [ ] The page reads sensibly with CSS turned off
+
+## Security and Privacy Notes
+
+- **Do not put private data in the markup.** Text in `aria-label`, `datetime`, `data-` attributes, and hidden elements is visible to anyone who views the source, and to crawlers.
+- **Escape user content.** Names, comments, and titles inserted into `article`, `figcaption`, or breadcrumb names must be escaped, or they could inject markup. In structured data, escape `<` as well, so nothing can close the script early. The breadcrumb demo above does this.
+- **Make dates honest.** A false "updated" date to look fresh misleads readers, and may break search guidelines.
+- **Do not use semantic elements to hide things from people.** Structure that differs from what people see (cloaking) can lead to penalties.
+- **Authorship and addresses.** If you mark up author names or contact addresses, ask whether those people agreed, and avoid exposing private details. Use a role or a shared address instead.
+
+## Global Audience Notes
+
+- **Set `lang`** on the page, and on passages in other languages. See [International SEO](./international-seo).
+- **`time` and `datetime`** use one standard format worldwide, and the visible text can follow local custom. This is a good use of the element.
+- **Dates and numbers differ by region** (day-month-year versus month-day-year, decimal commas). Do not guess. Use `datetime` for clarity.
+- **Breadcrumb separators** should work for right-to-left languages. Let CSS draw them, and let the order of the `ol` stay logical.
+- **Translated pages** need translated labels, such as `aria-label="Fil d'Ariane"` for a French breadcrumb.
+- **Table, list, and quote conventions** differ across languages. Check that quotation marks and punctuation follow local style.
+
+## Common Mistakes to Avoid
+
+1. **Div soup,** with no meaningful elements.
+2. **Several `main` elements,** or none.
+3. **`section` or `article` with no heading.**
+4. **Using `section` as a wrapper for styling.** That is a `div`'s job.
+5. **Click handlers on divs** instead of buttons or links.
+6. **Dates as plain text only.**
+7. **A table used for page layout.**
+8. **Fake lists** made with `br` or dashes.
+9. **Several unlabelled `nav` elements.**
+10. **Mismatched breadcrumb markup and data.**
+11. **Expecting semantic elements to boost rankings by themselves.**
+12. **Never checking** the page with CSS off or a screen reader.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Run the analyzer on the div-soup page, fix every suggestion, and compare it with the semantic version.
+2. Use the element picker. Which jobs had more than one reasonable answer?
+3. Build a breadcrumb for a page on a site you know, and compare the HTML with the data.
+4. Take a page you built, and replace five `div` elements with better ones.
+5. Turn off CSS (with developer tools or an extension). Does the page still make sense?
+6. Use a landmarks list (screen reader or extension). Are the regions clear?
+7. Mark up a date with `time`, in a page that has plain-text dates.
+8. Turn a fake list (`br` or dashes) into a real list.
+9. Open reader mode on a few pages. Which find the main content easily?
+10. Bonus: take a page from a site you like, copy its HTML, and rewrite it using only semantic elements. Compare the two.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Does semantic HTML boost rankings by itself?</summary>
+
+No. But it makes the page unambiguous: it separates the main content from boilerplate, helps many tools, supports accessibility, and prepares you for rich results.
+
+</details>
+
+<details>
+<summary>2. What is the difference between article and section?</summary>
+
+An `<article>` is self-contained, and makes sense on its own. A `<section>` is a themed part of something bigger, with its own heading.
+
+</details>
+
+<details>
+<summary>3. How many main elements should a page have?</summary>
+
+One visible `<main>`, holding the content unique to the page.
+
+</details>
+
+<details>
+<summary>4. Why use the time element?</summary>
+
+Its `datetime` attribute gives machines a standard, reliable date, while the visible text can be in any local format.
+
+</details>
+
+<details>
+<summary>5. What are the parts of a good breadcrumb?</summary>
+
+A labelled `<nav>`, an ordered list of links, the current page marked with `aria-current="page"`, and, optionally, matching structured data that agrees with the visible trail.
+
+</details>
+
+<details>
+<summary>6. Why avoid div soup?</summary>
+
+A machine sees no structure, screen reader users get no landmarks, and clickable divs do not work with a keyboard. Use meaningful elements wherever one fits.
+
+</details>
+
+## Key Takeaways
+
+- **Semantic elements put the page's structure in the code.**
+- **They do not boost ranking by themselves,** but they remove guesswork for every tool.
+- **Use `main`, `nav`, `header`, `footer`, `article`, `section`, and `aside`** for what they mean.
+- **Use `time`, `figure`, lists, and tables** for dates, captions, lists, and data.
+- **Use `div` and `span` only when nothing else fits.**
+- **Build breadcrumbs with `nav`, `ol`, and `aria-current`.**
+- **Semantics, accessibility, and SEO all pull the same way.**
+- **Keep markup honest,** and escape user content.
+
+Next, learn how to tell search engines which version of a page is the main one, in [Canonical Links](./canonical-links).

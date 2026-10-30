@@ -1,0 +1,516 @@
+---
+id: html-seo-title
+title: "Title (SEO)"
+sidebar_label: "Title (SEO)"
+sidebar_position: 3
+slug: /html/seo/title-seo
+description: "Learn how to write page titles that search engines understand and people want to click: matching search intent, placing keywords naturally, choosing patterns for different page types, handling brand names and separators, avoiding stuffing and clickbait, and knowing why search engines sometimes rewrite titles. Includes a title builder, a title duel quiz, and a site-wide title audit."
+keywords:
+  - SEO title
+  - title tag SEO
+  - page title best practices
+  - title length SEO
+  - title rewriting
+  - duplicate titles
+  - search intent
+  - click through rate
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, title, search-results, ctr, on-page-seo, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function checkTitle(title, brand) {
+  const text = title.trim();
+  const results = [];
+  if (text === "") {
+    results.push({ok: false, text: "The title is empty."});
+    return results;
+  }
+  results.push({ok: text.length >= 25, text: text.length >= 25 ? "Long enough to say something (" + text.length + " characters)." : "Quite short (" + text.length + " characters). Say what the page is about."});
+  results.push({ok: text.length <= 60, text: text.length <= 60 ? "Short enough to usually fit in a result." : "Long (" + text.length + " characters), so it may be cut off. Put the important words first."});
+  results.push({ok: !/^(home|untitled|document|index|page|new page|welcome)$/i.test(text), text: /^(home|untitled|document|index|page|new page|welcome)$/i.test(text) ? "Too generic. Say what the page is." : "Not a generic placeholder."});
+  const letters = text.replace(/[^a-zA-Z]/g, "");
+  const upper = letters.replace(/[^A-Z]/g, "");
+  const shouting = letters.length > 8 && upper.length / letters.length > 0.6;
+  results.push({ok: !shouting, text: shouting ? "Mostly capital letters. It reads like shouting, and is harder to read." : "Normal capitalisation."});
+  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((word) => word.length > 3);
+  const counts = {};
+  words.forEach((word) => { counts[word] = (counts[word] || 0) + 1; });
+  const repeated = Object.keys(counts).filter((word) => counts[word] >= 3);
+  results.push({ok: repeated.length === 0, text: repeated.length === 0 ? "No word is repeated again and again." : "The word \"" + repeated[0] + "\" appears " + counts[repeated[0]] + " times. That looks like keyword stuffing."});
+  const separators = (text.match(/[|\-–—·•]/g) || []).length;
+  results.push({ok: separators <= 2, text: separators <= 2 ? "A clean structure." : "Many separators. It reads like a list of keywords. Use one separator, before the brand."});
+  const punctuation = /!{2,}|\?{2,}|\${2,}/.test(text);
+  results.push({ok: !punctuation, text: punctuation ? "Repeated punctuation such as !! looks spammy." : "No spammy punctuation."});
+  if (brand && brand.trim() !== "") {
+    const hasBrand = text.toLowerCase().indexOf(brand.trim().toLowerCase()) !== -1;
+    results.push({ok: hasBrand, text: hasBrand ? "The brand name is included." : "The brand name is missing. That is fine for some pages, but it helps recognition."});
+  }
+  return results;
+}
+
+export function TitleBuilder() {
+  const [type, setType] = useState("article");
+  const [topic, setTopic] = useState("Rye Bread Recipe");
+  const [extra, setExtra] = useState("Easy No-Knead Loaf");
+  const [brand, setBrand] = useState("The Bread Bin");
+  const [sep, setSep] = useState(" | ");
+  const make = () => {
+    const t = topic.trim();
+    const e = extra.trim();
+    const b = brand.trim();
+    if (type === "home") return [b, e || t].filter(Boolean).join(sep);
+    if (type === "article") return (t + (e ? ": " + e : "") + (b ? sep + b : "")).trim();
+    if (type === "product") return (t + (e ? " - " + e : "") + (b ? sep + b : "")).trim();
+    return (t + (e ? " (" + e + ")" : "") + (b ? sep + b : "")).trim();
+  };
+  const title = make();
+  const results = checkTitle(title, brand);
+  const bad = results.filter((item) => !item.ok).length;
+  const hints = {
+    home: "Home page: brand first, then what you offer.",
+    article: "Article or recipe: the main topic first, then a helpful detail, then the brand.",
+    product: "Product: the product name first, then a key detail, then the brand.",
+    category: "Category: what the group is, a detail in brackets, then the brand.",
+  };
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tb-type">Page type</label>{" "}
+        <select id="tb-type" value={type} onChange={(event) => setType(event.target.value)}>
+          <option value="home">Home page</option>
+          <option value="article">Article or recipe</option>
+          <option value="product">Product</option>
+          <option value="category">Category page</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tb-topic">Main topic (what the page is)</label><br />
+        <input id="tb-topic" type="text" value={topic} onChange={(event) => setTopic(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tb-extra">Helpful detail (optional)</label><br />
+        <input id="tb-extra" type="text" value={extra} onChange={(event) => setExtra(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tb-brand">Brand or site name</label><br />
+        <input id="tb-brand" type="text" value={brand} onChange={(event) => setBrand(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.7rem"}}>
+        <label htmlFor="tb-sep">Separator before the brand</label>{" "}
+        <select id="tb-sep" value={sep} onChange={(event) => setSep(event.target.value)}>
+          <option value=" | ">Pipe ( | )</option>
+          <option value=" - ">Hyphen ( - )</option>
+          <option value=" – ">En dash ( – )</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.2rem", fontSize: "0.9em", color: "#64748b"}}>{hints[type]}</p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Your title:</strong></p>
+      <p style={{margin: "0 0 0.6rem", padding: "0.5rem 0.7rem", border: "1px solid #cbd5e1", borderRadius: "6px", color: "#1d4ed8", fontSize: "1.1em"}}>{title || "(empty)"}</p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{"<title>" + title + "</title>"}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{bad}</strong> {bad === 1 ? "thing" : "things"} to improve.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {results.map((item, index) => (
+          <li key={index}><strong>{item.ok ? "OK:" : "Improve:"}</strong> {item.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These patterns are starting points, not rules. Real search results cut titles by pixel width, not by characters, and a search engine may show something different. Always read your title aloud, and ask whether a stranger would know what they are getting.
+      </p>
+    </div>
+  );
+}
+
+export const duelRounds = [
+  {id: "d1", query: "how to bake rye bread", a: "Rye Bread", b: "How to Bake Rye Bread: Easy No-Knead Recipe | The Bread Bin", best: "b", why: "The first is too thin to match the question. The second says what it is, and includes the words a searcher used, naturally."},
+  {id: "d2", query: "rye bread recipe", a: "Bread | Rye Bread | Sourdough | Baking | Recipes | Flour | Yeast | The Bread Bin", b: "Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin", best: "b", why: "The first is a pile of keywords. It reads badly, and looks spammy. The second is clear and focused."},
+  {id: "d3", query: "best oven thermometer", a: "You WON'T BELIEVE Which Oven Thermometer Wins!!!", b: "Best Oven Thermometers Tested: 6 Picks | The Bread Bin", best: "b", why: "The first is clickbait with shouting and vague promises. The second is specific, honest, and says what you will find."},
+  {id: "d4", query: "the bread bin", a: "Home", b: "The Bread Bin: Easy Bread Recipes for Home Bakers", best: "b", why: "\"Home\" tells nobody anything. The second starts with the brand and says what the site offers."},
+  {id: "d5", query: "serrated vs straight bread knife", a: "Serrated vs Straight Bread Knife: Which Should You Buy? | The Bread Bin", b: "Knives", best: "a", why: "The first matches the question and the content. The second is too short and general."},
+];
+
+export function TitleDuel() {
+  const [guesses, setGuesses] = useState({});
+  const [shown, setShown] = useState(false);
+  const answered = Object.keys(guesses).length;
+  const right = duelRounds.filter((round) => guesses[round.id] === round.best).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>Someone searches for the words shown. Which title would you choose to click, and be happy you did?</p>
+      {duelRounds.map((round) => (
+        <fieldset key={round.id} style={{margin: "0 0 0.6rem"}}>
+          <legend>Search: "{round.query}"</legend>
+          <label style={{display: "block", marginBottom: "0.2rem"}}><input type="radio" name={"duel-" + round.id} checked={guesses[round.id] === "a"} onChange={() => setGuesses({...guesses, [round.id]: "a"})} /> {round.a}</label>
+          <label style={{display: "block"}}><input type="radio" name={"duel-" + round.id} checked={guesses[round.id] === "b"} onChange={() => setGuesses({...guesses, [round.id]: "b"})} /> {round.b}</label>
+          {shown && guesses[round.id] ? (
+            <p style={{margin: "0.3rem 0 0"}}><strong>{guesses[round.id] === round.best ? "Good choice." : "Not quite."}</strong> {round.why}</p>
+          ) : null}
+        </fieldset>
+      ))}
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my choices</button>{" "}
+        <button type="button" onClick={() => { setGuesses({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? "You chose well in " + right + " of " + answered + " rounds." : ""}</p>
+    </div>
+  );
+}
+
+export const auditSample = "/ :: Home\n/recipes :: Recipes | The Bread Bin\n/recipes/rye-bread :: Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin\n/recipes/sourdough :: Recipes | The Bread Bin\n/recipes/bagels :: BAGELS BAGELS BAGELS - best bagels - bagel recipe - buy bagels\n/about :: About\n/blog/baking-tips :: 10 Baking Tips Every Beginner Needs | The Bread Bin\n/blog/baking-tips-2 :: 10 Baking Tips Every Beginner Needs | The Bread Bin";
+
+export function TitleAudit() {
+  const [text, setText] = useState(auditSample);
+  const rows = text.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+    const index = line.indexOf("::");
+    if (index === -1) return {path: line, title: "", bad: true, invalid: true};
+    return {path: line.slice(0, index).trim(), title: line.slice(index + 2).trim(), invalid: false};
+  });
+  const counts = {};
+  rows.forEach((row) => { if (!row.invalid && row.title !== "") counts[row.title.toLowerCase()] = (counts[row.title.toLowerCase()] || 0) + 1; });
+  const report = rows.map((row) => {
+    if (row.invalid) return {...row, issues: ["Use the format: /path :: Title"]};
+    const issues = checkTitle(row.title, "").filter((item) => !item.ok).map((item) => item.text);
+    if (counts[row.title.toLowerCase()] > 1) issues.push("Used on " + counts[row.title.toLowerCase()] + " pages. Every page should have its own title.");
+    return {...row, issues};
+  });
+  const withIssues = report.filter((row) => row.issues.length > 0).length;
+  const dupes = Object.keys(counts).filter((key) => counts[key] > 1).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="ta-input">Your pages, one per line, in the form <code>/path :: Page title</code></label><br />
+        <textarea id="ta-input" rows={9} value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{rows.length}</strong> pages checked. <strong>{withIssues}</strong> with something to improve, <strong>{dupes}</strong> duplicated {dupes === 1 ? "title" : "titles"}.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {report.map((row, index) => (
+          <li key={index} style={{marginBottom: "0.4rem"}}>
+            <code>{row.path}</code> {row.title ? <span>"{row.title}"</span> : null}{" "}
+            {row.issues.length === 0 ? <strong>OK</strong> : <span><strong>Improve:</strong> {row.issues.join(" ")}</span>}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        The audit runs in your browser. Nothing is sent anywhere. It checks length, wording patterns, and duplicates, but cannot tell whether a title is truthful or fits what the page really says.
+      </p>
+    </div>
+  );
+}
+
+The `<title>` is the **most important piece of text** you give a search engine, and the first thing a person usually sees. It is a headline, a promise, and a label, all in about sixty characters.
+
+You already learned the basics of the element in [The HTML Title Element](/tutorials/html/html-head/title): where it shows, how to escape characters, and how to change it with JavaScript. This lesson is about the **SEO side:** how search engines use titles, and how to write ones that **match what people are looking for** and **earn the click.**
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How search engines **use** the title
+- How to match **search intent**
+- Where to put **keywords** without stuffing
+- **Patterns** for home pages, articles, products, and categories
+- How to handle **brand names** and **separators**
+- Why search engines sometimes **rewrite** your title
+- How to find **duplicate and weak titles** across a site
+- How to **measure** whether a title works
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- Weak: vague, and the same on every page -->
+<title>Home</title>
+<title>Page 2</title>
+
+<!-- Stuffed: a list of keywords, not a title -->
+<title>Bread, Rye Bread, Best Bread, Bread Recipe, Buy Bread Online</title>
+
+<!-- Clickbait: promises something the page does not deliver -->
+<title>You Won't BELIEVE This Bread Trick!!!</title>
+
+<!-- Good: clear, specific, natural, and branded -->
+<title>Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin</title>
+```
+
+</TabItem>
+<TabItem value="output" label="Title Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TitleBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Change the page type, topic, detail, and brand. Notice how each type of page asks for a slightly different shape.
+
+## How Search Engines Use the Title
+
+- **A strong clue about the topic.** The title is one of the clearest signals of what a page is about. It is one of several, along with your headings, content, and links.
+- **The clickable headline.** In most results, the title is the big blue link people click.
+- **A label elsewhere.** Browser tabs, bookmarks, history, and shared links often use it too.
+
+:::info A title is a promise
+A search engine looks at whether your title **matches the page.** A title that says one thing while the page says another may be ignored or rewritten, and people who feel tricked leave quickly.
+:::
+
+## Match Search Intent
+
+Before writing, ask: **what is the person trying to do?** The same topic can have different intents:
+
+| Search | Probable intent | A fitting title |
+| :-- | :-- | :-- |
+| "how to bake rye bread" | Learn how | How to Bake Rye Bread: Easy No-Knead Recipe |
+| "best oven thermometer" | Compare, then choose | Best Oven Thermometers Tested: 6 Picks |
+| "bread bin buy" | Buy | Wooden Bread Bin with Lid |
+| "the bread bin" | Find a site | The Bread Bin: Easy Bread Recipes |
+| "oven thermometer not working" | Fix a problem | Oven Thermometer Not Working? 5 Fixes |
+
+Use the words your readers use, and make the title **promise the thing the page gives them.**
+
+## Keywords: Natural, Not Stuffed
+
+A **keyword** is simply a word or phrase people type. It makes sense to **include the main one in your title,** as long as the title reads like a human wrote it for a human.
+
+- **Put the most important words early.** If a title is cut off, the end is lost.
+- **Use the words people actually use,** such as "recipe," "how to," or "best."
+- **Use each important word once or twice,** not five times.
+- **Do not list variations** ("bread recipe, bread recipes, best bread recipe").
+- **Do not add words only for search engines.**
+
+:::warning Stuffing hurts
+Piling keywords into a title can make your page look low quality to people and to search engines. It does not help, and it can hurt.
+:::
+
+## Patterns That Work
+
+| Page type | Pattern | Example |
+| :-- | :-- | :-- |
+| Home | Brand, then what you offer | The Bread Bin: Easy Bread Recipes for Home Bakers |
+| Article or recipe | Topic, then a helpful detail, then brand | Rye Bread Recipe: Easy No-Knead Loaf \| The Bread Bin |
+| Product | Product, then a key detail, then brand | Wooden Bread Bin with Lid - Beech \| The Bread Bin |
+| Category | Group, then a detail, then brand | Bread Recipes (Beginner Friendly) \| The Bread Bin |
+| Guide or list | The number or promise, then the topic | 10 Baking Tips Every Beginner Needs |
+
+Treat them as starting points. A helpful detail might be a number, a year, a level ("for beginners"), a benefit, or a limit ("no knead").
+
+## Brand Names and Separators
+
+- **Brand last** on most pages, so the topic is read first. **Brand first** on the home page.
+- **One separator is enough:** a pipe `|`, a hyphen, or a dash, with spaces around it.
+- **Be consistent** across the site, so people recognise you.
+- **Shorten the brand** if it is long, or leave it out if space is tight.
+- **Do not repeat the brand in other parts** of the title.
+
+## How Long?
+
+There is no official limit. Search engines cut titles when they are **too wide for the space,** which is measured in **pixels,** not characters. A rough guide is about **50 to 60 characters,** and wide letters such as "W" and "M" take more room than "i" and "l."
+
+- **Front-load the important words.** Anything cut is lost.
+- **Do not obsess over the exact number.** A clear, slightly long title is better than a short, vague one.
+- **Check the result** in a preview tool, or in the search results themselves.
+
+## Why a Search Engine May Rewrite Your Title
+
+Search engines sometimes show a **different title** from the one you wrote. Common reasons:
+
+- The title is **empty, too generic, or the same** on many pages.
+- The title is **stuffed** or very long.
+- The title **does not match** the page's content or main heading.
+- The **search itself** suggests a different part of the page would answer it better.
+- It includes **boilerplate,** such as a long brand repeated on every page.
+
+If you see rewrites, do not panic. Compare the rewrite with your title, and ask what the search engine is telling you. Usually the fix is a clearer, more honest title that fits the page.
+
+## Title, Heading, and Social Title
+
+These three often get mixed up, and should be **related but not identical:**
+
+| Element | Purpose | Notes |
+| :-- | :-- | :-- |
+| `<title>` | The headline in search results and tabs | Includes the brand, and works on its own |
+| `<h1>` | The main heading on the page | Speaks to a visitor who is already there. See [Headings and SEO](./headings-and-seo) |
+| `og:title` | The headline when the link is shared | Can be shorter and friendlier. See [Open Graph](./open-graph) |
+
+They should **agree on the topic.** If the title says "Rye Bread Recipe" and the heading says "Welcome," something is wrong.
+
+## Test Your Titles
+
+Play the title duel. For each search, pick the title you would want to click.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TitleDuel />
+</>
+</BrowserWindow>
+
+## Audit a Whole Site
+
+Individual titles can be fine while the site as a whole is a mess. The most common site-wide problems are **missing titles, identical titles, and default titles** (such as "Home" or "Untitled"). Paste your own pages in below, or use the sample:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TitleAudit />
+</>
+</BrowserWindow>
+
+In a real site, you can find your titles with:
+
+- **Google Search Console,** which has reports for pages and queries.
+- A **crawler tool,** such as Screaming Frog, which lists every title on a site (check its current free limits).
+- **"View source"** on a few key pages.
+
+## Measure What Works
+
+After you change a title, give it time, then look at **Search Console's performance report.** Compare **clicks, impressions, and click-through rate (CTR)** for the page before and after. Two honest cautions:
+
+- **Change one thing at a time,** and wait a few weeks. Rankings and seasons move on their own.
+- **A higher CTR is good only if people are happy** when they arrive. A misleading title may raise clicks and hurt the site.
+
+## Titles in Docusaurus
+
+Docusaurus builds the `<title>` from each page's frontmatter `title`, combined with the site title set in `docusaurus.config.js`. So give every page a clear `title`. Docusaurus also has a frontmatter field for the description, and a `Head` component for adding custom tags to a page. The exact options change between versions, so check the current Docusaurus documentation.
+
+## Good Habits
+
+- **Write a unique title for every page.**
+- **Make it say what the page is,** in plain words.
+- **Put the main topic first,** and the brand last.
+- **Use natural wording,** including the words your readers use.
+- **Keep it around 50 to 60 characters,** without worrying about the exact number.
+- **Make it match the page,** and its `h1`.
+- **Read it aloud,** and ask whether you would click it.
+- **Audit the whole site** from time to time.
+
+## Title SEO Checklist
+
+- [ ] Every page has a title, and no two pages share one
+- [ ] The title matches the content and the search intent
+- [ ] The main topic comes first
+- [ ] Keywords are natural, with no stuffing
+- [ ] The brand is consistent, and usually last
+- [ ] The title is not in all capitals, and has no spammy punctuation
+- [ ] The title is roughly 50 to 60 characters
+- [ ] The title agrees with the `h1` and social title
+- [ ] No private data is in the title
+- [ ] Titles in each language are written in that language
+
+## Security and Privacy Notes
+
+- **Do not put private data in titles.** Names, emails, order numbers, and tokens in a title end up in browser history, tabs, bookmarks, screen shares, and sometimes in search results.
+- **Be careful with user-supplied titles.** If a title comes from user input (a profile, a post), escape it, and never build HTML from it without cleaning it. See [The HTML Title Element](/tutorials/html/html-head/title) for escaping.
+- **Do not impersonate.** A title that copies another brand's name to draw clicks can mislead people, and may break trademark or search rules. This is not legal advice.
+- **Avoid misleading claims.** Titles that promise "free," "official," or "guaranteed" without it being true can harm visitors, and your reputation.
+- **Be wary of "SEO title generators"** that ask you to paste private content, or require access to your site. Use trusted tools.
+
+## Global Audience Notes
+
+- **Write the title in the language of the page.** A French page needs a French title, and the `lang` attribute to match. See [International SEO](./international-seo).
+- **Keyword research differs by language.** People in different countries use different words for the same thing. Translate the **meaning,** not just the words.
+- **Characters take different widths.** Chinese, Japanese, and Korean characters are wide, so titles are usually shorter in characters. Arabic and Hebrew read right to left. Test how yours look.
+- **Check that special characters display** (use UTF-8), including accents and non-Latin scripts.
+- **Be careful with idioms and humour** that may not translate.
+- **Dates, currencies, and units** in titles should match the region.
+
+## Common Mistakes to Avoid
+
+1. **The same title on every page,** or the site name only.
+2. **"Home," "Untitled," or "Document."**
+3. **Keyword stuffing,** lists of words with commas or pipes.
+4. **Clickbait,** shouting, and repeated punctuation.
+5. **A title that does not match the page.**
+6. **Burying the topic after a long brand name.**
+7. **Titles that are far too long,** with the key words cut off.
+8. **A title and `h1` about different things.**
+9. **Putting private data in titles.**
+10. **Changing titles constantly,** and never waiting to see the effect.
+11. **Forgetting about translated pages,** which keep the original language title.
+12. **Never auditing the site.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the title builder with each of the four page types. What changes?
+2. Make a title that is too long, and one that is stuffed. Read what the checker says.
+3. Take the title duel. Which one was closest?
+4. Paste five pages from a site you built into the audit. Fix every problem it finds.
+5. Write titles for a home page, a product, a guide, and a category for a site you can imagine.
+6. Search for something you know, and read ten result titles. Which are the best, and why?
+7. Find a result whose title was clearly rewritten. What might have caused it?
+8. Compare `<title>` and `<h1>` on three pages. Do they agree on the topic?
+9. Check your site in Search Console, and find the pages with the most impressions and the lowest click-through rate.
+10. Bonus: change one title, wait three or four weeks, and compare its click-through rate with before.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why is the title important for SEO?</summary>
+
+It is one of the clearest signals of what a page is about, and it is usually the clickable headline in search results.
+
+</details>
+
+<details>
+<summary>2. What does it mean to match search intent?</summary>
+
+To write a title that promises what the searcher is trying to do or find: learn, compare, buy, find a site, or fix a problem.
+
+</details>
+
+<details>
+<summary>3. How should you use keywords in a title?</summary>
+
+Include the main words people use, early and naturally, once or twice. Do not stuff or list them.
+
+</details>
+
+<details>
+<summary>4. Where do the brand name and the separator go?</summary>
+
+On most pages the brand goes last, after a single separator, so the topic is read first. On the home page, the brand often goes first.
+
+</details>
+
+<details>
+<summary>5. Why might a search engine rewrite your title?</summary>
+
+Because it is empty, generic, duplicated, stuffed, too long, or does not match the page. The search itself may also suggest a better part of the page to use.
+
+</details>
+
+<details>
+<summary>6. How do you know a new title is working?</summary>
+
+Compare clicks, impressions, and click-through rate in Search Console before and after, changing one thing at a time and waiting a few weeks, while also checking that visitors are happy.
+
+</details>
+
+## Key Takeaways
+
+- **The title is your headline and your promise.** Make it clear and true.
+- **Match search intent,** and use the words your readers use.
+- **Put the topic first and the brand last** (home page: brand first).
+- **No stuffing, no clickbait, no shouting.**
+- **Aim for around 50 to 60 characters,** and front-load the key words.
+- **Every page needs its own title.** Audit the whole site.
+- **Search engines may rewrite weak titles.** Fix the cause.
+- **Measure, wait, and keep the visitor's trust.**
+
+Next, learn how to write the short summary that sits beneath your title, in [Meta Description](./meta-description).

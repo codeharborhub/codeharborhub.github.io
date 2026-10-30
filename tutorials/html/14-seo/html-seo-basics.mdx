@@ -1,0 +1,579 @@
+---
+id: html-seo-basics
+title: "HTML SEO Basics"
+sidebar_label: "HTML SEO Basics"
+sidebar_position: 2
+slug: /html/seo/html-seo-basics
+description: "Learn the HTML basics that help search engines find and understand a page: the head essentials, real headings and text, crawlable links, images, clean URLs, mobile and speed basics, and how JavaScript can hide content. Includes a crawler's-view lab, a URL checker, and a live HTML SEO basics checker with a messy and a fixed page."
+keywords:
+  - HTML SEO basics
+  - on-page SEO
+  - crawlable links
+  - SEO friendly HTML
+  - SEO friendly URLs
+  - JavaScript SEO
+  - view source SEO
+  - SEO checklist
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, on-page-seo, crawling, urls, links, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const crawlFeatures = [
+  {
+    id: "nav",
+    label: "A menu link",
+    good: {html: '<a href="/recipes">Recipes</a>', found: "A link to /recipes. The crawler can follow it to find more pages."},
+    risky: {html: '<span onclick="go(\'/recipes\')">Recipes</span>', found: "Just the word \"Recipes\". There is no href, so there is no link to follow."},
+  },
+  {
+    id: "heading",
+    label: "The page heading",
+    good: {html: "<h1>Rye Bread</h1>", found: "A top-level heading: \"Rye Bread\". The topic is clear."},
+    risky: {html: '<div class="big-text">Rye Bread</div>', found: "Plain text in a div. It looks big, but nothing says it is the main heading."},
+  },
+  {
+    id: "text",
+    label: "The description",
+    good: {html: "<p>Bake a crusty rye loaf with five simple ingredients.</p>", found: "A paragraph of readable text, ready to be indexed and translated."},
+    risky: {html: '<img src="description.png">', found: "An image with no alt text. The words in it cannot be read as text."},
+  },
+  {
+    id: "price",
+    label: "The cooking time",
+    good: {html: "<p>Cooking time: 45 minutes</p>", found: "The cooking time is in the HTML the server sends."},
+    risky: {html: '<p id="time"></p>\n<script>/* fills #time later */</script>', found: "An empty paragraph. Search engines may run the script, but it can be delayed, and some crawlers do not run scripts at all."},
+  },
+];
+
+export function CrawlerViewLab() {
+  const [choices, setChoices] = useState({nav: "risky", heading: "risky", text: "risky", price: "risky"});
+  const set = (id, value) => setChoices({...choices, [id]: value});
+  const goodCount = crawlFeatures.filter((item) => choices[item.id] === "good").length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>For each part of a page, choose how it is built. Then see what a crawler reading the raw HTML finds.</p>
+      {crawlFeatures.map((item) => (
+        <fieldset key={item.id} style={{margin: "0 0 0.5rem"}}>
+          <legend>{item.label}</legend>
+          <label style={{marginRight: "1rem"}}><input type="radio" name={"crawl-" + item.id} checked={choices[item.id] === "good"} onChange={() => set(item.id, "good")} /> Plain, meaningful HTML</label>
+          <label><input type="radio" name={"crawl-" + item.id} checked={choices[item.id] === "risky"} onChange={() => set(item.id, "risky")} /> Risky approach</label>
+        </fieldset>
+      ))}
+      <p style={{margin: "0.6rem 0 0.2rem"}}><strong>Your HTML:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.6rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{crawlFeatures.map((item) => item[choices[item.id]].html).join("\n")}</code></pre>
+      <p style={{margin: "0 0 0.2rem"}}><strong>What a crawler reading the raw HTML finds:</strong></p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}} aria-live="polite">
+        {crawlFeatures.map((item) => (
+          <li key={item.id}><strong>{item.label}:</strong> {item[choices[item.id]].found}</li>
+        ))}
+      </ul>
+      <p role="status" style={{margin: 0}}><strong>{goodCount}</strong> of {crawlFeatures.length} parts are built in a search-friendly way.</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simplified picture. Modern search engines can run JavaScript and understand many layouts, but plain HTML is the most reliable, and it also works better for people, screen readers, and slow connections.
+      </p>
+    </div>
+  );
+}
+
+export function checkUrl(input) {
+  const raw = input.trim();
+  const results = [];
+  if (raw === "") return results;
+  let path = raw;
+  let query = "";
+  const q = raw.indexOf("?");
+  if (q !== -1) { path = raw.slice(0, q); query = raw.slice(q + 1); }
+  const noOrigin = path.replace(/^https?:\/\/[^/]+/i, "");
+  results.push({ok: !/^http:\/\//i.test(raw), text: /^http:\/\//i.test(raw) ? "Uses http. Prefer https." : "Uses https, or a relative path."});
+  results.push({ok: noOrigin === noOrigin.toLowerCase(), text: noOrigin === noOrigin.toLowerCase() ? "All lowercase." : "Has capital letters. Paths can be case sensitive, so lowercase is safer."});
+  results.push({ok: !/\s|%20/.test(raw), text: /\s|%20/.test(raw) ? "Contains spaces. Use hyphens." : "No spaces."});
+  results.push({ok: noOrigin.indexOf("_") === -1, text: noOrigin.indexOf("_") === -1 ? "No underscores." : "Has underscores. Hyphens are easier to read as word breaks."});
+  const params = query === "" ? 0 : query.split("&").length;
+  results.push({ok: params <= 1, text: params === 0 ? "No query parameters." : params + " query parameter" + (params > 1 ? "s" : "") + (params > 1 ? ". Many parameters can create endless duplicate pages." : ".")});
+  results.push({ok: noOrigin.length <= 75, text: noOrigin.length <= 75 ? "A reasonable length (" + noOrigin.length + " characters)." : "Long (" + noOrigin.length + " characters). Shorter addresses are easier to read and share."});
+  const lastPart = noOrigin.split("/").filter(Boolean).pop() || "";
+  const hasWords = /[a-z]{4,}/i.test(lastPart);
+  results.push({ok: hasWords, text: hasWords ? "Has readable words." : "No readable words. An address like /recipes/rye-bread tells people what to expect."});
+  results.push({ok: !/(sessionid|sid|phpsessid)=/i.test(query), text: /(sessionid|sid|phpsessid)=/i.test(query) ? "Contains a session id. This is private data and creates duplicate pages." : "No session id."});
+  return results;
+}
+
+export function UrlLab() {
+  const examples = ["https://thebreadbin.example/recipes/rye-bread", "http://thebreadbin.example/Recipes/Rye_Bread%20Easy?id=482&ref=nav&sid=a8f3", "/recipes/rye-bread/"];
+  const [url, setUrl] = useState(examples[1]);
+  const results = checkUrl(url);
+  const bad = results.filter((item) => !item.ok).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="url-input">Web address (or path) to check</label><br />
+        <input id="url-input" type="text" value={url} onChange={(event) => setUrl(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.6rem", display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        <button type="button" onClick={() => setUrl(examples[0])}>A clean address</button>
+        <button type="button" onClick={() => setUrl(examples[1])}>A messy address</button>
+        <button type="button" onClick={() => setUrl(examples[2])}>A relative path</button>
+      </p>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{bad}</strong> {bad === 1 ? "thing" : "things"} to improve.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {results.map((item, index) => (
+          <li key={index}><strong>{item.ok ? "OK:" : "Improve:"}</strong> {item.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        These are friendly guidelines, not laws. Search engines can handle many kinds of addresses. Clear, stable, readable ones are simply easier for people, and less likely to cause problems.
+      </p>
+    </div>
+  );
+}
+
+export const basicsSamples = {
+  messy: '<html>\n<head>\n<title>Home</title>\n<meta name="keywords" content="bread, rye, recipe, baking, best bread">\n<meta name="robots" content="noindex">\n</head>\n<body>\n<div class="big">Rye Bread</div>\n<h1>Welcome</h1>\n<h1>Ingredients</h1>\n<a href="/more">click here</a>\n<a>Recipes</a>\n<img src="IMG_0042.jpg">\n<img src="loaf.jpg" alt="image">\n</body>\n</html>',
+  fixed: '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin</title>\n<meta name="description" content="Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools.">\n<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">\n</head>\n<body>\n<main>\n<h1>Easy No-Knead Rye Bread</h1>\n<h2>Ingredients</h2>\n<p><a href="/recipes/rye-bread/steps">Read the step-by-step method</a></p>\n<img src="loaf.jpg" alt="A rye loaf cooling on a wooden board" width="800" height="600">\n</main>\n</body>\n</html>',
+};
+
+export function BasicsCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(basicsSamples.messy);
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const results = [];
+  const check = (ok, good, bad, level) => results.push({ok, text: ok ? good : bad, level: level || "problem"});
+  check(/^\s*<!doctype html/i.test(html), "Starts with the HTML doctype.", "No doctype. Start with <!doctype html> so browsers use standards mode.");
+  const lang = doc.documentElement.getAttribute("lang");
+  check(!!lang, "The html element has lang=\"" + lang + "\".", "No lang attribute on the html element.");
+  check(!!doc.querySelector("meta[charset]"), "Character encoding is declared.", "No meta charset. Add <meta charset=\"utf-8\">.");
+  check(!!doc.querySelector('meta[name="viewport"]'), "The viewport meta tag is present.", "No viewport meta tag, so mobile pages may not scale properly.");
+  const title = doc.querySelector("title");
+  const titleText = title ? title.textContent.trim() : "";
+  if (!title || titleText === "") check(false, "", "No title, or an empty one.");
+  else if (/^(home|untitled|document|index|page)$/i.test(titleText)) check(false, "", "The title \"" + titleText + "\" is too generic. Say what the page is about.");
+  else if (titleText.length > 65) check(false, "", "The title is " + titleText.length + " characters, so it may be cut off.", "note");
+  else check(true, "The title is present and specific (" + titleText.length + " characters).", "");
+  const desc = doc.querySelector('meta[name="description"]');
+  const descText = desc ? (desc.getAttribute("content") || "").trim() : "";
+  check(descText !== "", "A meta description is present (" + descText.length + " characters).", "No meta description. Search engines may pick a snippet from the page.", "note");
+  const h1s = doc.querySelectorAll("h1");
+  check(h1s.length === 1, "Exactly one h1.", h1s.length === 0 ? "No h1. Add one clear main heading." : h1s.length + " h1 headings. Most pages should have one.");
+  check(!!doc.querySelector("main"), "There is a main element.", "No main element. Wrap the main content in one.", "note");
+  check(!!doc.querySelector('link[rel="canonical"]'), "A canonical link is present.", "No canonical link. Add one if the page can be reached at more than one address.", "note");
+  const robots = doc.querySelector('meta[name="robots"]');
+  if (robots && /noindex/i.test(robots.getAttribute("content") || "")) check(false, "", "The robots meta says noindex. This page asks not to be listed. Is that on purpose?");
+  if (doc.querySelector('meta[name="keywords"]')) check(false, "", "A meta keywords tag. Major search engines ignore it, so you can remove it.", "note");
+  const noHref = doc.querySelectorAll("a:not([href])");
+  check(noHref.length === 0, "Every a element has an href.", noHref.length + " a element" + (noHref.length > 1 ? "s have" : " has") + " no href. Crawlers cannot follow it.");
+  const vague = Array.from(doc.querySelectorAll("a[href]")).filter((el) => /^(click here|here|read more|more|link)$/i.test((el.textContent || "").trim()));
+  check(vague.length === 0, "Link texts are descriptive.", vague.length + " link" + (vague.length > 1 ? "s say" : " says") + " something vague, like \"" + (vague[0] ? vague[0].textContent.trim() : "") + "\". Say where it goes.");
+  const imgs = Array.from(doc.querySelectorAll("img"));
+  const noAlt = imgs.filter((el) => !el.hasAttribute("alt"));
+  const badAlt = imgs.filter((el) => /^(image|photo|picture|img|graphic)?\s*\d*$/i.test((el.getAttribute("alt") || "").trim()) && el.hasAttribute("alt") && (el.getAttribute("alt") || "").trim() !== "");
+  const badName = imgs.filter((el) => /^(img|dsc|image|photo)[_-]?\d+/i.test((el.getAttribute("src") || "").split("/").pop()));
+  if (imgs.length > 0) {
+    check(noAlt.length === 0, "Every image has an alt attribute.", noAlt.length + " image" + (noAlt.length > 1 ? "s have" : " has") + " no alt attribute.");
+    check(badAlt.length === 0, "Alt text is descriptive.", badAlt.length + " image" + (badAlt.length > 1 ? "s have" : " has") + " vague alt text such as \"image\". Describe what the image shows.");
+    check(badName.length === 0, "Image file names are meaningful.", badName.length + " image file name" + (badName.length > 1 ? "s look" : " looks") + " like a camera default (such as IMG_0042). A clear name helps a little.", "note");
+    const noSize = imgs.filter((el) => !el.hasAttribute("width") || !el.hasAttribute("height"));
+    check(noSize.length === 0, "Images have width and height.", noSize.length + " image" + (noSize.length > 1 ? "s have" : " has") + " no width and height. The page may jump around as images load.", "note");
+  }
+  const problems = results.filter((item) => !item.ok && item.level === "problem").length;
+  const notes = results.filter((item) => !item.ok && item.level === "note").length;
+  const choose = (value) => { setWhich(value); setHtml(basicsSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="bs-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="bs-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="bs-html">Full HTML page (edit it freely)</label><br />
+        <textarea id="bs-html" rows={14} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{problems}</strong> problems, <strong>{notes}</strong> suggestions.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {results.map((item, index) => (
+          <li key={index} style={{marginBottom: "0.25rem"}}><strong>{item.ok ? "OK:" : (item.level === "note" ? "Suggestion:" : "Problem:")}</strong> {item.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a small teaching checker. It reads the HTML only, so it cannot judge content quality, speed, links from other sites, or what a search engine will really do. Use it with Search Console and Lighthouse, not instead of them.
+      </p>
+    </div>
+  );
+}
+
+export function BasicsChecker() {
+  return <BrowserOnly>{() => <BasicsCheckerInner />}</BrowserOnly>;
+}
+
+Before you learn any single tag, it helps to see the **whole picture.** What does a search engine actually receive when it visits your page, and what in that HTML helps it make sense of it?
+
+This lesson is your **map.** It covers the basics that every page needs, with a quick look at each. The next lessons zoom in on the big ones: titles, descriptions, headings, semantics, canonical links, robots, structured data, and sharing.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a search engine **receives** when it visits your page
+- The **head essentials** every page needs
+- Writing **real text, headings, and links** that crawlers can use
+- How to treat **images** and **URLs**
+- **Mobile and speed** basics that live in your HTML
+- How **JavaScript** can hide content from crawlers
+- Why **status codes, sitemaps, and robots.txt** matter
+- How to **check** a page
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin</title>
+  <meta name="description" content="Bake a crusty rye loaf at home with five simple ingredients.">
+  <link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+</head>
+<body>
+  <header>
+    <nav aria-label="Main">
+      <a href="/recipes">Recipes</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Easy No-Knead Rye Bread</h1>
+    <p>Bake a crusty rye loaf with five simple ingredients.</p>
+    <img src="/img/rye-bread.jpg" alt="A rye loaf cooling on a wooden board" width="800" height="600">
+    <h2>Ingredients</h2>
+    <ul>
+      <li>500 g rye flour</li>
+      <li>350 ml warm water</li>
+    </ul>
+    <p><a href="/recipes/rye-bread/steps">Read the step-by-step method</a></p>
+  </main>
+  <footer>...</footer>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="output" label="Crawler's View Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CrawlerViewLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch each part from the risky choice to plain HTML, and watch what the crawler can suddenly find. Nothing here is clever. It is just **meaningful HTML.**
+
+## What a Search Engine Receives
+
+When a crawler visits your page, it first downloads the **raw HTML** from your server. It looks for:
+
+- The **head:** title, description, canonical, robots, language.
+- The **text** in the body, and how it is organised into headings and sections.
+- The **links,** to find more pages.
+- The **images,** with their alt text.
+- Any **structured data.**
+
+Many search engines can then also **run your JavaScript** to see the final page, but that step can be slower, can be limited, and does not happen with every crawler. So the safest rule is: **put the important things in the HTML itself.**
+
+:::tip See what a crawler sees
+Right-click your page and choose **View page source.** This shows the raw HTML the server sent, before any scripts ran. If your key text, headings, and links are missing there, they may be missing for crawlers too. (The browser's Elements panel in developer tools shows the page after scripts have run, which is different.)
+:::
+
+## The Head Essentials
+
+| Tag | Why it matters |
+| :-- | :-- |
+| `<!doctype html>` | Tells browsers to use standards mode |
+| `<html lang="en">` | Says what language the page is in |
+| `<meta charset="utf-8">` | Makes sure characters display correctly |
+| `<meta name="viewport" ...>` | Makes the page scale properly on phones |
+| `<title>` | Names the page in results and tabs |
+| `<meta name="description">` | Offers a summary for the result snippet |
+| `<link rel="canonical">` | Names the main address of the page |
+
+You can read the basics of the first few in [Title](/tutorials/html/html-head/title), [Viewport](/tutorials/html/html-head/viewport), and [Charset](/tutorials/html/html-head/charset). The next lessons cover title, description, and canonical in an SEO light.
+
+## The Body: Real Text, Real Structure
+
+Search engines are built to read **text.** Help them:
+
+- **Put your content in real text,** not in images. If you must use an image of text, add alt text that repeats the words.
+- **Use one `h1`** that says what the page is about, and `h2` to `h6` for sections. See [Headings and SEO](./headings-and-seo).
+- **Use semantic elements** such as `main`, `nav`, `article`, `section`, and `footer`. See [Semantic HTML and SEO](./semantic-html-and-seo).
+- **Use lists and tables** for lists and data. They carry meaning.
+- **Write one clear topic per page,** answering a real question. If you cover two different topics, make two pages.
+- **Write for people.** Repeating a keyword over and over helps no one.
+
+## Links Search Engines Can Follow
+
+Crawlers discover your site by **following links.** A link is only a link if it is a real `a` element with an `href`.
+
+```html
+<!-- Good: a crawler can follow it, and so can a keyboard -->
+<a href="/recipes/rye-bread">Rye bread recipe</a>
+
+<!-- Poor: no href, so no link -->
+<a onclick="go('/recipes/rye-bread')">Rye bread recipe</a>
+<span onclick="go('/recipes/rye-bread')">Rye bread recipe</span>
+```
+
+- **Write descriptive link text.** "Rye bread recipe" says far more than "click here." It helps people, screen readers, and crawlers. See also [Accessible Links](/tutorials/html/accessibility/accessible-links).
+- **Link between your own pages,** so no page is an "orphan" with nothing pointing at it. See [Internal Links](/tutorials/html/links-and-navigation/internal-links).
+- **Choose `rel` values for outside links** when it matters: `rel="nofollow"` for links you do not want to vouch for, `rel="sponsored"` for paid links, and `rel="ugc"` for links in user comments. See [External Links](/tutorials/html/links-and-navigation/external-links).
+
+## Images
+
+- **Add useful alt text** that describes what the image shows. It helps accessibility and image search. See [Alt Text](/tutorials/html/accessibility/alt-text).
+- **Give images clear file names,** such as `rye-bread-loaf.jpg` rather than `IMG_0042.jpg`.
+- **Set `width` and `height`,** so the page does not jump while images load.
+- **Use the right size and format.** Huge images slow the page. See [Responsive Images](/tutorials/html/images/responsive-images).
+- **Lazy-load images below the fold** with `loading="lazy"`, but not your main image at the top. See [Lazy Loading](/tutorials/html/images/lazy-loading).
+
+## Clean URLs
+
+An address is part of the experience. People see it, share it, and sometimes read it aloud. Try the checker:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<UrlLab />
+</>
+</BrowserWindow>
+
+Some friendly habits:
+
+- **Use words that describe the page:** `/recipes/rye-bread`.
+- **Use lowercase and hyphens,** not spaces or underscores.
+- **Keep them short and stable.** If an address must change, **redirect** the old one to the new one with a permanent redirect (301).
+- **Avoid long strings of parameters** and anything private, such as session ids or emails.
+- **Use https** everywhere.
+
+## Mobile and Speed Basics
+
+Most searches today happen on phones, and search engines largely look at the **mobile version** of your page. A page that is slow or hard to use on a phone is hard to love. Several basics live in your HTML:
+
+- **The viewport meta tag,** so the page scales to the device.
+- **Responsive layouts,** which are covered in your CSS lessons.
+- **`width` and `height` on images,** to avoid layout jumps.
+- **`defer` or `async` on scripts,** so they do not block the page. See [Script](/tutorials/html/html-head/script).
+- **Small, compressed images** and few heavy third-party scripts.
+- **Large tap targets** and readable text.
+
+Speed and page experience are only **part** of ranking, but slow pages also lose visitors, whatever the ranking.
+
+## JavaScript and SEO
+
+Many modern sites build pages in the browser with JavaScript. That can work, but it adds risk:
+
+- The crawler may see an **empty page** at first, and fill in the content later.
+- Some search engines, social apps, and other bots **do not run scripts.**
+- Content that only loads after a click or scroll may **never be seen.**
+- Links created without `href` are **not followed.**
+
+How to stay safe:
+
+1. **Send the important content in the first HTML** (server-side rendering or static generation). Docusaurus, which powers this site, builds static HTML pages for exactly this reason.
+2. **Use real links** for navigation, even in a single-page app.
+3. **Give each page its own address,** title, and description.
+4. **Test with "view source"** and with Search Console's URL inspection tool.
+
+## Status Codes, Sitemaps, and robots.txt
+
+A few things sit outside your HTML, but they affect everything:
+
+- **Status codes.** A working page returns 200. A moved page returns a redirect (301 for permanent). A missing page should return **404.** A page that says "not found" but returns 200 is called a **soft 404,** and confuses search engines.
+- **A sitemap** (usually `sitemap.xml`) lists the pages you want found. It helps, but it does not guarantee they are indexed.
+- **robots.txt** is a file at the top of your site that asks crawlers which paths to avoid. It controls **crawling,** not whether a page can appear in results. The `robots` meta tag is covered in [Robots Meta](./robots-meta).
+
+## Check Your Page
+
+Run the checker on the messy page. Fix every problem in the box, and then try the fixed page.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="check.html"
+<!-- Things the checker looks for -->
+<title>Home</title>                   <!-- too generic -->
+<h1>Welcome</h1>                      <!-- vague, and there are two -->
+<a>Recipes</a>                        <!-- no href -->
+<a href="/more">click here</a>        <!-- vague link text -->
+<img src="IMG_0042.jpg">              <!-- no alt, no size, bad file name -->
+<meta name="robots" content="noindex"> <!-- is this on purpose? -->
+```
+
+</TabItem>
+<TabItem value="output" label="Basics Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BasicsChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+### Check it by hand
+
+1. **View the page source.** Is your content in there?
+2. **Search for your own page** with `site:yourdomain.com` in a search engine, to see what is listed.
+3. **Use Google Search Console** (or Bing Webmaster Tools) and its URL inspection tool, to see how a search engine saw your page.
+4. **Run Lighthouse** in Chrome DevTools for a basic SEO, speed, and accessibility check.
+5. **Try your page on a phone,** on a slow connection if you can.
+
+## Good Habits
+
+- **Put the important content in the HTML.**
+- **Give each page one purpose,** a unique title, and a description.
+- **Use real links with descriptive text.**
+- **Describe images,** and give them sizes.
+- **Keep addresses clean and stable,** with redirects when they change.
+- **Test on mobile,** and on slow connections.
+- **Check with "view source" and Search Console.**
+- **Be patient.** SEO takes time.
+
+## SEO Basics Checklist
+
+- [ ] `doctype`, `lang`, `charset`, and `viewport` are set
+- [ ] The title is unique and descriptive
+- [ ] There is a meta description
+- [ ] There is one `h1`, and headings follow an outline
+- [ ] Main content is real text inside `main`
+- [ ] Links are real `a` elements with `href`, and descriptive text
+- [ ] Images have alt text, clear names, and width and height
+- [ ] Addresses are clean, lowercase, and stable, and use https
+- [ ] Old addresses redirect with 301
+- [ ] Missing pages return 404
+- [ ] Important content appears in "view source"
+- [ ] A sitemap exists, and robots.txt does not block what you want found
+
+## Security and Privacy Notes
+
+- **Do not put private information in URLs.** Emails, tokens, and session ids in an address end up in browser history, logs, and shared links, and can be indexed.
+- **Check what is public.** Staging sites, test pages, backups, and admin screens can be found by crawlers if they are reachable. Protect them with a login, and not only with `noindex` or robots.txt.
+- **`robots.txt` is public.** Anyone can read it, so do not list secret paths in it.
+- **Use https.** It protects visitors, and search engines prefer it.
+- **Watch out for hidden text and cloaking,** showing crawlers something different from what people see. It is against search guidelines, and it can look like a security problem.
+- **Use `rel="ugc"` or `rel="nofollow"`** on links added by visitors, and moderate comments, to limit spam.
+- **Respect privacy laws** if you add analytics or tracking. This is not legal advice, so check the rules that apply to you.
+
+## Global Audience Notes
+
+- **Set `lang` correctly,** and write each page in one main language. See [International SEO](./international-seo).
+- **Use UTF-8** so names and scripts from any language display correctly.
+- **Addresses can contain non-English words.** Many sites keep addresses in a simple form (transliterated or English) for easier sharing. Whatever you choose, be consistent.
+- **Mobile and slow networks matter most** in many regions. Test on modest phones.
+- **Search engines differ by country.** Check the guidelines of the ones your readers use.
+- **Date, currency, and units** should match your readers' region.
+
+## Common Mistakes to Avoid
+
+1. **Hiding content in scripts,** so "view source" shows an empty page.
+2. **Links with no `href`,** or buttons used as links.
+3. **Text inside images** with no alt text.
+4. **Generic titles** such as "Home" on every page.
+5. **No `h1`,** or several of them, or headings used only for style.
+6. **Link text like "click here."**
+7. **Messy, long, changing addresses,** with no redirects.
+8. **Missing viewport tag,** so phones show a tiny page.
+9. **Large, unsized images.**
+10. **Using `noindex` by accident,** often left over from testing.
+11. **Soft 404 pages** that say "not found" but return 200.
+12. **Never checking** what search engines actually see.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the crawler's view lab. Which risky choice would you be most likely to make by accident?
+2. Use the URL checker on three addresses from your own projects.
+3. Run the basics checker on the messy page, fix every problem, and run it again.
+4. Open a page you built, and choose **View page source.** Is your main content there?
+5. Search for `site:` and your domain. How many of your pages are listed?
+6. Find a "click here" link in one of your pages, and rewrite it.
+7. Add `width` and `height` to every image in a page.
+8. Add a meta description and a canonical link to a page.
+9. Run Lighthouse on a page, and fix one SEO item it reports.
+10. Bonus: build a three-page site where every page is linked from at least one other page, and has a unique title and description.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a crawler first receive from your page?</summary>
+
+The raw HTML from the server. It reads the head, the text and structure, the links, the images, and any structured data. Running JavaScript is a later, less certain step.
+
+</details>
+
+<details>
+<summary>2. What are the head essentials?</summary>
+
+The doctype, the `lang` attribute, the charset, the viewport meta tag, a title, a meta description, and, when needed, a canonical link.
+
+</details>
+
+<details>
+<summary>3. What makes a link something a crawler can follow?</summary>
+
+It must be an `&lt;a&gt;` element with an `href`. Click handlers on other elements are not links.
+
+</details>
+
+<details>
+<summary>4. Why set width and height on images?</summary>
+
+So the browser can reserve space for them, and the page does not jump around while images load.
+
+</details>
+
+<details>
+<summary>5. How can JavaScript hurt SEO?</summary>
+
+Content that only appears after scripts run can be missed or delayed, and some crawlers do not run scripts. Send important content in the HTML, and use real links.
+
+</details>
+
+<details>
+<summary>6. What is a soft 404?</summary>
+
+A page that tells people "not found" but returns a 200 (success) status code. Return a real 404 for missing pages.
+
+</details>
+
+## Key Takeaways
+
+- **Put the important content in the HTML.** "View source" shows what a crawler gets first.
+- **Every page needs the head essentials,** a unique title, and a description.
+- **Use real text, headings, and semantic elements** so the structure is clear.
+- **Real links with descriptive text** help crawlers, people, and screen readers.
+- **Describe images,** give them sizes, and name them clearly.
+- **Keep addresses clean and stable,** and redirect when they change.
+- **Mobile, speed, and JavaScript choices** can help or hurt.
+- **Check your pages,** and be patient.
+
+Next, learn how to write a title that people and search engines both understand, in [Title (SEO)](./title-seo).
