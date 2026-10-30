@@ -1,0 +1,556 @@
+---
+id: html-seo-canonical
+title: "Canonical Links"
+sidebar_label: "Canonical Links"
+sidebar_position: 7
+slug: /html/seo/canonical-links
+description: "Learn how rel=canonical tells search engines which address is the main version of a page. Understand duplicate URLs, self-referencing canonicals, cross-domain canonicals, redirects versus canonicals versus noindex, pagination, parameters, and common mistakes. Includes a URL normaliser, a canonical decision quiz, and a live canonical checker."
+keywords:
+  - canonical link
+  - rel canonical
+  - duplicate content
+  - canonical URL
+  - self-referencing canonical
+  - cross-domain canonical
+  - 301 redirect vs canonical
+  - URL parameters SEO
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, canonical, duplicate-content, urls, redirects, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const trackingParams = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "fbclid", "gclid", "ref", "sid", "sessionid"];
+
+export function normalise(input, options) {
+  const steps = [];
+  let url;
+  try {
+    url = new URL(input.trim());
+  } catch (error) {
+    return {canonical: "", steps: ["That does not look like a full address. Start with https://."]};
+  }
+  if (url.protocol === "http:") { url.protocol = "https:"; steps.push("Use https."); }
+  const host = url.hostname.toLowerCase();
+  let newHost = host;
+  if (options.www && !host.startsWith("www.")) { newHost = "www." + host; steps.push("Use the www version of the host, to match your chosen style."); }
+  if (!options.www && host.startsWith("www.")) { newHost = host.slice(4); steps.push("Use the host without www, to match your chosen style."); }
+  if (newHost !== url.hostname) url.hostname = newHost;
+  else if (url.hostname !== input.trim().replace(/^https?:\/\//i, "").split(/[/?#]/)[0].toLowerCase()) steps.push("Lowercase the host.");
+  if (options.strip) {
+    const keys = Array.from(url.searchParams.keys());
+    const removed = keys.filter((key) => trackingParams.indexOf(key.toLowerCase()) !== -1);
+    removed.forEach((key) => url.searchParams.delete(key));
+    if (removed.length > 0) steps.push("Remove tracking parameters (" + removed.join(", ") + ").");
+  }
+  if (url.hash) { url.hash = ""; steps.push("Remove the #fragment."); }
+  let path = url.pathname;
+  if (/\/index\.html?$/i.test(path)) { path = path.replace(/index\.html?$/i, ""); steps.push("Remove index.html."); }
+  if (path !== path.toLowerCase()) { path = path.toLowerCase(); steps.push("Use a lowercase path (only if your site treats paths as lowercase)."); }
+  if (path !== "/" ) {
+    if (options.slash && !path.endsWith("/") && !/\.[a-z0-9]{2,5}$/i.test(path)) { path += "/"; steps.push("Add a trailing slash, to match your chosen style."); }
+    if (!options.slash && path.endsWith("/")) { path = path.slice(0, -1); steps.push("Remove the trailing slash, to match your chosen style."); }
+  }
+  url.pathname = path;
+  const out = url.origin + url.pathname + url.search;
+  if (steps.length === 0) steps.push("Nothing to change. This address is already in the preferred form.");
+  return {canonical: out, steps};
+}
+
+export function CanonicalNormaliser() {
+  const examples = [
+    "http://WWW.TheBreadBin.example/Recipes/Rye-Bread/index.html?utm_source=news&utm_medium=email#comments",
+    "https://thebreadbin.example/recipes/rye-bread?sort=newest&sessionid=a8f3",
+    "https://www.thebreadbin.example/recipes/rye-bread/",
+  ];
+  const [input, setInput] = useState(examples[0]);
+  const [www, setWww] = useState(false);
+  const [slash, setSlash] = useState(false);
+  const [strip, setStrip] = useState(true);
+  const result = normalise(input, {www, slash, strip});
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="cn-url">An address people might arrive on</label><br />
+        <input id="cn-url" type="text" value={input} onChange={(event) => setInput(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.6rem", display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        {examples.map((example, index) => (<button key={index} type="button" onClick={() => setInput(example)}>Example {index + 1}</button>))}
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Your site's preferred style</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={www} onChange={(event) => setWww(event.target.checked)} /> Use www in the host</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={slash} onChange={(event) => setSlash(event.target.checked)} /> Use a trailing slash on paths</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={strip} onChange={(event) => setStrip(event.target.checked)} /> Remove tracking parameters</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.3rem"}}><strong>Steps to the preferred address:</strong></p>
+      <ul style={{margin: "0 0 0.6rem", paddingLeft: "1.2rem"}} aria-live="polite">
+        {result.steps.map((step, index) => (<li key={index}>{step}</li>))}
+      </ul>
+      {result.canonical !== "" ? (
+        <div>
+          <p style={{margin: "0 0 0.3rem"}}><strong>The tag every one of those variants should carry:</strong></p>
+          <pre style={{margin: 0, padding: "0.5rem", overflowX: "auto", whiteSpace: "pre-wrap", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{'<link rel="canonical" href="' + result.canonical + '">'}</code></pre>
+        </div>
+      ) : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a teaching tool. Only your own site knows which forms of an address really show the same page. Paths can be case sensitive, and some parameters (such as a page number or a language) do change the content. Never remove a parameter that changes what the page shows.
+      </p>
+    </div>
+  );
+}
+
+export const decisionScenarios = [
+  {id: "c1", text: "A unique page with no duplicates, at one address", expect: "self", why: "Point the canonical at itself. It is a clear, safe habit."},
+  {id: "c2", text: "The same article is reachable at /recipes/rye?utm_source=news", expect: "other", why: "The parameter version should name the clean address as its canonical."},
+  {id: "c3", text: "A page has moved to a new address for good", expect: "redirect", why: "Send a permanent redirect (301) from the old address, so people and search engines both end up in the right place."},
+  {id: "c4", text: "Your http pages also load over https", expect: "redirect", why: "Redirect http to https. A canonical can back it up, but the redirect does the main job."},
+  {id: "c5", text: "Your site's internal search results pages", expect: "noindex", why: "These are thin, endless pages. Ask search engines not to index them (noindex), instead of pointing them anywhere."},
+  {id: "c6", text: "A printer-friendly version of an article", expect: "other", why: "It is the same content. Its canonical should point to the main article."},
+  {id: "c7", text: "Two different products that happen to look similar", expect: "self", why: "They are different pages. Each should point to itself. Do not canonicalise one to the other."},
+  {id: "c8", text: "A partner site republishes your article, and you asked for a canonical", expect: "other", why: "The partner's copy can name your original as its canonical. That is their page to change, and they must agree."},
+];
+
+export function CanonicalDecisions() {
+  const [picks, setPicks] = useState({});
+  const [shown, setShown] = useState(false);
+  const labels = {self: "Canonical to itself", other: "Canonical to another page", redirect: "301 redirect", noindex: "noindex"};
+  const right = decisionScenarios.filter((item) => picks[item.id] === item.expect).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>For each situation, choose the best approach.</p>
+      {decisionScenarios.map((item) => (
+        <fieldset key={item.id} style={{margin: "0 0 0.5rem"}}>
+          <legend>{item.text}</legend>
+          {Object.keys(labels).map((key) => (
+            <label key={key} style={{marginRight: "0.8rem", display: "inline-block"}}>
+              <input type="radio" name={"dec-" + item.id} checked={picks[item.id] === key} onChange={() => setPicks({...picks, [item.id]: key})} /> {labels[key]}
+            </label>
+          ))}
+          {shown && picks[item.id] ? <p style={{margin: "0.3rem 0 0"}}><strong>{picks[item.id] === item.expect ? "Good." : "Better: " + labels[item.expect] + "."}</strong> {item.why}</p> : null}
+        </fieldset>
+      ))}
+      <p style={{margin: "0.4rem 0"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my choices</button>{" "}
+        <button type="button" onClick={() => { setPicks({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? right + " of " + decisionScenarios.length + " match the usual advice." : ""}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Real sites have exceptions, and search engines make their own decisions. These are the usual, safe choices.
+      </p>
+    </div>
+  );
+}
+
+export const canonicalSamples = {
+  messy: {url: "https://www.thebreadbin.example/recipes/rye-bread?utm_source=news", html: '<!doctype html>\n<html lang="en">\n<head>\n<title>Rye Bread</title>\n<link rel="canonical" href="/recipes/rye-bread">\n<link rel="canonical" href="http://thebreadbin.example/recipes/rye-bread#top">\n<meta name="robots" content="noindex">\n</head>\n<body>\n<link rel="canonical" href="https://thebreadbin.example/other">\n<h1>Rye Bread</h1>\n</body>\n</html>'},
+  fixed: {url: "https://thebreadbin.example/recipes/rye-bread?utm_source=news", html: '<!doctype html>\n<html lang="en">\n<head>\n<title>Rye Bread Recipe | The Bread Bin</title>\n<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">\n</head>\n<body>\n<h1>Rye Bread</h1>\n</body>\n</html>'},
+};
+
+export function CanonicalCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [pageUrl, setPageUrl] = useState(canonicalSamples.messy.url);
+  const [html, setHtml] = useState(canonicalSamples.messy.html);
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const all = Array.from(doc.querySelectorAll('link[rel~="canonical"]'));
+  const inHead = all.filter((el) => el.closest("head"));
+  const results = [];
+  const add = (ok, good, bad, level) => results.push({ok, text: ok ? good : bad, level: level || "problem"});
+  add(all.length > 0, "A canonical link is present.", "No canonical link. Add one, even if it points to the page itself.", "note");
+  if (all.length > 0) {
+    add(all.length === 1, "Only one canonical link.", all.length + " canonical links. Search engines may ignore all of them. Keep one.");
+    add(inHead.length === all.length, "It is in the head.", (all.length - inHead.length) + " canonical link(s) are outside the head, where they are ignored. Move them into the head.");
+    const first = inHead[0] || all[0];
+    const href = (first.getAttribute("href") || "").trim();
+    add(href !== "", "The href is not empty.", "The href is empty.");
+    if (href !== "") {
+      add(/^https?:\/\//i.test(href), "The address is absolute.", "The address is relative (\"" + href + "\"). Use a full address starting with https://.");
+      add(!/^http:\/\//i.test(href), "The address uses https, or is relative.", "The canonical uses http. Use https if your site supports it.", "note");
+      add(href.indexOf("#") === -1, "No fragment.", "The address has a #fragment. Remove it.");
+      add(!/[?&](utm_|fbclid|gclid|sessionid|sid=)/i.test(href), "No tracking parameters.", "The address contains tracking or session parameters. Use the clean address.");
+      try {
+        const target = new URL(href, pageUrl);
+        const current = new URL(pageUrl);
+        const same = target.origin + target.pathname === current.origin + current.pathname;
+        if (target.origin !== current.origin) add(false, "", "The canonical points to a different site (" + target.origin + "). That is only right if you meant to give credit to that site.", "note");
+        else if (same) add(true, "It points to the page itself (self-referencing), which is a safe habit.", "");
+        else add(false, "", "It points to a different page (" + target.pathname + "). That is right only if this page is a duplicate or variant of that one.", "note");
+      } catch (error) {
+        add(false, "", "The address could not be understood.");
+      }
+    }
+  }
+  const robots = doc.querySelector('meta[name="robots"]');
+  if (robots && /noindex/i.test(robots.getAttribute("content") || "") && all.length > 0) add(false, "", "This page has both a canonical and noindex. They send mixed signals. Choose one: noindex to keep it out, or a canonical to merge it.");
+  const problems = results.filter((item) => !item.ok && item.level === "problem").length;
+  const notes = results.filter((item) => !item.ok && item.level === "note").length;
+  const choose = (value) => { setWhich(value); setPageUrl(canonicalSamples[value].url); setHtml(canonicalSamples[value].html); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="cc-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="cc-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="cc-url">The address the page was loaded from</label><br />
+        <input id="cc-url" type="text" value={pageUrl} onChange={(event) => setPageUrl(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="cc-html">Page HTML (edit it freely)</label><br />
+        <textarea id="cc-html" rows={11} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{problems}</strong> problems, <strong>{notes}</strong> suggestions.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {results.map((item, index) => (
+          <li key={index} style={{marginBottom: "0.25rem"}}><strong>{item.ok ? "OK:" : (item.level === "note" ? "Suggestion:" : "Problem:")}</strong> {item.text}</li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This checks the HTML you paste. It cannot see your server's redirects or headers, or what a search engine decides. Use Search Console's URL inspection to see which address Google chose.
+      </p>
+    </div>
+  );
+}
+
+export function CanonicalChecker() {
+  return <BrowserOnly>{() => <CanonicalCheckerInner />}</BrowserOnly>;
+}
+
+One page, many addresses. It happens more than you would think:
+
+```text
+https://thebreadbin.example/recipes/rye-bread
+http://thebreadbin.example/recipes/rye-bread
+https://www.thebreadbin.example/recipes/rye-bread
+https://thebreadbin.example/recipes/rye-bread/
+https://thebreadbin.example/recipes/rye-bread?utm_source=news
+https://thebreadbin.example/recipes/rye-bread/index.html
+```
+
+To you, that is **one page.** To a search engine, it can look like **six different pages** with identical content. It then has to guess which one to show, and your signals (such as links from other sites) can be **split** between them.
+
+A **canonical link** solves this. It says: *"Whatever address you found me at, this one is the main version."*
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What a **canonical link** is, and why duplicate addresses happen
+- How to write one, and where it goes
+- **Self-referencing** and **cross-domain** canonicals
+- The difference between **canonical, 301 redirect, noindex,** and **robots.txt**
+- How to handle **parameters, pagination,** and **translations**
+- The most common **mistakes**
+- How to **check** a canonical
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <title>Rye Bread Recipe | The Bread Bin</title>
+
+  <!-- The main address for this content -->
+  <link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="URL Normaliser">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CanonicalNormaliser />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Try the three examples, and change the style choices. Notice that very different-looking addresses all lead to the same clean one.
+
+## What a Canonical Link Is
+
+```html
+<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+```
+
+- It goes in the **head** of the page. Outside the head, it is ignored.
+- **`rel="canonical"`** says "this is about the preferred address."
+- **`href`** is that preferred address, written in full.
+
+It is a **hint, not a command.** Search engines usually follow it, but may choose a different address if other signals disagree (for example, if your internal links, sitemap, and redirects all point somewhere else).
+
+## Why Duplicates Happen
+
+- **Protocol and host:** http versus https, with or without `www`.
+- **Trailing slashes** and **capital letters** in paths.
+- **`index.html`** and similar default files.
+- **Tracking parameters:** `utm_source`, `fbclid`, and session ids.
+- **Sorting and filtering:** `?sort=price&color=red`.
+- **Printer-friendly** and **mobile** versions (such as `m.` subdomains).
+- **The same content in two categories,** at two addresses.
+- **Syndication:** your article republished on another site.
+- **Staging or test sites** that were left public.
+
+Most duplicates are not malicious, and search engines are used to them. The goal is to **make your preference clear,** so you do not leave the choice to chance.
+
+## Self-Referencing Canonicals
+
+A good habit is to give **every page a canonical that points to itself.** Even when there are no duplicates today, one may appear tomorrow (a tracking link, a typo, a scraper), and the self-referencing tag already names the right version.
+
+```html
+<!-- On https://thebreadbin.example/recipes/rye-bread -->
+<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+
+<!-- Also on https://thebreadbin.example/recipes/rye-bread?utm_source=news -->
+<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+```
+
+That second example shows the idea: the **variant** carries the **same tag** as the main page.
+
+## Canonical, 301, noindex, or robots.txt?
+
+These tools do different jobs. Choosing the right one matters.
+
+| Tool | What it does | Use it when |
+| :-- | :-- | :-- |
+| **Canonical link** | Says which address is the main one, but both stay reachable | Variants must keep working (parameters, print versions) |
+| **301 redirect** | Sends everyone to the new address, for good | A page moved, or you chose one host or protocol |
+| **noindex** | Asks search engines not to list the page | The page should exist, but not appear in results |
+| **robots.txt** | Asks crawlers not to visit certain paths | You want to save crawling effort (not to hide pages) |
+
+A few rules of thumb:
+
+- **If the old address should stop existing, use a 301 redirect.** It is the strongest signal, and it also fixes things for people.
+- **If both addresses need to work, use a canonical.**
+- **If you do not want the page in results at all, use `noindex`.** Do not also point a canonical elsewhere. Mixed signals confuse.
+- **Do not block a page in robots.txt and expect its canonical to be seen.** A crawler that cannot visit the page cannot read its canonical tag. See [Robots Meta](./robots-meta).
+
+Try the decisions yourself:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CanonicalDecisions />
+</>
+</BrowserWindow>
+
+## Cross-Domain Canonicals
+
+A canonical can point to a **different website.** It is useful for **syndication:** if a partner republishes your article, their copy can carry a canonical pointing back to your original.
+
+```html
+<!-- On the partner's copy -->
+<link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+```
+
+Two cautions:
+
+- **It is a hint.** The partner's page may still appear in results.
+- **It gives away credit,** so only do it when you mean to. Never point your pages at a site you do not trust, and be wary of requests to do so.
+
+## Parameters, Filters, and Pagination
+
+### Parameters
+
+- **Tracking parameters** (`utm_...`, `fbclid`) never change the content. Canonicalise them to the clean address.
+- **Sorting and filtering** often produce near-duplicates. Usually, canonicalise them to the main listing, unless a filtered view is a page people really search for (such as "red running shoes").
+- **Parameters that change the content** (a page number, a language, a product id) are **not** duplicates. Do not strip them.
+
+### Pagination
+
+For a listing split over pages, **each page should have its own canonical** (page 2 points to page 2). Do **not** canonicalise every page to page 1, or the content on later pages may be missed. Search engines have said they no longer use `rel="next"` and `rel="prev"` for indexing, as far as they have publicly stated.
+
+### Translations
+
+Each language version should have a canonical that points to **itself,** not to the English page. Link the versions together with `hreflang`. See [International SEO](./international-seo).
+
+## Be Consistent
+
+A canonical is one signal among several. Make them all agree:
+
+- **Link to the canonical address** in your own menus and content.
+- **List only canonical addresses** in your sitemap.
+- **Redirect** the other hosts and protocols to the canonical.
+- **Keep `hreflang` and canonical in step.**
+- **Do not canonicalise to a page that redirects, returns an error, or has `noindex`.** Point to a live, indexable page.
+- **Avoid chains and loops:** A points to B, which points to C, or A and B point to each other.
+
+## Canonicals in HTTP Headers
+
+HTML is not the only way. For files that have no head, such as PDFs, a server can send the canonical as a **header:**
+
+```text
+Link: <https://thebreadbin.example/guide.html>; rel="canonical"
+```
+
+This is an advanced option, and needs access to your server's settings.
+
+## Canonicals in Docusaurus
+
+Docusaurus builds your site into static pages, and uses the `url` and `baseUrl` in `docusaurus.config.js` to create full addresses. It adds a canonical link to your pages for you, using those settings. So:
+
+- **Set `url` correctly,** to your real address with https.
+- **Choose a `trailingSlash` setting** (true or false) and keep it, so your addresses are consistent.
+- **Check the output** with "view source" after a build.
+
+Options and behaviour can change between versions, so check the current Docusaurus documentation.
+
+## Check Your Canonical
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CanonicalChecker />
+</>
+</BrowserWindow>
+
+### Check it for real
+
+1. **"View source"** on a page, and search for `canonical`.
+2. **Google Search Console, URL inspection:** it shows the address **you declared** and the address **Google chose.** If they differ, find out why.
+3. **The Pages report** lists duplicates, such as "Duplicate without user-selected canonical."
+4. **A crawler tool** can list the canonical of every page on a site.
+5. **Test with the variants:** add `?utm_source=test` to a page, and check that the canonical is unchanged.
+
+## Good Habits
+
+- **Add a self-referencing canonical to every page.**
+- **Use full addresses,** with https.
+- **Have exactly one,** in the head.
+- **Point to a live, indexable, unredirected page.**
+- **Prefer a 301 redirect** when an address should not exist at all.
+- **Keep sitemaps, links, and redirects in line** with your canonicals.
+- **Do not use canonical to hide thin or different pages.**
+- **Check Search Console** for the address Google chose.
+
+## Canonical Checklist
+
+- [ ] Every page has one canonical link, in the head
+- [ ] The address is absolute, uses https, and has no fragment
+- [ ] It has no tracking or session parameters
+- [ ] It points to a live, indexable page that does not redirect
+- [ ] Pagination pages point to themselves
+- [ ] Translations point to their own language version
+- [ ] http, www, and non-www versions redirect to the preferred host
+- [ ] Sitemaps and internal links use the canonical addresses
+- [ ] No page has both a canonical elsewhere and `noindex`
+- [ ] Search Console shows Google chose the address you declared
+
+## Security and Privacy Notes
+
+- **Do not build the canonical from untrusted input.** If your server creates the tag from the request's host header or from a parameter without checking, an attacker may be able to point your canonical at their site. Build it from a fixed, configured address, and escape it.
+- **Escape the address** when you write it into HTML, so a stray quote cannot break out of the attribute.
+- **Do not leak private addresses.** A canonical on a staging or admin page may reveal an internal address. Keep private areas behind a login, and keep them out of public builds.
+- **Strip secrets from URLs.** Session ids, tokens, and email addresses in a URL end up in logs, history, and referrers. Never let them become your canonical.
+- **Be careful with cross-domain canonicals.** Pointing your content to another site transfers credit to them, and accepting requests to do so from unknown parties could be a trick.
+- **Watch for scrapers and hijacks.** A copied page that keeps your canonical tag points back to you, which helps. Check your pages from time to time for unexpected copies.
+
+## Global Audience Notes
+
+- **Each language or country version needs its own canonical,** pointing to itself, with `hreflang` links between them. See [International SEO](./international-seo).
+- **Choose one URL style per country site,** such as `/fr/` folders or a `.fr` domain, and be consistent.
+- **Non-Latin paths** may be encoded in addresses (`%E4%BD...`). Use the same form everywhere, so canonicals match.
+- **Do not point translated pages at the original language,** unless the translation is only a machine copy you do not want indexed.
+- **Check regional hosting and CDNs,** which may serve the same page from several hosts or domains.
+
+## Common Mistakes to Avoid
+
+1. **No canonical at all.**
+2. **A relative address** (`/recipes/rye-bread`) instead of a full one.
+3. **More than one canonical** on a page.
+4. **A canonical in the body,** where it is ignored.
+5. **Pointing every page to the home page.**
+6. **Pointing page 2 and 3 of a list to page 1.**
+7. **Pointing to a page that redirects, errors, or is `noindex`.**
+8. **Canonical plus `noindex`,** which sends mixed signals.
+9. **Blocking the page in robots.txt,** so the canonical is never seen.
+10. **Including tracking parameters** or fragments in the canonical.
+11. **Using canonical when a 301 redirect is right.**
+12. **Never checking** what search engines chose.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the URL normaliser with each example, and turn the style options on and off.
+2. Take the decision quiz. Which scenario made you hesitate?
+3. Run the checker on the messy page, fix every problem, and run it again.
+4. Open a page you built, and use "view source." Does it have a canonical?
+5. Add `?utm_source=test` to a page you own. Does the canonical stay clean?
+6. List all the ways a page of yours can be reached. Which should redirect?
+7. Open Search Console's URL inspection on a page, and compare the declared and chosen canonical.
+8. Write the canonical tags for a product with two color variants, and explain your choice.
+9. Find your sitemap. Does it contain only canonical addresses?
+10. Bonus: draw a map of the addresses a page can have, and decide for each one: redirect, canonical, or noindex.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a canonical link do?</summary>
+
+It tells search engines which address is the main version of a page, so duplicates and variants are grouped together, and signals are not split.
+
+</details>
+
+<details>
+<summary>2. Is a canonical a command?</summary>
+
+No, it is a hint. Search engines usually follow it, but may pick another address if your other signals disagree.
+
+</details>
+
+<details>
+<summary>3. What is a self-referencing canonical?</summary>
+
+A canonical that points to the page's own address. It is a safe habit, because it already names the right version if a duplicate ever appears.
+
+</details>
+
+<details>
+<summary>4. When should you use a 301 redirect instead of a canonical?</summary>
+
+When an address should stop existing, such as after a move, or to choose one host or protocol. Use a canonical when both addresses must keep working.
+
+</details>
+
+<details>
+<summary>5. Why not point every page of a paginated list to page 1?</summary>
+
+The content on later pages could be missed. Each page should have its own canonical.
+
+</details>
+
+<details>
+<summary>6. What mistakes make a canonical ignored?</summary>
+
+Putting it outside the head, having several, pointing to a page that redirects, errors, or is `noindex`, or blocking the page in robots.txt so the tag can never be read.
+
+</details>
+
+## Key Takeaways
+
+- **A canonical link names the main address** for a page that can be reached in several ways.
+- **It is a hint,** so keep your other signals in line.
+- **Give every page a self-referencing canonical,** with a full https address.
+- **Use a 301 redirect** when an address should go away, and `noindex` to keep a page out of results.
+- **Do not canonicalise pagination or translations to a different page.**
+- **Point to a live, indexable page,** and avoid chains.
+- **Never build a canonical from untrusted input.**
+- **Check Search Console** to see what search engines chose.
+
+Next, learn how to ask search engines to index, skip, or follow, and what that can and cannot do, in [Robots Meta](./robots-meta).

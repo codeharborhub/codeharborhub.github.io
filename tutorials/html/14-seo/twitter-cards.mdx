@@ -1,0 +1,555 @@
+---
+id: html-seo-twitter-cards
+title: "Twitter Cards"
+sidebar_label: "Twitter Cards"
+sidebar_position: 11
+slug: /html/seo/twitter-cards
+description: "Learn Twitter Card tags, used by X for link previews: the card types, twitter:card, title, description, image, alt text and handles, how they fall back to Open Graph, image sizes, caching, and why robots.txt must allow the crawler. Includes a card builder with previews, a fallback lab that shows which tag wins, and a live Twitter Card checker."
+keywords:
+  - Twitter Cards
+  - twitter:card
+  - summary_large_image
+  - X link preview
+  - twitter:image
+  - Open Graph fallback
+  - social share tags
+  - Twitterbot
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, twitter-cards, x, social-sharing, link-preview, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function esc(value) {
+  return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export function validHandle(value) {
+  return /^@[A-Za-z0-9_]{1,15}$/.test(value.trim());
+}
+
+export function TwitterCardBuilder() {
+  const [card, setCard] = useState("summary_large_image");
+  const [useOg, setUseOg] = useState(false);
+  const [title, setTitle] = useState("Easy No-Knead Rye Bread");
+  const [desc, setDesc] = useState("Bake a crusty rye loaf at home with five simple ingredients, and no kneading.");
+  const [image, setImage] = useState("https://thebreadbin.example/img/rye-1200x600.jpg");
+  const [alt, setAlt] = useState("A rye loaf cooling on a wooden board");
+  const [width, setWidth] = useState("1200");
+  const [height, setHeight] = useState("600");
+  const [site, setSite] = useState("@thebreadbin");
+  const [creator, setCreator] = useState("");
+  const tags = ['<meta name="twitter:card" content="' + card + '">'];
+  if (site.trim()) tags.push('<meta name="twitter:site" content="' + esc(site.trim()) + '">');
+  if (creator.trim()) tags.push('<meta name="twitter:creator" content="' + esc(creator.trim()) + '">');
+  if (!useOg) {
+    if (title) tags.push('<meta name="twitter:title" content="' + esc(title) + '">');
+    if (desc) tags.push('<meta name="twitter:description" content="' + esc(desc) + '">');
+    if (image) tags.push('<meta name="twitter:image" content="' + esc(image) + '">');
+  }
+  if (alt && image) tags.push('<meta name="twitter:image:alt" content="' + esc(alt) + '">');
+  const problems = [];
+  if (site.trim() && !validHandle(site)) problems.push("twitter:site should be a handle such as @thebreadbin: an @ sign, then letters, numbers, or underscores, up to 15 characters.");
+  if (creator.trim() && !validHandle(creator)) problems.push("twitter:creator should be a handle such as @ravipatel.");
+  if (!useOg) {
+    if (!title.trim()) problems.push("twitter:title is empty.");
+    else if (title.length > 70) problems.push("The title is " + title.length + " characters. It may be cut off at around 70.");
+    if (desc.length > 200) problems.push("The description is long (" + desc.length + " characters). It is often cut, and small cards show very little of it.");
+    if (!/^https:\/\/\S+$/.test(image.trim())) problems.push("twitter:image must be a full https address.");
+    else if (/\.svg(\?|$)/i.test(image)) problems.push("SVG images are not supported. Use JPG, PNG, WebP, or GIF.");
+  }
+  if (alt.length > 420) problems.push("The image description is " + alt.length + " characters. Keep it shorter (the limit is around 420).");
+  if (image && !alt.trim()) problems.push("Add twitter:image:alt, so the picture has a text description.");
+  const w = parseInt(width, 10);
+  const h = parseInt(height, 10);
+  if (w > 0 && h > 0) {
+    const ratio = w / h;
+    if (card === "summary_large_image") {
+      if (w < 300 || h < 157) problems.push("The image is small. A large card image should be at least 300 by 157, and 1200 by 600 is a good target.");
+      if (Math.abs(ratio - 2) > 0.3) problems.push("A large card shows the image at about 2 to 1. Yours is " + ratio.toFixed(2) + " to 1, so it will be cropped.");
+    } else {
+      if (w < 144 || h < 144) problems.push("A summary card image should be at least 144 by 144.");
+      if (Math.abs(ratio - 1) > 0.15) problems.push("A summary card shows a square image. Yours is " + ratio.toFixed(2) + " to 1, so it will be cropped.");
+    }
+  }
+  const large = card === "summary_large_image";
+  const shape = large ? 2 : 1;
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Card type</legend>
+        <label style={{display: "block"}}><input type="radio" name="tc-card" checked={card === "summary_large_image"} onChange={() => { setCard("summary_large_image"); setWidth("1200"); setHeight("600"); }} /> summary_large_image (a big picture above the text)</label>
+        <label style={{display: "block"}}><input type="radio" name="tc-card" checked={card === "summary"} onChange={() => { setCard("summary"); setWidth("600"); setHeight("600"); }} /> summary (a small square picture beside the text)</label>
+      </fieldset>
+      <label style={{display: "block", margin: "0 0 0.6rem"}}><input type="checkbox" checked={useOg} onChange={(event) => setUseOg(event.target.checked)} /> Use my Open Graph tags for the title, description, and image</label>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="tc-title">Title</label><br /><input id="tc-title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} disabled={useOg} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="tc-desc">Description</label><br /><textarea id="tc-desc" rows={2} value={desc} onChange={(event) => setDesc(event.target.value)} disabled={useOg} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="tc-image">Image address</label><br /><input id="tc-image" type="text" value={image} onChange={(event) => setImage(event.target.value)} disabled={useOg} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.4rem", display: "flex", gap: "0.6rem", flexWrap: "wrap"}}>
+        <span><label htmlFor="tc-w">Image width</label>{" "}<input id="tc-w" type="text" value={width} onChange={(event) => setWidth(event.target.value)} style={{width: "5rem"}} /></span>
+        <span><label htmlFor="tc-h">Image height</label>{" "}<input id="tc-h" type="text" value={height} onChange={(event) => setHeight(event.target.value)} style={{width: "5rem"}} /></span>
+      </p>
+      <p style={{margin: "0 0 0.4rem"}}><label htmlFor="tc-alt">Image description (alt text)</label><br /><input id="tc-alt" type="text" value={alt} onChange={(event) => setAlt(event.target.value)} style={{width: "100%"}} /></p>
+      <p style={{margin: "0 0 0.6rem", display: "flex", gap: "0.6rem", flexWrap: "wrap"}}>
+        <span><label htmlFor="tc-site">Site handle</label>{" "}<input id="tc-site" type="text" value={site} onChange={(event) => setSite(event.target.value)} style={{width: "9rem"}} /></span>
+        <span><label htmlFor="tc-creator">Author handle (optional)</label>{" "}<input id="tc-creator" type="text" value={creator} onChange={(event) => setCreator(event.target.value)} style={{width: "9rem"}} /></span>
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>How the card might look:</strong></p>
+      <div style={{border: "1px solid #cbd5e1", borderRadius: "14px", overflow: "hidden", maxWidth: large ? "22rem" : "26rem", background: "#ffffff", color: "#0f172a", marginBottom: "0.6rem", display: large ? "block" : "flex"}}>
+        <div style={{width: large ? "100%" : "7rem", flexShrink: 0, aspectRatio: String(shape), background: "linear-gradient(135deg, #cbd5e1, #94a3b8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75em", color: "#334155", textAlign: "center", padding: "0.3rem"}}>Your image</div>
+        <div style={{padding: "0.6rem 0.8rem"}}>
+          <div style={{fontSize: "0.75em", color: "#64748b"}}>thebreadbin.example</div>
+          <div style={{fontWeight: "bold", margin: "0.1rem 0"}}>{useOg ? "(from og:title)" : (title.length > 70 ? title.slice(0, 69) + "…" : title || "(no title)")}</div>
+          <div style={{fontSize: "0.85em", color: "#475569"}}>{useOg ? "(from og:description)" : (desc.length > 100 ? desc.slice(0, 99) + "…" : desc)}</div>
+        </div>
+      </div>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The tags for your head:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{tags.join("\n")}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{problems.length}</strong> {problems.length === 1 ? "thing" : "things"} to check.</p>
+      {problems.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {problems.map((problem, index) => (<li key={index}>{problem}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>No problems found by these simple checks.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This preview is a rough guide. X changes how cards look, and the sizes and limits shown here follow its public guidance at the time of writing. Check X's current documentation. Values are escaped, so quotes cannot break the tags.
+      </p>
+    </div>
+  );
+}
+
+export function FallbackLab() {
+  const [has, setHas] = useState({card: true, ttitle: false, otitle: true, tdesc: false, odesc: true, mdesc: true, timage: false, oimage: true});
+  const toggle = (key) => setHas({...has, [key]: !has[key]});
+  const pick = (list) => {
+    const found = list.find((item) => has[item.key]);
+    return found ? found.label : null;
+  };
+  const title = pick([{key: "ttitle", label: "twitter:title"}, {key: "otitle", label: "og:title"}, {key: "ptitle", label: "the page title"}]) || "the page title (always present)";
+  const description = pick([{key: "tdesc", label: "twitter:description"}, {key: "odesc", label: "og:description"}, {key: "mdesc", label: "the meta description"}]);
+  const image = pick([{key: "timage", label: "twitter:image"}, {key: "oimage", label: "og:image"}]);
+  const items = [
+    {key: "card", label: "twitter:card"},
+    {key: "ttitle", label: "twitter:title"},
+    {key: "otitle", label: "og:title"},
+    {key: "tdesc", label: "twitter:description"},
+    {key: "odesc", label: "og:description"},
+    {key: "mdesc", label: "meta name=\"description\""},
+    {key: "timage", label: "twitter:image"},
+    {key: "oimage", label: "og:image"},
+  ];
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.7rem"}}>
+        <legend>Which tags does your page have?</legend>
+        {items.map((item) => (
+          <label key={item.key} style={{display: "block"}}><input type="checkbox" checked={has[item.key]} onChange={() => toggle(item.key)} /> <code>{item.label}</code></label>
+        ))}
+      </fieldset>
+      <p style={{margin: "0 0 0.3rem"}}><strong>What a card is likely to use:</strong></p>
+      <ul style={{margin: "0 0 0.6rem", paddingLeft: "1.2rem"}} aria-live="polite">
+        <li><strong>Card:</strong> {has.card ? "A rich card (the type named in twitter:card)." : "No twitter:card, so X may show only a plain link, even if Open Graph tags exist."}</li>
+        <li><strong>Title:</strong> {title}</li>
+        <li><strong>Description:</strong> {description || "nothing, so the card may show no description"}</li>
+        <li><strong>Image:</strong> {image || "nothing, so the card is text only"}</li>
+      </ul>
+      <p style={{margin: "0 0 0.3rem"}}>
+        {has.card && !has.timage && has.oimage && !has.ttitle && !has.tdesc ? "This is the lean, popular setup: your Open Graph tags do the work, and one extra tag turns on the card." : null}
+        {!has.card && (has.otitle || has.oimage) ? "Tip: add twitter:card, and your Open Graph tags will be used for the rest." : null}
+      </p>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This shows the commonly documented order of fallbacks, from the most specific tag to the least. Platforms can change their behaviour at any time, so check the current documentation and test your page.
+      </p>
+    </div>
+  );
+}
+
+export const twSamples = {
+  messy: '<head>\n<title>Rye Bread</title>\n<meta property="twitter:card" content="large">\n<meta name="twitter:title" content="Rye Bread">\n<meta name="twitter:image" content="/img/rye.svg">\n<meta name="twitter:site" content="thebreadbin">\n<meta name="twitter:creator" content="@a very long name here">\n<meta name="twitter:player" content="https://thebreadbin.example/player">\n</head>',
+  fixed: '<head>\n<title>Easy No-Knead Rye Bread | The Bread Bin</title>\n<meta property="og:title" content="Easy No-Knead Rye Bread">\n<meta property="og:description" content="Bake a crusty rye loaf at home with five simple ingredients.">\n<meta property="og:image" content="https://thebreadbin.example/img/rye-1200x630.jpg">\n<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:site" content="@thebreadbin">\n<meta name="twitter:image:alt" content="A rye loaf cooling on a wooden board">\n</head>',
+};
+
+export function TwitterCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(twSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html>" + html, "text/html");
+  const issues = [];
+  const notes = [];
+  const metaByName = {};
+  Array.from(doc.querySelectorAll("meta[name], meta[property]")).forEach((el) => {
+    const name = (el.getAttribute("name") || el.getAttribute("property") || "").trim();
+    (metaByName[name] = metaByName[name] || []).push({value: (el.getAttribute("content") || "").trim(), usedProperty: !el.hasAttribute("name")});
+  });
+  const first = (key) => (metaByName[key] ? metaByName[key][0].value : "");
+  Object.keys(metaByName).filter((key) => key.indexOf("twitter:") === 0).forEach((key) => {
+    if (metaByName[key].length > 1) issues.push(key + " appears " + metaByName[key].length + " times. Use it once.");
+    if (metaByName[key].some((item) => item.usedProperty)) notes.push(key + " uses property. The convention for Twitter tags is name, which is the safest choice.");
+  });
+  const card = first("twitter:card");
+  if (!metaByName["twitter:card"]) issues.push("No twitter:card. Without it, X may show only a plain link.");
+  else if (["summary", "summary_large_image", "app", "player"].indexOf(card) === -1) issues.push("twitter:card \"" + card + "\" is not a known value. Use summary or summary_large_image.");
+  else if (card === "app" || card === "player") notes.push("The \"" + card + "\" card type is specialised and has limited support today. Most pages should use summary or summary_large_image.");
+  if (metaByName["twitter:player"]) notes.push("twitter:player belongs to the player card, which has limited support. Most pages do not need it.");
+  const title = first("twitter:title") || first("og:title") || (doc.querySelector("title") ? doc.querySelector("title").textContent.trim() : "");
+  const titleFrom = first("twitter:title") ? "twitter:title" : first("og:title") ? "og:title" : "the page title";
+  if (title === "") issues.push("No title found in twitter:title, og:title, or the page title.");
+  else if (title.length > 70) notes.push("The title (from " + titleFrom + ") is " + title.length + " characters, so it may be cut off.");
+  else if (/^(home|untitled|rye bread)$/i.test(title)) notes.push("The title \"" + title + "\" (from " + titleFrom + ") is very short or generic. Say what the page is about.");
+  const descFrom = first("twitter:description") ? "twitter:description" : first("og:description") ? "og:description" : first("description") ? "the meta description" : "";
+  if (!descFrom) notes.push("No description in twitter:description, og:description, or the meta description. The card may show none.");
+  const image = first("twitter:image") || first("og:image");
+  const imageFrom = first("twitter:image") ? "twitter:image" : "og:image";
+  if (!image) issues.push("No image in twitter:image or og:image. The card will be text only.");
+  else {
+    if (!/^https:\/\//i.test(image)) issues.push(imageFrom + " \"" + image + "\" must be a full https address.");
+    else if (/\.svg(\?|$)/i.test(image)) issues.push(imageFrom + " is an SVG. X does not accept SVG images. Use JPG, PNG, WebP, or GIF.");
+    if (!first("twitter:image:alt") && !first("og:image:alt")) notes.push("No image description. Add twitter:image:alt.");
+  }
+  ["twitter:site", "twitter:creator"].forEach((key) => {
+    const value = first(key);
+    if (value && !/^@[A-Za-z0-9_]{1,15}$/.test(value)) issues.push(key + " \"" + value + "\" should be a handle like @thebreadbin: an @ sign, then up to 15 letters, numbers, or underscores.");
+  });
+  if (!metaByName["twitter:site"]) notes.push("No twitter:site. It is optional, but it connects the card to your account.");
+  if (card === "summary_large_image" && !image) notes.push("A large image card needs an image.");
+  const choose = (value) => { setWhich(value); setHtml(twSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="twc-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="twc-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="twc-html">HTML head (edit it freely)</label><br />
+        <textarea id="twc-html" rows={11} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>What a card would use:</strong> title from {titleFrom}, description from {descFrom || "nothing"}, image from {image ? imageFrom : "nothing"}.</p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{issues.length}</strong> problems, <strong>{notes.length}</strong> suggestions.</p>
+      {issues.length === 0 && notes.length === 0 ? <p style={{margin: 0}}>Nothing to report.</p> : null}
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {issues.map((issue, index) => (<li key={"i" + index}><strong>Problem:</strong> {issue}</li>))}
+        {notes.map((note, index) => (<li key={"n" + index}><strong>Suggestion:</strong> {note}</li>))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot fetch your image, check robots.txt, or see what X has cached. Test the live page by drafting a post with the link.
+      </p>
+    </div>
+  );
+}
+
+export function TwitterChecker() {
+  return <BrowserOnly>{() => <TwitterCheckerInner />}</BrowserOnly>;
+}
+
+[Open Graph](./open-graph) gave you control over how your link looks when it is shared. **Twitter Cards** do the same job for one particular place: the platform that was once called Twitter, and is now called **X.**
+
+The good news is that you do not have to start from scratch. X reads Open Graph tags as a fallback, so most of the work is already done. You add a small number of `twitter:` tags to switch the card on and fine-tune it. This lesson shows you which ones, and which you can skip.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **Twitter Cards** are, and how they relate to **Open Graph**
+- The two card types you will actually use
+- The key tags: **card, title, description, image, alt, site,** and **creator**
+- How the **fallback** order works, so you write less
+- **Image** sizes for each card
+- Why robots.txt must allow **Twitterbot**
+- How to **test** your cards
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <title>Easy No-Knead Rye Bread | The Bread Bin</title>
+
+  <!-- Open Graph does most of the work -->
+  <meta property="og:title" content="Easy No-Knead Rye Bread">
+  <meta property="og:description" content="Bake a crusty rye loaf at home with five simple ingredients.">
+  <meta property="og:image" content="https://thebreadbin.example/img/rye-1200x630.jpg">
+
+  <!-- One tag switches on a large card, and one names your account -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@thebreadbin">
+  <meta name="twitter:image:alt" content="A rye loaf cooling on a wooden board">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Twitter Card Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TwitterCardBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Switch between the two card types, and tick "Use my Open Graph tags" to see the lean setup.
+
+:::info A note on the name
+The platform has been renamed **X,** but the tags still begin with `twitter:`, and the feature is still widely called Twitter Cards. Always check X's current developer documentation, because names and details can change.
+:::
+
+## What Twitter Cards Are
+
+A **Twitter Card** is the preview that appears under a link in a post: a picture, a title, and a line of description, instead of just a bare address. The card is built from `<meta>` tags in your page's head, read by X's crawler (called **Twitterbot**) when the link is shared.
+
+- Like Open Graph, cards do **not** directly affect your search ranking. They make shared links more inviting.
+- Unlike Open Graph, the conventional attribute is **`name`,** not `property`: `<meta name="twitter:card" ...>`.
+- Other apps do not usually read them. Chat apps, Slack, Discord, WhatsApp, and Mastodon mostly use **Open Graph.** That is one more reason to write good Open Graph tags first.
+
+## The Card Types
+
+| Card | What it looks like | Best for |
+| :-- | :-- | :-- |
+| `summary` | A small square picture beside the title and description | Pages without a strong picture, or with a logo |
+| `summary_large_image` | A large picture above the title and description | Articles, recipes, products, and anything with a good image |
+
+Two other types (`app` and `player`) exist for specialised uses, and have limited support today. Most pages only ever need one of the two above. When in doubt, use **`summary_large_image`.**
+
+## The Tags
+
+| Tag | What it does |
+| :-- | :-- |
+| `twitter:card` | **The one that turns the card on.** Its value is the card type |
+| `twitter:title` | The headline of the card |
+| `twitter:description` | A line or two of text |
+| `twitter:image` | The picture |
+| `twitter:image:alt` | A text description of the picture |
+| `twitter:site` | The account for the website (`@thebreadbin`) |
+| `twitter:creator` | The account of the author (`@ravipatel`) |
+
+Handles are written with an **@ sign,** and X handles are letters, numbers, and underscores, up to 15 characters.
+
+## Fallbacks: Write Less
+
+If a `twitter:` tag is missing, X usually falls back to the matching Open Graph tag, and then to the page itself:
+
+| Needed | First choice | Then | Then |
+| :-- | :-- | :-- | :-- |
+| Title | `twitter:title` | `og:title` | the page `<title>` |
+| Description | `twitter:description` | `og:description` | the meta description |
+| Image | `twitter:image` | `og:image` | nothing |
+
+The one thing that does **not** have a fallback is **`twitter:card`.** Without it, you may get only a plain link, even if your Open Graph tags are perfect.
+
+So the **lean setup** is:
+
+1. Write good **Open Graph** tags.
+2. Add **`twitter:card`.**
+3. Optionally add `twitter:site` and `twitter:image:alt`.
+
+Add the full set of `twitter:` tags only when you want the card to say something **different** from your Open Graph tags.
+
+Play with the fallbacks, and see which tag wins:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FallbackLab />
+</>
+</BrowserWindow>
+
+## Images
+
+Per X's public guidance (check the current documentation, as sizes change):
+
+| Card | Shape | Suggested size | Notes |
+| :-- | :-- | :-- | :-- |
+| `summary_large_image` | About 2 to 1 | 1200 by 600 is a good target. At least 300 by 157 | Larger images get cropped to fit |
+| `summary` | Square, 1 to 1 | At least 144 by 144. 600 by 600 is a good target | Shown as a small thumbnail |
+
+- **Formats:** JPG, PNG, WebP, and GIF (usually the first frame). Not SVG.
+- **File size:** keep it well under a few megabytes. Smaller is faster.
+- **Full https address,** public, with no login.
+- **Keep key content in the middle,** since edges may be cropped.
+- **Use an image of about 2 to 1 for both Open Graph and Twitter** if you want one file to serve both. A 1200 by 630 image (Open Graph's usual size) is close enough to 2 to 1 for a large card, and many sites use it for both.
+- **Add `twitter:image:alt`** so the image has a description. X limits alt text length, so keep it short and plain.
+
+## Do Not Block Twitterbot
+
+X's crawler obeys your **robots.txt.** If your file blocks it, or blocks the folder where your images live, cards will fail to appear.
+
+```text title="robots.txt"
+# This would break cards
+User-agent: Twitterbot
+Disallow: /
+```
+
+Check that Twitterbot is allowed on your pages **and** on your image address. See [Robots Meta](./robots-meta). Also remember that pages and images behind a login cannot be fetched, so cards for them show nothing.
+
+## Caching and Testing
+
+- **X caches cards,** like other platforms. After you change a tag or image, an old card may linger for a while. Using a new image address (such as a version number in the file name) is the most reliable fix.
+- **X has retired its old Card Validator tool,** so do not rely on it. Check X's current help pages in case a new one exists. The most reliable test is to **draft a post** with your link in it, and look at the preview before you publish. Check X's current help pages for any new tool.
+- **Test the Open Graph tags too,** with the Facebook Sharing Debugger and the LinkedIn Post Inspector. If your Open Graph is right, the fallback works.
+
+## Check Your Tags
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TwitterChecker />
+</>
+</BrowserWindow>
+
+### Check it for real
+
+1. **"View source"** on the live page, and search for `twitter:`.
+2. **Draft a post** on X with your link, and read the preview.
+3. **Open your image address** in a private window. Does it load without logging in?
+4. **Open `/robots.txt`** on your site, and make sure Twitterbot is not blocked.
+5. **Check Open Graph** in a debugger, since the fallback depends on it.
+
+## Twitter Cards in Docusaurus
+
+Docusaurus lets you set a card type for the whole site (in the theme's configuration, using `metadata` or the social card options), and uses a page's `title`, `description`, and `image` for the matching tags. You can also add `twitter:` tags to a single page with the `Head` component. The tags end up in the built HTML. Details change between versions, so check the current documentation and inspect the output.
+
+## Good Habits
+
+- **Write complete Open Graph tags first.**
+- **Add `twitter:card` to every page,** usually `summary_large_image`.
+- **Add `twitter:site`** and `twitter:image:alt`.
+- **Use a good, public, wide image** with a full https address.
+- **Only add `twitter:title` and the like** when the card should differ.
+- **Allow Twitterbot** in robots.txt.
+- **Preview a draft post** before you publish.
+- **Use a new image address** when you change an image.
+
+## Twitter Cards Checklist
+
+- [ ] `twitter:card` is on every page, with `summary` or `summary_large_image`
+- [ ] Open Graph title, description, and image are set (or the `twitter:` versions)
+- [ ] The image is JPG, PNG, WebP, or GIF, public, with a full https address
+- [ ] The image shape matches the card type
+- [ ] `twitter:image:alt` is set
+- [ ] `twitter:site` and `twitter:creator` are valid handles, with an @ sign
+- [ ] Twitterbot is allowed in robots.txt
+- [ ] Tags use `name` and appear once
+- [ ] Tags are in the HTML the server sends
+- [ ] A draft post showed the preview correctly
+- [ ] No private data is in any tag
+
+## Security and Privacy Notes
+
+- **Escape every value.** If a title or description comes from a database or a user, a stray quote or angle bracket can break your tags and inject content. Escape before you write it into `content="..."`. The builder above does this.
+- **Handles identify real people.** `twitter:creator` links a page to a person's account. Only use a handle with the person's consent, and prefer your organisation's account over a personal one.
+- **Private pages leak through cards.** If someone shares a link to a private page, X may fetch it and show its title and image to everyone. Put generic text in the tags of logged-in pages, and do not expose private details.
+- **Pictures can reveal more than you expect.** Check images for names, faces, and locations, and remove hidden location data (EXIF) from photos.
+- **Do not mislead.** A card that says one thing while the page says another may be treated as spam or a scam by the platform.
+- **Do not put tracking codes in the image address** that identify individual visitors. The card is shown to many people.
+- **Watch for tampering.** If a hacked page has its tags changed, shared links can show spam. Check your live tags from time to time.
+- **Crawlers appear in your logs.** Twitterbot fetching your page is normal. If you restrict access by address or user agent, allow it deliberately.
+
+## Global Audience Notes
+
+- **Write each language version's tags in that language,** and give it its own image if the picture contains text.
+- **Check where your readers share.** X is not equally popular everywhere, and other apps (which read Open Graph) may matter more. Do not neglect Open Graph.
+- **Text direction:** cards for right-to-left languages such as Arabic and Hebrew should be tested in the real preview.
+- **Titles and descriptions are cut at different lengths** in different scripts. Preview each language.
+- **Handles are not translated.** Use the account that matches the audience, such as a separate account per language, if you have one.
+- **Slow networks:** a large image may be slow to load or fail on a poor connection. Keep files small.
+- **Access and rules vary by country.** The platform may be limited or unavailable in some places. Do not depend on it as your only channel.
+
+## Common Mistakes to Avoid
+
+1. **No `twitter:card` tag,** so no card appears.
+2. **Relying on Open Graph alone,** and forgetting the card tag.
+3. **A relative or SVG image.**
+4. **An image of the wrong shape,** which gets cropped badly.
+5. **Handles without the `@`,** or with spaces.
+6. **Blocking Twitterbot** in robots.txt.
+7. **A private or login-protected image.**
+8. **Using `property` instead of `name`.**
+9. **Duplicate tags that disagree.**
+10. **A stale card that is never refreshed.**
+11. **No alt text** for the image.
+12. **Never previewing** the card before posting.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the builder with each card type. How does the image shape change?
+2. Tick "Use my Open Graph tags," and see which tags remain.
+3. In the fallback lab, remove `twitter:card`. What happens to the result?
+4. Run the checker on the messy page, fix every problem, and run it again.
+5. Add `twitter:card` to a page that already has Open Graph tags.
+6. Check your robots.txt for Twitterbot.
+7. Draft a post on X with a link to your page, and look at the preview. Do not publish it.
+8. Make one image that works for both a large card and Open Graph, and keep the text in the middle.
+9. Write alt text for your share image in under a hundred characters.
+10. Bonus: make a different image for each language version of a page, and add the matching tags.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are Twitter Cards?</summary>
+
+Meta tags that tell X how to draw a preview card (picture, title, description) under a shared link.
+
+</details>
+
+<details>
+<summary>2. Which tag turns the card on?</summary>
+
+`twitter:card`, with a value such as `summary_large_image`. It has no fallback, so without it you may only get a plain link.
+
+</details>
+
+<details>
+<summary>3. How do Twitter Cards relate to Open Graph?</summary>
+
+X falls back to Open Graph for the title, description, and image when the `twitter:` versions are missing. So you can write good Open Graph tags and add only `twitter:card`.
+
+</details>
+
+<details>
+<summary>4. Which card types should most pages use?</summary>
+
+`summary_large_image` for pages with a good picture, and `summary` for small square images such as logos.
+
+</details>
+
+<details>
+<summary>5. Why must robots.txt allow Twitterbot?</summary>
+
+Twitterbot obeys robots.txt. If it is blocked from your page or your image, the card cannot be built.
+
+</details>
+
+<details>
+<summary>6. How can you test a card?</summary>
+
+Draft a post with your link and look at the preview before publishing. Check X's current help pages for any official tool, and test your Open Graph tags in the other platforms' debuggers.
+
+</details>
+
+## Key Takeaways
+
+- **Twitter Cards control how your link looks on X.** The tags still use the `twitter:` prefix.
+- **`twitter:card` is the key tag,** and it has no fallback.
+- **Open Graph is the fallback** for title, description, and image, so write it first.
+- **Use `summary_large_image`** for most pages, with a wide image of about 2 to 1.
+- **Use full, public https addresses,** and never SVG.
+- **Allow Twitterbot** in robots.txt.
+- **Escape values, and keep private pages out of cards.**
+- **Preview a draft post** before you publish.
+
+Next, the last lesson in this section, learn how to serve readers in many languages and regions, in [International SEO](./international-seo).

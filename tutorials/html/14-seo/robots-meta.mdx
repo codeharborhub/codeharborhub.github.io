@@ -1,0 +1,682 @@
+---
+id: html-seo-robots
+title: "Robots Meta"
+sidebar_label: "Robots Meta"
+sidebar_position: 8
+slug: /html/seo/robots-meta
+description: "Learn how the robots meta tag asks search engines to index, skip, follow, or limit snippets for a page, and how it differs from robots.txt, X-Robots-Tag, rel=nofollow, canonical links, and real privacy. Includes a robots meta builder, a robots.txt tester that shows which rule wins, and a live robots meta checker that catches typos and conflicts."
+keywords:
+  - robots meta tag
+  - noindex
+  - nofollow
+  - robots.txt
+  - X-Robots-Tag
+  - noarchive
+  - nosnippet
+  - max-snippet
+  - crawl vs index
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, robots, noindex, robots-txt, crawling, indexing, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function RobotsBuilder() {
+  const [bot, setBot] = useState("robots");
+  const [noindex, setNoindex] = useState(false);
+  const [nofollow, setNofollow] = useState(false);
+  const [noarchive, setNoarchive] = useState(false);
+  const [nosnippet, setNosnippet] = useState(false);
+  const [maxSnippet, setMaxSnippet] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+  const [notranslate, setNotranslate] = useState(false);
+  const [expires, setExpires] = useState("");
+  const tokens = [];
+  if (noindex) tokens.push("noindex");
+  if (nofollow) tokens.push("nofollow");
+  if (noarchive) tokens.push("noarchive");
+  if (nosnippet) tokens.push("nosnippet");
+  if (maxSnippet !== "" && !nosnippet) tokens.push("max-snippet:" + maxSnippet);
+  if (imagePreview !== "") tokens.push("max-image-preview:" + imagePreview);
+  if (notranslate) tokens.push("notranslate");
+  if (expires !== "") tokens.push("unavailable_after: " + expires);
+  const content = tokens.length === 0 ? "index, follow" : tokens.join(", ");
+  const meaning = [];
+  meaning.push(noindex ? "Please do not list this page in results." : "The page may be listed in results.");
+  meaning.push(nofollow ? "Please do not follow the links on this page." : "Links on this page may be followed.");
+  if (noarchive) meaning.push("Please do not show a cached copy.");
+  if (nosnippet) meaning.push("Please do not show a text snippet.");
+  else if (maxSnippet !== "") meaning.push("Keep the text snippet to " + (maxSnippet === "-1" ? "any length" : maxSnippet + " characters at most") + ".");
+  if (imagePreview !== "") meaning.push("Image previews: " + imagePreview + ".");
+  if (notranslate) meaning.push("Do not offer to translate this page.");
+  if (expires !== "") meaning.push("Stop showing the page after " + expires + ".");
+  const warnings = [];
+  if (noindex && maxSnippet !== "") warnings.push("A page that is not indexed has no snippet to control. The snippet settings do nothing here.");
+  if (noindex && imagePreview !== "") warnings.push("A page that is not indexed has no image preview to control.");
+  if (noindex && nofollow) warnings.push("noindex with nofollow is a common pair for pages that should be left completely alone. Be sure this is what you want.");
+  if (noindex) warnings.push("noindex is a request, not a lock. Anyone with the link can still open the page.");
+  const name = bot === "robots" ? "robots" : bot;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rb-bot">Which crawlers is it for?</label>{" "}
+        <select id="rb-bot" value={bot} onChange={(event) => setBot(event.target.value)}>
+          <option value="robots">All crawlers (robots)</option>
+          <option value="googlebot">Google only (googlebot)</option>
+          <option value="bingbot">Bing only (bingbot)</option>
+        </select>
+      </p>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>What do you want to ask for?</legend>
+        <label style={{display: "block"}}><input type="checkbox" checked={noindex} onChange={(event) => setNoindex(event.target.checked)} /> Do not index this page (noindex)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={nofollow} onChange={(event) => setNofollow(event.target.checked)} /> Do not follow links on this page (nofollow)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={noarchive} onChange={(event) => setNoarchive(event.target.checked)} /> No cached copy (noarchive)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={nosnippet} onChange={(event) => setNosnippet(event.target.checked)} /> No text snippet (nosnippet)</label>
+        <label style={{display: "block"}}><input type="checkbox" checked={notranslate} onChange={(event) => setNotranslate(event.target.checked)} /> Do not offer translation (notranslate)</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rb-snip">Snippet length limit</label>{" "}
+        <select id="rb-snip" value={maxSnippet} onChange={(event) => setMaxSnippet(event.target.value)} disabled={nosnippet}>
+          <option value="">No limit set</option>
+          <option value="0">0 (same as no snippet)</option>
+          <option value="50">50 characters</option>
+          <option value="160">160 characters</option>
+          <option value="-1">No limit (-1)</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rb-img">Image preview size</label>{" "}
+        <select id="rb-img" value={imagePreview} onChange={(event) => setImagePreview(event.target.value)}>
+          <option value="">No preference</option>
+          <option value="none">none</option>
+          <option value="standard">standard</option>
+          <option value="large">large</option>
+        </select>
+      </p>
+      <p style={{margin: "0 0 0.7rem"}}>
+        <label htmlFor="rb-exp">Stop showing after (optional date, such as 2027-01-31)</label>{" "}
+        <input id="rb-exp" type="text" value={expires} onChange={(event) => setExpires(event.target.value)} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>In the head of the page:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", whiteSpace: "pre-wrap", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{'<meta name="' + name + '" content="' + content + '">'}</code></pre>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The same thing as an HTTP header (useful for PDFs and images):</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", whiteSpace: "pre-wrap", border: "1px solid #cbd5e1", borderRadius: "6px"}}><code>{"X-Robots-Tag: " + (bot === "robots" ? "" : bot + ": ") + content}</code></pre>
+      <p style={{margin: "0 0 0.2rem"}}><strong>In plain English:</strong></p>
+      <ul style={{margin: "0 0 0.5rem", paddingLeft: "1.2rem"}} aria-live="polite">
+        {meaning.map((line, index) => (<li key={index}>{line}</li>))}
+      </ul>
+      {warnings.length > 0 ? (
+        <div>
+          <p style={{margin: "0 0 0.2rem"}}><strong>Things to think about:</strong></p>
+          <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+            {warnings.map((line, index) => (<li key={index}>{line}</li>))}
+          </ul>
+        </div>
+      ) : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Different search engines support different directives, and the list changes over time. The ones here are widely documented for Google, and often used by others. Check each search engine's documentation. With no tag at all, the default is the same as index, follow.
+      </p>
+    </div>
+  );
+}
+
+export const robotsTxtSample = "User-agent: *\nDisallow: /admin/\nDisallow: /search\nAllow: /search/help\nDisallow: /*.pdf$\n\nUser-agent: Googlebot-Image\nDisallow: /private-images/\n\nSitemap: https://thebreadbin.example/sitemap.xml";
+
+export function parseRobots(text) {
+  const groups = [];
+  let current = null;
+  let collecting = false;
+  text.split("\n").forEach((raw) => {
+    const line = raw.split("#")[0].trim();
+    if (line === "") return;
+    const index = line.indexOf(":");
+    if (index === -1) return;
+    const key = line.slice(0, index).trim().toLowerCase();
+    const value = line.slice(index + 1).trim();
+    if (key === "user-agent") {
+      if (!collecting || current === null) { current = {agents: [], rules: []}; groups.push(current); }
+      current.agents.push(value.toLowerCase());
+      collecting = true;
+    } else if (key === "allow" || key === "disallow") {
+      collecting = false;
+      if (current) current.rules.push({type: key, path: value});
+    } else {
+      collecting = false;
+    }
+  });
+  return groups;
+}
+
+export function ruleMatches(pattern, path) {
+  if (pattern === "") return false;
+  const anchored = pattern.endsWith("$");
+  const body = anchored ? pattern.slice(0, -1) : pattern;
+  const source = body.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*");
+  return new RegExp("^" + source + (anchored ? "$" : "")).test(path);
+}
+
+export function testRobots(text, agent, path) {
+  const groups = parseRobots(text);
+  const name = agent.trim().toLowerCase();
+  let group = groups.find((item) => item.agents.indexOf(name) !== -1);
+  let usedAgent = name;
+  if (!group) {
+    group = groups.find((item) => item.agents.indexOf("*") !== -1);
+    usedAgent = "*";
+  }
+  if (!group) return {allowed: true, rule: null, usedAgent: null};
+  const matches = group.rules.filter((rule) => ruleMatches(rule.path, path));
+  if (matches.length === 0) return {allowed: true, rule: null, usedAgent};
+  const best = matches.reduce((top, rule) => {
+    if (rule.path.length > top.path.length) return rule;
+    if (rule.path.length === top.path.length && rule.type === "allow") return rule;
+    return top;
+  }, matches[0]);
+  return {allowed: best.type === "allow", rule: best, usedAgent};
+}
+
+export function RobotsTxtTester() {
+  const [text, setText] = useState(robotsTxtSample);
+  const [agent, setAgent] = useState("Googlebot");
+  const [path, setPath] = useState("/search/help");
+  const result = testRobots(text, agent, path.trim() === "" ? "/" : path.trim());
+  const paths = ["/", "/recipes/rye-bread", "/admin/login", "/search?q=rye", "/search/help", "/guides/rye.pdf", "/private-images/a.jpg"];
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rt-text">A robots.txt file (edit it freely)</label><br />
+        <textarea id="rt-text" rows={11} value={text} onChange={(event) => setText(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem", display: "flex", gap: "0.6rem", flexWrap: "wrap"}}>
+        <span>
+          <label htmlFor="rt-agent">Crawler name</label>{" "}
+          <input id="rt-agent" type="text" value={agent} onChange={(event) => setAgent(event.target.value)} />
+        </span>
+        <span>
+          <label htmlFor="rt-path">Path to test</label>{" "}
+          <input id="rt-path" type="text" value={path} onChange={(event) => setPath(event.target.value)} style={{fontFamily: "monospace"}} />
+        </span>
+      </p>
+      <p style={{margin: "0 0 0.6rem", display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        {paths.map((item) => (<button key={item} type="button" onClick={() => setPath(item)}>{item}</button>))}
+      </p>
+      <p role="status" style={{margin: "0 0 0.3rem"}}>
+        <strong>{result.allowed ? "Allowed to crawl." : "Blocked from crawling."}</strong>{" "}
+        {result.usedAgent === null ? "There is no group for this crawler, and no wildcard group, so everything is allowed." : "Using the group for \"" + result.usedAgent + "\"."}
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {result.rule ? <span>Winning rule: <code>{(result.rule.type === "allow" ? "Allow: " : "Disallow: ") + result.rule.path}</code> (the longest matching rule wins, and Allow wins a tie).</span> : <span>No rule matches this path.</span>}
+      </p>
+      {!result.allowed ? (
+        <p style={{margin: "0 0 0.3rem"}}><strong>Remember:</strong> a crawler that is blocked cannot read the page, so it cannot see a <code>noindex</code> tag on it. The address can still appear in results, without a description, if other pages link to it.</p>
+      ) : null}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simplified tester that follows the common rules (user-agent groups, the longest match, * and $). Real crawlers have small differences, so use the testing tools in Search Console and Bing Webmaster Tools for the real answer. A robots.txt file is public, and only well-behaved crawlers follow it.
+      </p>
+    </div>
+  );
+}
+
+export const robotsSamples = {
+  messy: '<!doctype html>\n<html lang="en">\n<head>\n<title>Thank you</title>\n<meta name="robots" content="noindx, follow">\n<meta name="robot" content="noindex">\n<meta name="googlebot" content="index, noindex">\n<meta http-equiv="robots" content="noindex">\n<meta name="robots" content="max-snippet:lots, nosnippt">\n</head>\n<body>\n<meta name="robots" content="noindex">\n<h1>Thank you</h1>\n</body>\n</html>',
+  fixed: '<!doctype html>\n<html lang="en">\n<head>\n<title>Thank you | The Bread Bin</title>\n<meta name="robots" content="noindex, follow">\n</head>\n<body>\n<h1>Thank you</h1>\n</body>\n</html>',
+};
+
+export const robotsKnown = ["all", "index", "noindex", "follow", "nofollow", "none", "noarchive", "nosnippet", "noimageindex", "notranslate"];
+export const robotsNames = ["robots", "googlebot", "googlebot-news", "bingbot", "slurp", "duckduckbot", "yandex", "baiduspider"];
+
+export function editDistance(a, b) {
+  const grid = [];
+  for (let i = 0; i <= a.length; i++) { grid[i] = [i]; }
+  for (let j = 0; j <= b.length; j++) { grid[0][j] = j; }
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      grid[i][j] = Math.min(grid[i - 1][j] + 1, grid[i][j - 1] + 1, grid[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+  }
+  return grid[a.length][b.length];
+}
+
+export function closest(word, list) {
+  let best = null;
+  let score = 99;
+  list.forEach((item) => {
+    const d = editDistance(word, item);
+    if (d < score) { score = d; best = item; }
+  });
+  return score <= 2 ? best : null;
+}
+
+export function RobotsCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(robotsSamples.messy);
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const issues = [];
+  const notes = [];
+  const metas = Array.from(doc.querySelectorAll("meta[name], meta[http-equiv]"));
+  const robotMetas = [];
+  metas.forEach((el) => {
+    const name = (el.getAttribute("name") || "").trim().toLowerCase();
+    const equiv = (el.getAttribute("http-equiv") || "").trim().toLowerCase();
+    if (equiv === "robots") { issues.push("http-equiv=\"robots\" is not supported. Use name=\"robots\", or the X-Robots-Tag header."); return; }
+    if (name === "") return;
+    if (robotsNames.indexOf(name) === -1) {
+      const guess = closest(name, robotsNames);
+      if (guess) issues.push("The name \"" + name + "\" looks like a typo for \"" + guess + "\".");
+      return;
+    }
+    robotMetas.push({el, name});
+  });
+  robotMetas.forEach((item) => {
+    const content = (item.el.getAttribute("content") || "").toLowerCase();
+    const tokens = content.split(",").map((token) => token.trim()).filter(Boolean);
+    const label = "<meta name=\"" + item.name + "\"> with \"" + content + "\"";
+    if (tokens.length === 0) issues.push(label + ": the content is empty.");
+    if (!item.el.closest("head")) issues.push(label + ": it is in the body. Move it into the head, where it is read.");
+    tokens.forEach((token) => {
+      if (robotsKnown.indexOf(token) !== -1) return;
+      if (/^max-snippet:(-?\d+)$/.test(token) || /^max-video-preview:(-?\d+)$/.test(token) || /^max-image-preview:(none|standard|large)$/.test(token) || /^unavailable_after:\s*\S+/.test(token)) return;
+      const base = token.split(":")[0];
+      const guess = closest(base, robotsKnown.concat(["max-snippet", "max-image-preview", "max-video-preview", "unavailable_after"]));
+      issues.push(label + ": \"" + token + "\" is not a known value" + (guess ? ". Did you mean \"" + guess + "\"?" : "."));
+    });
+    if (tokens.indexOf("index") !== -1 && tokens.indexOf("noindex") !== -1) issues.push(label + ": index and noindex together contradict each other.");
+    if (tokens.indexOf("follow") !== -1 && tokens.indexOf("nofollow") !== -1) issues.push(label + ": follow and nofollow together contradict each other.");
+    if (tokens.indexOf("none") !== -1 && tokens.length > 1) notes.push(label + ": none already means noindex, nofollow. The other values are redundant.");
+    if (tokens.indexOf("noindex") !== -1 && (tokens.some((token) => token.indexOf("max-snippet") === 0 || token.indexOf("max-image-preview") === 0) || tokens.indexOf("nosnippet") !== -1)) notes.push(label + ": a page that is not indexed has no snippet or image preview to control.");
+    if (tokens.indexOf("noindex") !== -1 || tokens.indexOf("none") !== -1) notes.push(label + ": this keeps the page out of results. Is that on purpose? This is a common launch-day mistake.");
+    if (tokens.indexOf("nofollow") !== -1 && tokens.indexOf("noindex") === -1) notes.push(label + ": nofollow on a whole page asks search engines not to follow any of its links. That is rarely what you want.");
+  });
+  const generic = robotMetas.filter((item) => item.name === "robots");
+  if (generic.length > 1) notes.push(generic.length + " generic robots tags. Search engines combine them, and apply the most restrictive. Keep just one.");
+  if (doc.querySelector('meta[name="robots"][content*="noindex" i]') && doc.querySelector('link[rel~="canonical"]')) notes.push("This page has noindex and a canonical link. Choose one purpose, so the signals do not conflict.");
+  const choose = (value) => { setWhich(value); setHtml(robotsSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="rc-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="rc-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rc-html">Page HTML (edit it freely)</label><br />
+        <textarea id="rc-html" rows={12} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>{robotMetas.length}</strong> robots tags found. <strong>{issues.length}</strong> problems, <strong>{notes.length}</strong> things to think about.</p>
+      {issues.length === 0 && notes.length === 0 ? <p role="status" style={{margin: 0}}>Nothing to report.</p> : null}
+      <ul role="status" style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {issues.map((issue, index) => (<li key={"i" + index}><strong>Problem:</strong> {issue}</li>))}
+        {notes.map((note, index) => (<li key={"n" + index}><strong>Think about:</strong> {note}</li>))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This checks the meta tags in the HTML you paste. It cannot see headers such as X-Robots-Tag, your robots.txt file, or what a search engine has actually done. Check the live page too.
+      </p>
+    </div>
+  );
+}
+
+export function RobotsChecker() {
+  return <BrowserOnly>{() => <RobotsCheckerInner />}</BrowserOnly>;
+}
+
+Most of your pages should be found. A few should not: a "thank you" page after a purchase, the results of your internal search box, a draft you are still writing, or a login screen. For those, you want to give search engines **instructions.**
+
+There are two main ways to do that, and they are easy to mix up. The **robots meta tag** tells a search engine what to do **with a page it has read.** The **robots.txt file** tells it **where it may go in the first place.** This lesson explains both, and helps you pick the right one.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What the **robots meta tag** does, and its common values
+- The difference between **crawling** and **indexing**
+- How **robots.txt, X-Robots-Tag, nofollow links,** and **canonical links** differ
+- When to use **noindex,** and when not to
+- How to limit **snippets** and **previews**
+- Why none of this is **security**
+- How to **check** your tags and your robots.txt
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="thank-you.html"
+<head>
+  <title>Thank you | The Bread Bin</title>
+
+  <!-- Keep this page out of search results, but let links be followed -->
+  <meta name="robots" content="noindex, follow">
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="Robots Meta Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RobotsBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Tick the options, and read the tag, the header, and the plain-English meaning that come out.
+
+## Crawling and Indexing Are Different
+
+This is the most important idea in the lesson.
+
+- **Crawling** is when a search engine **visits** a page and downloads it.
+- **Indexing** is when it **stores** the page, so it can show it in results.
+
+| Tool | Controls | What it really says |
+| :-- | :-- | :-- |
+| **robots.txt** | Crawling | "Please do not visit these paths." |
+| **Robots meta tag** | Indexing (and more) | "You may visit, but please do not list this page." |
+| **X-Robots-Tag header** | Indexing (and more) | The same, for files with no head, such as PDFs |
+| **rel="nofollow" on a link** | One link | "Please do not treat this link as an endorsement." |
+| **Canonical link** | Which duplicate to prefer | "This other address is the main one." See [Canonical Links](./canonical-links). |
+
+:::warning The classic trap
+To keep a page **out of results,** you use `noindex`. But a crawler must **read the page** to see that tag. If you **also** block the page in `robots.txt`, the crawler never visits, so it never sees the `noindex`. The address can then still appear in results, usually without a description, if other pages link to it. So: **use noindex, and leave the page crawlable.**
+:::
+
+## The Robots Meta Tag
+
+```html
+<meta name="robots" content="noindex, nofollow">
+```
+
+- **`name="robots"`** speaks to all search engines. Use a crawler's own name (`googlebot`, `bingbot`) to speak to just one.
+- **`content`** holds one or more instructions, separated by commas.
+- **It goes in the head.** In the body, it is ignored.
+- **Without any tag,** the default is `index, follow`. You never need to write that.
+
+### Common values
+
+| Value | Meaning |
+| :-- | :-- |
+| `index` | The page may be listed (the default) |
+| `noindex` | Do not list this page in results |
+| `follow` | Links may be followed (the default) |
+| `nofollow` | Do not follow the links on this page |
+| `none` | Same as `noindex, nofollow` |
+| `noarchive` | Do not show a cached copy |
+| `nosnippet` | Do not show a text snippet |
+| `max-snippet:N` | Limit the snippet to N characters |
+| `max-image-preview:large` | Allow large image previews (or `standard` or `none`) |
+| `notranslate` | Do not offer to translate the page |
+| `unavailable_after: date` | Stop showing the page after a date |
+
+Support varies by search engine, and it changes. These are documented by Google, and many are respected by others. Check each search engine's own page.
+
+## Pages That Often Get noindex
+
+- **Thank-you and confirmation pages.**
+- **Internal search results,** which are thin and endless.
+- **Login, account, and checkout steps.**
+- **Drafts and staging pages** (but protect them with a password too).
+- **Thin, near-empty pages,** such as tag pages with nothing on them.
+- **Duplicate printer-friendly pages,** when a canonical will not do.
+
+## Pages That Should Not
+
+- **Anything you want people to find.** A stray `noindex` on a home page can remove it from results.
+- **A page that also has a canonical pointing elsewhere.** Choose one purpose. If the page is a duplicate, use a canonical. If it should simply not be listed, use noindex.
+- **Pages you want to hide from people.** `noindex` is a request. Use a login instead.
+
+### The launch-day mistake
+
+Developers often put `noindex` on a staging site, so it is not listed while it is being built. Then they launch, and **forget to take it off.** The live site silently disappears from search. Always check your live pages after a launch, and consider adding a test in your build that fails if production pages have `noindex`.
+
+## The robots.txt File
+
+`robots.txt` is a plain text file at the **top of your site** (`https://thebreadbin.example/robots.txt`). It lists which paths crawlers should skip.
+
+```text title="robots.txt"
+User-agent: *
+Disallow: /admin/
+Disallow: /search
+Allow: /search/help
+
+Sitemap: https://thebreadbin.example/sitemap.xml
+```
+
+- **`User-agent`** names the crawler. `*` means all of them.
+- **`Disallow`** lists a path to skip. **`Allow`** makes an exception.
+- **The longest matching rule wins,** and `Allow` wins a tie.
+- **`*`** matches any characters, and **`$`** matches the end of the address.
+- **`Sitemap`** points to your sitemap file.
+
+Try it, and see which rule wins:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RobotsTxtTester />
+</>
+</BrowserWindow>
+
+### Good uses of robots.txt
+
+- Stopping crawlers from wasting time on **endless, low-value paths** (internal search, filters, calendars).
+- Keeping crawlers away from **large, heavy files** that you do not want fetched.
+- Pointing to your **sitemap.**
+
+### What it is not for
+
+- **Keeping a page out of results.** Use `noindex` (and leave it crawlable).
+- **Hiding private content.** The file is public, and anyone can read it. A list of "secret" paths in robots.txt is a map for attackers.
+- **Blocking your CSS and JavaScript.** Search engines need them to understand your page.
+
+## X-Robots-Tag: For Files Without a Head
+
+A PDF or image has no HTML head, so a meta tag cannot go in it. A server can send the same instruction as an **HTTP header:**
+
+```text
+X-Robots-Tag: noindex
+```
+
+The values are the same as in the meta tag. It is set in your server or hosting settings, and is often used for PDFs, images, and whole folders.
+
+## Links: nofollow, sponsored, and ugc
+
+The meta tag can apply `nofollow` to **every** link on a page. More often, you want to mark **single links** with `rel`:
+
+```html
+<a href="https://example.com/partner" rel="sponsored">Our partner</a>
+<a href="https://example.com/comment-link" rel="ugc nofollow">A link from a comment</a>
+<a href="https://example.com/unsure" rel="nofollow">A link we do not vouch for</a>
+```
+
+- **`sponsored`:** paid or affiliate links.
+- **`ugc`:** links in user-generated content.
+- **`nofollow`:** a link you do not want to vouch for.
+
+Search engines treat these as **hints,** not commands. Use them to be honest about your links.
+
+## Snippets and Previews
+
+You can limit how your page appears in results. Use these with care, because showing less often means fewer clicks.
+
+- **`nosnippet`** or **`max-snippet:N`** limit the text shown. See [Meta Description](./meta-description).
+- **`max-image-preview:large`** allows large images, which can make a result more eye-catching.
+- **`noarchive`** stops cached copies being offered.
+- **`data-nosnippet`** is an HTML attribute that asks Google not to use a part of a page in snippets.
+
+## AI and Other Crawlers
+
+More and more crawlers, including those that collect data for AI systems, visit sites. Many publish a **crawler name** and say they follow **robots.txt.** You can then allow or block them by name:
+
+```text title="robots.txt"
+User-agent: ExampleAIBot
+Disallow: /
+```
+
+Names, rules, and promises change quickly, and not every crawler obeys. Read each company's current documentation. If something must stay private, put it behind a login.
+
+## Robots Rules in Docusaurus
+
+Docusaurus has a site-wide `noIndex` option in `docusaurus.config.js`, and lets you add tags to a single page with its `Head` component. A static `robots.txt` placed in the `static` folder is copied to the top of your built site. Behaviour changes between versions, so check the current documentation, and look at the built output.
+
+## Check Your Tags
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RobotsChecker />
+</>
+</BrowserWindow>
+
+### Check it for real
+
+1. **"View source"** on a page, and search for `robots`.
+2. **Open `/robots.txt`** on your site, and read it.
+3. **Google Search Console's URL inspection** tells you whether a page is indexed, and whether `noindex` or robots.txt is stopping it.
+4. **The robots.txt tester** in Search Console (or Bing Webmaster Tools) shows what a real crawler would do.
+5. **Check response headers** in your browser's developer tools (Network tab) for `X-Robots-Tag`.
+6. **Search for `site:yourdomain.com`** to see what is listed.
+
+:::info Changes take time
+After you add or remove `noindex`, search engines must **visit the page again** to notice. That can take days or weeks. Search Console has a temporary removal tool for urgent cases, and a way to ask for a recrawl.
+:::
+
+## Good Habits
+
+- **Use `noindex` to keep a page out of results,** and leave it crawlable.
+- **Use robots.txt for crawl control,** not for hiding.
+- **Never block CSS or JavaScript** that pages need.
+- **Use a login for anything private.**
+- **Check your live site after every launch** for stray `noindex` tags.
+- **Keep one robots tag per page,** in the head.
+- **Be honest with `rel` values** on links.
+- **Check with Search Console** to see what search engines did.
+
+## Robots Checklist
+
+- [ ] Pages you want found have no `noindex`
+- [ ] Pages you do not want listed have `noindex`, and are not blocked in robots.txt
+- [ ] Private pages are behind a login, not only hidden
+- [ ] robots.txt exists, is short, and lists no secret paths
+- [ ] CSS, JavaScript, and images needed for rendering are not blocked
+- [ ] A sitemap is listed in robots.txt
+- [ ] No page has both `noindex` and a canonical pointing elsewhere
+- [ ] Staging has a password, and its `noindex` is removed on launch
+- [ ] Sponsored and user-submitted links have `rel` values
+- [ ] PDFs and images use `X-Robots-Tag` when needed
+
+## Security and Privacy Notes
+
+- **noindex and robots.txt are requests, not locks.** Well-behaved crawlers follow them. Scrapers, attackers, and anyone with the link do not have to. Use authentication for private data.
+- **robots.txt is public.** Listing `/admin/` or `/private-backups/` tells everyone where to look. Protect those paths properly, and avoid naming them.
+- **Pages can still be shared and archived.** Copies, screenshots, and other archives may exist, whatever your tags say. `noarchive` only affects some search engines' caches.
+- **Do not rely on `noindex` for removing private data.** If something sensitive was published, remove it, change what needs changing, and use the search engines' removal tools. Takedown and "right to be forgotten" rules differ by country. This is not legal advice.
+- **Never build robots tags from untrusted input.** If a page's tag or header is created from a parameter or user data, an attacker could inject `noindex` or break your HTML. Use fixed, validated values, and escape the output.
+- **Watch for tampering.** If a hacked site gets `noindex` added, or robots.txt changed to `Disallow: /`, it can vanish from results. Monitor your live tags and file.
+- **Respect others' rules.** If you write a crawler or scraper, follow robots.txt, identify yourself, and limit your request rate.
+
+## Global Audience Notes
+
+- **Search engines differ by region.** Baidu, Yandex, Naver, and others each document their own robots support and crawler names. Check the ones your readers use.
+- **Apply rules to every language version.** A forgotten `noindex` on the Spanish pages is as damaging as on the English ones.
+- **Check country-specific hosts** (`.fr`, `/de/`). Each needs the right robots.txt, since the file belongs to one host.
+- **Legal rules** about data, privacy, and removal differ across countries. Ask for advice if you handle personal data.
+- **Notranslate** lets you stop automatic translation for pages (or parts) where a machine translation could mislead, such as legal text or brand names. Use it sparingly, because many readers rely on translation.
+
+## Common Mistakes to Avoid
+
+1. **Blocking a page in robots.txt and expecting `noindex` to work.**
+2. **Leaving `noindex` on after launch.**
+3. **Using robots.txt to hide private pages.**
+4. **Listing secret paths in robots.txt.**
+5. **Typos** such as `noindx`, or `name="robot"`.
+6. **Contradictory values,** such as `index, noindex`.
+7. **Putting the tag in the body.**
+8. **Using `http-equiv="robots"`,** which is not supported.
+9. **`noindex` plus a canonical pointing elsewhere.**
+10. **Blocking CSS and JavaScript.**
+11. **Using `nofollow` on a whole page** by accident.
+12. **Never checking** what search engines actually did.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the builder to make a tag for a thank-you page, an internal search page, and a normal article.
+2. In the robots.txt tester, try each sample path. Why does `/search/help` work, while `/search?q=rye` is blocked?
+3. Add a rule that blocks `/drafts/`, and test it.
+4. Run the checker on the messy page, fix every problem, and run it again.
+5. Open `/robots.txt` on three sites you use. What do they block?
+6. Search a site you own for `noindex`. Is it where you expect it?
+7. Use URL inspection in Search Console on a page. Is it indexed?
+8. Find a PDF on your site, and work out how you would add `X-Robots-Tag` to it.
+9. Mark three kinds of links on a page with the right `rel` values.
+10. Bonus: write a short test for your build that fails if a production page contains `noindex`.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the difference between crawling and indexing?</summary>
+
+Crawling is visiting and downloading a page. Indexing is storing it so it can appear in results. robots.txt mainly controls crawling, and the robots meta tag controls indexing.
+
+</details>
+
+<details>
+<summary>2. Which tag keeps a page out of search results?</summary>
+
+`noindex`, in a robots meta tag or an X-Robots-Tag header. The page must stay crawlable, so the tag can be read.
+
+</details>
+
+<details>
+<summary>3. Why is blocking a page in robots.txt a poor way to keep it out of results?</summary>
+
+A blocked crawler cannot read the page, so it cannot see a `noindex` tag. The address can still appear in results, without a description, if other pages link to it.
+
+</details>
+
+<details>
+<summary>4. Is noindex a way to keep a page private?</summary>
+
+No. It is a request, and anyone with the link can still open the page. Use a login for private content.
+
+</details>
+
+<details>
+<summary>5. What is X-Robots-Tag for?</summary>
+
+It sends robots instructions as an HTTP header, which works for files with no HTML head, such as PDFs and images.
+
+</details>
+
+<details>
+<summary>6. What launch-day mistake do many sites make?</summary>
+
+They leave the `noindex` from staging on the live site, so the site vanishes from search. Check live pages after a launch.
+
+</details>
+
+## Key Takeaways
+
+- **Crawling and indexing are different.** robots.txt guides the first, and the robots tag guides the second.
+- **To keep a page out of results, use `noindex` and keep it crawlable.**
+- **The default is `index, follow`.** You rarely need to say it.
+- **Use `X-Robots-Tag` for PDFs and images,** and `rel` values for single links.
+- **None of these are security.** Use a login for anything private.
+- **robots.txt is public.** Never list secrets in it.
+- **Check your live site** for stray `noindex` tags, and use Search Console to see what search engines did.
+- **Rules and crawler names change.** Read the current documentation.
+
+Next, learn how to describe your content so search engines understand it in detail, with [Structured Data](./structured-data).

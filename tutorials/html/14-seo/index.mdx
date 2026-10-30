@@ -1,15 +1,439 @@
+---
+id: seo-overview
+title: "HTML SEO: Helping People Find Your Pages"
+sidebar_label: "SEO"
+sidebar_position: 1
+slug: /html/seo
+description: "Start learning SEO with HTML: how search engines crawl, index, and rank pages, which tags help (title, description, headings, canonical, robots, structured data, Open Graph), what HTML cannot do, and a map of every lesson in this section. Includes a live search result preview, a crawl-to-rank explorer, and a short true-or-false myth drill."
+keywords:
+  - HTML SEO
+  - SEO for beginners
+  - search engine optimization HTML
+  - how search engines work
+  - title tag
+  - meta description
+  - canonical link
+  - structured data
+  - Open Graph
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, search-engines, meta-tags, structured-data, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function SnippetPreview() {
+  const [title, setTitle] = useState("Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin");
+  const [desc, setDesc] = useState("Bake a crusty rye loaf at home with five simple ingredients. No kneading, no special tools, and a step-by-step guide for beginners.");
+  const [path, setPath] = useState("recipes/rye-bread");
+  const titleMax = 60;
+  const descMax = 155;
+  const shortTitle = title.length > titleMax ? title.slice(0, titleMax - 1).trim() + "…" : title;
+  const shortDesc = desc.length > descMax ? desc.slice(0, descMax - 1).trim() + "…" : desc;
+  const tips = [];
+  if (title.trim() === "") tips.push("The title is empty. Search engines may make one up for you.");
+  else if (title.length < 20) tips.push("The title is very short. Say what the page is about.");
+  if (title.length > titleMax) tips.push("The title is " + title.length + " characters, so it may be cut off. Put the important words first.");
+  if (desc.trim() === "") tips.push("There is no description. Search engines may pick a snippet from the page instead.");
+  else if (desc.length < 70) tips.push("The description is short. You have room to say more.");
+  if (desc.length > descMax) tips.push("The description is " + desc.length + " characters, so it may be cut off.");
+  if (title.trim() !== "" && desc.trim() !== "" && title.trim().toLowerCase() === desc.trim().toLowerCase()) tips.push("The title and description are the same. Use the description to add something new.");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="snip-title">Page title</label><br />
+        <input id="snip-title" type="text" value={title} onChange={(event) => setTitle(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="snip-desc">Meta description</label><br />
+        <textarea id="snip-desc" rows={3} value={desc} onChange={(event) => setDesc(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.7rem"}}>
+        <label htmlFor="snip-path">Page address (after the domain)</label><br />
+        <input id="snip-path" type="text" value={path} onChange={(event) => setPath(event.target.value)} style={{width: "100%"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>How it might look in a search result:</strong></p>
+      <div style={{border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "0.6rem", background: "#ffffff", color: "#0f172a"}}>
+        <div style={{fontSize: "0.85em", color: "#475569"}}>thebreadbin.example › {path.split("/").filter(Boolean).join(" › ")}</div>
+        <div style={{fontSize: "1.15em", color: "#1d4ed8", margin: "0.15rem 0"}}>{shortTitle || "(no title)"}</div>
+        <div style={{fontSize: "0.92em", color: "#334155"}}>{shortDesc || "(no description)"}</div>
+      </div>
+      <p style={{margin: "0 0 0.3rem"}}><strong>{title.length}</strong> characters in the title, <strong>{desc.length}</strong> in the description.</p>
+      {tips.length === 0 ? <p role="status" style={{margin: 0}}>Looks good. Make sure it is also true and useful.</p> : (
+        <ul role="status" style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {tips.map((tip, index) => (<li key={index}>{tip}</li>))}
+        </ul>
+      )}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This is a simple preview. Real search results are cut off by width in pixels, not by characters, and search engines often rewrite titles and snippets to suit each search. The limits here are rough guides, not rules.
+      </p>
+    </div>
+  );
+}
+
+export const pipelineStages = [
+  {id: "crawl", name: "1. Crawl", what: "A program (a crawler) follows links and downloads your pages. It can only find pages that are linked, listed in a sitemap, or already known.", html: ["Real links with an href", "robots.txt rules", "A sitemap file", "Fast, working pages"], tip: "If a crawler cannot reach a page, nothing else matters."},
+  {id: "render", name: "2. Read and render", what: "The search engine reads your HTML, and may run your JavaScript, to see what a visitor would see.", html: ["Content in the HTML", "Title and meta tags in the head", "Headings and semantic elements", "Alt text on images"], tip: "Content that only appears after a lot of scripting can be missed or delayed."},
+  {id: "index", name: "3. Index", what: "The search engine decides whether to store the page, and works out what it is about. Duplicate or blocked pages may be left out.", html: ["Canonical link", "Robots meta (index or noindex)", "Structured data", "Unique, useful content"], tip: "Being crawled does not guarantee being indexed."},
+  {id: "rank", name: "4. Rank", what: "When someone searches, the search engine picks the best stored pages and orders them. Hundreds of signals can be involved.", html: ["A clear title that matches the topic", "Helpful, original content", "Good page experience", "Links from other sites"], tip: "Nobody outside the search engine knows the full recipe, and it changes."},
+  {id: "show", name: "5. Show", what: "The result appears with a title, a link, and a snippet, and maybe an image, rating, or other rich result.", html: ["Title and meta description", "Open Graph tags (for shared links)", "Structured data (for rich results)", "A favicon"], tip: "A clear, honest snippet earns clicks. Clicks come from people."},
+];
+
+export function PipelineExplorer() {
+  const [current, setCurrent] = useState("crawl");
+  const stage = pipelineStages.find((item) => item.id === current);
+  return (
+    <div>
+      <p style={{margin: "0 0 0.4rem"}}>Choose a stage to see what happens, and which HTML helps.</p>
+      <p style={{margin: "0 0 0.7rem", display: "flex", gap: "0.4rem", flexWrap: "wrap"}}>
+        {pipelineStages.map((item) => (
+          <button key={item.id} type="button" aria-pressed={current === item.id} onClick={() => setCurrent(item.id)} style={{fontWeight: current === item.id ? "bold" : "normal"}}>{item.name}</button>
+        ))}
+      </p>
+      <div style={{border: "1px solid #94a3b8", borderRadius: "8px", padding: "0.7rem 0.9rem"}} aria-live="polite">
+        <p style={{margin: "0 0 0.4rem"}}><strong>{stage.name}</strong></p>
+        <p style={{margin: "0 0 0.4rem"}}>{stage.what}</p>
+        <p style={{margin: "0 0 0.2rem"}}><strong>What helps here:</strong></p>
+        <ul style={{margin: "0 0 0.4rem", paddingLeft: "1.2rem"}}>
+          {stage.html.map((item) => (<li key={item}>{item}</li>))}
+        </ul>
+        <p style={{margin: 0}}><em>{stage.tip}</em></p>
+      </div>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        A simplified model. Real search engines are more complicated, and each one works a little differently.
+      </p>
+    </div>
+  );
+}
+
+export const mythItems = [
+  {id: "m1", text: "Filling the meta keywords tag with lots of words helps a page rank.", answer: "false", why: "Major search engines such as Google ignore the meta keywords tag. Write good visible content instead."},
+  {id: "m2", text: "Every page should have its own unique title.", answer: "true", why: "A unique title tells people and search engines what makes each page different."},
+  {id: "m3", text: "The meta description is a direct ranking factor.", answer: "false", why: "Google has said it does not use the description for ranking. But a good one can make more people click your result."},
+  {id: "m4", text: "Hiding white text full of keywords on a white background is a smart trick.", answer: "false", why: "Hidden keyword stuffing is against search engine rules, and can get a site demoted or removed."},
+  {id: "m5", text: "A noindex tag makes a page private.", answer: "false", why: "It only asks search engines not to list the page. Anyone with the link can still open it. Use a login for privacy."},
+  {id: "m6", text: "Text in HTML is easier for search engines to understand than text baked into an image.", answer: "true", why: "Real text can be read, translated, and selected. If you use an image of text, add alt text."},
+  {id: "m7", text: "Paying for search ads improves your normal (organic) ranking.", answer: "false", why: "Ads and organic results are separate. Paying for ads does not change where you rank organically."},
+  {id: "m8", text: "Fast, mobile-friendly, accessible pages tend to be good for both visitors and search.", answer: "true", why: "Pages that work well for people are easier to use, share, and understand. Search engines aim to reward that."},
+];
+
+export function MythDrill() {
+  const [guesses, setGuesses] = useState({});
+  const [shown, setShown] = useState(false);
+  const answered = Object.keys(guesses).length;
+  const right = mythItems.filter((item) => guesses[item.id] === item.answer).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>True or false? Decide each one, then check your answers.</p>
+      {mythItems.map((item) => (
+        <fieldset key={item.id} style={{margin: "0 0 0.5rem"}}>
+          <legend>{item.text}</legend>
+          <label style={{marginRight: "1rem"}}><input type="radio" name={"myth-" + item.id} checked={guesses[item.id] === "true"} onChange={() => setGuesses({...guesses, [item.id]: "true"})} /> True</label>
+          <label><input type="radio" name={"myth-" + item.id} checked={guesses[item.id] === "false"} onChange={() => setGuesses({...guesses, [item.id]: "false"})} /> False</label>
+          {shown && guesses[item.id] ? (
+            <p style={{margin: "0.3rem 0 0"}}><strong>{guesses[item.id] === item.answer ? "Correct." : "Not quite. It is " + item.answer + "."}</strong> {item.why}</p>
+          ) : null}
+        </fieldset>
+      ))}
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my answers</button>{" "}
+        <button type="button" onClick={() => { setGuesses({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? "You got " + right + " of " + answered + " answered correctly." : ""}</p>
+      <p style={{margin: "0.5rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Search engines change their advice over time. Check the official documentation for the search engines you care about.
+      </p>
+    </div>
+  );
+}
+
+Most people find a website the same way: they **type a question into a search box.** If your page is not in the results, it may as well not exist. **SEO,** short for **search engine optimization,** is the craft of making your pages easy for search engines to **find, understand, and show** to the right people.
+
+The good news for beginners: a lot of SEO is just **good HTML.** A clear title, honest headings, meaningful elements, descriptive links, and useful content all help people, and they help search engines too. This section teaches the HTML side of SEO, one tag at a time, and is honest about what HTML **cannot** do.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn in This Section
+
+- How search engines **crawl, index, and rank** pages
+- Writing **titles and meta descriptions** that people want to click
+- Using **headings** and **semantic HTML** to show a page's structure
+- Using **canonical links** and **robots meta** to manage duplicates and indexing
+- Adding **structured data** (JSON-LD) so search engines understand your content
+- Controlling how links look when shared, with **Open Graph** and **Twitter Cards**
+- The basics of **international SEO** (language and region)
+- Which parts of SEO are **not** in your HTML
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- What the page is called, in search results and tabs -->
+  <title>Rye Bread Recipe: Easy No-Knead Loaf | The Bread Bin</title>
+
+  <!-- The summary that may appear under the title -->
+  <meta name="description" content="Bake a crusty rye loaf at home with five simple ingredients. No kneading and no special tools.">
+
+  <!-- The main address of this page -->
+  <link rel="canonical" href="https://thebreadbin.example/recipes/rye-bread">
+
+  <!-- How the link looks when shared -->
+  <meta property="og:title" content="Rye Bread Recipe">
+  <meta property="og:image" content="https://thebreadbin.example/img/rye.jpg">
+</head>
+<body>
+  <main>
+    <h1>Easy No-Knead Rye Bread</h1>
+    <p>...</p>
+  </main>
+</body>
+</html>
 ```
-        ├── 14-seo/
-        │   ├── index.mdx
-        │   ├── html-seo-basics.mdx
-        │   ├── title-seo.mdx
-        │   ├── meta-description.mdx
-        │   ├── headings-and-seo.mdx
-        │   ├── semantic-html-and-seo.mdx
-        │   ├── canonical-links.mdx
-        │   ├── robots-meta.mdx
-        │   ├── structured-data.mdx
-        │   ├── open-graph.mdx
-        │   ├── twitter-cards.mdx
-        │   └── international-seo.mdx
-```
+
+</TabItem>
+<TabItem value="output" label="Search Preview">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SnippetPreview />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Edit the title and the description. Watch the preview change, and see the length hints. Notice how a clear title and an honest summary already look more inviting.
+
+## What Is SEO, Really?
+
+SEO is **not** a trick to fool a search engine. It is the work of **helping a search engine understand your page, so it can match it with people who are looking for it.** The goals are simple:
+
+1. **Be findable:** search engines can reach and store your pages.
+2. **Be understandable:** they can tell what each page is about.
+3. **Be worth clicking:** your result looks clear and trustworthy.
+4. **Be worth staying on:** the page is useful, fast, and easy to use.
+
+The fourth one matters most. A search engine's whole job is to send people to pages they will be glad they opened.
+
+:::info Be careful with promises
+Nobody can guarantee a number one ranking, and anyone who does should be treated with caution. SEO takes **weeks or months** to show results, and results depend on competition, content, and changes that you do not control.
+:::
+
+## How Search Engines Work
+
+Search engines work in stages. Explore each one, and see which HTML helps where.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PipelineExplorer />
+</>
+</BrowserWindow>
+
+## Where HTML Helps
+
+HTML is only one part of SEO, but it is the part **you** fully control, and the part that makes everything else work.
+
+| HTML piece | What it does for SEO |
+| :-- | :-- |
+| `<title>` | Names the page in results, tabs, and bookmarks |
+| `<meta name="description">` | Offers a summary that can appear under the title |
+| Headings (`h1` to `h6`) | Show the outline and main topics |
+| Semantic elements | Show which parts are navigation, main content, and so on |
+| Links with clear text | Help crawlers find pages and understand what they are about |
+| Image `alt` text | Describes images, and helps image search |
+| `rel="canonical"` | Names the main version of a page that exists at several addresses |
+| Robots meta | Asks search engines to index or skip a page |
+| Structured data | Describes your content in a format machines read well |
+| Open Graph and Twitter Cards | Control how the link looks when shared |
+| `lang` and hreflang | Say which language and region a page is for |
+
+## Where HTML Does Not Help
+
+Honest SEO includes what is **outside** the page's HTML:
+
+- **Content quality.** Helpful, original, accurate content that answers a real question is the biggest factor.
+- **Page experience.** Fast loading, stable layout, mobile-friendly design, and HTTPS.
+- **Links from other sites.** Others linking to you is a signal that your page is useful.
+- **Authority and trust.** Real expertise, clear authorship, and an honest site.
+- **Search intent.** Whether your page is the kind of page the searcher wanted.
+- **Technical setup.** Server speed, redirects, sitemaps, and error pages.
+
+A perfect set of tags on a thin, copied page will not get far. And a great page with missing tags can still do well. HTML is the **foundation,** not the whole building.
+
+## White Hat and Black Hat
+
+- **White hat SEO** follows the search engines' guidelines, and helps real people.
+- **Black hat SEO** tries to trick them: hidden keywords, fake links, copied content, misleading titles, and cloaking (showing crawlers something different).
+
+Black hat tricks may work for a little while, but they put your site at risk of being demoted or removed. They also make a worse web for readers. In this course, we only teach the first kind.
+
+## Myth or Fact?
+
+Test what you already believe about SEO:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MythDrill />
+</>
+</BrowserWindow>
+
+## What Is in This Section
+
+### Foundations
+
+<DocCardList />
+
+## Tools You Will Use
+
+- **Google Search Console** (free): shows which pages are indexed, which searches find you, and any problems. Bing Webmaster Tools is the equivalent for Bing.
+- **Lighthouse** (in Chrome DevTools): checks basic SEO, speed, and accessibility.
+- **Rich Results Test** and **Schema Markup Validator:** test your structured data.
+- **Your browser's "view source" and developer tools:** see what a crawler gets in your HTML.
+- **A site search for your own pages** (the `site:` operator in many search engines) to see what is listed.
+
+Features and names change, so check each tool's current documentation.
+
+## Five Habits to Start Today
+
+1. **Give every page a unique, clear title.** Say what the page is.
+2. **Write for people first.** Answer one real question well.
+3. **Use real headings and links.** Describe where each link goes.
+4. **Add alt text** to images that carry meaning.
+5. **Check what search engines see.** Use Search Console and "view source."
+
+## SEO Checklist for Any Page
+
+- [ ] The page has a `lang` attribute and a unique `<title>`
+- [ ] There is a helpful, honest meta description
+- [ ] There is one clear `h1`, and headings follow the outline
+- [ ] The content is in real text, and links have descriptive text
+- [ ] Images have useful `alt` text, and a sensible size
+- [ ] The page has a canonical link, when needed
+- [ ] The page can be crawled, unless it is meant to be private (and private pages have a login)
+- [ ] Structured data is valid, and matches visible content
+- [ ] Social share tags are set (Open Graph and Twitter Cards)
+- [ ] The page is fast, mobile-friendly, and served over HTTPS
+- [ ] Language and region are clear, if you serve several
+
+## Security and Privacy Notes
+
+- **`noindex` and `robots.txt` are not security.** They are polite requests to well-behaved crawlers. Pages that must stay private need a login and proper access control.
+- **Do not publish private data and hope it is not found.** Search engines index what they can reach, including old test pages, staging sites, and files in public folders. Check what is public.
+- **Structured data and reviews must be honest.** Fake ratings, fake reviews, or markup that does not match the visible page can lead to penalties, and it can mislead people.
+- **Be careful with tracking and analytics.** Many places require consent for cookies and tracking. Collect the least data you need, and say what you collect. This is not legal advice, so check the rules that apply to you.
+- **Beware of SEO scams.** Emails promising instant first-page rankings, or tools that ask for passwords or access to your Search Console, are often scams. Give out access carefully.
+- **Watch for spam on your own site.** User-generated links and comments can be abused. Use `rel="ugc"` or `rel="nofollow"` where appropriate, and moderate content.
+
+## Global Audience Notes
+
+- **Search engines differ.** Google and Bing are common in many places, but Baidu (China), Yandex (Russia and nearby), and Naver (Korea) matter in others. Each has its own guidelines and tools, so check the ones your readers use.
+- **Write in your readers' language,** and say so with the `lang` attribute. For a multilingual site, read the lesson on [International SEO](./international-seo).
+- **People search in different ways.** Words, spellings, and phrases differ by language and country, so translate the **meaning,** not just the words.
+- **Mobile and slow networks matter.** In many regions, most visitors use phones on slower connections. Small, fast pages do better.
+- **Right-to-left languages and non-Latin scripts** need correct `lang`, `dir`, and encoding (UTF-8).
+- **Laws and rules vary** by country, including privacy and advertising rules.
+
+## Common Mistakes to Avoid
+
+1. **Writing for search engines, not people.** Stuffed, awkward text hurts everyone.
+2. **The same title on every page.**
+3. **No title, or "Untitled" or "Home" only.**
+4. **Keyword stuffing,** including in alt text, headings, and hidden text.
+5. **Relying on the meta keywords tag,** which major search engines ignore.
+6. **Using headings only for size or style.**
+7. **Links that say "click here."**
+8. **Using `noindex` or `robots.txt` as if it were security.**
+9. **Duplicate pages with no canonical.**
+10. **Content that only appears after heavy scripting,** with no fallback.
+11. **Chasing tricks,** or paying for "guaranteed rankings."
+12. **Never checking Search Console** or what is really indexed.
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the search preview. Write a title and description for a page you built, and watch the length hints.
+2. Open the explorer, and read each stage. Which stage can you influence the most with HTML?
+3. Take the myth drill. Which answer surprised you?
+4. Use "view source" on a site you like. Find its `<title>`, description, and canonical link.
+5. Search for a topic you know well. Which results look the most trustworthy, and why?
+6. Open Lighthouse in Chrome DevTools, and run an SEO check on a page you built.
+7. List every page of a small site you built, and give each page a unique title.
+8. Check your page with a screen reader. Do the headings and link texts make sense out of context?
+9. Find one page that you would not want indexed, and decide how to protect it properly.
+10. Bonus: sign up for Google Search Console (free) with a site you own, and read the "Pages" report.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does SEO stand for, and what is it for?</summary>
+
+Search engine optimization. It is the work of helping search engines find, understand, and show your pages to the people who are looking for them.
+
+</details>
+
+<details>
+<summary>2. What are the main stages of how search engines work?</summary>
+
+They crawl (find and download pages), read and render them, index (store and understand) them, rank them for a search, and show a result.
+
+</details>
+
+<details>
+<summary>3. Which HTML helps SEO most?</summary>
+
+A unique and clear `&lt;title&gt;`, an honest meta description, real headings, semantic elements, descriptive links, alt text, and, when needed, canonical, robots, and structured data.
+
+</details>
+
+<details>
+<summary>4. What can HTML not do?</summary>
+
+HTML cannot make poor content good, give you links from other sites, or guarantee a ranking. Content quality, page experience, and trust matter a great deal.
+
+</details>
+
+<details>
+<summary>5. Is `noindex` a way to keep a page private?</summary>
+
+No. It only asks search engines not to list the page. Anyone with the link can still open it. Use a login for private pages.
+
+</details>
+
+<details>
+<summary>6. What is the difference between white hat and black hat SEO?</summary>
+
+White hat follows search engine guidelines and helps people. Black hat tries to trick search engines, and risks penalties.
+
+</details>
+
+## Key Takeaways
+
+- **SEO helps search engines find, understand, and show your pages.** Good HTML is where it starts.
+- **Search engines crawl, index, rank, and show.** Different tags help at different stages.
+- **Titles, descriptions, headings, and links** are your core tools.
+- **Canonical, robots, and structured data** guide how search engines treat your pages.
+- **Open Graph and Twitter Cards** shape how links look when shared.
+- **Content quality and page experience** matter more than any tag.
+- **No one can promise rankings.** Beware of tricks and scams.
+- **Write for people first,** and tell the truth.
+
+Start with [HTML SEO Basics](./seo/html-seo-basics), and work through the lessons in order.

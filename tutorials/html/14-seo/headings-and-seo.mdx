@@ -1,0 +1,541 @@
+---
+id: html-seo-headings
+title: "Headings and SEO"
+sidebar_label: "Headings and SEO"
+sidebar_position: 5
+slug: /html/seo/headings-and-seo
+description: "Learn how headings help search engines and readers understand a page: the h1 to h6 outline, how many h1 elements to use, writing clear and natural headings, avoiding fake headings and stuffing, jump links, FAQs, and templates. Includes a live heading outline checker, a heading level sorter, and a heading duel quiz."
+keywords:
+  - headings SEO
+  - h1 tag SEO
+  - heading hierarchy
+  - heading structure
+  - multiple h1
+  - heading outline
+  - fake headings
+  - jump links
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, headings, h1, content-structure, outline, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export const outlineSamples = {
+  messy: '<h3>Welcome</h3>\n<h1>Rye Bread</h1>\n<h1>Our Bread Shop</h1>\n<h2></h2>\n<h2>Ingredients</h2>\n<h4>Steps</h4>\n<h2>Ingredients</h2>\n<p><strong>Storage</strong></p>\n<h2>Bread bread best bread rye bread recipe bread buy bread online</h2>\n<h2><img src="logo.png" alt=""></h2>',
+  fixed: '<h1>Easy No-Knead Rye Bread</h1>\n<h2>Ingredients</h2>\n<h2>Method</h2>\n<h3>Mixing the dough</h3>\n<h3>Baking</h3>\n<h2>Storing your loaf</h2>\n<h2>Frequently asked questions</h2>\n<h3>Can I freeze rye bread?</h3>',
+};
+
+export function headingText(el) {
+  let text = (el.textContent || "").replace(/\s+/g, " ").trim();
+  if (text === "") {
+    const img = el.querySelector("img[alt]");
+    if (img) text = (img.getAttribute("alt") || "").trim();
+  }
+  return text;
+}
+
+export function OutlineCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(outlineSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const headings = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+  const issues = [];
+  const h1s = headings.filter((el) => el.tagName === "H1");
+  if (headings.length === 0) issues.push("There are no headings at all.");
+  if (headings.length > 0 && h1s.length === 0) issues.push("There is no h1. Add one clear main heading.");
+  if (h1s.length > 1) issues.push("There are " + h1s.length + " h1 headings. Search engines can cope, but one clear h1 keeps the page focused and easier to use with a screen reader.");
+  if (headings.length > 0 && headings[0].tagName !== "H1") issues.push("The first heading is " + headings[0].tagName.toLowerCase() + ", not h1. Start with the main heading.");
+  const seen = {};
+  let last = 0;
+  const rows = headings.map((el) => {
+    const level = parseInt(el.tagName.charAt(1), 10);
+    const text = headingText(el);
+    const notes = [];
+    if (text === "") notes.push("Empty heading.");
+    if (last && level > last + 1) notes.push("Jumps from h" + last + " to h" + level + ".");
+    if (text.length > 70) notes.push("Long (" + text.length + " characters). Keep headings short.");
+    const key = level + ":" + text.toLowerCase();
+    if (text !== "" && seen[key]) notes.push("Same text used before at this level.");
+    seen[key] = true;
+    const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((word) => word.length > 3);
+    const counts = {};
+    words.forEach((word) => { counts[word] = (counts[word] || 0) + 1; });
+    const repeated = Object.keys(counts).filter((word) => counts[word] >= 3);
+    if (repeated.length > 0) notes.push("The word \"" + repeated[0] + "\" appears " + counts[repeated[0]] + " times. That looks like stuffing.");
+    last = level;
+    return {level, text, notes};
+  });
+  const fake = Array.from(doc.querySelectorAll("p, div, span")).filter((el) => {
+    const kids = Array.from(el.children);
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    return kids.length === 1 && /^(STRONG|B)$/.test(kids[0].tagName) && text.length > 0 && text.length <= 60 && text === (kids[0].textContent || "").replace(/\s+/g, " ").trim() && !/[.!?]$/.test(text);
+  });
+  fake.forEach((el) => issues.push("\"" + (el.textContent || "").trim() + "\" looks like a heading made with bold text. Use a real heading element."));
+  rows.forEach((row) => row.notes.forEach((note) => issues.push("h" + row.level + " \"" + row.text + "\": " + note)));
+  const choose = (value) => { setWhich(value); setHtml(outlineSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which HTML do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="ol-sample" checked={which === "messy"} onChange={() => choose("messy")} /> Messy headings</label>
+        <label><input type="radio" name="ol-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="ol-html">HTML to check (edit it freely)</label><br />
+        <textarea id="ol-html" rows={10} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p style={{margin: "0 0 0.3rem"}}><strong>The outline a reader or crawler gets:</strong></p>
+      {rows.length === 0 ? <p style={{margin: "0 0 0.6rem"}}>No headings found.</p> : (
+        <ul style={{margin: "0 0 0.6rem", paddingLeft: "0.2rem", listStyle: "none"}}>
+          {rows.map((row, index) => (
+            <li key={index} style={{marginLeft: (row.level - 1) * 1.2 + "rem"}}><code>h{row.level}</code> {row.text === "" ? <em>(empty)</em> : row.text}</li>
+          ))}
+        </ul>
+      )}
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{issues.length}</strong> {issues.length === 1 ? "problem" : "problems"} found.</p>
+      {issues.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {issues.map((issue, index) => (<li key={index}>{issue}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>The outline reads well.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This reads the HTML only. It cannot tell whether a heading is helpful or truthful, or find headings made with CSS and scripts.
+      </p>
+    </div>
+  );
+}
+
+export function OutlineChecker() {
+  return <BrowserOnly>{() => <OutlineCheckerInner />}</BrowserOnly>;
+}
+
+export const sortItems = [
+  {id: "s1", text: "Easy No-Knead Rye Bread", expect: "1"},
+  {id: "s2", text: "Ingredients", expect: "2"},
+  {id: "s3", text: "Flour and yeast", expect: "3"},
+  {id: "s4", text: "Method", expect: "2"},
+  {id: "s5", text: "Mixing the dough", expect: "3"},
+  {id: "s6", text: "Baking", expect: "3"},
+  {id: "s7", text: "Storing your loaf", expect: "2"},
+  {id: "s8", text: "Frequently asked questions", expect: "2"},
+  {id: "s9", text: "Subscribe to our newsletter!", expect: "0"},
+];
+
+export function LevelSorter() {
+  const [levels, setLevels] = useState({});
+  const [shown, setShown] = useState(false);
+  const labelFor = (value) => (value === "0" ? "not a heading (a normal paragraph or button)" : "h" + value);
+  const right = sortItems.filter((item) => levels[item.id] === item.expect).length;
+  const chosen = sortItems.filter((item) => levels[item.id] && levels[item.id] !== "0");
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>Here is a recipe page, in order. Choose a level for each line.</p>
+      {sortItems.map((item) => (
+        <p key={item.id} style={{margin: "0 0 0.4rem"}}>
+          <label htmlFor={"sort-" + item.id}>{item.text}</label>{" "}
+          <select id={"sort-" + item.id} value={levels[item.id] || ""} onChange={(event) => setLevels({...levels, [item.id]: event.target.value})}>
+            <option value="">Choose...</option>
+            <option value="1">h1</option>
+            <option value="2">h2</option>
+            <option value="3">h3</option>
+            <option value="0">Not a heading</option>
+          </select>
+          {shown && levels[item.id] ? <span> <strong>{levels[item.id] === item.expect ? "Good." : "Better: " + labelFor(item.expect) + "."}</strong></span> : null}
+        </p>
+      ))}
+      <p style={{margin: "0.4rem 0"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my levels</button>{" "}
+        <button type="button" onClick={() => { setLevels({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}>{shown ? right + " of " + sortItems.length + " match the usual outline." : ""}</p>
+      <p style={{margin: "0 0 0.2rem"}}><strong>Your outline so far:</strong></p>
+      {chosen.length === 0 ? <p style={{margin: 0}}>Choose levels to see the outline.</p> : (
+        <ul style={{margin: 0, paddingLeft: "0.2rem", listStyle: "none"}}>
+          {chosen.map((item) => (<li key={item.id} style={{marginLeft: (parseInt(levels[item.id], 10) - 1) * 1.2 + "rem"}}><code>h{levels[item.id]}</code> {item.text}</li>))}
+        </ul>
+      )}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        Outlines can reasonably differ. Check that your page makes sense when you read only the headings, and that the levels never skip.
+      </p>
+    </div>
+  );
+}
+
+export const headingDuels = [
+  {id: "h1", context: "A section about keeping bread fresh", a: "Info", b: "How to Store Rye Bread So It Stays Fresh", best: "b", why: "\"Info\" says nothing. The second tells a reader, and a search engine, exactly what the section answers."},
+  {id: "h2", context: "A section with baking tips for newcomers", a: "Bread Baking Bread Tips Best Bread Bread Tips", b: "Baking Tips for Beginners", best: "b", why: "The first is stuffed with repeated words. The second is short, natural, and clear."},
+  {id: "h3", context: "A question people often ask", a: "Can I freeze rye bread?", b: "Section 4", best: "a", why: "A heading written as the real question matches how people search, and tells the reader what follows."},
+  {id: "h4", context: "A list of links to other recipes", a: "More", b: "Related recipes", best: "b", why: "\"More\" does not say more of what. The second names the content."},
+];
+
+export function HeadingDuel() {
+  const [guesses, setGuesses] = useState({});
+  const [shown, setShown] = useState(false);
+  const answered = Object.keys(guesses).length;
+  const right = headingDuels.filter((round) => guesses[round.id] === round.best).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>Pick the better heading for each section.</p>
+      {headingDuels.map((round) => (
+        <fieldset key={round.id} style={{margin: "0 0 0.6rem"}}>
+          <legend>{round.context}</legend>
+          <label style={{display: "block", marginBottom: "0.2rem"}}><input type="radio" name={"hd-" + round.id} checked={guesses[round.id] === "a"} onChange={() => setGuesses({...guesses, [round.id]: "a"})} /> {round.a}</label>
+          <label style={{display: "block"}}><input type="radio" name={"hd-" + round.id} checked={guesses[round.id] === "b"} onChange={() => setGuesses({...guesses, [round.id]: "b"})} /> {round.b}</label>
+          {shown && guesses[round.id] ? (
+            <p style={{margin: "0.3rem 0 0"}}><strong>{guesses[round.id] === round.best ? "Good choice." : "Not quite."}</strong> {round.why}</p>
+          ) : null}
+        </fieldset>
+      ))}
+      <p style={{margin: "0 0 0.4rem"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my choices</button>{" "}
+        <button type="button" onClick={() => { setGuesses({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? "You chose well in " + right + " of " + answered + " rounds." : ""}</p>
+    </div>
+  );
+}
+
+Imagine opening a book with no chapter titles. Every page would be a wall of text, and finding anything would take forever. **Headings** are the chapter titles of a web page. They tell a visitor, a screen reader, and a search engine **what each part is about,** and how the parts fit together.
+
+You learned the elements themselves in [Headings](/html/text-content/headings). This lesson shows how to use them **well for search:** one clear main heading, a logical outline, honest wording, and no tricks.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- How headings **help search engines** and readers
+- The **h1 to h6 outline,** and how not to break it
+- How many **h1** elements to use
+- How to **write** a good heading
+- How to avoid **fake headings** and **stuffing**
+- How **jump links,** FAQs, and templates relate to headings
+- How to **check** your outline
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- A clear outline: read only the headings, and you know the page -->
+<h1>Easy No-Knead Rye Bread</h1>
+
+<h2>Ingredients</h2>
+
+<h2>Method</h2>
+  <h3>Mixing the dough</h3>
+  <h3>Baking</h3>
+
+<h2>Storing your loaf</h2>
+
+<h2>Frequently asked questions</h2>
+  <h3>Can I freeze rye bread?</h3>
+```
+
+</TabItem>
+<TabItem value="output" label="Outline Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OutlineChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Run the messy sample, read the problems, and fix them in the box. Then try the fixed one.
+
+:::tip The headings-only test
+Read **only** the headings on your page, in order. Do they tell the story? Would a stranger know what the page is, and be able to find the part they want? If yes, search engines and screen reader users can too.
+:::
+
+## How Headings Help
+
+- **They show the topic.** The `h1` and the sub-headings tell a search engine what the page, and each section, is about.
+- **They divide content into passages.** Search engines can match a part of a page to a specific question. Clear headings help with this. (Search engines do not publish exactly how they use headings, and it can change.)
+- **They can feed rich results.** A well-marked section may be used as a summary, a list, or a "jump to" link in results.
+- **They help people skim.** Most visitors scan before they read. Clear headings keep them on the page.
+- **They help assistive technology.** Screen reader users often move **heading by heading,** like using a table of contents. See [Semantic Accessibility](/html/accessibility/semantic-accessibility).
+
+:::info Headings are a hint, not a trick
+Headings are one of many signals. Stuffing them with keywords will not make a weak page rank, and clear ones will not rescue a page with nothing to say. Use them to **communicate.**
+:::
+
+## One h1, and Why
+
+The `h1` is the page's **main heading.** What should it say, and how many should there be?
+
+- **Use one `h1` per page** in almost every case, to say what the page is about.
+- **Search engines can handle more than one,** and HTML does not forbid it. But one clear `h1` keeps the page focused, and is easier for screen reader users.
+- **Make it match the page's purpose.** It does not have to equal the `<title>` word for word, but they should agree on the topic. See [Title (SEO)](./title-seo).
+- **Speak to the visitor.** The title speaks to someone choosing a result. The `h1` speaks to someone who has arrived.
+
+| Element | Where | Speaks to |
+| :-- | :-- | :-- |
+| `<title>` | Search results, tab | Someone choosing a result |
+| `<h1>` | Top of the page | Someone who has arrived |
+| `<h2>` | Each main section | Someone scanning the page |
+
+## Keep the Outline in Order
+
+The levels are like an outline for an essay:
+
+- `h1` is the title.
+- `h2` is a main section.
+- `h3` is a part of an `h2` section, and so on.
+
+Rules to follow:
+
+1. **Start with `h1`.**
+2. **Do not skip levels.** After an `h2` comes an `h2` or an `h3`, not an `h4`.
+3. **You can go back up** at any time (from `h3` to the next `h2`).
+4. **Do not pick a level because of its size.** Use CSS for size.
+
+Try building an outline yourself:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LevelSorter />
+</>
+</BrowserWindow>
+
+## Writing Good Headings
+
+- **Be descriptive.** "How to Store Rye Bread" beats "Info" or "More."
+- **Be short.** Aim for a few words, and certainly under about 70 characters.
+- **Use natural wording,** including the words your readers use. A heading is a good place for a keyword, once, naturally.
+- **Be unique.** Two sections called "Details" tell no one anything.
+- **Match the content below.** A heading is a promise.
+- **Use questions** for FAQ-style sections, if that is how people ask.
+- **Keep a parallel style** among siblings ("Mixing the dough," "Baking," "Cooling").
+
+### Stuffing and tricks
+
+Do **not**:
+
+- Repeat keywords: "Bread Recipes Bread Baking Best Bread."
+- Hide headings with CSS to show only to crawlers.
+- Use a heading for text that is not a heading, just to emphasise it.
+- Put the same long keyword phrase in every heading.
+
+These look spammy to readers, and are against search engine guidelines.
+
+Test your taste:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HeadingDuel />
+</>
+</BrowserWindow>
+
+## Fake Headings
+
+A **fake heading** is text that looks like a heading but is not one:
+
+```html
+<!-- Fake: just bold text -->
+<p><strong>Storage</strong></p>
+<div class="big-title">Storage</div>
+
+<!-- Real -->
+<h2>Storage</h2>
+```
+
+A fake heading looks right on screen, but has no meaning for a search engine or a screen reader. If something is a heading, use a heading element. (If you really cannot, `role="heading"` with `aria-level` can help, but a real element is always better.)
+
+The opposite mistake is also common: using a heading element for something that **is not** a heading, such as a newsletter prompt or a large quote, just to make it big. Use CSS for size.
+
+## Headings That Link: Jump Links
+
+Give a heading an `id`, and you can link straight to it:
+
+```html
+<h2 id="storing">Storing your loaf</h2>
+
+<!-- Elsewhere -->
+<a href="#storing">Jump to storing</a>
+<a href="/recipes/rye-bread#storing">Storing your rye loaf</a>
+```
+
+- **Use short, readable ids** that match the heading, in lowercase with hyphens.
+- **Keep them stable.** A changing id breaks links and bookmarks.
+- **A table of contents** at the top of a long page makes use of them.
+- **Search engines sometimes show "jump to" links** to sections of your page in results. Clear headings with ids can make this more likely, though it is never guaranteed.
+
+## FAQs
+
+A section of **frequently asked questions** is natural for headings:
+
+```html
+<h2>Frequently asked questions</h2>
+
+<h3>Can I freeze rye bread?</h3>
+<p>Yes. Slice it first, then freeze the slices for up to three months.</p>
+
+<h3>Why is my loaf dense?</h3>
+<p>Rye is heavy by nature, but...</p>
+```
+
+Write the questions as people really ask them, and answer them **right below,** briefly and directly. If you also want to mark them up as structured data, see [Structured Data](./structured-data). Note that search engines have limited which sites get special FAQ results, so do not rely on that. Write the FAQ because it helps readers.
+
+## Templates and Components
+
+On larger sites, headings often come from **templates,** and that is where outlines break:
+
+- **The logo as an `h1`.** If the site logo is an `h1` on every page, every page has the same main heading. Make the page's own title the `h1`, and the logo a link.
+- **Sidebars and footers full of `h2`s.** "Related posts," "Newsletter," and "Follow us" as `h2` elements make the outline noisy. Keep `h2` for the main sections of the page, and use lower-level headings or plain text for extras, inside landmarks such as `aside` and `footer`.
+- **Cards in a list.** Each card title can be an `h3` under a section `h2`.
+- **Reusable components with a fixed level.** A card that is always `h3` breaks the outline when used under an `h1`. Let the level be a setting.
+- **Headings added by scripts.** Check that they appear in "view source" if they matter for search.
+
+## Headings in Docusaurus
+
+In Docusaurus, a Markdown `# Heading` becomes an `h1`, `##` an `h2`, and so on. A few points:
+
+- **The page `title` frontmatter** becomes the page's main heading in the docs layout. Do not add another `#` heading as well, or you may get two `h1` elements.
+- **Ids are created automatically** from heading text, so renaming a heading changes its link. You can set your own with `{#my-id}` after the heading, which keeps the link stable.
+- **The right-hand table of contents** is built from your `h2` and `h3` headings, so a clear outline gives a clear contents list.
+
+Check the current Docusaurus documentation, as behaviour can change between versions.
+
+## Good Habits
+
+- **One clear `h1` per page,** matching the page's topic.
+- **Keep levels in order,** with none skipped.
+- **Read the headings alone** to test the outline.
+- **Write short, natural, descriptive headings.**
+- **Use real heading elements,** not bold text.
+- **Use CSS for size,** not heading levels.
+- **Give important sections stable ids.**
+- **Check templates,** so logos and sidebars do not break the outline.
+
+## Headings SEO Checklist
+
+- [ ] The page has one clear `h1`
+- [ ] The `h1` and `<title>` agree on the topic
+- [ ] The outline starts at `h1`, and no levels are skipped
+- [ ] Headings are short, specific, and unique
+- [ ] Keywords are natural, with no stuffing
+- [ ] There are no fake headings made from bold text
+- [ ] Headings are not used only for size
+- [ ] No headings are hidden from users
+- [ ] Important sections have stable ids
+- [ ] Heading text is in real text, not only in images
+- [ ] Templates (logo, sidebar, cards) do not break the outline
+
+## Security and Privacy Notes
+
+- **Do not put private information in headings.** Headings can appear in search results, tables of contents, jump links, and screen reader menus.
+- **Escape user-supplied headings.** If a heading comes from user input (a post title, a profile name), escape it, and never build HTML from raw input. Otherwise, someone could inject unwanted markup.
+- **Beware of hidden-heading tricks.** Hiding keyword-filled headings with CSS can get a site penalised, and it is also a sign of a hacked page. Check your pages from time to time, especially after a security problem.
+- **Fragment ids are visible in links.** Do not put private data, such as a customer name, in an id.
+- **Be honest.** A heading that promises something the section does not deliver misleads people.
+
+## Global Audience Notes
+
+- **Write headings in the language of the page,** and set `lang` to match. See [International SEO](./international-seo).
+- **Translate the meaning.** The way people ask a question, or name a topic, differs from language to language.
+- **Headings are often longer in some languages** (such as German), and shorter in others (such as Chinese). Check that they wrap well on small screens.
+- **Right-to-left languages** need correct text direction in headings, and in table-of-contents lists.
+- **Ids with non-Latin characters** are allowed in modern HTML, but check that your tools handle them in links. Many sites use simple, transliterated ids for easier sharing.
+- **Avoid wordplay and idioms** in headings that machine translation may break.
+
+## Common Mistakes to Avoid
+
+1. **No `h1`,** or the logo as the `h1` on every page.
+2. **Several competing `h1` elements.**
+3. **Skipping levels** from `h2` to `h4`.
+4. **Choosing a level by its size.**
+5. **Bold text instead of a heading.**
+6. **Vague headings** such as "Info," "More," or "Section 2."
+7. **Keyword stuffing** in headings.
+8. **Hiding headings** with CSS.
+9. **Heading text only in an image,** with no alt text.
+10. **Empty heading elements.**
+11. **The same heading text repeated** throughout a page.
+12. **Never reading the page by headings alone.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Run the outline checker on the messy sample. Fix every problem, and run it again.
+2. Use the level sorter. Which line did you place differently from the expected answer, and why?
+3. Take the heading duel. Which wording would you use on your own page?
+4. Choose a page you built. Read only its headings. Do they tell the story?
+5. Find three fake headings (bold text or styled `div`) in a site, and make them real.
+6. Rewrite five vague headings, such as "More" and "Info," into specific ones.
+7. Add `id` attributes to your main sections, and build a small table of contents.
+8. Add an FAQ section with three real questions, and short answers.
+9. Check a site's template: does the logo use an `h1`? Do sidebars use `h2`?
+10. Bonus: install a heading-outline browser extension (check current options), and compare the outline of five sites you like.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How do headings help SEO?</summary>
+
+They show the page's topic and sections to search engines, help them match passages to questions, can feed rich results and jump links, and help people and screen reader users skim.
+
+</details>
+
+<details>
+<summary>2. How many h1 elements should a page have?</summary>
+
+Usually one. Search engines can cope with more, but one clear main heading keeps the page focused, and is easier for screen reader users.
+
+</details>
+
+<details>
+<summary>3. What is the rule for heading levels?</summary>
+
+Start with `h1`, do not skip levels going down, and use CSS (not heading levels) to control size.
+
+</details>
+
+<details>
+<summary>4. What makes a good heading?</summary>
+
+It is short, specific, natural, unique, and matches the content below it.
+
+</details>
+
+<details>
+<summary>5. What is a fake heading?</summary>
+
+Text that looks like a heading (bold, or a big `&lt;div&gt;`) but is not a heading element. It has no meaning for search engines or screen readers.
+
+</details>
+
+<details>
+<summary>6. What often goes wrong with headings in templates?</summary>
+
+The logo used as an `h1` on every page, sidebars and footers full of `h2` elements, and components with a fixed heading level.
+
+</details>
+
+## Key Takeaways
+
+- **Headings are the outline of your page.** Read them alone to test it.
+- **Use one clear `h1`** that matches the page's topic.
+- **Keep levels in order,** and use CSS for size.
+- **Write short, specific, natural headings.** No stuffing.
+- **Use real heading elements,** not bold text.
+- **Stable ids make good jump links.**
+- **Check templates and components** so they do not break the outline.
+- **Write for readers first.** Search engines follow.
+
+Next, learn how the other semantic elements show the structure of your page, in [Semantic HTML and SEO](./semantic-html-and-seo).

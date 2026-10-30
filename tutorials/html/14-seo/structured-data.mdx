@@ -1,0 +1,681 @@
+---
+id: html-seo-structured-data
+title: "Structured Data"
+sidebar_label: "Structured Data"
+sidebar_position: 9
+slug: /html/seo/structured-data
+description: "Learn structured data with JSON-LD and schema.org: what it is, which types to use (Article, Recipe, Product, FAQPage, Event, BreadcrumbList), the honesty rules, how to escape it safely, and how to test it. Includes a JSON-LD builder for five types, a live JSON-LD checker that compares markup with visible text, and a which-type quiz."
+keywords:
+  - structured data
+  - JSON-LD
+  - schema.org
+  - rich results
+  - Article schema
+  - Recipe schema
+  - Product schema
+  - FAQPage schema
+  - Rich Results Test
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, seo, structured-data, json-ld, schema-org, rich-results, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function toDuration(minutes) {
+  const m = parseInt(minutes, 10);
+  if (isNaN(m) || m <= 0) return undefined;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return "PT" + (h ? h + "H" : "") + (r ? r + "M" : "");
+}
+
+export function lines(text) {
+  return (text || "").split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+export const schemaDefs = {
+  Article: {
+    label: "Article (a blog post or news story)",
+    required: ["headline", "author", "datePublished", "image"],
+    fields: [
+      {k: "headline", l: "Headline", v: "Easy No-Knead Rye Bread"},
+      {k: "author", l: "Author name", v: "Ravi Patel"},
+      {k: "datePublished", l: "Date published (YYYY-MM-DD)", v: "2026-03-12", kind: "date"},
+      {k: "dateModified", l: "Date modified (YYYY-MM-DD)", v: "2026-04-02", kind: "date"},
+      {k: "image", l: "Image address", v: "https://thebreadbin.example/img/rye.jpg", kind: "url"},
+      {k: "description", l: "Short description", v: "Bake a crusty rye loaf with five simple ingredients."},
+    ],
+    build: (v) => ({"@type": "Article", headline: v.headline, author: {"@type": "Person", name: v.author}, datePublished: v.datePublished, dateModified: v.dateModified || undefined, image: v.image, description: v.description || undefined}),
+  },
+  Recipe: {
+    label: "Recipe",
+    required: ["name", "image", "ingredients"],
+    fields: [
+      {k: "name", l: "Recipe name", v: "Easy No-Knead Rye Bread"},
+      {k: "author", l: "Author name", v: "Ravi Patel"},
+      {k: "image", l: "Image address", v: "https://thebreadbin.example/img/rye.jpg", kind: "url"},
+      {k: "prep", l: "Preparation time (minutes)", v: "15"},
+      {k: "cook", l: "Cooking time (minutes)", v: "45"},
+      {k: "yield", l: "Makes", v: "1 loaf"},
+      {k: "ingredients", l: "Ingredients (one per line)", v: "500 g rye flour\n350 ml warm water\n7 g salt\n3 g dried yeast", area: true},
+      {k: "steps", l: "Steps (one per line)", v: "Mix everything in a bowl.\nRest overnight.\nBake at 230 degrees for 45 minutes.", area: true},
+    ],
+    build: (v) => ({"@type": "Recipe", name: v.name, author: v.author ? {"@type": "Person", name: v.author} : undefined, image: v.image, prepTime: toDuration(v.prep), cookTime: toDuration(v.cook), recipeYield: v.yield || undefined, recipeIngredient: lines(v.ingredients), recipeInstructions: lines(v.steps).map((text) => ({"@type": "HowToStep", text}))}),
+  },
+  Product: {
+    label: "Product",
+    required: ["name", "price", "currency"],
+    fields: [
+      {k: "name", l: "Product name", v: "Beech Bread Bin"},
+      {k: "image", l: "Image address", v: "https://thebreadbin.example/img/bin.jpg", kind: "url"},
+      {k: "description", l: "Description", v: "A solid beech bread bin with a bamboo lid."},
+      {k: "brand", l: "Brand", v: "The Bread Bin"},
+      {k: "sku", l: "SKU", v: "BIN-BEECH-01"},
+      {k: "price", l: "Price (numbers only)", v: "39.00", kind: "price"},
+      {k: "currency", l: "Currency code (such as USD, EUR, INR)", v: "USD", kind: "currency"},
+      {k: "availability", l: "Availability", v: "InStock", options: ["InStock", "OutOfStock", "PreOrder"]},
+    ],
+    build: (v) => ({"@type": "Product", name: v.name, image: v.image || undefined, description: v.description || undefined, sku: v.sku || undefined, brand: v.brand ? {"@type": "Brand", name: v.brand} : undefined, offers: {"@type": "Offer", price: v.price, priceCurrency: v.currency, availability: "https://schema.org/" + v.availability}}),
+  },
+  FAQPage: {
+    label: "FAQ page",
+    required: ["q1", "a1"],
+    fields: [
+      {k: "q1", l: "Question 1", v: "Can I freeze rye bread?"},
+      {k: "a1", l: "Answer 1", v: "Yes. Slice it first, then freeze the slices for up to three months.", area: true},
+      {k: "q2", l: "Question 2", v: "Why is my loaf dense?"},
+      {k: "a2", l: "Answer 2", v: "Rye is naturally heavy. Rest the dough long enough, and do not skip the salt.", area: true},
+    ],
+    build: (v) => ({"@type": "FAQPage", mainEntity: [[v.q1, v.a1], [v.q2, v.a2]].filter((pair) => pair[0] && pair[1]).map((pair) => ({"@type": "Question", name: pair[0], acceptedAnswer: {"@type": "Answer", text: pair[1]}}))}),
+  },
+  Event: {
+    label: "Event",
+    required: ["name", "startDate", "locationName"],
+    fields: [
+      {k: "name", l: "Event name", v: "Beginner Bread Baking Class"},
+      {k: "startDate", l: "Start (YYYY-MM-DD or YYYY-MM-DDThh:mm)", v: "2026-06-14T10:00", kind: "date"},
+      {k: "endDate", l: "End (optional)", v: "2026-06-14T13:00", kind: "date"},
+      {k: "locationName", l: "Venue name", v: "Village Hall"},
+      {k: "city", l: "City", v: "Bath"},
+      {k: "description", l: "Description", v: "A friendly three-hour class for first-time bakers."},
+    ],
+    build: (v) => ({"@type": "Event", name: v.name, startDate: v.startDate, endDate: v.endDate || undefined, eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode", location: {"@type": "Place", name: v.locationName, address: v.city ? {"@type": "PostalAddress", addressLocality: v.city} : undefined}, description: v.description || undefined}),
+  },
+};
+
+export function validateField(field, value) {
+  const text = (value || "").trim();
+  if (text === "") return null;
+  if (field.kind === "date" && !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})?)?$/.test(text)) return field.l + ": use the format YYYY-MM-DD, with an optional time.";
+  if (field.kind === "url" && !/^https?:\/\/\S+$/.test(text)) return field.l + ": use a full address starting with https://.";
+  if (field.kind === "price" && !/^\d+(\.\d+)?$/.test(text)) return field.l + ": numbers only, with no currency symbol or words.";
+  if (field.kind === "currency" && !/^[A-Z]{3}$/.test(text)) return field.l + ": use a three-letter uppercase code, such as USD.";
+  return null;
+}
+
+export function JsonLdBuilder() {
+  const [type, setType] = useState("Article");
+  const [values, setValues] = useState({});
+  const def = schemaDefs[type];
+  const get = (field) => {
+    const key = type + "." + field.k;
+    return values[key] !== undefined ? values[key] : field.v;
+  };
+  const current = {};
+  def.fields.forEach((field) => { current[field.k] = get(field); });
+  const data = Object.assign({"@context": "https://schema.org"}, def.build(current));
+  const json = JSON.stringify(data, null, 2).replace(/</g, "\\u003c");
+  const problems = [];
+  def.fields.forEach((field) => {
+    const note = validateField(field, current[field.k]);
+    if (note) problems.push(note);
+  });
+  def.required.forEach((key) => {
+    const field = def.fields.find((item) => item.k === key);
+    if (field && (current[key] || "").trim() === "") problems.push(field.l + " is empty. It is usually needed for this type.");
+  });
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>
+        <label htmlFor="jb-type">What kind of page is it?</label>{" "}
+        <select id="jb-type" value={type} onChange={(event) => setType(event.target.value)}>
+          {Object.keys(schemaDefs).map((key) => (<option key={key} value={key}>{schemaDefs[key].label}</option>))}
+        </select>
+      </p>
+      {def.fields.map((field) => (
+        <p key={type + field.k} style={{margin: "0 0 0.4rem"}}>
+          <label htmlFor={"jb-" + type + "-" + field.k}>{field.l}</label><br />
+          {field.options ? (
+            <select id={"jb-" + type + "-" + field.k} value={get(field)} onChange={(event) => setValues({...values, [type + "." + field.k]: event.target.value})}>
+              {field.options.map((option) => (<option key={option} value={option}>{option}</option>))}
+            </select>
+          ) : field.area ? (
+            <textarea id={"jb-" + type + "-" + field.k} rows={3} value={get(field)} onChange={(event) => setValues({...values, [type + "." + field.k]: event.target.value})} style={{width: "100%"}} />
+          ) : (
+            <input id={"jb-" + type + "-" + field.k} type="text" value={get(field)} onChange={(event) => setValues({...values, [type + "." + field.k]: event.target.value})} style={{width: "100%"}} />
+          )}
+        </p>
+      ))}
+      <p style={{margin: "0.6rem 0 0.3rem"}}><strong>Add this to the page:</strong></p>
+      <pre style={{margin: "0 0 0.6rem", padding: "0.5rem", overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: "6px", maxHeight: "22rem"}}><code>{'<script type="application/ld+json">\n' + json + "\n</script>"}</code></pre>
+      <p role="status" style={{margin: "0 0 0.3rem"}}><strong>{problems.length}</strong> {problems.length === 1 ? "thing" : "things"} to check.</p>
+      {problems.length > 0 ? (
+        <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+          {problems.map((problem, index) => (<li key={index}>{problem}</li>))}
+        </ul>
+      ) : <p style={{margin: 0}}>No problems found by these simple checks.</p>}
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This builds valid-looking JSON-LD for common fields. Search engines require different fields for different rich results, and change their rules. Always test with the Rich Results Test and the Schema Markup Validator. And only mark up what is really, visibly on the page. The characters are escaped, so nothing you type can close the script early.
+      </p>
+    </div>
+  );
+}
+
+export const requiredByType = {
+  article: ["headline"],
+  newsarticle: ["headline"],
+  blogposting: ["headline"],
+  recipe: ["name", "image", "recipeIngredient"],
+  product: ["name", "offers"],
+  faqpage: ["mainEntity"],
+  event: ["name", "startDate", "location"],
+  breadcrumblist: ["itemListElement"],
+  organization: ["name"],
+  localbusiness: ["name", "address"],
+  website: ["url"],
+};
+
+export const dateKeys = ["datePublished", "dateModified", "startDate", "endDate", "uploadDate"];
+export const urlKeys = ["image", "url", "logo", "item"];
+
+export function collectNodes(data) {
+  if (Array.isArray(data)) return data.reduce((list, item) => list.concat(collectNodes(item)), []);
+  if (data && typeof data === "object") {
+    if (Array.isArray(data["@graph"])) return collectNodes(data["@graph"]);
+    return [data];
+  }
+  return [];
+}
+
+export function walk(value, visit, path) {
+  if (Array.isArray(value)) { value.forEach((item) => walk(item, visit, path)); return; }
+  if (value && typeof value === "object") {
+    visit(value, path);
+    Object.keys(value).forEach((key) => walk(value[key], visit, key));
+  }
+}
+
+export const ldSamples = {
+  messy: '<h1>Rye Bread</h1>\n<p>A solid bread bin with a bamboo lid.</p>\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Article",\n  "headline": "Rye Bread Secrets",\n  "datePublished": "March 12",\n  "image": "/img/rye.jpg",\n}\n</script>\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Product",\n  "name": "Beech Bread Bin",\n  "offers": {"@type": "Offer", "price": "free", "priceCurrency": "dollars"}\n}\n</script>\n<script type="application/ld+json">\n{\n  "@type": "Recipe",\n  "name": "Rye Bread",\n  "image": "https://thebreadbin.example/img/rye.jpg"\n}\n</script>',
+  fixed: '<h1>Easy No-Knead Rye Bread</h1>\n<p>Published 12 March 2026 by Ravi Patel</p>\n<h2>Beech Bread Bin</h2>\n<p>A solid beech bread bin with a bamboo lid. Price: 39.00 USD.</p>\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Article",\n  "headline": "Easy No-Knead Rye Bread",\n  "datePublished": "2026-03-12",\n  "image": "https://thebreadbin.example/img/rye.jpg",\n  "author": {"@type": "Person", "name": "Ravi Patel"}\n}\n</script>\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Product",\n  "name": "Beech Bread Bin",\n  "offers": {"@type": "Offer", "price": "39.00", "priceCurrency": "USD", "availability": "https://schema.org/InStock"}\n}\n</script>',
+};
+
+export function JsonLdCheckerInner() {
+  const [which, setWhich] = useState("messy");
+  const [html, setHtml] = useState(ldSamples.messy);
+  const doc = new DOMParser().parseFromString("<!doctype html><body>" + html, "text/html");
+  const scripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
+  const clone = doc.body.cloneNode(true);
+  Array.from(clone.querySelectorAll("script")).forEach((el) => el.remove());
+  const visible = (clone.textContent || "").replace(/\s+/g, " ").toLowerCase();
+  const report = scripts.map((script, index) => {
+    const issues = [];
+    const notes = [];
+    let data = null;
+    const text = script.textContent || "";
+    try {
+      data = JSON.parse(text);
+    } catch (error) {
+      return {index, types: [], issues: ["This is not valid JSON (" + error.message + "). Search engines will ignore it."], notes};
+    }
+    const nodes = collectNodes(data);
+    const types = [];
+    nodes.forEach((node) => {
+      const rawType = Array.isArray(node["@type"]) ? node["@type"][0] : node["@type"];
+      if (!node["@context"] && !(data && data["@context"])) issues.push("No @context. Add \"@context\": \"https://schema.org\".");
+      if (!rawType) { issues.push("An item has no @type."); return; }
+      types.push(rawType);
+      const required = requiredByType[String(rawType).toLowerCase()];
+      if (!required) notes.push("The type \"" + rawType + "\" is not one this checker knows. Check it in the Schema Markup Validator.");
+      else required.forEach((key) => { if (node[key] === undefined || node[key] === "" || (Array.isArray(node[key]) && node[key].length === 0)) issues.push(rawType + " is missing \"" + key + "\"."); });
+      ["headline", "name"].forEach((key) => {
+        if (typeof node[key] === "string" && node[key].trim() !== "" && ["Organization", "WebSite", "LocalBusiness", "Person"].indexOf(rawType) === -1 && visible.indexOf(node[key].trim().toLowerCase()) === -1) issues.push("The " + key + " \"" + node[key] + "\" does not appear in the visible page. Markup must describe content people can see.");
+      });
+    });
+    walk(data, (node, parentKey) => {
+      Object.keys(node).forEach((key) => {
+        const value = node[key];
+        if (dateKeys.indexOf(key) !== -1 && typeof value === "string" && !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/.test(value)) issues.push(key + " \"" + value + "\" is not in ISO format (YYYY-MM-DD).");
+        if (urlKeys.indexOf(key) !== -1 && typeof value === "string" && !/^https?:\/\//.test(value)) issues.push(key + " \"" + value + "\" should be a full address starting with https://.");
+      });
+      if (node["@type"] === "Offer") {
+        if (node.price !== undefined && !/^\d+(\.\d+)?$/.test(String(node.price))) issues.push("The Offer price \"" + node.price + "\" should be a number, such as 39.00.");
+        if (node.priceCurrency !== undefined && !/^[A-Z]{3}$/.test(String(node.priceCurrency))) issues.push("The priceCurrency \"" + node.priceCurrency + "\" should be a three-letter code, such as USD.");
+        if (node.price !== undefined && node.priceCurrency === undefined) issues.push("The Offer has a price but no priceCurrency.");
+      }
+    }, "");
+    return {index, types, issues, notes};
+  });
+  const total = report.reduce((sum, item) => sum + item.issues.length, 0);
+  const choose = (value) => { setWhich(value); setHtml(ldSamples[value]); };
+  return (
+    <div>
+      <fieldset style={{margin: "0 0 0.6rem"}}>
+        <legend>Which page do you want to check?</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="ld-sample" checked={which === "messy"} onChange={() => choose("messy")} /> A messy page</label>
+        <label><input type="radio" name="ld-sample" checked={which === "fixed"} onChange={() => choose("fixed")} /> The fixed version</label>
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="ld-html">Page HTML with JSON-LD (edit it freely)</label><br />
+        <textarea id="ld-html" rows={14} value={html} onChange={(event) => setHtml(event.target.value)} style={{width: "100%", fontFamily: "monospace"}} />
+      </p>
+      <p role="status" style={{margin: "0 0 0.4rem"}}><strong>{scripts.length}</strong> JSON-LD blocks found. <strong>{total}</strong> problems.</p>
+      <ul style={{margin: 0, paddingLeft: "1.2rem"}}>
+        {report.map((item) => (
+          <li key={item.index} style={{marginBottom: "0.4rem"}}>
+            <strong>Block {item.index + 1}</strong> {item.types.length > 0 ? "(" + item.types.join(", ") + ")" : ""}{" "}
+            {item.issues.length === 0 ? <strong>OK</strong> : <span><strong>Problem:</strong> {item.issues.join(" ")}</span>}
+            {item.notes.length > 0 ? <span> <em>Note:</em> {item.notes.join(" ")}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p style={{margin: "0.6rem 0 0", fontSize: "0.9em", color: "#64748b"}}>
+        This checks the basics only. It cannot know every rule for every rich result, or whether your data is true. Use Google's Rich Results Test and the Schema Markup Validator on your real, live pages.
+      </p>
+    </div>
+  );
+}
+
+export function JsonLdChecker() {
+  return <BrowserOnly>{() => <JsonLdCheckerInner />}</BrowserOnly>;
+}
+
+export const typeScenarios = [
+  {id: "t1", text: "A blog post about baking tips, with an author and a date", expect: "Article"},
+  {id: "t2", text: "A page with ingredients, steps, and a cooking time", expect: "Recipe"},
+  {id: "t3", text: "A bread bin for sale, with a price and stock status", expect: "Product"},
+  {id: "t4", text: "A page of common questions, each with an answer", expect: "FAQPage"},
+  {id: "t5", text: "A baking class on 14 June at the village hall", expect: "Event"},
+  {id: "t6", text: "A bakery's shop page with an address and opening hours", expect: "LocalBusiness"},
+  {id: "t7", text: "The Home > Recipes > Rye Bread trail at the top of a page", expect: "BreadcrumbList"},
+];
+
+export function TypeMatcher() {
+  const [picks, setPicks] = useState({});
+  const [shown, setShown] = useState(false);
+  const options = ["Article", "Recipe", "Product", "FAQPage", "Event", "LocalBusiness", "BreadcrumbList"];
+  const right = typeScenarios.filter((item) => picks[item.id] === item.expect).length;
+  return (
+    <div>
+      <p style={{margin: "0 0 0.6rem"}}>Which schema.org type fits each page?</p>
+      {typeScenarios.map((item) => (
+        <p key={item.id} style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor={"ty-" + item.id}>{item.text}</label>{" "}
+          <select id={"ty-" + item.id} value={picks[item.id] || ""} onChange={(event) => setPicks({...picks, [item.id]: event.target.value})}>
+            <option value="">Choose...</option>
+            {options.map((name) => (<option key={name} value={name}>{name}</option>))}
+          </select>
+          {shown && picks[item.id] ? <span> <strong>{picks[item.id] === item.expect ? "Good." : "Better: " + item.expect + "."}</strong></span> : null}
+        </p>
+      ))}
+      <p style={{margin: "0.4rem 0"}}>
+        <button type="button" onClick={() => setShown(true)}>Check my choices</button>{" "}
+        <button type="button" onClick={() => { setPicks({}); setShown(false); }}>Start again</button>
+      </p>
+      <p role="status" style={{margin: 0}}>{shown ? right + " of " + typeScenarios.length + " match the usual choice." : ""}</p>
+    </div>
+  );
+}
+
+A person can look at a recipe page and instantly see the title, the ingredients, and the cooking time. A search engine reads **words,** and has to **guess** which ones are the ingredients, and which are the author's life story.
+
+**Structured data** removes the guessing. It is a small block of labelled facts you add to a page, in a format machines understand: *"This is a recipe. Its name is this. Its cooking time is 45 minutes."* In return, search engines can understand your page more precisely, and may show it in richer ways, such as with a rating, an image, or a price.
+
+<AdsComponent />
+<br />
+
+## What You Will Learn
+
+- What **structured data** and **schema.org** are
+- The three formats, and why we use **JSON-LD**
+- How to write it for **Article, Recipe, Product, FAQ, Event,** and more
+- The **honesty rules** that keep your site safe
+- How to **escape** it safely
+- How to **test** it
+- What it **can and cannot** do
+
+## The Big Idea
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <title>Easy No-Knead Rye Bread | The Bread Bin</title>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    "name": "Easy No-Knead Rye Bread",
+    "image": "https://thebreadbin.example/img/rye.jpg",
+    "author": {"@type": "Person", "name": "Ravi Patel"},
+    "prepTime": "PT15M",
+    "cookTime": "PT45M",
+    "recipeIngredient": ["500 g rye flour", "350 ml warm water", "7 g salt"]
+  }
+  </script>
+</head>
+```
+
+</TabItem>
+<TabItem value="output" label="JSON-LD Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<JsonLdBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Pick a type, change the fields, and watch the JSON-LD update. Type a wrong date, or a price with a currency symbol, and see the checks respond.
+
+## What Structured Data Is
+
+- **A vocabulary.** [schema.org](https://schema.org) is a shared list of types (such as `Recipe`, `Product`, `Event`) and properties (such as `name`, `price`, `startDate`), agreed by the big search engines.
+- **A format.** You write those types and properties in a format that machines parse easily. The most common is JSON-LD.
+- **A hint.** Search engines use it to understand your page, and **may** use it to show **rich results.** It does not guarantee any special display, and it is not a ranking boost on its own.
+
+:::info What it will not do
+Structured data does not make a weak page rank well, and adding it does not entitle you to a rich result. It helps search engines **understand** what is already on your page. If the page is thin, nothing is fixed.
+:::
+
+## Three Formats, One Winner
+
+| Format | How it works | Our advice |
+| :-- | :-- | :-- |
+| **JSON-LD** | A separate script block with the data | **Use this.** It is clean, easy to maintain, and what Google recommends |
+| **Microdata** | Attributes added to your HTML elements | Works, but tangles data with markup |
+| **RDFa** | Attributes added to your HTML elements | Works, and is less common |
+
+A quick look at the same fact, in microdata, so you can recognise it:
+
+```html
+<div itemscope itemtype="https://schema.org/Recipe">
+  <h1 itemprop="name">Easy No-Knead Rye Bread</h1>
+</div>
+```
+
+JSON-LD keeps the data **apart from the layout,** so redesigning the page does not break it.
+
+## How JSON-LD Is Written
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Easy No-Knead Rye Bread",
+  "datePublished": "2026-03-12",
+  "author": {"@type": "Person", "name": "Ravi Patel"}
+}
+</script>
+```
+
+- **`type="application/ld+json"`** tells the browser this is data, not code to run.
+- **`@context`** says which vocabulary you use. It is almost always `https://schema.org`.
+- **`@type`** says what kind of thing this is.
+- **Other keys** are the properties of that type.
+- **Nested objects** describe related things: an `author` is a `Person`, with its own `name`.
+- **It is strict JSON:** double quotes, no trailing commas, no comments.
+- **It can sit in the head or the body.** Search engines read both.
+
+## Common Types
+
+| Type | For | Typical properties |
+| :-- | :-- | :-- |
+| `Article`, `BlogPosting`, `NewsArticle` | Posts and stories | headline, author, datePublished, image |
+| `Recipe` | Recipes | name, image, recipeIngredient, recipeInstructions, cookTime |
+| `Product` and `Offer` | Items for sale | name, image, brand, price, priceCurrency, availability |
+| `FAQPage` | Questions and answers | mainEntity with `Question` and `Answer` |
+| `Event` | Dates and places | name, startDate, location |
+| `BreadcrumbList` | The breadcrumb trail | itemListElement. See [Semantic HTML and SEO](./semantic-html-and-seo) |
+| `Organization`, `LocalBusiness` | Who you are | name, logo, address, openingHours |
+| `WebSite` | The site itself | name, url |
+| `VideoObject`, `Review`, `JobPosting` and more | Other content | See schema.org and each search engine's documentation |
+
+Test your sense of which type to choose:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TypeMatcher />
+</>
+</BrowserWindow>
+
+## The Rules You Must Follow
+
+Search engines publish structured data guidelines. They boil down to a few honest habits:
+
+1. **Mark up what is really on the page.** Every fact in your markup should be **visible to people** on that page. Do not describe things that are hidden or absent.
+2. **Be accurate and current.** Prices, dates, and availability must match the page. Out-of-date data can mislead.
+3. **Use the right type.** Do not call a page a `Recipe` if it is not.
+4. **No fake or self-serving reviews.** Do not invent ratings, or mark up reviews you wrote about your own business, as if they came from customers.
+5. **Do not mark up content that is not about the page,** such as the same company-wide rating on every page.
+6. **Follow each search engine's current guidelines.** They differ, and they change.
+
+Breaking these rules can lead to a **manual action,** where the search engine stops showing your rich results, or lowers your site's visibility.
+
+:::warning Fake markup hurts real people
+A fake five-star rating or a wrong price does not just break a rule. It can cause someone to buy something on false information.
+:::
+
+## Rich Results: What to Expect
+
+Rich results are the extras in a search listing: stars, prices, images, dates, breadcrumbs, and more. Some points to keep in mind:
+
+- **They are never guaranteed.** Even valid markup may not be shown.
+- **Search engines change them.** For example, Google has reduced or limited the display of some types over time, such as FAQ and how-to results. Check the current documentation before you build a plan on them.
+- **Different search engines support different features,** and some only in certain countries and languages.
+- **The best reason to add markup is to be clear.** Rich results are a bonus.
+
+## Linking Things Together
+
+For bigger sites, you can connect items with `@id`, so each fact is stated once, and others refer to it:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://thebreadbin.example/#org",
+      "name": "The Bread Bin",
+      "url": "https://thebreadbin.example/",
+      "logo": "https://thebreadbin.example/img/logo.png"
+    },
+    {
+      "@type": "Article",
+      "headline": "Easy No-Knead Rye Bread",
+      "publisher": {"@id": "https://thebreadbin.example/#org"}
+    }
+  ]
+}
+```
+
+`@graph` holds several items in one block. The Article names the Organization by its `@id`, so you do not repeat the details.
+
+## Dates, Prices, and Other Formats
+
+Structured data expects specific formats:
+
+- **Dates:** ISO 8601, such as `2026-03-12` or `2026-06-14T10:00+01:00`. Never "March 12" or "12/03/26."
+- **Durations:** ISO 8601 durations, such as `PT45M` (45 minutes) or `PT1H30M`.
+- **Prices:** numbers only, such as `39.00`, with a separate `priceCurrency` of `USD`, `EUR`, or `INR`.
+- **Addresses:** a `PostalAddress` object, with its own parts.
+- **Addresses of images and pages:** full URLs, starting with `https://`.
+- **Availability:** a full schema.org address, such as `https://schema.org/InStock`.
+
+## Test It
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<JsonLdChecker />
+</>
+</BrowserWindow>
+
+### Test it for real
+
+1. **Google's Rich Results Test** shows which rich results your page could be eligible for, and any errors.
+2. **The Schema Markup Validator** (from schema.org) checks the syntax against the shared vocabulary, for any type.
+3. **Search Console's enhancement reports** show problems found across your live site.
+4. **"View source"** to check that your data is in the page the server sends, not only added later by scripts.
+5. **Compare the markup with the page.** Is every fact visible?
+
+## Structured Data in Docusaurus
+
+Docusaurus lets you add tags to a page with its `Head` component, and you can place a JSON-LD script there, written with `JSON.stringify` so it is always valid. Some themes and plugins also add basic data for you. Always look at the built output, and test it with the tools above. Details change between versions, so check the current documentation.
+
+## Good Habits
+
+- **Use JSON-LD,** in a separate script block.
+- **Mark up only what is visible and true.**
+- **Choose the most specific type** that fits.
+- **Use correct formats** for dates, prices, and durations.
+- **Escape data** that comes from users or a database.
+- **Keep markup in step** with the page, and update it when the page changes.
+- **Test every template** with the validators.
+- **Treat rich results as a bonus,** not a plan.
+
+## Structured Data Checklist
+
+- [ ] The JSON-LD is valid, with double quotes and no trailing commas
+- [ ] `@context` and `@type` are set
+- [ ] Every marked-up fact is visible on the page
+- [ ] Dates, durations, prices, and currencies use the right formats
+- [ ] Image and page addresses are full https URLs
+- [ ] Required fields for the type are present
+- [ ] No fake, copied, or unrelated reviews and ratings
+- [ ] Data is escaped, and cannot close the script early
+- [ ] No private data is included
+- [ ] Tested with the Rich Results Test and the Schema Markup Validator
+- [ ] Reviewed whenever the page changes
+
+## Security and Privacy Notes
+
+- **Escape everything that is not fixed.** If a title, name, or description comes from a database or a user, a value containing `</script>` could close your script early and inject HTML. Build the JSON with `JSON.stringify`, and then replace `<` with `<` before you write it into the page. The builder above does this.
+- **Never build JSON by pasting strings together.** A stray quote breaks the whole block, and an attacker can use that to inject content.
+- **Structured data is public.** Anything in it can be read by anyone who views the source, and by every crawler. Do not include private phone numbers, personal emails, home addresses, or internal ids.
+- **Be careful with `Person` markup.** Naming real people, with their photos or profile links, needs their agreement. Prefer a role or a shared address if you are unsure.
+- **Never fake ratings or reviews.** It harms customers, and it is against search engine rules and, in many places, consumer law. This is not legal advice.
+- **Do not copy another site's markup,** or claim another organisation's identity. It can mislead people, and may be treated as spam.
+- **Watch for tampering.** If a hacked site has spam markup added, it can lead to penalties. Check your live markup from time to time.
+
+## Global Audience Notes
+
+- **Use international formats.** ISO dates and durations, three-letter currency codes, and a clear time zone offset avoid confusion between countries.
+- **Describe the language.** Use `inLanguage` (such as `"en"`, `"fr"`) on content, and write each language version's markup in that language.
+- **Addresses differ by country.** `PostalAddress` has parts for region, postal code, and country. Fill them in the way that country does. Use the standard two-letter country code.
+- **Phone numbers** are clearest in international format, such as `+44 1225 000000`.
+- **Prices:** give the price in the currency the page shows, with one `priceCurrency`. Do not mix.
+- **Rich result support varies by country and language,** so features you see in one place may not appear in another.
+- **Names and scripts:** use UTF-8, and write names as people write them, in their own script.
+
+## Common Mistakes to Avoid
+
+1. **Marking up content that is not on the page.**
+2. **Invalid JSON,** such as a trailing comma or single quotes.
+3. **Missing `@context` or `@type`.**
+4. **Dates like "March 12"** instead of `2026-03-12`.
+5. **Prices with symbols or words,** such as `$39` or `free`.
+6. **Relative image addresses** such as `/img/rye.jpg`.
+7. **Wrong or too-general types.**
+8. **Fake or copied reviews.**
+9. **Out-of-date prices and availability.**
+10. **Unescaped user data** inside the script.
+11. **Markup added only by scripts,** and never tested in the final page.
+12. **Treating markup as a ranking trick.**
+
+## Practice Time
+
+Try these in your browser and your editor:
+
+1. Use the builder with each of the five types. Which field did you find hardest?
+2. Type a wrong date and a price with a symbol in the builder. What does it say?
+3. Take the type quiz. Which scenario made you hesitate?
+4. Run the checker on the messy page, fix every problem, and run it again.
+5. Write JSON-LD for a page on a site you know, and check that every fact is visible on that page.
+6. Run Google's Rich Results Test on the page.
+7. Run the Schema Markup Validator on the same page. Do the two tools agree?
+8. Add an `Organization` block with a logo, and link an `Article` to it with `@id`.
+9. Try to break your script on purpose, by putting a quote and `</script>` in a title. How does your code handle it?
+10. Bonus: add `BreadcrumbList` markup to a page, and compare it with the visible breadcrumb.
+
+<AdsComponent />
+<br />
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is structured data?</summary>
+
+A block of labelled facts about a page, written in a format that machines understand, using the shared schema.org vocabulary.
+
+</details>
+
+<details>
+<summary>2. Which format should you use?</summary>
+
+JSON-LD, in a script block with `type="application/ld+json"`. It keeps the data separate from your layout.
+
+</details>
+
+<details>
+<summary>3. Does structured data guarantee rich results or better ranking?</summary>
+
+No. It helps search engines understand the page, and may make it eligible for rich results, but display is never guaranteed, and it is not a ranking boost on its own.
+
+</details>
+
+<details>
+<summary>4. What is the most important rule?</summary>
+
+Only mark up what is really visible on the page, and keep it accurate. Fake or hidden markup can lead to penalties, and mislead people.
+
+</details>
+
+<details>
+<summary>5. How should dates and prices be written?</summary>
+
+Dates in ISO 8601 (`2026-03-12`), durations like `PT45M`, and prices as plain numbers with a separate three-letter `priceCurrency`.
+
+</details>
+
+<details>
+<summary>6. How do you stop user data breaking out of the script?</summary>
+
+Build the JSON with `JSON.stringify`, and replace `<` with `<` before writing it into the page, so `</script>` can never appear inside the data.
+
+</details>
+
+## Key Takeaways
+
+- **Structured data labels the facts on your page** for machines, using schema.org.
+- **Use JSON-LD,** in a script block, with valid JSON.
+- **Choose the right type,** and fill in its key fields.
+- **Mark up only what is visible, true, and current.**
+- **Use correct formats** for dates, durations, prices, and addresses.
+- **Escape everything** that is not fixed.
+- **Test with the Rich Results Test and the Schema Markup Validator.**
+- **Rich results are never guaranteed.** The real goal is clarity.
+
+Next, learn how to control how your links look when they are shared, with [Open Graph](./open-graph).
