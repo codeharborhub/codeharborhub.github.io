@@ -19,6 +19,7 @@ import Admonition from '@theme/Admonition';
 import TOCInline from '@theme/TOCInline';
 import CodePenEmbed from '@site/src/components/CodePenEmbed';
 import CodePreview from '@site/src/components/CodePreview';
+import BookmarkButton from "@site/src/components/learning/BookmarkButton";
 
 export default {
   // Re-use the default mapping
@@ -42,4 +43,15 @@ export default {
   TOCInline,
   CodePenEmbed,
   CodePreview,
+  BookmarkButton,
+  // <BookmarkButton
+  // item={{
+  //   id: "html-introduction",
+  //   title: "Introduction to HTML",
+  //   url: "/tutorials/html/getting-started/what-is-html",
+  //   type: "lesson",
+  //   courseId: "html-mastery",
+  //   description: "Learn HTML fundamentals and how web pages are structured."
+  // }}
+  // />
 };
