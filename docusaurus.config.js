@@ -292,18 +292,18 @@ const config = {
                 label: "⚡ Live Code Editor",
                 to: "/LiveEditor/",
               },
-              {
-                label: "🏆 Coding Challenges",
-                to: "/challenges/",
-              },
-              {
-                label: "❓ Quizzes",
-                to: "/quizzes/",
-              },
-              {
-                label: "🎯 Daily Practice",
-                to: "/daily-challenges/",
-              },
+              // {
+              //   label: "🏆 Coding Challenges",
+              //   to: "/challenges/",
+              // },
+              // {
+              //   label: "❓ Quizzes",
+              //   to: "/quizzes/",
+              // },
+              // {
+              //   label: "🎯 Daily Practice",
+              //   to: "/daily-challenges/",
+              // },
             ],
           },
 
@@ -323,10 +323,10 @@ const config = {
                 label: "🌟 Project Showcase",
                 to: "/showcase/",
               },
-              {
-                label: "💻 Open Source",
-                to: "/open-source/",
-              },
+              // {
+              //   label: "💻 Open Source",
+              //   to: "/open-source/",
+              // },
               {
                 label: "🤝 Contribute on GitHub",
                 to: "https://github.com/CodeHarborHub",
@@ -335,10 +335,10 @@ const config = {
                 label: "📚 E-books",
                 to: "/ebooks/",
               },
-              {
-                label: "🧰 Developer Resources",
-                to: "/resources/",
-              },
+              // {
+              //   label: "🧰 Developer Resources",
+              //   to: "/resources/",
+              // },
             ],
           },
 
