@@ -27,39 +27,39 @@ const config = {
   projectName: "codeharborhub.github.io",
 
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
     localeConfigs: {
       en: {
-        label: 'English (US)',
-        htmlLang: 'en-US', // Signals US English target to search engines
+        label: "English (US)",
+        htmlLang: "en-US", // Signals US English target to search engines
       },
     },
   },
 
   headTags: [
     {
-      tagName: 'meta',
+      tagName: "meta",
       attributes: {
-        name: 'impact-site-verification',
-        value: '0ecab9f1-a456-4638-9f7a-17e0ff5f55f6',
+        name: "impact-site-verification",
+        value: "0ecab9f1-a456-4638-9f7a-17e0ff5f55f6",
       },
     },
     {
-      tagName: 'script',
+      tagName: "script",
       attributes: {
-        type: 'application/ld+json',
+        type: "application/ld+json",
       },
       innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        name: 'CodeHarborHub',
-        url: 'https://codeharborhub.github.io',
-        logo: 'https://codeharborhub.github.io/img/logo.png',
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "CodeHarborHub",
+        url: "https://codeharborhub.github.io",
+        logo: "https://codeharborhub.github.io/img/logo.png",
         sameAs: [
-          'https://github.com/CodeHarborHub',
-          'https://twitter.com/CodeHarborHub',
-          'https://www.linkedin.com/company/codeharborhub',
+          "https://github.com/CodeHarborHub",
+          "https://twitter.com/CodeHarborHub",
+          "https://www.linkedin.com/company/codeharborhub",
         ],
       }),
     },
@@ -262,87 +262,150 @@ const config = {
               },
             ],
           },
-          {
-            to: "/github-stars-nominate",
-            html: '<span class="nav-emoji">⭐</span> GitHub Stars',
-            position: "left",
-          },
-          {
-            to: "/community",
-            html: '<span class="nav-emoji">🤝</span> Community',
-            position: "left",
-          },
-          {
-            to: "/our-sponsors/",
-            html: '<span class="nav-emoji">💰</span> Donate',
-          },
-          {
-            to: "https://codeharborhub.github.io/blog/",
-            html: '<span class="nav-emoji">📰</span> Blog',
-          },
-          {
-            to: "/feature-requests/",
-            html: '<span class="nav-emoji">💡</span> Feature Requests',
-          },
 
+          // =====================================================
+          // 2. PRACTICE
+          // =====================================================
           {
             type: "dropdown",
-            html: '<span class="nav-emoji">🔗</span> More',
+            label: "🧠 Practice",
             position: "left",
             items: [
               {
-                to: "/showcase",
-                label: "Showcase",
+                label: "🧩 Data Structures & Algorithms",
+                to: "https://codeharborhub.github.io/dsa/",
               },
               {
-                label: "Projects",
-                to: "/projects/",
+                label: "💡 DSA Solutions",
+                to: "https://codeharborhub.github.io/dsa/solutions/",
               },
               {
-                label: "E-books",
-                to: "/ebooks/",
-              },
-
-              {
-                label: "Roadmap",
-                to: "/roadmap/",
+                label: "🧪 Coding Problems",
+                to: "https://codeharborhub.github.io/dsa/problems/",
               },
               {
-                label: "Live Editor",
+                type: "html",
+                value:
+                  '<hr class="dropdown-separator" /><span class="dropdown-category">CODING TOOLS</span>',
+              },
+              {
+                label: "⚡ Live Code Editor",
                 to: "/LiveEditor/",
               },
               {
-                label: "Broadcast",
-                to: "https://codeharborhub-broadcast-web.vercel.app/",
+                label: "🏆 Coding Challenges",
+                to: "/challenges/",
               },
               {
-                label: "Events",
-                to: "/events/",
+                label: "❓ Quizzes",
+                to: "/quizzes/",
+              },
+              {
+                label: "🎯 Daily Practice",
+                to: "/daily-challenges/",
               },
             ],
           },
-          // {
-          //   type: "dropdown",
-          //   html: '<span class="nav-emoji">🏷️</span> Tags',
-          //   position: "left",
-          //   items: [
-          //     {
-          //       label: "🏷️ Tutorial Tags 📚",
-          //       to: "/docs/tags/",
-          //       activeBaseRegex: "/docs/tags/",
-          //     },
-          //     {
-          //       label: "🏷️ Courses Tags 🎓",
-          //       to: "/courses/tags/",
-          //       activeBaseRegex: "/courses/tags/",
-          //     },
-          //     {
-          //       label: "🏷️ DSA Tags 🧠",
-          //       to: "/dsa/tags/",
-          //       activeBaseRegex: "/dsa/tags/",
-          //     },
-          //   ],
-          // },
+
+          // =====================================================
+          // 3. BUILD
+          // =====================================================
+          {
+            type: "dropdown",
+            label: "🛠️ Build",
+            position: "left",
+            items: [
+              {
+                label: "🚀 Projects",
+                to: "/projects/",
+              },
+              {
+                label: "🌟 Project Showcase",
+                to: "/showcase/",
+              },
+              {
+                label: "💻 Open Source",
+                to: "/open-source/",
+              },
+              {
+                label: "🤝 Contribute on GitHub",
+                to: "https://github.com/CodeHarborHub",
+              },
+              {
+                label: "📚 E-books",
+                to: "/ebooks/",
+              },
+              {
+                label: "🧰 Developer Resources",
+                to: "/resources/",
+              },
+            ],
+          },
+
+          // =====================================================
+          // 4. COMMUNITY
+          // =====================================================
+          {
+            type: "dropdown",
+            label: "🌍 Community",
+            position: "left",
+            items: [
+              {
+                label: "🤝 Join Community",
+                to: "/community/",
+              },
+              {
+                label: "📅 Events & Workshops",
+                to: "/events/",
+              },
+              {
+                label: "📰 Blog & Articles",
+                to: "https://codeharborhub.github.io/blog/",
+              },
+              {
+                label: "📢 Broadcast",
+                to: "https://codeharborhub-broadcast-web.vercel.app/",
+              },
+              {
+                label: "💡 Feature Requests",
+                to: "/feature-requests/",
+              },
+              {
+                label: "🐛 Report an Issue",
+                to: "https://github.com/CodeHarborHub/codeharborhub.github.io/issues",
+              },
+              {
+                label: "⭐ GitHub Stars",
+                to: "/github-stars-nominate/",
+              },
+            ],
+          },
+          // =====================================================
+          // 5. SUPPORT
+          // =====================================================
+          {
+            type: "dropdown",
+            label: "❤️ Support",
+            position: "left",
+            items: [
+              {
+                label: "💰 Donate",
+                to: "/our-sponsors/",
+              },
+              {
+                label: "🌟 Our Sponsors",
+                to: "/our-sponsors/",
+              },
+              {
+                label: "☕ Buy Me a Coffee",
+                to: "https://buymeacoffee.com/ajaydhangar",
+              },
+              {
+                label: "⭐ Star on GitHub",
+                to: "https://github.com/CodeHarborHub/codeharborhub.github.io",
+              },
+            ],
+          },
           {
             type: "search",
             position: "right",
@@ -353,13 +416,7 @@ const config = {
           //   className: "header-github-link",
           //   "aria-label": "GitHub repository",
           // },
-          // {
-          //   href: "https://www.codeharborhub.live/register",
-          //   position: "right",
-          //   className: "header-signup-link",
-          //   "aria-label": "Auth",
-          //   label: "Auth",
-          // },
+          { type: "custom-authButton", position: "right" },
         ],
         hideOnScroll: true,
       },

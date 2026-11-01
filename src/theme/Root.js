@@ -1,11 +1,16 @@
-import React from 'react';
-import AntiAdBlock from '@site/src/components/AntiAdBlock';
 
-export default function Root({children}) {
+import React from "react";
+import { AuthProvider } from "@site/src/context/AuthContext";
+import { LearningProvider } from "@site/src/context/LearningContext";
+
+export default function Root({
+  children
+}) {
   return (
-    <>
-      <AntiAdBlock />
-      {children}
-    </>
+    <AuthProvider>
+      <LearningProvider>
+        {children}
+      </LearningProvider>
+    </AuthProvider>
   );
 }
