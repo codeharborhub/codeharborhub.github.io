@@ -1,0 +1,526 @@
+---
+id: html-perf-resource-hints
+title: "Resource Hints in HTML"
+sidebar_label: "Resource Hints"
+sidebar_position: 3
+slug: /html/performance/resource-hints
+description: "Learn what resource hints are and how to choose between dns-prefetch, preconnect, preload and prefetch. Includes a hint builder and a live checker for common mistakes."
+keywords:
+  - resource hints
+  - dns-prefetch
+  - preconnect
+  - preload
+  - prefetch
+  - link rel
+  - crossorigin
+  - modulepreload
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, resource-hints, preload, preconnect, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function escapeAttr(v) {
+  return String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export function buildHint(o) {
+  const notes = [];
+  const href = o.href.trim();
+  const parts = ['rel="' + o.rel + '"'];
+  if (href === "") {
+    notes.push({level: "problem", text: "Enter a URL. A hint with no address does nothing."});
+  }
+  parts.push('href="' + escapeAttr(href) + '"');
+  let crossorigin = o.crossorigin;
+  if (o.rel === "preload" || o.rel === "prefetch") {
+    if (o.as === "") {
+      if (o.rel === "preload") {
+        notes.push({level: "problem", text: "A preload needs an as value, so the browser knows what kind of file it is."});
+      }
+    } else {
+      parts.push('as="' + o.as + '"');
+    }
+    if (o.as === "font") {
+      crossorigin = true;
+      notes.push({level: "tip", text: "Fonts are always fetched in anonymous CORS mode, so a font preload needs crossorigin, even from your own site. Without it the browser can download the font twice."});
+    }
+  }
+  if (o.rel === "preconnect" || o.rel === "dns-prefetch") {
+    try {
+      const u = new URL(href);
+      if (u.pathname !== "/" || u.search !== "") {
+        notes.push({level: "tip", text: "Only the origin matters here (for example " + u.origin + "). The path is ignored, so you can drop it."});
+      }
+    } catch (e) {
+      if (href !== "") notes.push({level: "problem", text: "Use a full origin such as https://cdn.example.com."});
+    }
+  }
+  if (o.rel === "preconnect" && !crossorigin) {
+    notes.push({level: "tip", text: "If the files from this host load in CORS mode (fonts, or fetch requests), add crossorigin. Otherwise the opened connection may not be reused."});
+  }
+  if (crossorigin) parts.push("crossorigin");
+  if (o.rel === "prefetch") {
+    notes.push({level: "tip", text: "Prefetch is for a file the visitor will probably need on the next page. It runs at low priority, and the browser may skip it."});
+  }
+  if (o.rel === "dns-prefetch") {
+    notes.push({level: "tip", text: "dns-prefetch only looks up the address. It is cheap, and a good fallback next to preconnect."});
+  }
+  return {tag: "<link " + parts.join(" ") + ">", notes: notes};
+}
+
+export function HintBuilder() {
+  const [rel, setRel] = useState("preload");
+  const [href, setHref] = useState("/img/hero-1200.webp");
+  const [as, setAs] = useState("image");
+  const [crossorigin, setCrossorigin] = useState(false);
+  const r = buildHint({rel: rel, href: href, as: as, crossorigin: crossorigin});
+  const usesAs = rel === "preload" || rel === "prefetch";
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Hint type</legend>
+        {["dns-prefetch", "preconnect", "preload", "prefetch"].map(function (v) {
+          return (
+            <label key={v} style={{marginRight: "1rem", display: "inline-block"}}>
+              <input type="radio" name="hint-rel" checked={rel === v} onChange={function () { setRel(v); }} /> {v}
+            </label>
+          );
+        })}
+      </fieldset>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="hint-href" style={{fontWeight: 600}}>URL</label>
+        <br />
+        <input id="hint-href" type="text" value={href} onChange={function (e) { setHref(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      {usesAs ? (
+        <p style={{margin: "0 0 0.75rem"}}>
+          <label htmlFor="hint-as" style={{fontWeight: 600}}>as (what kind of file)</label>
+          <br />
+          <select id="hint-as" value={as} onChange={function (e) { setAs(e.target.value); }}>
+            <option value="">(none)</option>
+            <option value="image">image</option>
+            <option value="font">font</option>
+            <option value="style">style</option>
+            <option value="script">script</option>
+            <option value="fetch">fetch</option>
+          </select>
+        </p>
+      ) : null}
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label>
+          <input type="checkbox" checked={crossorigin} onChange={function (e) { setCrossorigin(e.target.checked); }} /> crossorigin
+        </label>
+      </p>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{r.tag}</code></pre>
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {r.notes.map(function (n, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: n.level === "problem" ? "#c0392b" : "#b9770e"}}>{n.level === "problem" ? "Problem: " : "Tip: "}</strong>
+              {n.text}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export const hintSamples = {
+  messy: [
+    '<head>',
+    '  <link rel="preload" href="/fonts/inter.woff2">',
+    '  <link rel="preload" href="/img/hero.webp" as="image">',
+    '  <link rel="preload" href="/img/hero.webp" as="image">',
+    '  <link rel="preconnect" href="https://fonts.gstatic.com">',
+    '  <link rel="preconnect" href="https://cdn.example.com/assets/">',
+    '  <link rel="preconnect" href="https://analytics.example.com">',
+    '  <link rel="preconnect" href="https://ads.example.com">',
+    '  <link rel="preconnect" href="https://chat.example.com">',
+    '  <link rel="prefetch" href="/checkout">',
+    '</head>'
+  ].join("\n"),
+  fixed: [
+    '<head>',
+    '  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+    '  <link rel="dns-prefetch" href="https://analytics.example.com">',
+    '  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>',
+    '  <link rel="preload" href="/img/hero.webp" as="image">',
+    '  <link rel="prefetch" href="/checkout">',
+    '</head>'
+  ].join("\n")
+};
+
+export function auditHints(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out = [];
+  const add = (level, text) => out.push({level: level, text: text});
+  const links = Array.from(doc.querySelectorAll("link[rel]"));
+  const withRel = function (name) {
+    return links.filter(function (l) { return l.getAttribute("rel").toLowerCase().split(/\s+/).indexOf(name) !== -1; });
+  };
+  const preloads = withRel("preload");
+  const preconnects = withRel("preconnect");
+  const dnsPrefetches = withRel("dns-prefetch");
+  const prefetches = withRel("prefetch");
+  const noAs = preloads.filter(function (l) { return !l.hasAttribute("as"); });
+  if (noAs.length > 0) add("problem", noAs.length + " preload(s) have no as value, so the browser cannot tell what the file is.");
+  const fontNoCors = preloads.filter(function (l) { return l.getAttribute("as") === "font" && !l.hasAttribute("crossorigin"); });
+  if (fontNoCors.length > 0) add("problem", fontNoCors.length + " font preload(s) have no crossorigin. Add it, even for fonts on your own site.");
+  const noAsFont = noAs.filter(function (l) { return /\.(woff2?|ttf|otf)(\?|$)/i.test(l.getAttribute("href") || ""); });
+  if (noAsFont.length > 0) add("tip", "A preload for a font file needs as=\"font\" and crossorigin.");
+  const seen = {};
+  let dupes = 0;
+  links.forEach(function (l) {
+    const key = l.getAttribute("rel") + "|" + (l.getAttribute("href") || "") + "|" + (l.getAttribute("as") || "");
+    if (seen[key]) dupes += 1;
+    seen[key] = true;
+  });
+  if (dupes > 0) add("problem", dupes + " duplicate hint(s). Repeating a hint adds nothing, and can cause a second download.");
+  const gstatic = preconnects.filter(function (l) { return /gstatic|fonts/i.test(l.getAttribute("href") || "") && !l.hasAttribute("crossorigin"); });
+  if (gstatic.length > 0) add("tip", "A preconnect to a font host usually needs crossorigin, because fonts load in CORS mode.");
+  const withPath = preconnects.concat(dnsPrefetches).filter(function (l) {
+    try { const u = new URL(l.getAttribute("href") || ""); return u.pathname !== "/"; } catch (e) { return false; }
+  });
+  if (withPath.length > 0) add("tip", withPath.length + " preconnect or dns-prefetch hint(s) include a path. Only the origin is used.");
+  if (preconnects.length > 4) add("tip", preconnects.length + " preconnects. A rule of thumb is to keep these for the few hosts you really need straight away, and use dns-prefetch for the rest.");
+  if (preloads.length > 4) add("tip", preloads.length + " preloads. Too many compete with each other and with the files that matter. Keep only the most important.");
+  if (noAs.length === 0 && fontNoCors.length === 0 && preloads.length > 0) add("good", "Every preload has an as value and the fonts have crossorigin.");
+  if (dupes === 0 && links.length > 0) add("good", "No duplicate hints.");
+  if (prefetches.length > 0) add("good", prefetches.length + " prefetch hint(s). Check each points to a page or file the visitor will probably need next.");
+  if (out.length === 0) add("good", "No hints found. Paste a head with link elements.");
+  return out;
+}
+
+export function HintAuditorInner() {
+  const [html, setHtml] = useState(hintSamples.messy);
+  const results = auditHints(html);
+  const problems = results.filter(function (r) { return r.level === "problem"; }).length;
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(hintSamples.messy); }}>Load the messy head</button>
+        <button type="button" onClick={function () { setHtml(hintSamples.fixed); }}>Load the fixed head</button>
+      </div>
+      <label htmlFor="hint-html" style={{display: "block", fontWeight: 600}}>Head HTML (edit it)</label>
+      <textarea
+        id="hint-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={11}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {problems === 0 ? "No problems found." : problems + " problem(s) found."}
+      </p>
+      <ul style={{listStyle: "none", padding: 0}}>
+        {results.map(function (r, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[r.level]}}>{labels[r.level]}: </strong>
+              {r.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a teaching checker. It looks at the markup only, so it cannot tell whether a hinted file is actually used. DevTools can.
+      </p>
+    </div>
+  );
+}
+
+export function HintAuditor() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <HintAuditorInner />; }}
+    </BrowserOnly>
+  );
+}
+
+# Resource Hints in HTML
+
+Normally a browser discovers what it needs as it reads: it finds a stylesheet, fetches it, finds an image, fetches that. This is fair, but sometimes the browser finds out about something too late. A font named inside a CSS file, a background image set in a stylesheet, a server your page will call after a script runs: all of these are discovered late.
+
+**Resource hints** are small instructions in your HTML that let you tell the browser what is coming, so it can get ready earlier. They are among the cheapest speed-ups you can add, and also among the easiest to misuse. This lesson shows you the four main hints, how they differ, and when to leave them out.
+
+## What You Will Learn
+
+- What a resource hint is, and why it is only a hint
+- The four main hints: `dns-prefetch`, `preconnect`, `preload` and `prefetch`
+- How to choose between them
+- Why `as` and `crossorigin` matter
+- How too many hints can make a page slower
+- How to check in DevTools that a hint helped
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+All four hints are written with the same element, `link`, and the `rel` attribute chooses the job.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+
+  <!-- 1. Only look up the address of a server we might use -->
+  <link rel="dns-prefetch" href="https://analytics.example.com">
+
+  <!-- 2. Open a full connection to a server we will definitely use -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- 3. Download a file this page needs, now -->
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- 4. Quietly download a file the NEXT page will probably need -->
+  <link rel="prefetch" href="/checkout">
+
+  <link rel="stylesheet" href="/site.css">
+</head>
+```
+
+</TabItem>
+<TabItem value="builder" label="Hint Builder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HintBuilder />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="checker" label="Hint Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HintAuditor />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the builder, switch between the four hints and notice what changes: `as` appears for preload and prefetch, and the notes change with the hint. In the checker, load the messy head and fix every problem it reports.
+
+## The Four Hints at a Glance
+
+The four hints sit on a ladder from cheapest and safest to most costly. The first two prepare a connection. The last two download a file.
+
+| Hint | What the browser does | Cost | Best for |
+| :-- | :-- | :-- | :-- |
+| `dns-prefetch` | Looks up the server's address | Very small | Third-party hosts you might use |
+| `preconnect` | Looks up the address, connects, and sets up security | Small, but a connection stays open | The few hosts you will use very soon |
+| `preload` | Downloads one file for this page, early, at high priority | Real bandwidth | A file the page needs but finds late |
+| `prefetch` | Downloads a file at low priority, for later | Real bandwidth, spent on a guess | Likely next pages or files |
+
+You will go deeper into each one in its own lesson: [Preload](./preload), [Prefetch](./prefetch), [DNS Prefetch](./dns-prefetch), and [Preconnect](./preconnect).
+
+## They Are Only Hints
+
+The word matters. A resource hint is a request, not a command. A browser may act on it, delay it, or ignore it, depending on the connection, the device, settings such as data saving, and how busy it already is. Support also differs between browsers, so always check [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel) for the hint you plan to use.
+
+Two things follow from this:
+
+1. **Your page must work without the hints.** A hint speeds things up. It should never be required for the page to work.
+2. **Test, do not assume.** A hint that helps on your fast laptop might do nothing, or even hurt, on a slow phone.
+
+## Which One Do I Need?
+
+Ask two questions: *is the file for this page or the next?* and *do I know exactly which file?*
+
+1. **I know the exact file, this page needs it, and the browser will find it late.** Use `preload`. Typical examples are a font named inside CSS, or a hero image set as a CSS background.
+2. **I know the server, but not the files.** Use `preconnect` if you will use the server almost straight away, or `dns-prefetch` if you might.
+3. **The visitor will probably go to a certain page next.** Use `prefetch` for that page or file.
+4. **The browser will find the file early anyway.** Use nothing. A normal image or stylesheet in your HTML is already found early.
+
+:::tip
+The best resource hint is often no hint at all. If you can move a file earlier in the HTML, or put an image in the HTML instead of in CSS, the browser finds it by itself, and you have one less thing to maintain.
+:::
+
+## Two Details That Trip People Up
+
+### The `as` attribute
+
+A preload must say what kind of file it is, using `as`. The browser uses this to give the file the right priority, and to send the right request headers. Without it, the browser may fetch the file twice or give it the wrong priority.
+
+```html
+<link rel="preload" href="/img/hero.webp" as="image">
+<link rel="preload" href="/css/fonts.css" as="style">
+<link rel="preload" href="/js/app.js" as="script">
+```
+
+### The `crossorigin` attribute
+
+Fonts, and anything fetched in "CORS mode", need `crossorigin`, even when they come from your own site. If the hint and the real request do not match, the browser cannot reuse the preloaded file, and downloads it again.
+
+```html
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+```
+
+The same idea applies to `preconnect`: if the files will be fetched in CORS mode, add `crossorigin` to the hint, so the open connection can be reused.
+
+## Hints in Other Places
+
+You can send the same hints from the server, as an HTTP header, which is useful when you cannot edit the HTML:
+
+```http
+Link: </img/hero.webp>; rel=preload; as=image
+```
+
+Two related ideas you may meet later:
+
+- **`modulepreload`** is a version of preload made for JavaScript modules (`<link rel="modulepreload" href="/app.js">`).
+- **Speculation rules** are a newer way to prefetch or even pre-render a whole next page. Support is not universal, so check current browser support before you rely on it.
+
+## When Hints Hurt
+
+Hints are not free. Each one uses bandwidth, a connection, or the browser's attention.
+
+- **Preload too much** and files compete with each other, and with the files that matter. If everything is high priority, nothing is.
+- **Preconnect to many hosts** and you open connections that may sit unused. Browsers close idle connections after a short time, so a hint for something used much later can be wasted.
+- **Preload a file you do not use** and Chrome will warn in the console that the file was preloaded but not used soon after load. That is a sign to remove the hint.
+- **Prefetch on a slow or metered connection** can cost visitors data for pages they never open.
+
+:::warning
+Add hints one at a time, and measure after each change. Remove any hint that does not clearly help.
+:::
+
+## Checking That a Hint Worked
+
+1. Open DevTools, then the **Network** panel, and reload.
+2. Find your file, and look at the **Priority** and **Initiator** columns. A preloaded file should start early, with an initiator showing the preload.
+3. Check the **Waterfall**. A good preload makes the file start near the top, not after a stylesheet or script finishes.
+4. Watch the **Console** for warnings about unused preloads or mismatched `crossorigin`.
+5. Run Lighthouse or WebPageTest before and after, and compare your key numbers, such as Largest Contentful Paint (LCP).
+
+## Best Practices
+
+1. **Make the file easy to find first.** Hints are a fix for late discovery, not a replacement for good HTML.
+2. **Keep the list short.** A few well-chosen hints beat a long list.
+3. **Always add `as` to a preload,** and `crossorigin` where needed.
+4. **Match the hint to the real request,** with the same URL, the same `as`, and the same `crossorigin`.
+5. **Use `dns-prefetch` as a cheap fallback** next to `preconnect`, for older browsers.
+6. **Never rely on a hint** for the page to work.
+7. **Re-check after redesigns,** since a hint for a file you no longer use is pure waste.
+
+## Quick Checklist
+
+- [ ] Each hint points to something the page really uses (or will probably use next)
+- [ ] Every preload has an `as` value
+- [ ] Font preloads and font-host preconnects have `crossorigin`
+- [ ] No hint is repeated
+- [ ] Only a few preconnects, for the hosts that matter most
+- [ ] No private or one-time URLs are prefetched
+- [ ] DevTools shows the hint helped, and the console shows no warnings
+
+## Security and Privacy Notes
+
+- **Hints contact other servers early.** `preconnect` and `dns-prefetch` make the visitor's browser contact a third party before the visitor does anything, which shares their network address and some connection details. If you need consent before contacting certain services (analytics or advertising, for example), do not hint those hosts until consent is given. This is not legal advice, so check the rules that apply to you.
+- **Prefetch only public pages.** A prefetched address is requested whether or not the visitor ever goes there. Never prefetch a logout link, an action link, or any URL that changes something or is private.
+- **Use `integrity` when it fits.** For a preloaded script or style that does not change, the `integrity` attribute lets the browser check the file is the one you expect.
+- **Do not leak secrets in URLs.** Hint URLs are visible in the page source and can end up in server logs.
+
+## Global Audience Notes
+
+- **Slow networks benefit most, and suffer most from waste.** A needless preload costs a visitor on a limited plan real data.
+- **Distant servers add delay to every new connection,** which makes `preconnect` more valuable for visitors far from your host.
+- **Some third-party hosts are slow or blocked in some countries.** A preconnect to a host that never answers wastes time, so make sure the page works without it.
+- **Test from other places and on slow connections,** because a hint that helps in one region may not help in another.
+
+## Common Mistakes to Avoid
+
+1. **Preloading without `as`.**
+2. **Forgetting `crossorigin` on fonts.**
+3. **Preloading a file the page does not use.**
+4. **Hinting at files the browser would find at once.**
+5. **Preloading everything,** so nothing stands out.
+6. **Preconnecting to a dozen hosts.**
+7. **Writing the same hint twice.**
+8. **Prefetching private or action URLs.**
+9. **Putting a path in a preconnect** and thinking it matters.
+10. **Never measuring** whether the hint helped.
+
+## Practice Time
+
+1. In the builder, create a preload for a font. What does it add on its own?
+2. Create a preconnect with a long URL. What does the note tell you?
+3. Load the messy head into the checker and fix every problem it reports.
+4. Open DevTools on a page you built. Is any file discovered late?
+5. Add a preload for that file, reload, and compare the waterfall.
+6. Add a preload for a file you do not use, and look in the console. What does Chrome say?
+7. Find a page where `prefetch` would make sense, and write down why.
+8. Bonus: run Lighthouse before and after your change, and compare LCP.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a resource hint?</summary>
+
+A `link` element that tells the browser about a file or server before it would normally find out. It is a request, and the browser may ignore it.
+
+</details>
+
+<details>
+<summary>2. What is the difference between preconnect and dns-prefetch?</summary>
+
+`dns-prefetch` only looks up the server's address. `preconnect` also opens the connection and sets up security, so it saves more time but costs more.
+
+</details>
+
+<details>
+<summary>3. What is the difference between preload and prefetch?</summary>
+
+`preload` fetches a file this page needs, early, at high priority. `prefetch` fetches a file the next page may need, quietly, at low priority.
+
+</details>
+
+<details>
+<summary>4. Why does a preload need `as`?</summary>
+
+It tells the browser what kind of file it is, so it can set the right priority and request headers. Without it the file may be fetched twice or given the wrong priority.
+
+</details>
+
+<details>
+<summary>5. When do you need `crossorigin`?</summary>
+
+For fonts (always, even from your own site) and for any file fetched in CORS mode. The hint must match the real request, or the preloaded file cannot be reused.
+
+</details>
+
+<details>
+<summary>6. How can hints make a page slower?</summary>
+
+Too many preloads compete with important files, unused connections and downloads waste bandwidth, and prefetching on a slow connection costs data for pages nobody opens.
+
+</details>
+
+## Key Takeaways
+
+- **Resource hints tell the browser what is coming,** so it can prepare earlier.
+- **They are hints, not commands,** and your page must work without them.
+- **`dns-prefetch` and `preconnect` prepare connections.** `preload` and `prefetch` download files.
+- **Preload is for this page, prefetch is for the next.**
+- **Always add `as` to a preload,** and `crossorigin` for fonts.
+- **Fewer, better hints win.** Measure each one, and remove what does not help.
+- **Mind privacy:** early connections reveal visitors to third parties, and prefetch must never touch private URLs.
+
+Next up: [Preload](./preload), where you will fetch the most important file on your page as early as possible.

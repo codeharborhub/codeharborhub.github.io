@@ -1,0 +1,435 @@
+---
+id: html-perf-prefetch
+title: "Prefetch in HTML"
+sidebar_label: "Prefetch"
+sidebar_position: 5
+slug: /html/performance/prefetch
+description: "Learn link rel=prefetch: quietly download files for the page a visitor will probably open next. See when it pays off, when it wastes data, and what must never be prefetched."
+keywords:
+  - link rel prefetch
+  - prefetch next page
+  - prefetch vs preload
+  - low priority fetch
+  - save-data
+  - speculative loading
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, prefetch, resource-hints, navigation, frontend]
+---
+
+import {useState} from 'react';
+
+export function prefetchValue(chance, sizeKb, mbps) {
+  const seconds = (sizeKb * 8) / (mbps * 1000);
+  const wastedKb = Math.round((1 - chance) * sizeKb);
+  let verdict = "Probably skip it.";
+  if (chance >= 0.5 && sizeKb <= 1000) verdict = "Usually a good bet.";
+  else if (chance >= 0.3 && sizeKb <= 300) verdict = "Maybe, if the connection is not metered.";
+  return {seconds: Math.round(seconds * 10) / 10, wastedKb: wastedKb, verdict: verdict};
+}
+
+export function NextPageLab() {
+  const [chance, setChance] = useState(60);
+  const [sizeKb, setSizeKb] = useState(300);
+  const [mbps, setMbps] = useState(5);
+  const r = prefetchValue(chance / 100, sizeKb, mbps);
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        <label htmlFor="pf-chance">Visitors who go to the next page: <strong>{chance}%</strong></label>
+        <br />
+        <input id="pf-chance" type="range" min="5" max="95" step="5" value={chance} onChange={function (e) { setChance(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <p>
+        <label htmlFor="pf-size">Size of what you prefetch: <strong>{sizeKb} KB</strong></label>
+        <br />
+        <input id="pf-size" type="range" min="50" max="5000" step="50" value={sizeKb} onChange={function (e) { setSizeKb(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Connection speed</legend>
+        {[1, 5, 25].map(function (m) {
+          return (
+            <label key={m} style={{marginRight: "1rem"}}>
+              <input type="radio" name="pf-mbps" checked={mbps === m} onChange={function () { setMbps(m); }} /> {m} Mbps
+            </label>
+          );
+        })}
+      </fieldset>
+      <ul aria-live="polite">
+        <li><strong>If they go:</strong> the next page can skip about {r.seconds} s of download for this file.</li>
+        <li><strong>If they do not go:</strong> about {r.wastedKb} KB per visitor is wasted, on average.</li>
+        <li><strong>Verdict:</strong> {r.verdict}</li>
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model, and the verdict is a rule of thumb, not a law. It assumes the prefetch finishes before the click. Use your own analytics to estimate the real chance.
+      </p>
+    </div>
+  );
+}
+
+export const plannerLinks = [
+  {
+    name: "Menu page, from the home page",
+    chance: "About 70% of visitors go there next",
+    should: true,
+    why: "A likely next step, public, and small. A good candidate."
+  },
+  {
+    name: "Checkout page, when the basket has items",
+    chance: "About 60% of those visitors go there next",
+    should: true,
+    why: "A likely next step for people with a full basket. Check it is the generic page and holds nothing personal in the URL."
+  },
+  {
+    name: "Log out link",
+    chance: "Rarely clicked",
+    should: false,
+    why: "Never prefetch a link that does something. A prefetch could log the visitor out without a click."
+  },
+  {
+    name: "Delete my account link",
+    chance: "Almost never clicked",
+    should: false,
+    why: "Actions must never be triggered by a prefetch. Make them a button that sends a POST request instead of a plain link."
+  },
+  {
+    name: "Terms of service, in the footer",
+    chance: "About 3% of visitors",
+    should: false,
+    why: "Few people go there. The data is wasted for almost everyone."
+  },
+  {
+    name: "A 70 MB video page",
+    chance: "About 80% of visitors go there",
+    should: false,
+    why: "Even a likely page is too heavy to guess about, especially for people on limited data."
+  },
+  {
+    name: "Order confirmation page with a private token in its address",
+    chance: "Visited once, after paying",
+    should: false,
+    why: "A private, one-time URL should never be fetched in advance."
+  },
+  {
+    name: "Page 2 of a long article, while reading page 1",
+    chance: "About 55% of readers go there",
+    should: true,
+    why: "A natural next step with a small, public page. A good candidate."
+  }
+];
+
+export function LinkPlanner() {
+  const [chosen, setChosen] = useState({});
+  const [checked, setChecked] = useState(false);
+  const score = plannerLinks.filter(function (l, i) { return Boolean(chosen[i]) === l.should; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: 0}}>
+        <legend style={{fontWeight: 600}}>Tick the links you would prefetch</legend>
+        {plannerLinks.map(function (l, i) {
+          const right = Boolean(chosen[i]) === l.should;
+          return (
+            <div key={i} style={{margin: "0.6rem 0"}}>
+              <label>
+                <input
+                  type="checkbox"
+                  disabled={checked}
+                  checked={Boolean(chosen[i])}
+                  onChange={function (e) { setChosen(Object.assign({}, chosen, {[i]: e.target.checked})); }}
+                />{" "}
+                <strong>{l.name}</strong>
+                {" "}({l.chance})
+              </label>
+              {checked ? (
+                <p style={{margin: "0.25rem 0 0 1.6rem"}}>
+                  <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Right. " : "Not quite. "}</strong>
+                  {l.why}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+      </fieldset>
+      {!checked ? (
+        <button type="button" onClick={function () { setChecked(true); }}>Check my choices</button>
+      ) : (
+        <p aria-live="polite">
+          <strong>Score: {score} of {plannerLinks.length}.</strong>{" "}
+          <button type="button" onClick={function () { setChecked(false); setChosen({}); }}>Start again</button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+# Prefetch in HTML
+
+Preload is for files this page needs right now. **Prefetch** looks forward. It is a way to say, "the visitor will probably go here next, so when you have a quiet moment, fetch it for me."
+
+Done well, the next page feels instant, because much of it is already waiting in the browser's cache. Done carelessly, prefetch spends your visitor's data on pages they never open. This lesson helps you aim well.
+
+## What You Will Learn
+
+- What `rel="prefetch"` does, and how it differs from preload
+- How to decide which pages and files are worth prefetching
+- What a prefetch can and cannot do for the next page
+- How to prefetch on hover or when the browser is idle, and respect data saving
+- What must never be prefetched
+- How to check whether prefetching helped
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A prefetch is a `link` element that names a file or page the visitor may need next.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="menu-page.html"
+<head>
+  <meta charset="utf-8">
+  <title>Menu | The Bread Bin</title>
+
+  <!-- The order page is the usual next step from the menu -->
+  <link rel="prefetch" href="/order">
+
+  <!-- A script and a stylesheet the order page will use -->
+  <link rel="prefetch" href="/js/order.js" as="script">
+  <link rel="prefetch" href="/css/order.css" as="style">
+
+  <link rel="stylesheet" href="/css/site.css">
+</head>
+```
+
+</TabItem>
+<TabItem value="lab" label="Next Page Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<NextPageLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, drag the sliders. Prefetch is a bet: it pays off when many visitors go to the next page and the file is small, and it wastes data when few go, or the file is large.
+
+## What Prefetch Does
+
+1. **It fetches at low priority.** The browser waits until it is not busy with files the current page needs.
+2. **It stores the result.** The file goes into the browser's cache, to be used if the visitor asks for it later.
+3. **It keeps going after the visitor leaves.** Unlike most downloads, a prefetch can carry on while the next page is loading, which is the whole point.
+4. **It does not run or show anything.** A prefetched script does not run, and a prefetched page does not appear. It is simply ready, if needed.
+5. **It is a hint.** The browser can skip it, for instance on a slow connection or with data saving on, and support differs between browsers, so check [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/prefetch) before relying on it.
+
+## Prefetch vs Preload
+
+They look alike, but they answer different questions.
+
+| Question | Preload | Prefetch |
+| :-- | :-- | :-- |
+| Which page is it for? | This page, now | The next page, maybe |
+| Priority | High | Low |
+| Is `as` needed? | Yes | Optional, but helpful |
+| What if it is wasted? | Competes with this page | Wastes data and bandwidth |
+| Typical use | Fonts, hero images, late-found files | The next page, or the files it needs |
+
+A simple rule: if the **current** page needs it, use preload (or better, put it in the HTML). If only the **next** page might need it, use prefetch. Using prefetch for something the current page needs is a mistake, because the low priority means it arrives late.
+
+## What Gets Prefetched for a Page
+
+If you prefetch a page address, the browser usually fetches just that one HTML file. The files that page uses (its stylesheets, scripts, and images) are not automatically included. So for a smoother jump, you may prefetch the key files as well:
+
+```html
+<link rel="prefetch" href="/order">
+<link rel="prefetch" href="/js/order.js" as="script">
+<link rel="prefetch" href="/css/order.css" as="style">
+```
+
+How much of this helps depends on your caching headers. A file the server marks as cacheable will be kept and reused. Behaviour for files that are not cacheable differs between browsers, so test in the ones your visitors use.
+
+## Choosing What to Prefetch
+
+Prefetch only when all of these are true:
+
+- **It is likely.** A good rule of thumb is that around half of visitors, or more, go there next.
+- **It is small.** A big page or file is a big bet.
+- **It is public and safe.** A plain GET request that changes nothing and holds nothing private.
+- **It is useful in the cache.** The page or file can actually be reused when the visitor arrives.
+
+Try your judgement on a bakery site. Tick the links you would prefetch, then check.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkPlanner />
+</>
+</BrowserWindow>
+
+## Prefetching on Hover or When Idle
+
+You do not have to prefetch everything on page load. A common, careful approach is to prefetch when the visitor shows interest, for example when they hover a link. This keeps the bet small, because they are clearly considering it.
+
+```js
+const done = new Set();
+
+function prefetch(url) {
+  if (done.has(url)) return;
+  const c = navigator.connection;
+  if (c && (c.saveData || /2g/.test(c.effectiveType))) return;
+  done.add(url);
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.href = url;
+  document.head.appendChild(link);
+}
+
+document.querySelectorAll("a[data-prefetch]").forEach(function (a) {
+  if (a.origin !== location.origin) return;
+  a.addEventListener("mouseenter", function () { prefetch(a.href); }, { once: true });
+});
+```
+
+A few notes about this code:
+
+- It only prefetches links you mark with `data-prefetch`, so you choose which ones.
+- It skips visitors who ask to save data, or are on very slow connections. `navigator.connection` is not available in every browser, which is why the code checks that it exists first.
+- It stays on your own site, and never repeats a link.
+- On touch screens there is no hover, so you might prefetch when a link scrolls into view instead, or on a touch start.
+
+:::info
+Newer tools exist for this job. **Speculation rules** let you describe pages to prefetch, or even pre-render, in a block of JSON, and some frameworks and tools prefetch links for you. Support varies, so check current browser support before you depend on them.
+:::
+
+## Prefetch and Your Numbers
+
+Prefetch requests are real requests. They show up in your server logs, and some analytics setups may count a prefetched page as a visit. Many browsers add a header to mark them (Chromium uses `Sec-Purpose: prefetch`, for example), which your server can use to tell prefetches from real visits. Check the current documentation for the browsers you care about.
+
+## Checking That It Worked
+
+1. Open DevTools, then **Network**, and load the first page. Look for your prefetched file. It should appear with a low priority.
+2. Click through to the next page. The prefetched file should now be loaded **from cache** (look for "disk cache" or "prefetch cache" in the Size column), not downloaded again.
+3. Compare the time to load the next page with and without the prefetch.
+4. Check that nothing was prefetched that the visitor never saw or could not use.
+5. Test with the Network panel throttled, and with data saving on, to see how the code behaves.
+
+## Best Practices
+
+1. **Prefetch the likely, not the possible.**
+2. **Keep it small,** or prefetch only the key files.
+3. **Use hover or idle triggers** to keep the bet small.
+4. **Respect data saving** and slow connections.
+5. **Prefetch only public, safe pages.**
+6. **Set good caching headers,** so the prefetched file is reusable.
+7. **Use analytics to find your real next steps,** not guesses.
+8. **Do not prefetch what the current page needs.** Use preload, or put it in the HTML.
+
+## Quick Checklist
+
+- [ ] Each prefetch is for a likely next step
+- [ ] Each file is small, or the page is light
+- [ ] No action, logout, delete, or private URL is prefetched
+- [ ] Data saving and slow connections are respected
+- [ ] The prefetched file is cacheable
+- [ ] The Network panel shows it used from cache on the next page
+- [ ] Analytics and server logs account for prefetch requests
+
+## Security and Privacy Notes
+
+- **A prefetch is a real request.** The server sees it, cookies are sent, and anything the URL does will happen. Never prefetch a link that changes something (logging out, deleting, adding to a basket, confirming). Good design makes such actions a POST request from a button, not a link, but do not rely on that alone.
+- **Never prefetch private or one-time URLs,** such as pages with tokens in the address, password reset links, or order confirmations.
+- **Do not prefetch personalised pages into shared caches.** Check your cache headers so private pages are never stored where other people can see them.
+- **Prefetch can share visitor details with third parties.** Fetching a file from another host tells that host about the visitor. If you need consent before contacting certain services, do not prefetch from them until it is given. Browsers also increasingly keep separate caches per site, so a prefetch from another host may not be reused the way you expect.
+- **Respect the visitor's choice.** If they have asked to save data, a prefetch is a poor use of it.
+
+## Global Audience Notes
+
+- **Prefetch costs real money for some visitors.** On pay-as-you-go plans, a guess that misses is not free. Respect data-saving settings, and keep prefetches small.
+- **Slow connections gain the most when the guess is right,** and lose the most when it is wrong. Be especially conservative for them.
+- **Visitors far from your server feel latency more,** so a prefetch that lands in the cache can help, if the file is small and likely.
+- **Test on slow networks and modest phones,** since prefetch competes for the same limited resources.
+
+## Common Mistakes to Avoid
+
+1. **Prefetching everything.**
+2. **Prefetching large files or pages.**
+3. **Prefetching links that do something,** like logout or delete.
+4. **Prefetching private or tokenised URLs.**
+5. **Using prefetch for files the current page needs.**
+6. **Ignoring data saving.**
+7. **Prefetching files that are not cacheable,** so the work is lost.
+8. **Not noticing the extra requests in your analytics.**
+9. **Prefetching third-party files without thinking about privacy.**
+10. **Never checking the next page** to see if the cache was used.
+
+## Practice Time
+
+1. In the Next Page Lab, find a case where prefetch is a clear yes, and one where it is a clear no.
+2. In the link planner, which choice surprised you?
+3. Think about a site you use. Which page is the most likely next step from its home page?
+4. Add a prefetch for that page on a test site, and check the Network panel.
+5. Click through, and see if the file came from cache.
+6. Try the hover script on a few links.
+7. Turn on data saving in your browser, if it has the option, and see if the script holds back.
+8. Bonus: look at your analytics to find the three most common two-page journeys.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does prefetch do?</summary>
+
+It downloads a file or page at low priority and stores it in the cache, so it is ready if the visitor needs it later, usually on the next page.
+
+</details>
+
+<details>
+<summary>2. How is prefetch different from preload?</summary>
+
+Preload is for files the current page needs, at high priority. Prefetch is for files the next page may need, at low priority.
+
+</details>
+
+<details>
+<summary>3. When is prefetch worth it?</summary>
+
+When the next step is likely (about half of visitors or more is a useful rule of thumb), the file is small, it is public and safe, and it can be reused from the cache.
+
+</details>
+
+<details>
+<summary>4. What should never be prefetched?</summary>
+
+Links that perform actions (logout, delete, confirm), private or one-time URLs, and personalised pages that must not be cached.
+
+</details>
+
+<details>
+<summary>5. How can you keep prefetching cheap?</summary>
+
+Prefetch on hover or when idle, keep files small, and skip visitors who have data saving on or slow connections.
+
+</details>
+
+<details>
+<summary>6. How do you know prefetch worked?</summary>
+
+In the Network panel, the file loads at low priority on the first page, and on the next page it comes from cache instead of being downloaded again.
+
+</details>
+
+## Key Takeaways
+
+- **Prefetch prepares the next page,** quietly, at low priority.
+- **It is a bet.** Make it when the odds are good and the cost is small.
+- **Do not use it for what this page needs.** That is preload's job.
+- **Never prefetch actions or private URLs.**
+- **Respect data saving and slow connections.**
+- **Make files cacheable,** and check the next page used the cache.
+- **Remember your analytics:** prefetches are real requests.
+
+Next up: [DNS Prefetch](./dns-prefetch), a very cheap hint that looks up a server's address before you need it.

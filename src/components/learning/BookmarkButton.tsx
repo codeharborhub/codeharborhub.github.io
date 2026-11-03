@@ -1,9 +1,9 @@
-
-import React from "react";
+import React, { useCallback } from "react";
 // @ts-ignore
 import { useLearning } from "@site/src/context/LearningContext";
 // @ts-ignore
 import type { BookmarkType } from "@site/src/types/learning";
+import { FaRegBookmark, FaBookmark } from 'react-icons/fa';
 
 interface BookmarkButtonProps {
   id: string;
@@ -23,10 +23,10 @@ export default function BookmarkButton({
   compact = false,
 }: BookmarkButtonProps) {
   const { isBookmarked, toggleBookmark } = useLearning();
-
   const saved = isBookmarked(id);
 
-  function handleClick() {
+  const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     toggleBookmark({
       id,
       title,
@@ -34,32 +34,30 @@ export default function BookmarkButton({
       type,
       description,
     });
-  }
+  }, [id, title, url, type, description, toggleBookmark]);
 
   return (
     <button
       type="button"
       onClick={handleClick}
       aria-pressed={saved}
-      aria-label={
-        saved
-          ? `Remove ${title} from bookmarks`
-          : `Bookmark ${title}`
-      }
-      title={saved ? "Remove bookmark" : "Save bookmark"}
-      className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5"
-      style={{
-        color: saved ? "var(--ifm-color-primary)" : "var(--ifm-font-color-base)",
-        borderColor: saved
-          ? "var(--ifm-color-primary)"
-          : "var(--ifm-color-emphasis-300)",
-        background: saved
-          ? "color-mix(in srgb, var(--ifm-color-primary) 10%, transparent)"
-          : "var(--ifm-background-surface-color)",
+      aria-label={saved ? 'Remove bookmark' : 'Add bookmark'}
+      title={saved ? 'Remove bookmark' : 'Add bookmark'}
+      className={`bookmark-btn ${saved ? 'bookmark-active' : ''}`}
+      style={{ 
+        background: 'none', 
+        border: 'none', 
+        cursor: 'pointer', 
+        fontSize: '1.25rem', 
+        padding: '4px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: saved ? 'var(--ifm-color-primary)' : 'var(--ifm-color-emphasis-600)',
+        transition: 'color 0.2s ease'
       }}
     >
-      <span aria-hidden="true">{saved ? "★" : "☆"}</span>
-      {!compact && (saved ? "Saved" : "Bookmark")}
+      {!compact && (saved ? <FaBookmark /> : <FaRegBookmark />)}
     </button>
   );
 }
