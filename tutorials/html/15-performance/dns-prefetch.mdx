@@ -1,0 +1,432 @@
+---
+id: html-perf-dns-prefetch
+title: "DNS Prefetch in HTML"
+sidebar_label: "DNS Prefetch"
+sidebar_position: 6
+slug: /html/performance/dns-prefetch
+description: "Learn link rel=dns-prefetch: a tiny, cheap hint that looks up a server's address early. See what DNS is, what the hint saves, how it differs from preconnect, and which hosts deserve it."
+keywords:
+  - dns-prefetch
+  - link rel dns-prefetch
+  - DNS lookup
+  - dns-prefetch vs preconnect
+  - third-party hosts
+  - connection time
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, dns-prefetch, resource-hints, third-party, frontend]
+---
+
+import {useState} from 'react';
+import AdsComponent from '@site/src/components/AdsComponent';
+
+export function connectionWait(o) {
+  const hintAt = 200;
+  const total = o.dns + o.tcp + o.tls;
+  if (o.needAt <= hintAt) return {none: total, dnsPrefetch: total, preconnect: total};
+  return {
+    none: total,
+    dnsPrefetch: Math.max(0, hintAt + o.dns - o.needAt) + o.tcp + o.tls,
+    preconnect: Math.max(0, hintAt + total - o.needAt)
+  };
+}
+
+export function ConnectionLab() {
+  const [dns, setDns] = useState(60);
+  const [tcp, setTcp] = useState(60);
+  const [tls, setTls] = useState(100);
+  const [needAt, setNeedAt] = useState(800);
+  const w = connectionWait({dns: dns, tcp: tcp, tls: tls, needAt: needAt});
+  const presets = [
+    ["Nearby", 20, 20, 40],
+    ["Typical", 60, 60, 100],
+    ["Far or slow", 150, 200, 300]
+  ];
+  const rows = [
+    ["No hint", w.none, "#c0392b"],
+    ["dns-prefetch", w.dnsPrefetch, "#b9770e"],
+    ["preconnect", w.preconnect, "#1e8449"]
+  ];
+  const slider = function (id, label, value, set, max) {
+    return (
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor={id}>{label}: <strong>{value} ms</strong></label>
+        <br />
+        <input id={id} type="range" min="0" max={max} step="10" value={value} onChange={function (e) { set(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+    );
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        {presets.map(function (p) {
+          return (
+            <button key={p[0]} type="button" onClick={function () { setDns(p[1]); setTcp(p[2]); setTls(p[3]); }}>{p[0]}</button>
+          );
+        })}
+      </div>
+      {slider("cl-dns", "DNS lookup", dns, setDns, 300)}
+      {slider("cl-tcp", "Connecting", tcp, setTcp, 300)}
+      {slider("cl-tls", "Security handshake", tls, setTls, 400)}
+      {slider("cl-need", "The page first needs this host at", needAt, setNeedAt, 2000)}
+      <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>Time the page waits for the connection</p>
+      {rows.map(function (r) {
+        return (
+          <div key={r[0]} style={{marginBottom: "0.5rem"}}>
+            <div>{r[0]}: <strong>{r[1]} ms</strong></div>
+            <div style={{height: "1rem", background: "rgba(128,128,128,0.15)", borderRadius: 4}}>
+              <div style={{height: "100%", width: Math.min(100, r[1] / 10) + "%", background: r[2], borderRadius: 4}} />
+            </div>
+          </div>
+        );
+      })}
+      <p aria-live="polite" style={{fontSize: "0.9rem"}}>
+        dns-prefetch saves at most the DNS part ({dns} ms). Preconnect can save the whole setup, if it has time to finish before the page needs the host.
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model. It assumes the hint is found at 200 ms and that each step takes the time you set. Real numbers vary a lot with distance, network, and caching, so measure your own.
+      </p>
+    </div>
+  );
+}
+
+export const hostItems = [
+  {
+    host: "fonts.gstatic.com",
+    use: "Your headline font loads from here, on the first screen.",
+    answer: "preconnect",
+    why: "You need this host straight away, so open the whole connection. Fonts load in CORS mode, so add crossorigin."
+  },
+  {
+    host: "analytics.example.com",
+    use: "An analytics script that loads after the page is ready.",
+    answer: "dns-prefetch",
+    why: "It is not needed early, and nothing visual waits for it. A cheap DNS lookup is enough."
+  },
+  {
+    host: "cdn.example.com",
+    use: "Your product photos on the first screen come from here.",
+    answer: "preconnect",
+    why: "Important, visible, and needed at once. A full connection saves the most."
+  },
+  {
+    host: "chat.example.com",
+    use: "A chat widget that only loads when the visitor clicks the chat button.",
+    answer: "dns-prefetch",
+    why: "It may never be used, so the cheap hint fits. A full connection might sit unused."
+  },
+  {
+    host: "your own site (www.example.com)",
+    use: "All your own pages, styles, and images.",
+    answer: "none",
+    why: "The browser has already looked up and connected to the host that served the page. A hint adds nothing."
+  },
+  {
+    host: "ads.example.com",
+    use: "An advertising service, loaded only if the visitor gives consent.",
+    answer: "none",
+    why: "Do not contact it until consent is given. Add the hint (or load the script) only after the visitor agrees."
+  },
+  {
+    host: "another-blog.example.org",
+    use: "A link in your footer to a friend's website. Few visitors click it.",
+    answer: "none",
+    why: "The chance is small and the benefit is tiny. Hints are best kept for hosts the page really uses."
+  }
+];
+
+export function HostSorter() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const options = [["", "Choose..."], ["preconnect", "preconnect"], ["dns-prefetch", "dns-prefetch"], ["none", "No hint"]];
+  const score = hostItems.filter(function (h, i) { return picked[i] === h.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      {hostItems.map(function (h, i) {
+        const right = picked[i] === h.answer;
+        return (
+          <div key={i} style={{marginBottom: "1rem"}}>
+            <label htmlFor={"hs-" + i}><strong>{h.host}</strong>: {h.use}</label>
+            <br />
+            <select
+              id={"hs-" + i}
+              disabled={checked}
+              value={picked[i] || ""}
+              onChange={function (e) { setPicked(Object.assign({}, picked, {[i]: e.target.value})); }}
+            >
+              {options.map(function (o) { return <option key={o[0]} value={o[0]}>{o[1]}</option>; })}
+            </select>
+            {checked ? (
+              <p style={{margin: "0.25rem 0 0"}}>
+                <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Right. " : "Not quite. "}</strong>
+                {h.why}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+      {!checked ? (
+        <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      ) : (
+        <p aria-live="polite">
+          <strong>Score: {score} of {hostItems.length}.</strong>{" "}
+          <button type="button" onClick={function () { setChecked(false); setPicked({}); }}>Start again</button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+# DNS Prefetch in HTML
+
+Before your browser can fetch anything from a server, it has to find that server. Humans use names such as `cdn.example.com`. Computers use numbers. The step that turns one into the other is called a **DNS lookup**, and it takes time, every time the browser meets a new host.
+
+`dns-prefetch` is the smallest resource hint there is. It tells the browser, "do the lookup for this host now, while you have a spare moment." It does nothing else, and costs almost nothing. This lesson shows you what it saves, where it is useful, and why it is often paired with its bigger sibling, `preconnect`.
+
+## What You Will Learn
+
+- What a DNS lookup is, and why it takes time
+- What `dns-prefetch` does, and what it does not do
+- How it differs from `preconnect`
+- Which hosts deserve the hint, and which do not
+- How to use it as a fallback next to `preconnect`
+- How to see DNS time in DevTools
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A DNS prefetch is a `link` element with the address of a host. Only the host matters, not the file.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+
+  <!-- Look up these hosts early. Nothing else happens yet. -->
+  <link rel="dns-prefetch" href="https://analytics.example.com">
+  <link rel="dns-prefetch" href="https://chat.example.com">
+
+  <link rel="stylesheet" href="/site.css">
+</head>
+```
+
+</TabItem>
+<TabItem value="lab" label="Connection Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ConnectionLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, compare the three bars. Notice how `dns-prefetch` only trims the DNS part of the wait, while `preconnect` can remove much more, if it has enough time to finish.
+
+## What Is DNS?
+
+Think of DNS as the phone book of the internet. You know a name, `cdn.example.com`, and the phone book gives you a number, such as `203.0.113.7`. Only then can your browser "call" the server.
+
+The lookup asks a chain of servers, and the answers are remembered for a while, by the browser, your device, and your internet provider. So a host you have used recently is often quick, and a host you have never used may take longer. The difference can be small (a few milliseconds) or large (hundreds, on a slow or distant network), and it varies a lot.
+
+## The Steps of a New Connection
+
+Fetching a file from a **new** server takes several steps before any data arrives. Each hint covers different steps.
+
+| Step | What happens | `dns-prefetch` | `preconnect` |
+| :-- | :-- | :-- | :-- |
+| 1. DNS lookup | Find the server's address | Yes | Yes |
+| 2. Connect | Open a line to the server | No | Yes |
+| 3. Secure handshake | Agree on encryption (for https) | No | Yes |
+| 4. Request | Ask for the file | No | No |
+
+So `dns-prefetch` does one step of three. That is why it is so cheap, and also why it saves less. Next lesson, [Preconnect](./preconnect), covers the full set.
+
+## How to Write It
+
+```html
+<link rel="dns-prefetch" href="https://cdn.example.com">
+```
+
+- **Use the origin only:** the scheme and host, such as `https://cdn.example.com`. A path adds nothing, because DNS cares only about the host.
+- **You do not need `crossorigin`.** A lookup is the same however the files are later fetched.
+- **Add one line per host,** and keep the list short.
+
+## When to Use It
+
+`dns-prefetch` is a good fit for hosts that are **third-party** (not your own site), and that the page **may need** later, but not at once:
+
+- Analytics and tag managers
+- Chat or support widgets
+- Embedded videos or maps further down the page
+- Social buttons
+- Any host that comes up after a script runs
+
+It does nothing for your own site, because the browser has already looked up the host that served the page.
+
+## Pairing It with Preconnect
+
+A very common pattern puts both hints on the same host:
+
+```html
+<link rel="preconnect" href="https://cdn.example.com" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.example.com">
+```
+
+Why both? Browsers that do not understand `preconnect` can still do the DNS lookup, and some browsers limit how many connections they will open early. The lookup acts as a safety net. Check [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/dns-prefetch) for current browser support of each.
+
+## Sort the Hosts
+
+Here is a bakery page that uses seven hosts. For each one, choose the hint it deserves, or none.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HostSorter />
+</>
+</BrowserWindow>
+
+:::tip
+A simple rule: **needed straight away, so `preconnect`. Maybe needed later, so `dns-prefetch`. Your own site or unlikely, so nothing.**
+:::
+
+## When It Does Not Help
+
+- **Your own site.** The lookup is already done.
+- **Hosts the page never uses.** You pay a small cost for nothing.
+- **Hosts used much later.** The answer is only remembered for a limited time, so a lookup that is far ahead of its use may be repeated.
+- **Many hosts.** A long list adds noise, and each lookup uses a little battery and network on mobile.
+- **A visitor with a fast, warm DNS cache.** The lookup may be nearly free anyway.
+
+Because the cost is so low, a few unneeded `dns-prefetch` hints do little harm. But a careful list is still better than a long one.
+
+## Checking That It Worked
+
+1. Open DevTools, then **Network**, and reload.
+2. Click a request to a third-party host, and open the **Timing** tab.
+3. Look at **DNS Lookup**. With a good prefetch it may be zero, or not shown, because the lookup already finished.
+4. Compare with the same page without the hint. Remember that DNS caching at several levels can hide the difference on a second visit, so clear the cache or use a test tool that starts fresh, such as WebPageTest.
+5. Check that you have not hinted any host the page never uses.
+
+## Best Practices
+
+1. **Hint third-party hosts you may use,** not your own.
+2. **Use origins only.**
+3. **Pair it with `preconnect`** for hosts that matter most.
+4. **Keep the list short.**
+5. **Remove hints** when you stop using a service.
+6. **Do not build hints from untrusted input,** such as user-submitted links.
+7. **Test on a fresh cache** and a slow connection.
+8. **Measure.** A hint that does not move a number is clutter.
+
+## Quick Checklist
+
+- [ ] Every hinted host is used by the page, or likely to be
+- [ ] No hint for your own site
+- [ ] Each hint is an origin, with no path
+- [ ] Hosts needed immediately use `preconnect`, with `dns-prefetch` as a fallback
+- [ ] No hosts that need consent are hinted before consent
+- [ ] Old services have had their hints removed
+- [ ] DevTools shows the DNS time dropped
+
+## Security and Privacy Notes
+
+- **A lookup tells the network something.** When your page asks for a lookup, the visitor's DNS resolver (often their internet provider) learns that this page uses that host. A hint triggers the lookup earlier, and for hosts the visitor may never actually use. If you need consent before contacting certain third parties (analytics or advertising, for example), do not hint those hosts until consent is given. This is not legal advice, so check the rules that apply to you.
+- **Never create hints from untrusted input.** If a page turns a user-submitted link into a `dns-prefetch`, the visitor's browser looks up a host chosen by someone else, which can be used to track visitors. Generate hints only from a list you control.
+- **Only hint hosts you trust.** Even a lookup is a small way of reaching out.
+- **Encrypted DNS** (offered by some browsers and providers) hides lookups from people on the network, but not from the resolver. It is the visitor's choice, not something your HTML controls.
+
+## Global Audience Notes
+
+- **DNS speed varies a lot by country, provider, and network.** Visitors on slow or distant networks may see lookups of hundreds of milliseconds, so they gain most from an early lookup.
+- **Third-party hosts can be slow, or blocked, in some places.** A page must still work if a host never answers, so never make the page depend on a hinted service.
+- **Mobile networks pay a price for every lookup,** in time and battery. A short list is kind to them.
+- **Test from different regions,** using a tool such as WebPageTest, since DNS behaviour differs around the world.
+
+## Common Mistakes to Avoid
+
+1. **Hinting your own site.**
+2. **Including a path** and thinking it matters.
+3. **Hinting dozens of hosts.**
+4. **Hinting hosts the page never uses.**
+5. **Using `dns-prefetch` for a host needed straight away** when `preconnect` would save more.
+6. **Hinting before consent** for services that need it.
+7. **Building hints from user input.**
+8. **Leaving hints for services you stopped using.**
+9. **Adding `crossorigin`,** which is not needed for DNS lookups.
+10. **Assuming it always helps,** without testing on a fresh cache.
+
+## Practice Time
+
+1. In the Connection Lab, use the "Far or slow" preset. How much does `dns-prefetch` save? How much does `preconnect` save?
+2. Set "the page first needs this host at" to 200 ms or less. Why does no hint help any more? Then slowly raise it, and watch each hint start to save time.
+3. Sort the hosts. Which one surprised you?
+4. List every third-party host on a page you built, using the Network panel.
+5. Decide which need `preconnect`, which need `dns-prefetch`, and which need nothing.
+6. Add the hints, and check the **DNS Lookup** time in the Timing tab.
+7. Remove a hint for a host the page no longer uses.
+8. Bonus: run WebPageTest on your page and look at the connection view.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `dns-prefetch` do?</summary>
+
+It asks the browser to look up a host's address early, so that step is already done when the page needs the host. It does nothing else.
+
+</details>
+
+<details>
+<summary>2. What does `preconnect` add?</summary>
+
+It also opens the connection and finishes the security handshake, so more of the setup is done in advance. It costs a little more, because the connection stays open.
+
+</details>
+
+<details>
+<summary>3. Which hosts deserve `dns-prefetch`?</summary>
+
+Third-party hosts the page may need later, such as analytics, chat widgets, and embedded media. Not your own site.
+
+</details>
+
+<details>
+<summary>4. Why pair `dns-prefetch` with `preconnect`?</summary>
+
+It is a safety net: browsers that do not support `preconnect`, or that limit early connections, can still do the lookup.
+
+</details>
+
+<details>
+<summary>5. Do you need `crossorigin` on `dns-prefetch`?</summary>
+
+No. The lookup is the same whichever mode the files are fetched in. (`preconnect` is different, and may need it.)
+
+</details>
+
+<details>
+<summary>6. What privacy risk does it carry?</summary>
+
+It triggers lookups, which tell the visitor's DNS resolver about the hosts your page uses, and may contact services before consent. Never build hints from untrusted input.
+
+</details>
+
+## Key Takeaways
+
+- **DNS turns a host name into an address,** and it takes time for each new host.
+- **`dns-prefetch` does just that step, early.** It is cheap, and saves less.
+- **Use it for third-party hosts you may need,** and `preconnect` for those you need at once.
+- **Origins only, no `crossorigin`.**
+- **Keep the list short,** and remove hints you no longer need.
+- **Mind privacy:** wait for consent where it is needed, and never hint untrusted hosts.
+- **Measure** the DNS time in DevTools, on a fresh cache.
+
+Next up: [Preconnect](./preconnect), the fuller hint that opens the whole connection early.

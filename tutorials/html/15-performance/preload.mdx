@@ -1,0 +1,520 @@
+---
+id: html-perf-preload
+title: "Preload in HTML"
+sidebar_label: "Preload"
+sidebar_position: 4
+slug: /html/performance/preload
+description: "Learn link rel=preload: fetch the files your page needs but finds late, such as fonts and CSS background images. Includes a discovery timeline and a checker for as and crossorigin mismatches."
+keywords:
+  - link rel preload
+  - preload fonts
+  - preload hero image
+  - as attribute
+  - crossorigin preload
+  - imagesrcset preload
+  - preload CSS
+  - late discovery
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, preload, resource-hints, fonts, images, frontend]
+---
+
+import {useState} from 'react';
+
+export function simulateDiscovery(o) {
+  const cssDone = 600;
+  const jsRun = 800;
+  const early = 250;
+  const kinds = {
+    font: {label: "A font named inside the CSS", found: cssDone, duration: 300, needsPage: cssDone},
+    bg: {label: "A hero image set as a CSS background", found: cssDone, duration: 500, needsPage: cssDone},
+    html: {label: "A hero image in an img tag", found: early, duration: 500, needsPage: 0},
+    js: {label: "An image chosen by JavaScript", found: jsRun, duration: 500, needsPage: jsRun}
+  };
+  const k = kinds[o.kind];
+  const run = function (preload) {
+    const start = preload ? early : k.found;
+    const end = start + k.duration;
+    return {start: start, end: end, ready: Math.max(end, k.needsPage)};
+  };
+  const without = run(false);
+  const withP = run(true);
+  return {label: k.label, without: without, withPreload: withP, saved: without.ready - withP.ready};
+}
+
+export function DiscoveryLab() {
+  const [kind, setKind] = useState("font");
+  const r = simulateDiscovery({kind: kind});
+  const scale = 1400;
+  const kinds = [
+    ["font", "Font in CSS"],
+    ["bg", "CSS background image"],
+    ["html", "Image in HTML"],
+    ["js", "Image set by JavaScript"]
+  ];
+  const bar = function (row, color) {
+    return (
+      <div style={{position: "relative", height: "1.4rem", background: "rgba(128,128,128,0.15)", borderRadius: 4, marginBottom: "0.4rem"}}>
+        <div style={{position: "absolute", left: (row.start / scale * 100) + "%", width: ((row.end - row.start) / scale * 100) + "%", top: 0, bottom: 0, background: color, borderRadius: 4}} />
+      </div>
+    );
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>What is the file?</legend>
+        {kinds.map(function (x) {
+          return (
+            <label key={x[0]} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="disc-kind" checked={kind === x[0]} onChange={function () { setKind(x[0]); }} /> {x[1]}
+            </label>
+          );
+        })}
+      </fieldset>
+      <p style={{margin: "0 0 0.25rem", fontWeight: 600}}>Without preload: starts at {r.without.start} ms, ready at {r.without.ready} ms</p>
+      {bar(r.without, "#c0392b")}
+      <p style={{margin: "0 0 0.25rem", fontWeight: 600}}>With preload: starts at {r.withPreload.start} ms, ready at {r.withPreload.ready} ms</p>
+      {bar(r.withPreload, "#1e8449")}
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {r.saved > 0 ? "Preload makes this ready about " + r.saved + " ms sooner." : "Preload changes nothing here. The browser already finds this file early."}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model with fixed numbers (the CSS arrives at 600 ms, the script runs at 800 ms). Real pages vary, so measure your own.
+      </p>
+    </div>
+  );
+}
+
+export function preloadMatch(p, u) {
+  const asFor = {font: "font", image: "image", imagecors: "image", style: "style", script: "script"};
+  const corsFor = {font: true, image: false, imagecors: true, style: false, script: false};
+  const reasons = [];
+  if (p.href.trim() !== u.href.trim()) reasons.push("The URLs are different, so the preloaded file is a different file.");
+  if (p.as !== asFor[u.kind]) reasons.push("The as value should be " + asFor[u.kind] + " for this kind of use.");
+  if (Boolean(p.crossorigin) !== corsFor[u.kind]) {
+    reasons.push(corsFor[u.kind] ? "This kind of request uses CORS mode, so the preload needs crossorigin." : "This request does not use CORS mode, so the preload should not have crossorigin.");
+  }
+  return {reused: reasons.length === 0, reasons: reasons};
+}
+
+export function MatchChecker() {
+  const [pHref, setPHref] = useState("/fonts/inter.woff2");
+  const [pAs, setPAs] = useState("font");
+  const [pCors, setPCors] = useState(false);
+  const [uHref, setUHref] = useState("/fonts/inter.woff2");
+  const [uKind, setUKind] = useState("font");
+  const r = preloadMatch({href: pHref, as: pAs, crossorigin: pCors}, {href: uHref, kind: uKind});
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "1.5rem", flexWrap: "wrap"}}>
+        <fieldset style={{flex: "1 1 14rem", margin: 0}}>
+          <legend style={{fontWeight: 600}}>The preload</legend>
+          <p style={{margin: "0 0 0.5rem"}}>
+            <label htmlFor="m-phref">href</label><br />
+            <input id="m-phref" type="text" value={pHref} onChange={function (e) { setPHref(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+          </p>
+          <p style={{margin: "0 0 0.5rem"}}>
+            <label htmlFor="m-pas">as</label><br />
+            <select id="m-pas" value={pAs} onChange={function (e) { setPAs(e.target.value); }}>
+              <option value="font">font</option>
+              <option value="image">image</option>
+              <option value="style">style</option>
+              <option value="script">script</option>
+            </select>
+          </p>
+          <label>
+            <input type="checkbox" checked={pCors} onChange={function (e) { setPCors(e.target.checked); }} /> crossorigin
+          </label>
+        </fieldset>
+        <fieldset style={{flex: "1 1 14rem", margin: 0}}>
+          <legend style={{fontWeight: 600}}>The real use</legend>
+          <p style={{margin: "0 0 0.5rem"}}>
+            <label htmlFor="m-uhref">URL the page asks for</label><br />
+            <input id="m-uhref" type="text" value={uHref} onChange={function (e) { setUHref(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+          </p>
+          <p style={{margin: 0}}>
+            <label htmlFor="m-ukind">How it is used</label><br />
+            <select id="m-ukind" value={uKind} onChange={function (e) { setUKind(e.target.value); }}>
+              <option value="font">A font in @font-face</option>
+              <option value="image">An img tag</option>
+              <option value="imagecors">An img tag with crossorigin</option>
+              <option value="style">A stylesheet link</option>
+              <option value="script">A classic script</option>
+            </select>
+          </p>
+        </fieldset>
+      </div>
+      <p aria-live="polite" style={{fontWeight: 600, color: r.reused ? "#1e8449" : "#c0392b"}}>
+        {r.reused ? "Match: the browser can reuse the preloaded file." : "No match: the file may be downloaded twice."}
+      </p>
+      <ul>
+        {r.reasons.map(function (x, i) { return <li key={i}>{x}</li>; })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This shows the general rule. Browsers differ in small details, so confirm in DevTools that the file is requested only once.
+      </p>
+    </div>
+  );
+}
+
+export const decisionItems = [
+  {
+    text: "A font file named inside the CSS @font-face rule, used for the page heading on the first screen.",
+    answer: 0,
+    why: "The browser only finds the font after it has read the CSS and seen text that needs it. A preload lets it start earlier. Remember as=\"font\" and crossorigin."
+  },
+  {
+    text: "The main image is an img tag in the HTML body, near the top.",
+    answer: 1,
+    why: "The browser finds an img tag early while reading the HTML, so a preload adds almost nothing. Save preload for files that are found late."
+  },
+  {
+    text: "The hero image is set with background-image in a stylesheet.",
+    answer: 0,
+    why: "The browser cannot know about it until the CSS has loaded and applied. A preload makes it start much sooner. Where you can, an img tag is simpler."
+  },
+  {
+    text: "An image in the footer that only appears when the visitor scrolls to the bottom.",
+    answer: 1,
+    why: "Preloading something the visitor may never see wastes data and competes with what matters. Use loading=\"lazy\" instead."
+  },
+  {
+    text: "The page's main stylesheet is a link element in the head.",
+    answer: 1,
+    why: "It is already in the HTML, so the browser finds it straight away. A preload would be a duplicate."
+  },
+  {
+    text: "A large script chosen at run time that fetches the hero image after it runs.",
+    answer: 0,
+    why: "The image is discovered only after the script runs. A preload makes it start in parallel. Even better, avoid the delay by putting the image in the HTML."
+  }
+];
+
+export function PreloadDecision() {
+  const [picked, setPicked] = useState({});
+  const done = Object.keys(picked).length;
+  const correct = decisionItems.filter(function (item, i) { return picked[i] === item.answer; }).length;
+  const options = ["Preload it", "Do not preload it"];
+  return (
+    <div style={{padding: "1rem"}}>
+      <p aria-live="polite" style={{marginTop: 0, fontWeight: 600}}>
+        Answered {done} of {decisionItems.length}. Correct: {correct}.
+      </p>
+      {decisionItems.map(function (item, i) {
+        const chosen = picked[i];
+        const answered = chosen !== undefined;
+        return (
+          <fieldset key={i} style={{border: "none", padding: 0, margin: "0 0 1.25rem"}}>
+            <legend style={{fontWeight: 600}}>{i + 1}. {item.text}</legend>
+            {options.map(function (opt, j) {
+              return (
+                <label key={j} style={{marginRight: "1.25rem"}}>
+                  <input
+                    type="radio"
+                    name={"pd-" + i}
+                    disabled={answered}
+                    checked={chosen === j}
+                    onChange={function () { setPicked(Object.assign({}, picked, {[i]: j})); }}
+                  />{" "}
+                  {opt}
+                </label>
+              );
+            })}
+            {answered ? (
+              <p style={{margin: "0.5rem 0 0"}}>
+                <strong>{chosen === item.answer ? "Right. " : "Not quite. "}</strong>
+                {item.why}
+              </p>
+            ) : null}
+          </fieldset>
+        );
+      })}
+      {done > 0 ? <button type="button" onClick={function () { setPicked({}); }}>Start again</button> : null}
+    </div>
+  );
+}
+
+# Preload in HTML
+
+Think of a restaurant kitchen. A good chef reads the whole order and starts the slow dishes first. A browser does something similar: it reads your HTML from top to bottom, and starts fetching each file as soon as it finds it. The trouble is that some files are not in the HTML at all. A font is named inside a CSS file. A hero picture is set as a CSS background. The browser can only start these after it has downloaded and read the CSS, and by then valuable time has passed.
+
+`<link rel="preload">` is a way to say, "I know you will need this file, so start fetching it now." Used well, it is one of the most effective speed tools in HTML. Used badly, it wastes bandwidth. This lesson shows you the difference.
+
+## What You Will Learn
+
+- What preload does, and what it does not do
+- Which files are worth preloading, and which are not
+- What the `as` attribute is for, and the common values
+- Why `crossorigin` matters, especially for fonts
+- How to preload responsive images and critical CSS
+- How to check that the preloaded file is reused, not downloaded twice
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A preload goes in the `head` and names a file the page will need soon. The browser fetches it at high priority and keeps it ready.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+
+  <!-- A font that CSS will ask for later -->
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- A hero image that CSS will ask for later -->
+  <link rel="preload" href="/img/hero.webp" as="image">
+
+  <link rel="stylesheet" href="/site.css">
+</head>
+```
+
+```css title="site.css"
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter.woff2") format("woff2");
+  font-display: swap;
+}
+
+.hero {
+  background-image: url("/img/hero.webp");
+}
+```
+
+</TabItem>
+<TabItem value="discovery" label="Discovery Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DiscoveryLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, try each kind of file. Preload helps most when a file is found late, and does nothing when the browser would find it early anyway.
+
+## What Preload Does
+
+1. It starts the download early, at the high priority that the `as` value suggests.
+2. It stores the result, so when the page asks for the file the browser can use it straight away.
+3. It does **not** use the file. A preloaded script does not run, a preloaded stylesheet does not apply, and a preloaded image does not appear. The page still has to ask for the file in the normal way.
+
+This last point is important. A preload only makes the file arrive sooner. If nothing on the page uses it, you have wasted a download.
+
+## The `as` Attribute
+
+The `as` value tells the browser what kind of file it is fetching. It affects priority and request headers, and it lets the browser match the preload to the later request.
+
+| `as` value | Use it for | Notes |
+| :-- | :-- | :-- |
+| `font` | Web fonts | Always add `crossorigin`, and `type` such as `font/woff2` |
+| `image` | Images | Works for CSS backgrounds too |
+| `style` | Stylesheets | See the CSS section below |
+| `script` | JavaScript | The script is fetched, not run |
+| `fetch` | Data requested with `fetch()` | Often needs `crossorigin` |
+
+Leaving out `as` is a mistake: the browser may give the file the wrong priority, or fetch it again later.
+
+## The `crossorigin` Trap
+
+Fonts are always fetched in a mode that needs `crossorigin`, even when they live on your own site. If your preload lacks it, the browser treats the preloaded file as a different request, and downloads the font a second time. You pay twice, and the preload helped nobody.
+
+Try the checker. It starts with exactly this mistake:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MatchChecker />
+</>
+</BrowserWindow>
+
+Check the box for `crossorigin` and see the result change. Then try changing the URL by one letter, or the `as` value, and watch the other reasons appear. The preload and the real request must agree on **URL, `as`, and `crossorigin`**.
+
+## Preloading Responsive Images
+
+If your main image uses `srcset` and `sizes`, a plain preload would fetch the wrong size on some screens. Use `imagesrcset` and `imagesizes` so the browser picks the same file the `img` will:
+
+```html
+<link
+  rel="preload"
+  as="image"
+  href="/img/hero-960.webp"
+  imagesrcset="/img/hero-480.webp 480w, /img/hero-960.webp 960w, /img/hero-1440.webp 1440w"
+  imagesizes="100vw">
+```
+
+The `href` is a fallback for browsers that do not understand the other two attributes. Check [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/rel/preload) for current support.
+
+You can also limit a preload to certain screens using `media`, for example to preload a different image only on wide screens:
+
+```html
+<link rel="preload" as="image" href="/img/hero-wide.webp" media="(min-width: 900px)">
+```
+
+## Preloading CSS
+
+Your main stylesheet is already a `link` in the head, so it needs no preload. But a stylesheet that the browser finds late, such as one imported from another CSS file, can benefit from one. If you are looking for a trick to load non-critical CSS without blocking, a well-known pattern is:
+
+```html
+<link rel="preload" href="/css/extra.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="/css/extra.css"></noscript>
+```
+
+This loads the file early without blocking the first paint, then applies it. It needs JavaScript, which is why the `noscript` fallback is there, and the inline `onload` may conflict with a strict content security policy. Treat it as an advanced tool, and test it carefully.
+
+## Deciding What to Preload
+
+The test is simple: **will the browser find this file late, and is it important to the first screen?** If both are true, preload it. If not, leave it alone.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PreloadDecision />
+</>
+</BrowserWindow>
+
+:::tip
+Preload is a repair for late discovery, not a replacement for good HTML. If you can put the hero image in an `img` tag instead of a CSS background, the browser finds it early and you need no preload at all.
+:::
+
+## Preload in an HTTP Header
+
+If you cannot edit the HTML, the server can send the same instruction as a header:
+
+```http
+Link: </fonts/inter.woff2>; rel=preload; as=font; type="font/woff2"; crossorigin
+```
+
+This is useful on platforms where headers are easier to change than templates. Use one place or the other for each file, so you do not repeat the hint.
+
+## Checking That It Worked
+
+1. Open DevTools, then **Network**, and reload.
+2. Find the file. It should appear **once**, not twice. Two entries usually mean a mismatch in `as`, `crossorigin`, or the URL.
+3. Check the **Waterfall**. The preloaded file should start near the top, before the CSS has finished.
+4. Check the **Console**. Chrome warns when a file was preloaded but not used soon after the page loaded, and when `crossorigin` does not match.
+5. Run Lighthouse or WebPageTest before and after. For an image, look at your Largest Contentful Paint (LCP).
+
+## Best Practices
+
+1. **Preload only what is both late-found and important.**
+2. **Keep the list very short.** A few preloads at most, for the files that really lead the first screen.
+3. **Always include `as`,** and `type` for fonts.
+4. **Match the real request:** the same URL, the same `as`, the same `crossorigin`.
+5. **Use `imagesrcset` and `imagesizes`** for responsive images.
+6. **Do not preload what the browser already finds early.**
+7. **Remove a preload when you remove the file it points to.**
+8. **Measure.** A preload that does not improve a number is just clutter.
+
+## Quick Checklist
+
+- [ ] Each preload is for a file the page uses on the first screen
+- [ ] The browser would not have found the file early on its own
+- [ ] `as` is present and correct
+- [ ] Font preloads have `crossorigin` and `type`
+- [ ] The URL matches the real request exactly
+- [ ] The file appears only once in the Network panel
+- [ ] There are no console warnings about unused preloads
+
+## Security and Privacy Notes
+
+- **Preload runs nothing, but it fetches early.** Treat the URLs like any other request: only point at files you trust.
+- **Use `integrity` for fixed files.** For a script or style that never changes, an `integrity` attribute on the preload lets the browser check it is the file you expect, as long as the real use includes the matching value.
+- **Preload only public resources.** A preload is requested whether or not the page ends up using it, so do not point it at private, personal, or one-time URLs.
+- **Third-party files share visitor details.** A preload from another host contacts that host straight away, which shares the visitor's network address and some request details with it. If you need consent before this, wait for it.
+- **Do not put secrets in URLs.** Hint URLs are visible in the page source and may be logged.
+
+## Global Audience Notes
+
+- **Every wasted preload costs data,** and in many places data is expensive. Keep preloads to the files that truly matter.
+- **Preloading a large font can slow down slow connections.** Subset fonts, especially large ones for Chinese, Japanese, and Korean, and preload only the weights you need on the first screen.
+- **Slow networks make late discovery hurt more,** so a good preload helps those visitors most.
+- **Test with a slow connection and a modest phone,** not only on your own machine.
+
+## Common Mistakes to Avoid
+
+1. **Leaving out `as`.**
+2. **Forgetting `crossorigin` on fonts.**
+3. **A URL that differs from the real request,** even by a query string.
+4. **Preloading a file that is never used.**
+5. **Preloading something the browser finds early anyway.**
+6. **Preloading many files,** so the important ones are no longer special.
+7. **Preloading the wrong size of a responsive image.**
+8. **Expecting a preloaded script to run.**
+9. **Forgetting to remove old preloads after a redesign.**
+10. **Never checking the Network panel.**
+
+## Practice Time
+
+1. In the Discovery Lab, which kind of file gains the most from a preload? Which gains nothing?
+2. In the checker, fix the font preload so the browser can reuse it.
+3. Change the real use to an `img` with `crossorigin`. What does the preload need now?
+4. Take the preload quiz. Which question surprised you?
+5. Find a page you built with a font or a CSS background image. Open the Network panel, and see when that file starts.
+6. Add a preload, reload, and see if it moved.
+7. Check the console for warnings.
+8. Bonus: preload a responsive image with `imagesrcset` and `imagesizes`, and make sure it is fetched only once.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does preload do?</summary>
+
+It tells the browser to download a file early, at high priority, and keep it ready. It does not run or apply the file.
+
+</details>
+
+<details>
+<summary>2. Which files are worth preloading?</summary>
+
+Important files the browser finds late, such as fonts named in CSS, CSS background images, and files requested by scripts.
+
+</details>
+
+<details>
+<summary>3. Why is `as` required?</summary>
+
+It tells the browser what kind of file it is, so it can use the right priority and headers, and match the preload to the later request.
+
+</details>
+
+<details>
+<summary>4. Why do font preloads need `crossorigin`?</summary>
+
+Fonts are fetched in CORS mode, even from your own site. Without `crossorigin` the preload does not match the real request, and the font is downloaded twice.
+
+</details>
+
+<details>
+<summary>5. How do you preload a responsive image?</summary>
+
+Use `imagesrcset` and `imagesizes` on the `link` element, so the browser picks the same file the `img` will.
+
+</details>
+
+<details>
+<summary>6. How do you know a preload is not working?</summary>
+
+The file appears twice in the Network panel, or the console warns that it was preloaded but not used. Fix the URL, `as`, or `crossorigin`, or remove the preload.
+
+</details>
+
+## Key Takeaways
+
+- **Preload fetches a file early,** so it is ready when the page asks for it.
+- **It helps most with files discovered late:** fonts in CSS, CSS backgrounds, and script-chosen images.
+- **It does not run or apply anything.**
+- **Always include `as`,** and `crossorigin` for fonts.
+- **The preload and the real request must match.**
+- **Keep it short and measure it.** An unused preload is waste.
+- **Where you can, put important files in the HTML,** so you do not need a preload at all.
+
+Next up: [Prefetch](./prefetch), where you will warm up files for the page the visitor will probably open next.

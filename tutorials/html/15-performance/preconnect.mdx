@@ -1,0 +1,470 @@
+---
+id: html-perf-preconnect
+title: "Preconnect in HTML"
+sidebar_label: "Preconnect"
+sidebar_position: 7
+slug: /html/performance/preconnect
+description: "Learn link rel=preconnect: open the connection to an important server early. Understand why crossorigin matters, how many to use, and how to pick the right origins, with a connection lab and an origin picker."
+keywords:
+  - link rel preconnect
+  - preconnect crossorigin
+  - preconnect vs dns-prefetch
+  - third-party origins
+  - connection setup
+  - TLS handshake
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, preconnect, resource-hints, third-party, frontend]
+---
+
+import {useState} from 'react';
+
+export const poolKinds = [
+  {id: "font", label: "A web font (@font-face)", pool: "anon"},
+  {id: "img", label: "An img tag", pool: "cred"},
+  {id: "imgc", label: "An img tag with crossorigin", pool: "anon"},
+  {id: "css", label: "A stylesheet link", pool: "cred"},
+  {id: "script", label: "A classic script tag", pool: "cred"},
+  {id: "fetch", label: "A fetch() call", pool: "anon"}
+];
+
+export function poolReady(hints, kind) {
+  return kind.pool === "cred" ? hints.plain : hints.cors;
+}
+
+export function ConnectionPoolLab() {
+  const [plain, setPlain] = useState(false);
+  const [cors, setCors] = useState(false);
+  const hints = {plain: plain, cors: cors};
+  const open = (plain ? 1 : 0) + (cors ? 1 : 0);
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Hints on cdn.example.com</legend>
+        <label style={{display: "block", margin: "0.2rem 0"}}>
+          <input type="checkbox" checked={plain} onChange={function (e) { setPlain(e.target.checked); }} />{" "}
+          preconnect (no crossorigin)
+        </label>
+        <label style={{display: "block", margin: "0.2rem 0"}}>
+          <input type="checkbox" checked={cors} onChange={function (e) { setCors(e.target.checked); }} />{" "}
+          preconnect with crossorigin
+        </label>
+      </fieldset>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>The page later asks for</th>
+            <th style={{textAlign: "left"}}>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {poolKinds.map(function (k) {
+            const ready = poolReady(hints, k);
+            return (
+              <tr key={k.id}>
+                <td>{k.label}</td>
+                <td style={{color: ready ? "#1e8449" : "#c0392b", fontWeight: 600}}>
+                  {ready ? "Uses the ready connection" : "Needs a new connection"}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p aria-live="polite">
+        You have <strong>{open}</strong> connection(s) opened early. Open only the kind you will really use.
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This shows the general rule used by most browsers: requests made with credentials and requests made without them use separate connections. Details can differ between browsers, so confirm in DevTools.
+      </p>
+    </div>
+  );
+}
+
+export function pickOrigins(text, siteOrigin) {
+  const map = {};
+  const origins = [];
+  const bad = [];
+  text.split("\n").forEach(function (line) {
+    const s = line.trim();
+    if (s === "") return;
+    let u;
+    try {
+      u = new URL(s);
+    } catch (e) {
+      bad.push(s);
+      return;
+    }
+    if (u.protocol !== "https:" && u.protocol !== "http:") {
+      bad.push(s);
+      return;
+    }
+    if (siteOrigin && u.origin === siteOrigin) return;
+    const isFont = /\.(woff2?|ttf|otf)(\?|$)/i.test(u.pathname) || /fonts|gstatic/i.test(u.hostname);
+    if (!map[u.origin]) {
+      map[u.origin] = {origin: u.origin, count: 0, cors: false};
+      origins.push(map[u.origin]);
+    }
+    map[u.origin].count += 1;
+    if (isFont) map[u.origin].cors = true;
+  });
+  origins.sort(function (a, b) { return b.count - a.count; });
+  return {origins: origins, bad: bad};
+}
+
+export function buildOriginHints(origins, choices) {
+  const lines = [];
+  origins.forEach(function (o) {
+    const choice = choices[o.origin] || (o.count >= 2 ? "preconnect" : "dns-prefetch");
+    if (choice === "preconnect") {
+      lines.push('<link rel="preconnect" href="' + o.origin + '"' + (o.cors ? " crossorigin" : "") + ">");
+      lines.push('<link rel="dns-prefetch" href="' + o.origin + '">');
+    } else if (choice === "dns-prefetch") {
+      lines.push('<link rel="dns-prefetch" href="' + o.origin + '">');
+    }
+  });
+  return lines.join("\n");
+}
+
+export const sampleUrls = [
+  "https://www.example.com/css/site.css",
+  "https://fonts.gstatic.com/s/inter/v12/inter.woff2",
+  "https://fonts.gstatic.com/s/inter/v12/inter-bold.woff2",
+  "https://cdn.example.com/img/hero.webp",
+  "https://cdn.example.com/img/loaf.webp",
+  "https://cdn.example.com/img/rye.webp",
+  "https://analytics.example.com/tag.js",
+  "https://chat.example.com/widget.js"
+].join("\n");
+
+export function OriginPicker() {
+  const [text, setText] = useState(sampleUrls);
+  const [site, setSite] = useState("https://www.example.com");
+  const [choices, setChoices] = useState({});
+  const r = pickOrigins(text, site.trim());
+  const out = buildOriginHints(r.origins, choices);
+  const preCount = r.origins.filter(function (o) {
+    return (choices[o.origin] || (o.count >= 2 ? "preconnect" : "dns-prefetch")) === "preconnect";
+  }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="op-site" style={{fontWeight: 600}}>Your own site's origin (skipped)</label>
+        <br />
+        <input id="op-site" type="text" value={site} onChange={function (e) { setSite(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <label htmlFor="op-urls" style={{display: "block", fontWeight: 600}}>URLs your page loads (one per line)</label>
+      <textarea
+        id="op-urls"
+        value={text}
+        onChange={function (e) { setText(e.target.value); }}
+        rows={8}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      {r.bad.length > 0 ? (
+        <p style={{color: "#c0392b"}}>Skipped {r.bad.length} line(s) that are not full http or https URLs.</p>
+      ) : null}
+      <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>Origins found ({r.origins.length})</p>
+      <ul style={{listStyle: "none", padding: 0}}>
+        {r.origins.map(function (o, i) {
+          const value = choices[o.origin] || (o.count >= 2 ? "preconnect" : "dns-prefetch");
+          return (
+            <li key={o.origin} style={{marginBottom: "0.4rem"}}>
+              <label htmlFor={"op-c-" + i}><code>{o.origin}</code> (used {o.count} time{o.count === 1 ? "" : "s"}) </label>
+              <select
+                id={"op-c-" + i}
+                value={value}
+                onChange={function (e) { setChoices(Object.assign({}, choices, {[o.origin]: e.target.value})); }}
+              >
+                <option value="preconnect">preconnect</option>
+                <option value="dns-prefetch">dns-prefetch</option>
+                <option value="none">no hint</option>
+              </select>
+            </li>
+          );
+        })}
+      </ul>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{out === "" ? "(no hints chosen)" : out}</code></pre>
+      <p aria-live="polite" style={{fontWeight: 600, color: preCount > 4 ? "#b9770e" : "inherit"}}>
+        {preCount > 4 ? "You chose " + preCount + " preconnects. That is a lot. Keep them for the few origins needed in the first seconds." : "Preconnects chosen: " + preCount + "."}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a starting point. It guesses that origins used more often matter more, and that font files need crossorigin. You know your page better, so adjust each choice.
+      </p>
+    </div>
+  );
+}
+
+# Preconnect in HTML
+
+When your page needs a file from a new server, the browser has to do three things before the first byte of that file can arrive: look up the server's address, open a connection, and agree on encryption. On a slow or distant network, that setup alone can take a noticeable fraction of a second.
+
+`<link rel="preconnect">` tells the browser to do all of that setup early, while it is busy with other work. When the page finally asks for a file from that server, the line is already open. It is one of the best hints for a page that depends on a few outside servers, and it is the one most often overused.
+
+## What You Will Learn
+
+- What preconnect does, and how it goes further than `dns-prefetch`
+- Why `crossorigin` matters, and why you may need two hints for one host
+- How many preconnects are sensible
+- How to find the right origins for your page
+- Where preconnect stops helping
+- How to check that it worked
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A preconnect names an origin (scheme and host), not a file. The browser opens a connection to it and keeps it ready.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+
+  <!-- Images on the first screen come from this host -->
+  <link rel="preconnect" href="https://cdn.example.com">
+  <link rel="dns-prefetch" href="https://cdn.example.com">
+
+  <!-- Fonts load in CORS mode, so this one needs crossorigin -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <img src="https://cdn.example.com/img/hero.webp" alt="A golden loaf" width="1200" height="600">
+</body>
+```
+
+</TabItem>
+<TabItem value="lab" label="Connection Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ConnectionPoolLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, tick one hint at a time and see which kinds of request can use it. You will notice that no single hint covers everything, which is the key idea of the next sections.
+
+## What Preconnect Does
+
+For a new `https` host, preconnect does all of the setup steps that come before a request:
+
+1. **DNS lookup**: find the server's address.
+2. **Connect**: open a line to the server.
+3. **Secure handshake**: agree on encryption.
+
+It sends **no request** for any file. The browser simply keeps the connection ready for when the page needs it. Compared with `dns-prefetch`, which only does step 1, preconnect can save much more, and costs a little more too.
+
+:::warning
+An idle connection does not stay open forever. Browsers close unused connections after a short time, so a preconnect for something the page uses much later may be wasted. The exact time varies by browser.
+:::
+
+## The `crossorigin` Question
+
+Here is the part that surprises people. Browsers keep **two separate sets** of connections to the same host: one for requests made with credentials (such as cookies) and one for requests made without. They cannot share a connection.
+
+- A plain `preconnect` (no `crossorigin`) prepares the **credentialed** connection. Images, stylesheets, and classic scripts use it.
+- A `preconnect` with `crossorigin` prepares the **anonymous** connection. Fonts, `fetch()` calls, and anything with a `crossorigin` attribute use it.
+
+If you hint the wrong one, the real request cannot use it, and the browser opens a new connection anyway. You paid for a connection nobody used.
+
+| The page later loads | Hint it needs |
+| :-- | :-- |
+| An image, stylesheet, or classic script from the host | `preconnect` (no `crossorigin`) |
+| A font, or data with `fetch()` | `preconnect` with `crossorigin` |
+| A mix of both | Both hints, one with and one without |
+
+Go back to the Connection Lab and try each combination. If a host serves both kinds, you may need both hints, but remember that each one is a connection you are paying for. Browsers differ in small details, so check in DevTools which connections are really used.
+
+## How Many Is Too Many?
+
+Each preconnect uses time, memory, and a connection on the visitor's device and on the server. Browsers may also limit how many early connections they will open. A sensible rule of thumb is to keep preconnect for **two to four** origins that the page needs in its first seconds, and use `dns-prefetch` for the rest. Lighthouse has an audit that suggests which origins are worth preconnecting and warns about having too many, but treat that as advice and test.
+
+Good candidates are:
+
+- The host that serves your **first-screen images** (a CDN, for example)
+- The host that serves your **fonts**
+- A host your **main script** calls straight away
+
+Poor candidates are anything used late, anything that needs consent first, and anything you only link to.
+
+## Pick Your Origins
+
+Paste the URLs your page loads (the Network panel in DevTools can list them), and this tool extracts the unique origins, guesses which need `crossorigin`, and writes the hints. Then adjust each choice yourself.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OriginPicker />
+</>
+</BrowserWindow>
+
+## Preconnect vs DNS Prefetch
+
+| | `dns-prefetch` | `preconnect` |
+| :-- | :-- | :-- |
+| Does the DNS lookup | Yes | Yes |
+| Opens the connection and handshake | No | Yes |
+| Cost | Tiny | Small, but a connection stays open |
+| Needs `crossorigin` | No | Sometimes |
+| Best for | Hosts you may need later | Hosts you need very soon |
+
+Use them together for important hosts: `preconnect` does the work, and `dns-prefetch` is a fallback for browsers that do not support it. See the [DNS Prefetch lesson](./dns-prefetch) for the reasoning.
+
+## Preconnect from a Header or a Script
+
+Like other hints, preconnect can be sent from the server as a header:
+
+```http
+Link: <https://cdn.example.com>; rel=preconnect
+Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+```
+
+You can also add it with JavaScript when the visitor shows interest, for example on hover over a button that will load a third-party widget. That keeps the cost for people who do not need it close to zero:
+
+```js
+const btn = document.querySelector("#open-chat");
+btn.addEventListener("mouseenter", function () {
+  const link = document.createElement("link");
+  link.rel = "preconnect";
+  link.href = "https://chat.example.com";
+  document.head.appendChild(link);
+}, { once: true });
+```
+
+## Checking That It Worked
+
+1. Open DevTools, then **Network**, and reload.
+2. Click a request to the hinted host and open its **Timing** tab. The **Initial connection** and **SSL** parts should be short or missing, because they happened earlier.
+3. Look at the **Waterfall** with the connection column shown, if your browser offers it. Fewer new connections means the preconnect was reused.
+4. Test on a fresh cache and a slow network, because caching and fast networks can hide the difference.
+5. Compare a key number, such as Largest Contentful Paint (LCP), before and after.
+6. If the connection is not reused, check `crossorigin` first. It is the most common cause.
+
+## Best Practices
+
+1. **Preconnect only to origins the page needs in its first seconds.**
+2. **Keep the list to a few.**
+3. **Use `crossorigin` when the files load in CORS mode,** such as fonts.
+4. **Hint the credentialed and anonymous connection separately** if the host needs both.
+5. **Add `dns-prefetch` as a fallback.**
+6. **Use origins only,** with no path.
+7. **Add it on interaction** for things that load only when asked.
+8. **Remove hints for services you no longer use,** and measure after every change.
+
+## Quick Checklist
+
+- [ ] Each preconnect is for an origin the page uses early
+- [ ] Font and `fetch()` hosts have `crossorigin`
+- [ ] No more than a few preconnects
+- [ ] `dns-prefetch` added as a fallback for the important ones
+- [ ] No hint for your own site
+- [ ] No hint for hosts that need consent first
+- [ ] DevTools shows the connection was reused
+
+## Security and Privacy Notes
+
+- **A preconnect sends no request, but it still reaches out.** The host learns the visitor's network address and some details of the secure handshake, even if the visitor never uses the service. If you need consent before contacting certain services (analytics or advertising, for example), do not hint those hosts until consent is given. This is not legal advice, so check the rules that apply to you.
+- **Only preconnect to hosts you trust.** A connection is a relationship. Never build hints from untrusted input, such as user-submitted links.
+- **Use https.** Preconnecting to a plain `http` host gives you almost nothing, and sends visitors to an unencrypted service.
+- **A broken host costs time.** If a host has a certificate error or never answers, the preconnect wastes effort, and may add warnings to the console. Make sure your page works without it.
+- **Idle connections use server resources too,** so a popular page with many preconnects can add load for the service you point at.
+
+## Global Audience Notes
+
+- **Distance makes connections expensive.** A visitor far from the server may wait several round trips for the setup, so preconnect helps most for them. A CDN with servers near visitors reduces the gap.
+- **Mobile connections are slower to set up,** and each extra connection costs battery. A short list is kind to them.
+- **Some third-party hosts are slow or blocked in some countries.** A preconnect to a host that never answers is wasted time. The page must still work if the host fails.
+- **Test from other regions** with a tool such as WebPageTest, and on a modest phone, not only your own fast machine.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting `crossorigin` on font hosts.**
+2. **Adding `crossorigin` to image-only hosts,** so the real requests cannot use the connection.
+3. **Preconnecting to a dozen hosts.**
+4. **Preconnecting to hosts used late,** so the connection closes before it is used.
+5. **Preconnecting to your own site.**
+6. **Putting a path in the URL.**
+7. **Hinting before consent** for services that need it.
+8. **Leaving hints for services you removed.**
+9. **Using it instead of fixing a late-found file** that `preload` or better HTML would solve.
+10. **Never checking** that the connection was reused.
+
+## Practice Time
+
+1. In the Connection Lab, which kinds of request can use a plain `preconnect`? Which need `crossorigin`?
+2. Tick both hints. What does it cost?
+3. Open DevTools on a page you built, and list the third-party origins.
+4. Paste a few of their URLs into the origin picker, and see what it suggests.
+5. Change at least one suggestion, and say why.
+6. Add the hints, and compare the Timing tab for one request before and after.
+7. Add a `preconnect` on hover for a widget that loads on click.
+8. Bonus: run WebPageTest on your page, and look at which connections were opened, and when.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does preconnect do?</summary>
+
+It does the DNS lookup, opens the connection, and finishes the secure handshake for an origin early, so the page's later requests can use the ready connection. It sends no request itself.
+
+</details>
+
+<details>
+<summary>2. How is it different from `dns-prefetch`?</summary>
+
+`dns-prefetch` only does the lookup. `preconnect` does the whole setup, so it saves more, but keeps a connection open.
+
+</details>
+
+<details>
+<summary>3. When is `crossorigin` needed?</summary>
+
+When the files load in CORS mode, such as fonts and `fetch()` calls. A plain preconnect and a `crossorigin` preconnect prepare two different connections, so the hint must match the later request.
+
+</details>
+
+<details>
+<summary>4. How many preconnects should a page have?</summary>
+
+Only a few, for the origins needed in the first seconds. Two to four is a sensible rule of thumb. Use `dns-prefetch` for the rest.
+
+</details>
+
+<details>
+<summary>5. Why can a preconnect be wasted?</summary>
+
+Idle connections close after a short time, so a host used late may need a new connection anyway. A hint with the wrong `crossorigin`, or for a host the page never uses, is wasted too.
+
+</details>
+
+<details>
+<summary>6. What privacy care does it need?</summary>
+
+It contacts a third party before the visitor does anything, which shares their network address. Wait for consent where it is needed, and never build hints from untrusted input.
+
+</details>
+
+## Key Takeaways
+
+- **Preconnect does the connection setup early:** lookup, connect, and handshake.
+- **It names an origin, not a file,** and sends no request.
+- **`crossorigin` selects which connection you prepare.** Match it to the later request.
+- **Keep the list short:** a few early hosts, with `dns-prefetch` for the rest.
+- **Pair it with `dns-prefetch`** as a fallback.
+- **Add it on interaction** for things loaded only when asked.
+- **Respect privacy:** wait for consent, trust the host, and measure that the connection was reused.
+
+Next up: [Lazy Loading](./lazy-loading), where you will stop loading images and iframes the visitor has not reached yet.

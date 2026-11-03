@@ -1,0 +1,535 @@
+---
+id: html-perf-lazy-loading
+title: "Lazy Loading for Performance"
+sidebar_label: "Lazy Loading"
+sidebar_position: 8
+slug: /html/performance/lazy-loading
+description: "A performance-first guide to lazy loading: which images, iframes and videos to defer, which to never defer, how to avoid layout jumps, and how to audit a page. Includes a scroll lab and a live lazy-loading checker."
+keywords:
+  - lazy loading performance
+  - loading lazy
+  - lazy load images and iframes
+  - LCP lazy loading
+  - IntersectionObserver
+  - layout shift
+  - click to load embeds
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, lazy-loading, images, iframes, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function lazySim(mode, maxScroll) {
+  const viewport = 800;
+  const margin = 1000;
+  const gap = 600;
+  const count = 12;
+  let loaded = 0;
+  let kb = 0;
+  const items = [];
+  for (let i = 0; i < count; i++) {
+    const top = i * gap;
+    const size = i === 0 ? 400 : 150;
+    const eager = mode === "eager" || (mode === "smart" && i === 0);
+    const near = top < maxScroll + viewport + margin;
+    const isLoaded = eager || near;
+    if (isLoaded) {
+      loaded += 1;
+      kb += size;
+    }
+    items.push({index: i, loaded: isLoaded});
+  }
+  return {loaded: loaded, kb: kb, total: count, totalKb: 400 + 11 * 150, items: items};
+}
+
+export function ScrollLab() {
+  const [mode, setMode] = useState("smart");
+  const [scroll, setScroll] = useState(0);
+  const [maxScroll, setMaxScroll] = useState(0);
+  const r = lazySim(mode, maxScroll);
+  const modes = [
+    ["eager", "Load everything at once"],
+    ["lazy", "Lazy-load every image"],
+    ["smart", "Hero loads normally, the rest are lazy"]
+  ];
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Strategy</legend>
+        {modes.map(function (m) {
+          return (
+            <label key={m[0]} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="sl-mode" checked={mode === m[0]} onChange={function () { setMode(m[0]); }} /> {m[1]}
+            </label>
+          );
+        })}
+      </fieldset>
+      <p>
+        <label htmlFor="sl-scroll">Visitor has scrolled to: <strong>{scroll} px</strong></label>
+        <br />
+        <input
+          id="sl-scroll"
+          type="range"
+          min="0"
+          max="6400"
+          step="100"
+          value={scroll}
+          onChange={function (e) {
+            const v = Number(e.target.value);
+            setScroll(v);
+            setMaxScroll(Math.max(maxScroll, v));
+          }}
+          style={{width: "100%"}}
+        />
+      </p>
+      <div style={{display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "0.4rem", margin: "0.75rem 0"}}>
+        {r.items.map(function (it) {
+          return (
+            <div
+              key={it.index}
+              style={{
+                padding: "0.6rem 0",
+                textAlign: "center",
+                borderRadius: 4,
+                background: it.loaded ? "#1e8449" : "rgba(128,128,128,0.25)",
+                color: it.loaded ? "#fff" : "inherit"
+              }}
+            >
+              {it.index === 0 ? "Hero" : "Img " + it.index}
+            </div>
+          );
+        })}
+      </div>
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        Loaded {r.loaded} of {r.total} images, about {r.kb} KB of {r.totalKb} KB.
+      </p>
+      {mode === "lazy" ? (
+        <p style={{color: "#c0392b"}}>
+          The hero is lazy too. The browser waits until it has laid out the page before it starts that download, so the biggest thing on the screen arrives later than it needed to.
+        </p>
+      ) : null}
+      <button type="button" onClick={function () { setScroll(0); setMaxScroll(0); }}>Reset</button>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model: twelve images 600 px apart, a 800 px screen, and images loading once they are within 1000 px of it. Real browsers pick their own distance, and it can depend on the connection.
+      </p>
+    </div>
+  );
+}
+
+export const lazySamples = {
+  messy: [
+    '<body>',
+    '  <img src="/img/hero.jpg" alt="A golden loaf" width="1200" height="600" loading="lazy">',
+    '  <img data-src="/img/rye.jpg" alt="Rye loaves">',
+    '  <img src="/img/sourdough.jpg" alt="Sourdough" loading="true">',
+    '  <img src="/img/rolls.jpg" alt="Rolls" loading="lazy">',
+    '  <img src="/img/hidden.jpg" alt="Seasonal loaf" width="600" height="400" loading="lazy" style="display:none">',
+    '  <img src="/img/logo.svg" alt="The Bread Bin" width="120" height="40" loading="eager">',
+    '  <iframe src="https://video.example.com/embed" loading="lazy"></iframe>',
+    '  <video src="/media/story.mp4" controls></video>',
+    '</body>'
+  ].join("\n"),
+  fixed: [
+    '<body>',
+    '  <img src="/img/hero.jpg" alt="A golden loaf" width="1200" height="600" fetchpriority="high">',
+    '  <img src="/img/rye.jpg" alt="Rye loaves" width="600" height="400" loading="lazy">',
+    '  <img src="/img/sourdough.jpg" alt="Sourdough" width="600" height="400" loading="lazy">',
+    '  <img src="/img/rolls.jpg" alt="Rolls" width="600" height="400" loading="lazy">',
+    '  <iframe src="https://video.example.com/embed" width="560" height="315" loading="lazy" title="Our story"></iframe>',
+    '  <video src="/media/story.mp4" controls preload="none" poster="/img/story-poster.jpg" width="560" height="315"></video>',
+    '</body>'
+  ].join("\n")
+};
+
+export function auditLazy(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out = [];
+  const add = (level, text) => out.push({level: level, text: text});
+  const imgs = Array.from(doc.querySelectorAll("img")).filter(function (i) { return !i.closest("noscript"); });
+  const frames = Array.from(doc.querySelectorAll("iframe"));
+  const isLazy = function (el) { return (el.getAttribute("loading") || "").toLowerCase() === "lazy"; };
+  if (imgs.length > 0 && isLazy(imgs[0])) {
+    add("problem", "The first image is lazy-loaded. If it is on the first screen, remove loading=lazy so it starts early.");
+  }
+  const jsOnly = imgs.filter(function (i) { return !i.hasAttribute("src") && (i.hasAttribute("data-src") || i.hasAttribute("data-srcset")); });
+  if (jsOnly.length > 0) {
+    const hasNoscript = doc.querySelectorAll("noscript img").length > 0;
+    add(hasNoscript ? "tip" : "problem", jsOnly.length + " image(s) have no src and depend on JavaScript. " + (hasNoscript ? "You have a noscript fallback, which helps." : "Without JavaScript, or if the script fails, nothing shows. Prefer native loading=lazy with a real src."));
+  }
+  const all = imgs.concat(frames);
+  const badValue = all.filter(function (el) {
+    return el.hasAttribute("loading") && ["lazy", "eager"].indexOf(el.getAttribute("loading").toLowerCase()) === -1;
+  });
+  if (badValue.length > 0) add("problem", badValue.length + " element(s) have a loading value that is not lazy or eager, so it is ignored.");
+  const lazyNoSize = all.filter(function (el) { return isLazy(el) && (!el.hasAttribute("width") || !el.hasAttribute("height")); });
+  if (lazyNoSize.length > 0) add("problem", lazyNoSize.length + " lazy element(s) have no width and height, so the layout will jump as they load in.");
+  const hidden = all.filter(function (el) { return isLazy(el) && /display\s*:\s*none/i.test(el.getAttribute("style") || ""); });
+  if (hidden.length > 0) add("tip", hidden.length + " lazy element(s) are hidden with display:none. Hidden images may never load, or may load late when shown.");
+  const redundant = all.filter(function (el) { return (el.getAttribute("loading") || "").toLowerCase() === "eager"; });
+  if (redundant.length > 0) add("tip", redundant.length + " element(s) use loading=eager, which is already the default. It does no harm, but you can remove it.");
+  const eagerFrames = frames.filter(function (f) { return !isLazy(f); });
+  if (eagerFrames.length > 0) add("tip", eagerFrames.length + " iframe(s) load straight away. If they are below the first screen, add loading=lazy.");
+  const videos = Array.from(doc.querySelectorAll("video")).filter(function (v) { return !v.hasAttribute("preload"); });
+  if (videos.length > 0) add("tip", videos.length + " video(s) have no preload attribute. For videos below the first screen, preload=\"none\" or \"metadata\" with a poster image avoids a big early download.");
+  const laterLazy = imgs.slice(1).filter(isLazy);
+  if (laterLazy.length > 0) add("good", laterLazy.length + " later image(s) use loading=lazy.");
+  if (out.length === 0) add("good", "Nothing to flag. Paste a page with images, iframes, or videos.");
+  return out;
+}
+
+export function LazyAuditInner() {
+  const [html, setHtml] = useState(lazySamples.messy);
+  const results = auditLazy(html);
+  const problems = results.filter(function (r) { return r.level === "problem"; }).length;
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(lazySamples.messy); }}>Load the messy page</button>
+        <button type="button" onClick={function () { setHtml(lazySamples.fixed); }}>Load the fixed page</button>
+      </div>
+      <label htmlFor="lazy-html" style={{display: "block", fontWeight: 600}}>Page HTML (edit it)</label>
+      <textarea
+        id="lazy-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={11}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {problems === 0 ? "No problems found." : problems + " problem(s) found."}
+      </p>
+      <ul style={{listStyle: "none", padding: 0}}>
+        {results.map(function (r, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[r.level]}}>{labels[r.level]}: </strong>
+              {r.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a teaching checker. It reads markup only, so it cannot know which images are on the first screen. You decide that, then confirm with DevTools.
+      </p>
+    </div>
+  );
+}
+
+export function LazyAudit() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <LazyAuditInner />; }}
+    </BrowserOnly>
+  );
+}
+
+# Lazy Loading for Performance
+
+Imagine a very long page with fifty photos. A visitor opens it, reads the top, and leaves. Without lazy loading, their browser has already downloaded all fifty photos, spending data and time on forty-five that nobody saw.
+
+**Lazy loading** fixes this by waiting. Images, iframes, and other heavy items far from the screen are fetched only when the visitor gets close to them. The basics of the `loading` attribute are covered in the earlier [Image Lazy Loading lesson](/tutorials/html/images/lazy-loading). This lesson takes the performance view: what to defer, what never to defer, and how to avoid the problems lazy loading can cause.
+
+## What You Will Learn
+
+- What lazy loading saves, and what it can cost
+- Which elements to lazy-load, and which to leave alone
+- Why lazy-loading the main image hurts your Largest Contentful Paint
+- How to avoid layout jumps with `width` and `height`
+- How to lazy-load iframes, videos, and CSS backgrounds
+- How to use a "click to load" pattern for heavy embeds
+- How to audit a page for lazy-loading mistakes
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+For most pages, the rule is short: **do not lazy-load what is on the first screen, and lazy-load most of what is not.**
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- First screen: load it right away, and tell the browser it matters -->
+<img src="/img/hero.webp" alt="A golden loaf on a wooden board"
+     width="1200" height="600" fetchpriority="high">
+
+<!-- Below the first screen: wait until the visitor is close -->
+<img src="/img/rye.webp" alt="Rye loaves on a rack"
+     width="600" height="400" loading="lazy">
+
+<iframe src="https://video.example.com/embed"
+        width="560" height="315" loading="lazy"
+        title="The story of our bakery"></iframe>
+```
+
+</TabItem>
+<TabItem value="lab" label="Scroll Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ScrollLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, compare the three strategies at the top of the page without scrolling. Then scroll down and watch what each one has downloaded. Loading everything wastes data. Making the hero lazy delays the one image people see first. The smart option does neither.
+
+## What to Lazy-Load
+
+| Element | Lazy-load? | Why |
+| :-- | :-- | :-- |
+| The main image on the first screen | No | It is usually your Largest Contentful Paint, and should start early |
+| Logo and header images | No | They are visible at once |
+| Images below the first screen | Yes | Many visitors never reach them |
+| Iframes (maps, videos, widgets) below the first screen | Yes | They are heavy and bring their own files |
+| Images in a closed tab, menu, or accordion | Usually yes | They are not seen until opened |
+| Videos below the first screen | Use `preload` | See below |
+| CSS background images | Use a script | The `loading` attribute does not apply |
+
+:::tip
+If you are not sure whether something is on the first screen, check it at a few common screen sizes. A tall hero on a phone may push the second image off the screen, while on a wide monitor it might be visible at once.
+:::
+
+## Lazy Loading Is Not Free
+
+Lazy loading can cause its own problems if you are careless:
+
+1. **Delay for what is visible.** A lazy image waits for the browser to lay out the page before it starts. For the main image, that is a delay you do not want.
+2. **Layout jumps.** An image with no `width` and `height` has no size until it arrives, so the page shifts as the visitor scrolls. This hurts your Cumulative Layout Shift (CLS).
+3. **Blank spaces.** If the visitor scrolls fast on a slow connection, they may reach an image before it has loaded. Browsers start the download before the image reaches the screen, but on a slow network it may still show a gap.
+4. **Hidden content.** Images that are never shown, such as those in `display: none` areas, may never load.
+
+The fixes are simple: leave the first-screen images alone, always give images and iframes a `width` and `height`, and use a placeholder colour or a reserved shape so the gap looks intentional.
+
+## Reserve the Space
+
+An image that has `width` and `height` lets the browser reserve the right room before it arrives. CSS can still make it fit its container:
+
+```css
+img {
+  max-width: 100%;
+  height: auto;
+}
+```
+
+For a box with no image yet, such as an embed or a CSS background, you can reserve space with `aspect-ratio`:
+
+```css
+.video-box {
+  aspect-ratio: 16 / 9;
+  background: #eee;
+}
+```
+
+## Videos and Iframes
+
+Native lazy loading works for `img` and `iframe`. A `video` element has no `loading` attribute, but you can control how much it downloads up front:
+
+```html
+<video src="/media/story.mp4" controls preload="none"
+       poster="/img/story-poster.jpg" width="560" height="315"></video>
+```
+
+- `preload="none"` downloads no video data until the visitor plays it.
+- `preload="metadata"` fetches just enough to show the length and first frame.
+- A `poster` image shows something useful while the video waits.
+
+## Click to Load: A Kind Way to Embed
+
+A video or map embed can pull in dozens of files, and may contact third-party servers, before anyone has pressed play. A "click to load" pattern (sometimes called a facade) shows a simple picture and button, and loads the real embed only when the visitor asks:
+
+```html
+<button type="button" class="video-facade" data-embed="https://video.example.com/embed/123">
+  <img src="/img/story-poster.jpg" alt="" width="560" height="315" loading="lazy">
+  <span>Play the video</span>
+</button>
+```
+
+```js
+document.querySelectorAll(".video-facade").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    const frame = document.createElement("iframe");
+    frame.src = btn.dataset.embed;
+    frame.width = 560;
+    frame.height = 315;
+    frame.title = "The story of our bakery";
+    frame.allow = "autoplay; fullscreen";
+    btn.replaceWith(frame);
+  }, { once: true });
+});
+```
+
+This saves data and time for everyone who does not press play, and it is also good for privacy, because no third party is contacted until the visitor chooses. Make sure the button has an accessible name (here, the visible text does the job).
+
+## Lazy-Loading CSS Backgrounds
+
+The `loading` attribute does not apply to CSS backgrounds. A small script using `IntersectionObserver` can add the image when the element gets near the screen:
+
+```html
+<div class="lazy-bg" data-bg="/img/banner.webp"></div>
+```
+
+```js
+const io = new IntersectionObserver(function (entries, observer) {
+  entries.forEach(function (entry) {
+    if (!entry.isIntersecting) return;
+    entry.target.style.backgroundImage = "url(" + entry.target.dataset.bg + ")";
+    observer.unobserve(entry.target);
+  });
+}, { rootMargin: "300px" });
+
+document.querySelectorAll(".lazy-bg").forEach(function (el) { io.observe(el); });
+```
+
+The `rootMargin` starts the load a little before the element is on screen. This approach needs JavaScript, so choose it only for decorative backgrounds, and give the element a plain background colour as a fallback. For important images, a real `img` with `loading="lazy"` is simpler and more robust.
+
+## A Note on Search Engines
+
+Search engines generally handle the native `loading="lazy"` attribute well, because the image has a real `src` in the HTML. Patterns that leave the `src` empty and fill it in with JavaScript are riskier, since the crawler needs to run your script to see the image. Prefer native lazy loading, and check any important images with a tool such as Search Console's URL inspection. The [HTML SEO Basics lesson](/tutorials/html/seo/html-seo-basics) has more.
+
+## Audit a Page
+
+Load the messy page below and fix each problem, one at a time.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LazyAudit />
+</>
+</BrowserWindow>
+
+## Checking in DevTools
+
+1. Open DevTools, then **Network**, and filter by **Img**.
+2. Reload without scrolling. Only images near the first screen should load.
+3. Scroll down slowly. New images should appear in the list just before they reach the screen.
+4. Look at the first screen's main image. It should start early and **not** be lazy.
+5. Throttle the network to a slow setting, and scroll quickly. Do gaps appear? If so, consider a larger margin or a placeholder.
+6. Run Lighthouse and check your LCP and CLS before and after.
+
+## Best Practices
+
+1. **Never lazy-load the main image or anything on the first screen.**
+2. **Lazy-load images and iframes below the first screen.**
+3. **Always give `width` and `height`.**
+4. **Use native `loading="lazy"` first,** and a script only where it cannot work.
+5. **Use `preload="none"` or `"metadata"`** and a `poster` for videos below the first screen.
+6. **Use click-to-load** for heavy embeds.
+7. **Keep a real `src`** in the HTML, so the page works without JavaScript.
+8. **Test with a slow connection and a fast scroll.**
+
+## Quick Checklist
+
+- [ ] The first-screen images are not lazy
+- [ ] Later images and iframes use `loading="lazy"`
+- [ ] Every image and iframe has `width` and `height`
+- [ ] Images keep a real `src` in the HTML
+- [ ] Videos use `preload` and a `poster`
+- [ ] Heavy embeds load on click, if they are not essential
+- [ ] DevTools shows only nearby images loading on a fresh load
+- [ ] LCP and CLS are checked before and after
+
+## Security and Privacy Notes
+
+- **Lazy loading is not a privacy tool by itself.** A lazy third-party iframe still contacts its host when the visitor scrolls near it, and visitors may scroll without choosing to interact. For services that need consent, or that track visitors, use a click-to-load pattern, or wait for consent before adding the embed. This is not legal advice, so check the rules that apply to you.
+- **Trust what you embed.** An iframe runs another site inside yours. Use only hosts you trust, and consider the `sandbox` attribute for untrusted content.
+- **Do not put private data in image URLs.** Lazy-loaded URLs are visible in the page source and may be logged.
+- **Do not hide important content behind a script.** If the lazy-loading script fails or is blocked, the page should still show its important images.
+
+## Global Audience Notes
+
+- **Lazy loading saves the most for people on limited data.** On pay-as-you-go plans, every skipped image is money saved.
+- **Slow networks make gaps more obvious.** Use placeholders and a modest margin so scrolling feels smooth.
+- **Fast scrollers and older devices** may reach images before they load. Test on a modest phone.
+- **Layouts that run right to left** behave the same way, since lazy loading depends on vertical position. Check that placeholders and reserved space look right in your own language.
+- **Images carry meaning.** Always give lazy images useful `alt` text, so they are understood even before or without loading.
+
+## Common Mistakes to Avoid
+
+1. **Lazy-loading the main image.**
+2. **Lazy images with no `width` and `height`.**
+3. **Every image lazy,** including the logo.
+4. **An empty `src` that depends on JavaScript.**
+5. **Writing `loading="true"`** or another value that is not `lazy` or `eager`.
+6. **Lazy-loading hidden images** and expecting them to load when shown.
+7. **Heavy embeds loading straight away** when a facade would do.
+8. **Videos with no `preload` and no `poster`.**
+9. **Testing only on a fast connection,** and missing the gaps.
+10. **Not checking LCP and CLS** after the change.
+
+## Practice Time
+
+1. In the Scroll Lab, at the top of the page, two strategies download the same amount. Which two, and why is one of them still worse for the visitor?
+2. Scroll to the bottom with each strategy. How do the totals compare?
+3. Load the messy page in the auditor. Fix every problem it reports.
+4. Open a page you built, and filter the Network panel by **Img**. Which images load before you scroll?
+5. Add `loading="lazy"` to the ones below the first screen, and reload.
+6. Add `width` and `height` to every image, and check there is no jump.
+7. Replace one iframe with a click-to-load button.
+8. Bonus: run Lighthouse before and after, and compare LCP and CLS.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does lazy loading do?</summary>
+
+It delays loading images and iframes until the visitor gets near them, saving data and speeding up the first load.
+
+</details>
+
+<details>
+<summary>2. Which images should never be lazy-loaded?</summary>
+
+The main image and anything else on the first screen. Lazy loading delays them, which usually makes Largest Contentful Paint worse.
+
+</details>
+
+<details>
+<summary>3. How do you avoid layout jumps with lazy images?</summary>
+
+Give every image and iframe a `width` and `height`, so the browser reserves the space. For other boxes, use `aspect-ratio`.
+
+</details>
+
+<details>
+<summary>4. How do you lazy-load a video?</summary>
+
+Videos have no `loading` attribute. Use `preload="none"` or `"metadata"` with a `poster` image, or a click-to-load pattern.
+
+</details>
+
+<details>
+<summary>5. What about CSS background images?</summary>
+
+The `loading` attribute does not apply. Use `IntersectionObserver` in a small script, and keep the approach for decorative images.
+
+</details>
+
+<details>
+<summary>6. Why is click-to-load good for privacy?</summary>
+
+No third-party server is contacted until the visitor chooses to play or load the embed.
+
+</details>
+
+## Key Takeaways
+
+- **Lazy loading waits.** It spares the visitor from downloading what they may never see.
+- **First screen: never lazy. Below it: usually lazy.**
+- **Always reserve space** with `width`, `height`, or `aspect-ratio`.
+- **Prefer native `loading="lazy"`,** with a real `src`.
+- **Videos use `preload` and `poster`.** Heavy embeds can load on click.
+- **Use a script only where native lazy loading cannot work.**
+- **Test on slow networks and check LCP and CLS.**
+
+Next up: [Script Loading](./script-loading), where you will learn how the browser fetches and runs your JavaScript, and how to stop it blocking the page.

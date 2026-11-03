@@ -1,0 +1,87 @@
+/* Container bar holding everything */
+.breadcrumbContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem 0;
+}
+
+/* Action button wrappers */
+.actionGroup {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Scrollable Breadcrumb Trail for Mobile & Desktop */
+.breadcrumbsWrapper {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+  /* Hide scrollbar for Chrome, Safari, and Opera */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+.breadcrumbsWrapper::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Breadcrumbs List (Ol) */
+.breadcrumbsList {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumbItem {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbLink {
+  transition: opacity 0.2s ease, color 0.2s ease;
+  font-weight: 500;
+}
+
+.breadcrumbLink:hover {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.activeItem {
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  cursor: default;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .breadcrumbContainer {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Make trail take priority on top row */
+  .breadcrumbsWrapper {
+    order: 1;
+    width: 100%;
+  }
+
+  /* Buttons align to bottom bar on small devices */
+  .leftAction {
+    order: 2;
+  }
+
+  .rightAction {
+    order: 3;
+    margin-left: auto;
+  }
+}

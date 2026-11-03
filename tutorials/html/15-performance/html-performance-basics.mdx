@@ -1,0 +1,663 @@
+---
+id: html-performance-basics
+title: "HTML Performance Basics"
+sidebar_label: "HTML Performance Basics"
+sidebar_position: 2
+slug: /html/performance/html-performance-basics
+description: "Learn the HTML habits behind a fast page: keep the head light, never block on scripts, size and lazy-load images, and ask four simple questions about every file. Includes a live page checker."
+keywords:
+  - HTML performance basics
+  - page speed for beginners
+  - render blocking CSS
+  - defer scripts
+  - image width and height
+  - lazy loading images
+  - layout shift
+  - fast HTML
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, page-speed, images, scripts, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const perfSamples = {
+  messy: [
+    '<!doctype html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="utf-8">',
+    '  <meta name="viewport" content="width=device-width, initial-scale=1">',
+    '  <title>The Bread Bin</title>',
+    '  <link rel="stylesheet" href="/reset.css">',
+    '  <link rel="stylesheet" href="/layout.css">',
+    '  <link rel="stylesheet" href="/theme.css">',
+    '  <link rel="stylesheet" href="/widgets.css">',
+    '  <style>@import url("/fonts.css");</style>',
+    '  <script src="/jquery.js"></script>',
+    '  <script src="/app.js"></script>',
+    '</head>',
+    '<body>',
+    '  <img src="/img/hero.jpg" alt="A golden loaf" loading="lazy">',
+    '  <img src="/img/rye.jpg" alt="Rye loaves">',
+    '  <img src="/img/sourdough.jpg" alt="Sourdough on a rack">',
+    '  <iframe src="https://maps.example.com/embed"></iframe>',
+    '</body>',
+    '</html>'
+  ].join("\n"),
+  fixed: [
+    '<!doctype html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="utf-8">',
+    '  <meta name="viewport" content="width=device-width, initial-scale=1">',
+    '  <title>The Bread Bin</title>',
+    '  <link rel="stylesheet" href="/site.css">',
+    '  <script src="/app.js" defer></script>',
+    '</head>',
+    '<body>',
+    '  <img src="/img/hero.jpg" alt="A golden loaf" width="1200" height="600" fetchpriority="high">',
+    '  <img src="/img/rye.jpg" alt="Rye loaves" width="600" height="400" loading="lazy">',
+    '  <img src="/img/sourdough.jpg" alt="Sourdough on a rack" width="600" height="400" loading="lazy">',
+    '  <iframe src="https://maps.example.com/embed" width="600" height="400" loading="lazy" title="Map to the bakery"></iframe>',
+    '</body>',
+    '</html>'
+  ].join("\n")
+};
+
+export function auditPerformance(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out = [];
+  const add = (level, text) => out.push({level, text});
+  const headScripts = Array.from(doc.head.querySelectorAll("script[src]"));
+  const blocking = headScripts.filter(function (s) {
+    return !s.hasAttribute("defer") && !s.hasAttribute("async") && s.getAttribute("type") !== "module";
+  });
+  if (blocking.length > 0) {
+    add("problem", blocking.length + " script(s) in the head block the page. Add defer or async.");
+  } else if (headScripts.length > 0) {
+    add("good", "Every script in the head uses defer, async or type=module.");
+  }
+  const styles = Array.from(doc.querySelectorAll("style")).map(function (s) { return s.textContent; }).join("\n");
+  if (/@import/i.test(styles)) {
+    add("problem", "A style block uses @import. The browser finds the second file only after the first arrives, so use a link element instead.");
+  }
+  const sheets = doc.querySelectorAll('link[rel~="stylesheet"]');
+  if (sheets.length > 3) {
+    add("tip", sheets.length + " separate stylesheet files. Each one is a request that can hold up the first paint, so combine or trim them where you can.");
+  } else if (sheets.length > 0) {
+    add("good", "A small number of stylesheets (" + sheets.length + ").");
+  }
+  const imgs = Array.from(doc.querySelectorAll("img"));
+  if (imgs.length > 0 && imgs[0].getAttribute("loading") === "lazy") {
+    add("problem", "The first image is lazy-loaded. If it is on the first screen, remove loading=lazy so it starts early.");
+  }
+  const noSize = imgs.filter(function (i) { return !i.hasAttribute("width") || !i.hasAttribute("height"); });
+  if (noSize.length > 0) {
+    add("problem", noSize.length + " image(s) have no width and height, so the layout can jump when they arrive.");
+  } else if (imgs.length > 0) {
+    add("good", "Every image has width and height.");
+  }
+  const lazyCandidates = imgs.slice(1).filter(function (i) { return i.getAttribute("loading") !== "lazy"; });
+  if (lazyCandidates.length > 0) {
+    add("tip", lazyCandidates.length + " later image(s) could use loading=lazy if they sit below the first screen.");
+  }
+  const frames = Array.from(doc.querySelectorAll("iframe"));
+  const eagerFrames = frames.filter(function (f) { return f.getAttribute("loading") !== "lazy"; });
+  if (eagerFrames.length > 0) {
+    add("tip", eagerFrames.length + " iframe(s) load straight away. If they are below the first screen, add loading=lazy.");
+  }
+  const frameNoSize = frames.filter(function (f) { return !f.hasAttribute("width") || !f.hasAttribute("height"); });
+  if (frameNoSize.length > 0) {
+    add("problem", frameNoSize.length + " iframe(s) have no width and height, so the page can jump when they load.");
+  }
+  if (out.length === 0) add("good", "Nothing to check here. Paste a page with a head, images or scripts.");
+  return out;
+}
+
+export function PerfCheckerInner() {
+  const [html, setHtml] = useState(perfSamples.messy);
+  const results = auditPerformance(html);
+  const problems = results.filter(function (r) { return r.level === "problem"; }).length;
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(perfSamples.messy); }}>Load the slow page</button>
+        <button type="button" onClick={function () { setHtml(perfSamples.fixed); }}>Load the fixed page</button>
+      </div>
+      <label htmlFor="perf-html" style={{display: "block", fontWeight: 600}}>Page HTML (edit it)</label>
+      <textarea
+        id="perf-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={12}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {problems === 0 ? "No problems found." : problems + " problem(s) found."}
+      </p>
+      <ul style={{listStyle: "none", padding: 0}}>
+        {results.map(function (r, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[r.level]}}>{labels[r.level]}: </strong>
+              {r.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a teaching checker. It reads the HTML you paste and looks for a few common habits. It cannot measure real speed, so always confirm with a tool like Lighthouse.
+      </p>
+    </div>
+  );
+}
+
+export function PerfChecker() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <PerfCheckerInner />; }}
+    </BrowserOnly>
+  );
+}
+
+export function imageWaste(fileWidth, displayWidth, dpr) {
+  const needed = displayWidth * dpr;
+  if (fileWidth >= needed) {
+    const used = (needed * needed) / (fileWidth * fileWidth);
+    return {needed: needed, wastedPercent: Math.round((1 - used) * 100), blurry: false};
+  }
+  return {needed: needed, wastedPercent: 0, blurry: true};
+}
+
+export function ImageWasteLab() {
+  const [fileWidth, setFileWidth] = useState(4000);
+  const [displayWidth, setDisplayWidth] = useState(400);
+  const [dpr, setDpr] = useState(2);
+  const r = imageWaste(fileWidth, displayWidth, dpr);
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        <label htmlFor="waste-file">Image file width: <strong>{fileWidth}px</strong></label>
+        <br />
+        <input id="waste-file" type="range" min="200" max="4000" step="100" value={fileWidth} onChange={function (e) { setFileWidth(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <p>
+        <label htmlFor="waste-display">Width on the page: <strong>{displayWidth}px</strong></label>
+        <br />
+        <input id="waste-display" type="range" min="100" max="1200" step="50" value={displayWidth} onChange={function (e) { setDisplayWidth(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Screen density</legend>
+        {[1, 2, 3].map(function (d) {
+          return (
+            <label key={d} style={{marginRight: "1rem"}}>
+              <input type="radio" name="waste-dpr" checked={dpr === d} onChange={function () { setDpr(d); }} /> {d}x
+            </label>
+          );
+        })}
+      </fieldset>
+      <p aria-live="polite">
+        The screen needs about <strong>{r.needed}px</strong> of width.{" "}
+        {r.blurry
+          ? "Your file is smaller than that, so the image will look soft on this screen."
+          : "About " + r.wastedPercent + "% of the file's pixels are never used on this screen."}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        File size does not track pixels exactly, because it also depends on the format and the picture, but more pixels almost always means more bytes.
+      </p>
+    </div>
+  );
+}
+
+export const spotItems = [
+  {
+    code: '<head>\n  <script src="/app.js"></script>\n</head>',
+    question: "What is the problem?",
+    options: [
+      "It blocks the page while it downloads and runs",
+      "Scripts cannot go in the head",
+      "The script needs an alt attribute"
+    ],
+    answer: 0,
+    why: "A plain script stops the browser reading the rest of the HTML until it has downloaded and run. Add defer, or async if it does not depend on anything else."
+  },
+  {
+    code: '<!-- the big picture at the very top of the page -->\n<img src="/img/hero.jpg" alt="A golden loaf"\n     width="1200" height="600" loading="lazy">',
+    question: "What is the problem?",
+    options: [
+      "Nothing, lazy loading is always good",
+      "Lazy loading delays an image people see straight away",
+      "The width and height should be removed"
+    ],
+    answer: 1,
+    why: "Lazy loading is for images below the first screen. Lazy-loading the main image makes the browser wait before it starts, which usually delays the largest paint."
+  },
+  {
+    code: '<img src="/img/cat.jpg" alt="A grey cat">',
+    question: "What can go wrong?",
+    options: [
+      "The alt text is too short",
+      "The image will not load",
+      "The browser does not know the space it needs, so the layout can jump"
+    ],
+    answer: 2,
+    why: "Without width and height the browser reserves no space, so text moves down when the image arrives. Giving both lets it hold the right amount of room."
+  },
+  {
+    code: '<!-- the file is 4000px wide -->\n<img src="/img/photo-4000.jpg" alt="Market stall"\n     width="400" height="300">',
+    question: "What is wasteful here?",
+    options: [
+      "It downloads far more pixels than a 400px slot can show",
+      "The height is too small",
+      "JPEG is not allowed on the web"
+    ],
+    answer: 0,
+    why: "A 400px slot, even on a 2x screen, needs about 800px of width. A responsive image with several sizes lets each device download only what it needs."
+  },
+  {
+    code: '<style>\n  @import url("/fonts.css");\n</style>',
+    question: "Why is this slower than a link element?",
+    options: [
+      "Style blocks are not allowed",
+      "The browser only discovers the second file after the first one arrives",
+      "It makes the text bold"
+    ],
+    answer: 1,
+    why: "An @import creates a chain: the browser must fetch and read one file before it knows about the next. A link element in the head lets it find the file straight away."
+  },
+  {
+    code: '<!-- far down the page, below the footer links -->\n<iframe src="https://video.example.com/embed"\n        width="560" height="315" title="Our story"></iframe>',
+    question: "What is a good improvement?",
+    options: [
+      "Remove the title",
+      "Add loading=\"lazy\" so it loads when the visitor gets near it",
+      "Move it to the top of the page"
+    ],
+    answer: 1,
+    why: "Embeds can be heavy, and each one brings its own files. If it is not on the first screen, loading=lazy keeps it from competing with the content people see first."
+  }
+];
+
+export function SpotQuiz() {
+  const [picked, setPicked] = useState({});
+  const done = Object.keys(picked).length;
+  const correct = spotItems.filter(function (item, i) { return picked[i] === item.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p aria-live="polite" style={{marginTop: 0, fontWeight: 600}}>
+        Answered {done} of {spotItems.length}. Correct: {correct}.
+      </p>
+      {spotItems.map(function (item, i) {
+        const chosen = picked[i];
+        const answered = chosen !== undefined;
+        return (
+          <div key={i} style={{marginBottom: "1.25rem"}}>
+            <pre style={{margin: "0 0 0.5rem", whiteSpace: "pre-wrap"}}><code>{item.code}</code></pre>
+            <fieldset style={{border: "none", padding: 0, margin: 0}}>
+              <legend style={{fontWeight: 600}}>{i + 1}. {item.question}</legend>
+              {item.options.map(function (opt, j) {
+                return (
+                  <label key={j} style={{display: "block", margin: "0.25rem 0"}}>
+                    <input
+                      type="radio"
+                      name={"spot-" + i}
+                      disabled={answered}
+                      checked={chosen === j}
+                      onChange={function () { setPicked(Object.assign({}, picked, {[i]: j})); }}
+                    />{" "}
+                    {opt}
+                  </label>
+                );
+              })}
+            </fieldset>
+            {answered ? (
+              <p style={{margin: "0.5rem 0 0"}}>
+                <strong>{chosen === item.answer ? "Right. " : "Not quite. "}</strong>
+                {item.why}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+      {done > 0 ? (
+        <button type="button" onClick={function () { setPicked({}); }}>Start again</button>
+      ) : null}
+    </div>
+  );
+}
+
+# HTML Performance Basics
+
+Every page is a shopping list. The browser reads your HTML, finds a list of files it needs (styles, scripts, images, fonts), and goes to fetch them. A fast page is one where that list is short, the files are small, the important ones are fetched first, and nothing stops the visitor from seeing the page while the rest arrive.
+
+You do not need to be a performance expert to get most of the benefit. A handful of HTML habits, repeated on every page, remove most of the common slowdowns. This lesson teaches those habits, one by one, with a checker you can try on a real page.
+
+## What You Will Learn
+
+- The four questions to ask about every file a page loads
+- Why stylesheets and plain scripts can hold up the first paint
+- How `defer` and `async` stop scripts from blocking
+- Why images need `width` and `height`, and when to lazy-load them
+- How to avoid sending more pixels than a screen can show
+- How iframes and embeds add hidden weight
+- Which speed jobs belong to the server, not the HTML
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Compare two versions of the same page. They look identical to a visitor, but the browser has a very different afternoon.
+
+<Tabs>
+<TabItem value="slow" label="Slow Page" default>
+
+```html title="slow.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+  <link rel="stylesheet" href="/reset.css">
+  <link rel="stylesheet" href="/layout.css">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/widgets.css">
+  <style>@import url("/fonts.css");</style>
+  <script src="/jquery.js"></script>
+  <script src="/app.js"></script>
+</head>
+<body>
+  <img src="/img/hero.jpg" alt="A golden loaf" loading="lazy">
+  <img src="/img/rye.jpg" alt="Rye loaves">
+  <iframe src="https://maps.example.com/embed"></iframe>
+</body>
+```
+
+</TabItem>
+<TabItem value="fast" label="Fast Page">
+
+```html title="fast.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+  <link rel="stylesheet" href="/site.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <img src="/img/hero.jpg" alt="A golden loaf"
+       width="1200" height="600" fetchpriority="high">
+  <img src="/img/rye.jpg" alt="Rye loaves"
+       width="600" height="400" loading="lazy">
+  <iframe src="https://maps.example.com/embed"
+          width="600" height="400" loading="lazy"
+          title="Map to the bakery"></iframe>
+</body>
+```
+
+</TabItem>
+<TabItem value="lab" label="Page Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PerfChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+Load the slow page into the checker, then fix the problems one at a time and watch the list shrink. The `fetchpriority` attribute is a hint that the main image matters most, and it is supported in current major browsers, but check [MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/fetchPriority) for the latest support.
+
+## Four Questions for Every File
+
+Before you add anything to a page, ask these four questions. They cover most performance decisions.
+
+1. **Do I need it?** The fastest file is the one you never send. Unused scripts, extra fonts, and old widgets all cost something.
+2. **Is it small?** Compress images, choose the right size, and trim what you do not use.
+3. **Is it found early?** Important files should be easy for the browser to discover, ideally right in the HTML.
+4. **Does it block?** If the visitor has to wait for the file before seeing anything, ask whether it really must come first.
+
+Keep these in your head as you read the rest of the lesson. Every tip below answers one of them.
+
+## Stylesheets: Needed Before Painting
+
+A browser will not paint a page until it has the styles that apply to it, because painting unstyled content and then restyling it looks broken. So CSS in the head is **render-blocking**: it holds up the first paint until it has downloaded and been read.
+
+That is usually the right trade, but it means your CSS is on the critical path. Keep it light:
+
+| Habit | Why it helps | Watch out for |
+| :-- | :-- | :-- |
+| Send only the CSS the page uses | Less to download and read | Huge frameworks used for three rules |
+| Avoid `@import` inside CSS or style blocks | The browser finds the next file only after the first arrives | Chains of files three or four deep |
+| Use a `link` element in the head | The browser sees the file straight away | Putting a stylesheet link deep in the body |
+| Keep the number of files reasonable | Each file is a request that can delay painting | Many tiny files, or one giant file |
+
+You will read more about what counts as critical in [Critical Resources](./critical-resources). For now, remember that CSS is on the path to your first paint, so treat it with care.
+
+:::tip
+The number of files matters less than it used to, because modern servers can send several at once. Total size and the chains between files matter more.
+:::
+
+## Scripts: Do Not Block
+
+A plain `script` tag with a `src` is the most common cause of a slow first paint. The browser stops reading the HTML, downloads the script, runs it, and only then carries on.
+
+```html
+<!-- Blocks: the browser stops here until the script has run -->
+<script src="/app.js"></script>
+
+<!-- Better: download in the background, run after the HTML is read -->
+<script src="/app.js" defer></script>
+
+<!-- Also fine for independent scripts: run as soon as it arrives -->
+<script src="/analytics.js" async></script>
+```
+
+A simple rule to start with: **use `defer` for your own scripts, and `async` for independent ones such as analytics.** Modern module scripts (`type="module"`) are deferred by default. The next lessons, [Script Loading](./script-loading), [Defer](./defer), and [Async](./async), go into the differences in detail. The original [script element lesson](/tutorials/html/html-head/script) covers the basics of the tag itself.
+
+:::warning
+Adding `defer` can break a script that expects to run before the page is ready, or that relies on another script running first. Test after the change. `defer` scripts keep their order, which helps with dependencies.
+:::
+
+## Images: The Biggest Files
+
+On most pages, images are the heaviest files, and they cause the most visible problems. Four habits cover most of them.
+
+### 1. Always give width and height
+
+```html
+<img src="/img/rye.jpg" alt="Rye loaves" width="600" height="400">
+```
+
+These two attributes let the browser work out the shape of the image before it arrives, and reserve that space. Without them, text jumps down when the image appears. That jump is what **Cumulative Layout Shift (CLS)** measures. CSS can still make the image fit its container, for example with `max-width: 100%; height: auto;`.
+
+### 2. Lazy-load images below the first screen
+
+```html
+<img src="/img/gallery-3.jpg" alt="Seeded rolls" width="600" height="400" loading="lazy">
+```
+
+`loading="lazy"` tells the browser to wait until the image is near the screen. That saves data and leaves bandwidth for what matters. It is covered in detail in the [Lazy Loading](./lazy-loading) lesson, and the older [image lazy loading lesson](/tutorials/html/images/lazy-loading).
+
+### 3. Never lazy-load the main image
+
+The big picture people see straight away should start loading as early as possible. Leave off `loading="lazy"`, and consider `fetchpriority="high"` for it. Lazy-loading it is one of the most common ways to make a page feel slower.
+
+### 4. Do not send more pixels than the screen can show
+
+A 4000px photo in a 400px slot makes the visitor download a lot of data they cannot see. Try it:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ImageWasteLab />
+</>
+</BrowserWindow>
+
+The fix is to offer several sizes and let the browser choose, using `srcset` and `sizes`. You can read more in [Responsive Images](./responsive-images-performance), and the earlier [responsive images lesson](/tutorials/html/images/responsive-images). Modern formats such as WebP and AVIF are often smaller than JPEG at similar quality, and most current browsers support them, but test on the browsers your visitors use.
+
+## Iframes and Embeds
+
+A single embedded video, map, or social widget can bring dozens of files of its own, from servers you do not control. You cannot easily make them smaller, but you can control when they load.
+
+```html
+<iframe
+  src="https://maps.example.com/embed"
+  width="600" height="400"
+  loading="lazy"
+  title="Map to the bakery"></iframe>
+```
+
+- Add `loading="lazy"` to embeds below the first screen.
+- Give them `width` and `height`, so the page does not jump.
+- Ask whether you need the embed, or whether a simple link or a still image would do.
+- Always give an iframe a `title`, for screen reader users.
+
+## A Word About Fonts
+
+Custom fonts are files too, and a page waiting for a font may show invisible text. Two cautious habits help: use as few font files as you can, and set `font-display: swap` in your `@font-face` rule so text shows in a fallback font while the real one loads. Fonts have trade-offs (a brief change of look when they swap in), so test how it feels. We will return to what to load first in [Critical Resources](./critical-resources).
+
+## Some Speed Belongs to the Server
+
+Not everything is in your HTML. These matter just as much, and are usually set up where the site is hosted:
+
+- **Compression.** Text files (HTML, CSS, JavaScript) can be compressed with gzip or Brotli, often shrinking them a lot.
+- **Caching.** Files that do not change can be stored by the browser, so a returning visitor downloads nothing.
+- **A CDN.** A content delivery network serves files from near the visitor.
+- **A fast server response.** If the HTML itself is slow to arrive, nothing else can start.
+
+If you use a platform like Netlify, Vercel, or GitHub Pages, much of this is handled for you. Check your host's documentation to see what is on by default.
+
+## Spot the Slowdown
+
+Time to practise. Each snippet has one problem, or one improvement waiting to happen. Pick an answer to see why.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SpotQuiz />
+</>
+</BrowserWindow>
+
+<AdsComponent />
+<br />
+
+## Best Practices
+
+1. **Measure first.** Use Lighthouse or DevTools to find the real problem before guessing.
+2. **Keep the head light.** A few small stylesheets, scripts with `defer` or `async`, and nothing else you do not need.
+3. **Give every image and iframe `width` and `height`.**
+4. **Lazy-load below the first screen, and never the main image.**
+5. **Serve images at the size they are shown,** and consider modern formats.
+6. **Remove what you do not use.** Old scripts, unused styles, and spare fonts all cost something.
+7. **Test on a slow connection and a modest phone,** not only your own fast machine.
+
+## Quick Checklist
+
+- [ ] No plain scripts in the head
+- [ ] No `@import` chains for CSS
+- [ ] Every image and iframe has `width` and `height`
+- [ ] The main image is not lazy-loaded
+- [ ] Images below the first screen use `loading="lazy"`
+- [ ] No image is much larger than the space it fills
+- [ ] Embeds are lazy-loaded, or replaced by a link
+- [ ] Compression and caching are on at the server
+
+## Security and Privacy Notes
+
+- **Every script is trust.** A script you load from another site runs with the full power of your page. Add only scripts you need, from providers you trust. For files that never change, the `integrity` attribute lets the browser check that the file has not been altered.
+- **Embeds can track visitors.** Maps, videos, and social widgets may set cookies or collect data as soon as they load. Lazy-loading them can reduce this on pages where visitors never scroll that far, but do not rely on it for consent. Check the rules that apply to you.
+- **Do not cache private pages in shared caches.** Pages with personal information need the right cache headers. Your host's documentation explains the options.
+- **Keep the page working without extras.** A page that depends on a third-party script to show its main content is both slow and fragile if that script is blocked or fails.
+
+## Global Audience Notes
+
+- **Many visitors use slow networks and modest phones.** A page that is fast for them is fast for everyone.
+- **Data can be expensive.** Large images, autoplaying media, and heavy embeds can cost visitors real money. Lazy loading and right-sized images are kind to people on limited plans.
+- **Distance adds delay.** A CDN is one of the easiest wins for a worldwide audience.
+- **Fonts for some scripts are large.** Chinese, Japanese, and Korean fonts can be very big, so use subsets or system fonts where you can.
+- **Some third-party services are slow or blocked in some places.** A page should still load if one of them does not.
+
+## Common Mistakes to Avoid
+
+1. **Plain `script` tags in the head,** which block the page.
+2. **Lazy-loading the main image.**
+3. **Images with no `width` and `height`,** so the layout jumps.
+4. **Huge images in small slots.**
+5. **`@import` chains in CSS.**
+6. **Loading every font weight "just in case".**
+7. **Embeds above the fold that nobody needs.**
+8. **Adding `defer` without testing,** then breaking a script that needed to run early.
+9. **Trusting one test on a fast laptop.**
+10. **Adding hints and tricks before fixing the basics.**
+
+## Practice Time
+
+1. Paste a page you built into the checker. How many problems does it find?
+2. Fix every problem it reports, one at a time.
+3. Use the image lab to find a file width that wastes less than 25% of its pixels on a 2x screen at 400px.
+4. Take the Spot the Slowdown quiz. Which one surprised you?
+5. Open DevTools, then the Network panel, and reload one of your pages. Which file is the biggest?
+6. Add `width` and `height` to every image on a page, then reload with a slow connection. Does the layout still jump?
+7. Add `defer` to a script, and check that your page still works.
+8. Bonus: run Lighthouse before and after your changes, and compare the results.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What four questions should you ask about every file?</summary>
+
+Do I need it? Is it small? Is it found early? Does it block?
+
+</details>
+
+<details>
+<summary>2. Why is a plain script in the head a problem?</summary>
+
+The browser stops reading the HTML to download and run it, which delays everything after it. Use `defer` or `async` instead.
+
+</details>
+
+<details>
+<summary>3. Why give images `width` and `height`?</summary>
+
+So the browser can reserve the right space before the image arrives. That stops the layout from jumping, which is what CLS measures.
+
+</details>
+
+<details>
+<summary>4. Which images should use `loading="lazy"`?</summary>
+
+Images below the first screen. The main image should not, because lazy loading delays it.
+
+</details>
+
+<details>
+<summary>5. Why avoid `@import` in CSS?</summary>
+
+The browser only discovers the imported file after it has fetched and read the first one, which creates a chain of delays. A `link` element lets it find the file straight away.
+
+</details>
+
+<details>
+<summary>6. Name two speed jobs that belong to the server.</summary>
+
+Compression (such as gzip or Brotli) and caching. A CDN and a fast server response also matter.
+
+</details>
+
+## Key Takeaways
+
+- **A page is a shopping list of files.** Make it short, small, early, and non-blocking.
+- **CSS in the head blocks painting,** so keep it light.
+- **Use `defer` and `async`** so scripts do not stop the page.
+- **Always size images and iframes,** and lazy-load those below the first screen.
+- **Never lazy-load the main image.**
+- **Send the right number of pixels,** not more than the screen can show.
+- **Some speed is the server's job:** compression, caching, and a CDN.
+- **Measure, change one thing, and measure again.**
+
+Next up: [Resource Hints](./resource-hints), where you will learn how to tell the browser about files before it finds them.
