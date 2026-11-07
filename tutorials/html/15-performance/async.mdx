@@ -1,0 +1,486 @@
+---
+id: html-perf-async
+title: "The async Attribute"
+sidebar_label: "Async"
+sidebar_position: 11
+slug: /html/performance/async
+description: "Learn how the async attribute works, why it suits independent scripts like analytics, and why it causes flaky bugs when scripts depend on each other. Includes a race condition simulator and a which-mode quiz."
+keywords:
+  - async attribute
+  - script async
+  - async vs defer
+  - race condition scripts
+  - DOMContentLoaded async
+  - third-party scripts
+  - analytics script loading
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, javascript, async, scripts, frontend]
+---
+
+import {useState} from 'react';
+
+export function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function raceLoads(mode, jitter, seed, count) {
+  const rand = mulberry32(seed);
+  const loads = [];
+  for (let i = 0; i < count; i++) {
+    const libMs = Math.max(20, 200 + (rand() * 2 - 1) * jitter);
+    const appMs = Math.max(20, 260 + (rand() * 2 - 1) * jitter);
+    let order;
+    if (mode === "async") order = appMs < libMs ? ["app.js", "lib.js"] : ["lib.js", "app.js"];
+    else order = ["lib.js", "app.js"];
+    loads.push({n: i + 1, lib: Math.round(libMs), app: Math.round(appMs), order: order, ok: order[0] === "lib.js"});
+  }
+  return {loads: loads, failures: loads.filter(function (l) { return !l.ok; }).length};
+}
+
+export function RaceLab() {
+  const [mode, setMode] = useState("async");
+  const [jitter, setJitter] = useState(80);
+  const [seed, setSeed] = useState(1);
+  const r = raceLoads(mode, jitter, seed, 20);
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        <code>app.js</code> needs <code>lib.js</code> first. On a calm day, <code>lib.js</code> takes about 200 ms to arrive and <code>app.js</code> about 260 ms.
+      </p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Both scripts use</legend>
+        {["async", "defer"].map(function (m) {
+          return (
+            <label key={m} style={{marginRight: "1rem"}}>
+              <input type="radio" name="race-mode" checked={mode === m} onChange={function () { setMode(m); }} /> {m}
+            </label>
+          );
+        })}
+      </fieldset>
+      <p>
+        <label htmlFor="race-jitter">How much download times vary: <strong>plus or minus {jitter} ms</strong></label>
+        <br />
+        <input id="race-jitter" type="range" min="0" max="200" step="10" value={jitter} onChange={function (e) { setJitter(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <div style={{display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: "0.3rem", margin: "0.75rem 0"}}>
+        {r.loads.map(function (l) {
+          const text = "Load " + l.n + ": lib " + l.lib + " ms, app " + l.app + " ms. " + (l.ok ? "Worked." : "app.js ran first, so it broke.");
+          return (
+            <div
+              key={l.n}
+              role="img"
+              aria-label={text}
+              title={text}
+              style={{padding: "0.5rem 0", textAlign: "center", borderRadius: 4, background: l.ok ? "#1e8449" : "#c0392b", color: "#fff"}}
+            >
+              {l.ok ? "ok" : "bug"}
+            </div>
+          );
+        })}
+      </div>
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {r.failures} of {r.loads.length} page loads broke.
+      </p>
+      <button type="button" onClick={function () { setSeed(seed + 1); }}>Load the page 20 more times</button>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simulation with made-up numbers. It only compares which file arrives first, and ignores everything else. It shows why an <code>async</code> bug can hide on your fast connection, then appear for some visitors.
+      </p>
+    </div>
+  );
+}
+
+export const modeItems = [
+  {
+    name: "A web analytics script",
+    note: "Nothing else on the page depends on it.",
+    answer: "async",
+    alt: "defer",
+    why: "It is independent, so run-when-ready is fine. Defer also works, but async starts it as soon as it arrives."
+  },
+  {
+    name: "Your own app bundle",
+    note: "It builds the page's menus and forms.",
+    answer: "defer",
+    alt: "",
+    why: "It needs the whole page to exist, so run it after the HTML is read. Defer also keeps its order with other scripts."
+  },
+  {
+    name: "A plugin that needs a library loaded first",
+    note: "Two files, and the plugin calls the library at once.",
+    answer: "defer",
+    alt: "",
+    why: "Order matters, and async gives no order. Defer keeps them in the order you write them."
+  },
+  {
+    name: "A small A/B testing snippet",
+    note: "It must choose a variant before the page paints, to avoid a flash of the wrong version.",
+    answer: "plain",
+    alt: "",
+    why: "This is one of the rare cases where blocking is intended. Keep the file tiny, and host it close to visitors, since the page waits for it."
+  },
+  {
+    name: "A chat widget",
+    note: "It is not needed until a visitor opens it.",
+    answer: "async",
+    alt: "defer",
+    why: "Independent and not urgent. Async works, and loading it even later, after the page is ready or on click, is better still."
+  },
+  {
+    name: "An advertising tag",
+    note: "A third-party script that fills a space on the page.",
+    answer: "async",
+    alt: "",
+    why: "A third-party script must never block your page. Reserve the ad's space with a width and height so the layout does not jump."
+  },
+  {
+    name: "A polyfill your app depends on",
+    note: "It adds a missing browser feature that the app uses straight away.",
+    answer: "defer",
+    alt: "",
+    why: "Order matters. Put the polyfill before the app in the HTML, both with defer, and they run in that order."
+  }
+];
+
+export function ModePicker() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const options = [["", "Choose..."], ["plain", "plain (blocking)"], ["defer", "defer"], ["async", "async"]];
+  const isRight = function (item, v) { return v === item.answer || (item.alt !== "" && v === item.alt); };
+  const score = modeItems.filter(function (m, i) { return isRight(m, picked[i]); }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      {modeItems.map(function (m, i) {
+        const right = isRight(m, picked[i]);
+        return (
+          <div key={i} style={{marginBottom: "1rem"}}>
+            <label htmlFor={"mp-" + i}><strong>{m.name}.</strong> {m.note}</label>
+            <br />
+            <select
+              id={"mp-" + i}
+              disabled={checked}
+              value={picked[i] || ""}
+              onChange={function (e) { setPicked(Object.assign({}, picked, {[i]: e.target.value})); }}
+            >
+              {options.map(function (o) { return <option key={o[0]} value={o[0]}>{o[1]}</option>; })}
+            </select>
+            {checked ? (
+              <p style={{margin: "0.25rem 0 0"}}>
+                <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Right. " : "Not quite. "}</strong>
+                {m.why}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+      {!checked ? (
+        <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      ) : (
+        <p aria-live="polite">
+          <strong>Score: {score} of {modeItems.length}.</strong>{" "}
+          <button type="button" onClick={function () { setChecked(false); setPicked({}); }}>Start again</button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+Where `defer` says "run me when the page is ready", `async` says "run me the moment I arrive." The script downloads in the background without stopping the page, and the instant it has downloaded, the browser runs it, even if it has to pause reading the HTML to do so.
+
+That makes `async` perfect for scripts that stand alone, and a source of confusing bugs for scripts that do not. This lesson explains both sides. The wider picture is in [Script Loading](./script-loading), and its companion is [Defer](./defer).
+
+## What You Will Learn
+
+- How an `async` script downloads and when it runs
+- Why it has no guaranteed order
+- Which scripts suit `async`, and which do not
+- Why `async` bugs are flaky, and how to spot them
+- The `DOMContentLoaded` trap, and how to avoid it
+- How to call a script's functions before it has arrived
+- How to choose between plain, `defer`, and `async`
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+```html
+<script src="https://stats.example.com/tracker.js" async></script>
+```
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+  <link rel="stylesheet" href="/site.css">
+
+  <!-- Your own code: runs after the page is read, in order -->
+  <script src="/js/lib.js" defer></script>
+  <script src="/js/app.js" defer></script>
+
+  <!-- Independent third-party script: runs whenever it arrives -->
+  <script src="https://stats.example.com/tracker.js" async></script>
+</head>
+```
+
+</TabItem>
+<TabItem value="lab" label="Race Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RaceLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, begin with `async` and a small variation. Then raise the variation and load the page again and again. Some loads break, some do not, and that unpredictability is the whole problem. Switch to `defer` and the bug disappears.
+
+## The Rules of async
+
+1. **It downloads in parallel,** just like `defer`.
+2. **It runs as soon as it has downloaded.** That may be before the page is fully read, or after.
+3. **If it arrives while the page is being read, the parser pauses** until the script has run.
+4. **It has no order.** Whichever script arrives first runs first, whatever the order in the HTML.
+5. **`DOMContentLoaded` does not wait for it.** The event can fire before or after an async script runs.
+6. **It only works on external scripts.** Inline classic scripts ignore it. A module script with `async` runs as soon as it and its imports are ready, instead of waiting until the end.
+
+## async vs defer
+
+| | `defer` | `async` |
+| :-- | :-- | :-- |
+| Runs | After the page is read | As soon as it arrives |
+| Order kept | Yes | No |
+| Can pause page reading | No | Yes, if it arrives early |
+| Does `DOMContentLoaded` wait for it? | Yes | No |
+| Can it use the whole page? | Yes | Not guaranteed |
+| Best for | Your own scripts, and scripts that depend on each other | Independent scripts, such as analytics |
+
+:::tip
+A simple rule: if it depends on nothing and nothing depends on it, use `async`. For everything else, use `defer`.
+:::
+
+## The Race Condition
+
+Imagine two scripts, where `app.js` needs `lib.js`. On your fast office connection `lib.js` always arrives first, the page always works, and you ship it. Then a visitor on a different network gets `app.js` first. It runs, finds no library, and fails.
+
+This is a **race condition**: the result depends on which download wins. It is the worst kind of bug, because it appears only sometimes, and rarely for the developer. The Race Lab shows it. If you ever see an error like "X is not defined" that comes and goes, check for `async` on scripts that depend on each other.
+
+## The DOMContentLoaded Trap
+
+Many scripts start their work like this:
+
+```js
+document.addEventListener("DOMContentLoaded", function () {
+  startApp();
+});
+```
+
+That is fine for a plain or deferred script, because the event has not fired yet when they run. But an `async` script may arrive **after** the event has already fired. Then the listener waits for something that has already happened, and `startApp` never runs.
+
+The fix is to check the state first:
+
+```js
+function ready(fn) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", fn);
+  } else {
+    fn();
+  }
+}
+
+ready(function () {
+  startApp();
+});
+```
+
+If the page is still being read, wait. If it is already read, go straight ahead. Code written this way works in every loading mode.
+
+## Calling a Script Before It Arrives
+
+Sometimes your page wants to call a function from an async script, but it may not have arrived yet. A common pattern is a small **queue**: you create a stand-in function that stores the calls, and the real script reads the queue when it arrives.
+
+```html
+<script>
+  window.track = window.track || function () {
+    (window.track.q = window.track.q || []).push(arguments);
+  };
+  track("page_view");
+</script>
+<script src="https://stats.example.com/tracker.js" async></script>
+```
+
+This only works if the provider's script is built to read the queue, as many analytics tools are. Follow the instructions of the service you use, rather than inventing the pattern yourself.
+
+## async Can Still Slow the Page
+
+Async does not block the **download**, but it can block the **parser** when it runs. If a big async script arrives while the page is still being read, the page pauses to run it. A heavy third-party tag arriving early can delay your content.
+
+- Keep async scripts small, or load them later (after the page has loaded, or on interaction).
+- Remember that running a script still takes time on the main thread, which can hurt responsiveness.
+- Check the Performance panel to see whether an async script runs in the middle of page reading.
+
+## Scripts Added by JavaScript
+
+A script you add from JavaScript with `document.createElement("script")` behaves like `async` by default. If you add several that depend on each other, tell the browser to keep their order:
+
+```js
+["/js/lib.js", "/js/app.js"].forEach(function (src) {
+  const s = document.createElement("script");
+  s.src = src;
+  s.async = false;
+  document.head.appendChild(s);
+});
+```
+
+With `async = false`, scripts added this way download in parallel but run in the order they were added.
+
+## Which Mode for Which Script?
+
+Pick plain, `defer`, or `async` for each script, then check your answers.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ModePicker />
+</>
+</BrowserWindow>
+
+## Checking in DevTools
+
+1. Open DevTools, then **Network**, filter by **JS**, and reload several times. Does the order of the async scripts change?
+2. In the **Performance** panel, record a load, and look for where an async script runs. Does it interrupt the page being read?
+3. Throttle the network, and reload. Do any "is not defined" errors appear that did not before?
+4. Use the **Console** to check for errors from scripts running in the wrong order.
+5. Try blocking one async script (DevTools can block a request). Does the page still work without it?
+
+## Best Practices
+
+1. **Use `async` only for independent scripts.**
+2. **Never use it on scripts that depend on each other.** Use `defer`.
+3. **Write start-up code with a `readyState` check,** not only a `DOMContentLoaded` listener.
+4. **Keep async scripts small,** or load them late.
+5. **Use a queue** where the provider supports one, to call a script before it arrives.
+6. **Make sure the page works** if an async script never loads.
+7. **Reserve space** for anything an async script adds, so the layout does not jump.
+8. **Test with throttling and repeated loads,** to catch race conditions.
+
+## Quick Checklist
+
+- [ ] Every `async` script is independent
+- [ ] Dependent scripts use `defer`
+- [ ] Start-up code checks `document.readyState`
+- [ ] The page works if an async script is blocked or fails
+- [ ] Async scripts are small, or load after the page
+- [ ] Space is reserved for anything they add (ads, widgets)
+- [ ] Several throttled reloads show no "is not defined" errors
+
+## Security and Privacy Notes
+
+- **An async script has the full power of your page,** and it runs whenever it arrives, even while the page is half-read. Load scripts only from sources you trust.
+- **Most async scripts are third-party.** Analytics, ads, and widgets can collect data and set cookies as soon as they run. If you need consent first, do not load them until it is given. This is not legal advice, so check the rules that apply to you.
+- **Use integrity hashes for fixed files.** For a script that never changes, add `integrity` and `crossorigin="anonymous"`, so the browser rejects an altered file.
+- **Use a content security policy** to limit which hosts may supply scripts. It can also block inline code, so test it carefully.
+- **Do not make your page depend on an async script for security.** For example, do not rely on one to hide or protect content, because it may never load, or may run late.
+- **Never build a script URL from untrusted input.**
+
+## Global Audience Notes
+
+- **A blocked or slow script should not hurt your page.** In some regions, networks, or browsers with blockers, third-party scripts never arrive. That is exactly where `async` is kind: the page carries on without them. Make sure it really does.
+- **Timing differs by network,** which is why async bugs show up for some visitors and not others. Test on slow connections as well as your own.
+- **Heavy tags cost more on modest phones,** because running them uses the same limited processor. Keep the number of async third-party scripts small.
+- **Layout shifts hurt slow networks most.** An ad or widget that pops in late and pushes content down is worse when it arrives seconds later. Reserve space for it.
+
+## Common Mistakes to Avoid
+
+1. **Using `async` on scripts that depend on each other.**
+2. **Relying on a `DOMContentLoaded` listener** inside an async script.
+3. **Assuming the page is fully read** when an async script runs.
+4. **Assuming the order in the HTML** is the order of running.
+5. **Loading a heavy third-party tag early,** so it pauses the page.
+6. **Using `async` on an inline script,** where it does nothing.
+7. **Setting both `async` and `defer`** on the same tag.
+8. **No reserved space** for what an async script adds.
+9. **Testing once on a fast connection,** and calling it done.
+10. **Making the page depend on a script** that may never load.
+
+## Practice Time
+
+1. In the Race Lab, set the variation to zero. What happens with `async`? Now raise it. What changes?
+2. Click "Load the page 20 more times" several times. Is the number of broken loads the same each time?
+3. Switch to `defer`. How many loads break now?
+4. Take the mode quiz. Which answer surprised you?
+5. Find a script on a page you built that is independent. Could it be `async`?
+6. Rewrite a `DOMContentLoaded` start-up with the `ready()` helper above.
+7. Block one third-party script in DevTools, and see whether your page still works.
+8. Bonus: find an ad or widget that appears late, and reserve space for it so the page does not jump.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `async` do?</summary>
+
+It downloads the script in the background and runs it as soon as it arrives, pausing the page reading if needed.
+
+</details>
+
+<details>
+<summary>2. Why is there no guaranteed order?</summary>
+
+Each async script runs when its own download finishes, so whichever arrives first runs first, whatever the order in the HTML.
+
+</details>
+
+<details>
+<summary>3. What kind of script is `async` good for?</summary>
+
+Independent scripts that depend on nothing and that nothing depends on, such as analytics or social buttons.
+
+</details>
+
+<details>
+<summary>4. Why are `async` bugs often flaky?</summary>
+
+They are race conditions. The result depends on which download wins, which changes with the network. A bug may never show on your own fast connection.
+
+</details>
+
+<details>
+<summary>5. What is the `DOMContentLoaded` trap?</summary>
+
+An async script can arrive after that event has already fired, so a listener waiting for it never runs. Check `document.readyState` first.
+
+</details>
+
+<details>
+<summary>6. How do you keep order for scripts added by JavaScript?</summary>
+
+Set `script.async = false` on each one. They then download in parallel but run in the order added.
+
+</details>
+
+## Key Takeaways
+
+- **`async` runs as soon as the script arrives,** with no order guaranteed.
+- **Use it for independent scripts,** and `defer` for everything that depends on something.
+- **Race conditions are flaky.** Test with throttling and repeated loads.
+- **Do not rely on `DOMContentLoaded` inside an async script.** Check `readyState`.
+- **An async script can still pause the page** when it runs, so keep it small or load it late.
+- **Design for a script that never arrives,** and reserve space for what it adds.
+- **Mind privacy and trust:** wait for consent where needed, and use integrity hashes for fixed files.
+
+Next up: [Responsive Images and Performance](./responsive-images-performance), where you will learn to send each visitor the right image size.
