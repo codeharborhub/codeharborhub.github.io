@@ -1,0 +1,507 @@
+---
+id: script-loading
+title: "Script Loading and Performance"
+sidebar_label: "Script Loading"
+sidebar_position: 9
+slug: /html/performance/script-loading
+description: "Understand what a browser does when it meets a script, why JavaScript is the most expensive kind of file, and how to load it without blocking the page. Includes a script order lab and a script weight lab."
+keywords:
+  - script loading
+  - JavaScript performance
+  - render blocking scripts
+  - defer async order
+  - dynamic import
+  - third-party scripts
+  - main thread
+  - DOMContentLoaded
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, javascript, scripts, defer, async, frontend]
+---
+
+import {useState} from 'react';
+
+export const scriptSpecs = [
+  {id: "a", name: "lib.js", dl: 300, run: 50, note: "a small library"},
+  {id: "b", name: "app.js", dl: 100, run: 50, note: "your code, needs lib.js first"},
+  {id: "c", name: "analytics.js", dl: 500, run: 30, note: "independent"}
+];
+
+export function simulateScripts(modes) {
+  const start = 100;
+  const restParse = 200;
+  let p = start;
+  const runs = {};
+  const deferred = [];
+  const asyncs = [];
+  const busy = [];
+  scriptSpecs.forEach(function (s) {
+    const dlDone = start + s.dl;
+    const m = modes[s.id];
+    if (m === "blocking") {
+      const st = Math.max(p, dlDone);
+      runs[s.id] = {start: st, end: st + s.run, dlDone: dlDone};
+      busy.push(runs[s.id]);
+      p = st + s.run;
+    } else if (m === "defer") {
+      deferred.push({spec: s, dlDone: dlDone});
+    } else {
+      asyncs.push({spec: s, dlDone: dlDone});
+    }
+  });
+  const place = function (st, len) {
+    let moved = true;
+    while (moved) {
+      moved = false;
+      busy.forEach(function (iv) {
+        if (st < iv.end && st + len > iv.start) {
+          st = iv.end;
+          moved = true;
+        }
+      });
+    }
+    return st;
+  };
+  let parseDone = p + restParse;
+  asyncs.sort(function (x, y) { return x.dlDone - y.dlDone; });
+  asyncs.forEach(function (x) {
+    const st = place(x.dlDone, x.spec.run);
+    runs[x.spec.id] = {start: st, end: st + x.spec.run, dlDone: x.dlDone};
+    busy.push(runs[x.spec.id]);
+    if (st < parseDone) parseDone += x.spec.run;
+  });
+  let t = parseDone;
+  deferred.forEach(function (x) {
+    const st = place(Math.max(t, x.dlDone), x.spec.run);
+    runs[x.spec.id] = {start: st, end: st + x.spec.run, dlDone: x.dlDone};
+    busy.push(runs[x.spec.id]);
+    t = st + x.spec.run;
+  });
+  const depOk = runs.a.end <= runs.b.start;
+  const lastEnd = Math.max(runs.a.end, runs.b.end, runs.c.end);
+  return {runs: runs, pageVisible: parseDone, domReady: Math.max(parseDone, deferred.length > 0 ? t : 0), depOk: depOk, allDone: lastEnd};
+}
+
+export function ScriptOrderLab() {
+  const [modes, setModes] = useState({a: "defer", b: "defer", c: "async"});
+  const r = simulateScripts(modes);
+  const scale = 900;
+  const options = [["blocking", "plain"], ["defer", "defer"], ["async", "async"]];
+  return (
+    <div style={{padding: "1rem"}}>
+      {scriptSpecs.map(function (s) {
+        const run = r.runs[s.id];
+        return (
+          <div key={s.id} style={{marginBottom: "1rem"}}>
+            <fieldset style={{border: "none", padding: 0, margin: "0 0 0.25rem"}}>
+              <legend style={{fontWeight: 600}}>{s.name} ({s.note})</legend>
+              {options.map(function (o) {
+                return (
+                  <label key={o[0]} style={{marginRight: "1rem"}}>
+                    <input
+                      type="radio"
+                      name={"so-" + s.id}
+                      checked={modes[s.id] === o[0]}
+                      onChange={function () { setModes(Object.assign({}, modes, {[s.id]: o[0]})); }}
+                    />{" "}
+                    {o[1]}
+                  </label>
+                );
+              })}
+            </fieldset>
+            <div style={{position: "relative", height: "1.2rem", background: "rgba(128,128,128,0.15)", borderRadius: 4}}>
+              <div style={{position: "absolute", left: (100 / scale * 100) + "%", width: (s.dl / scale * 100) + "%", top: 0, bottom: 0, background: "rgba(52,120,200,0.45)", borderRadius: 4}} />
+              <div style={{position: "absolute", left: (run.start / scale * 100) + "%", width: Math.max(1.5, s.run / scale * 100) + "%", top: 0, bottom: 0, background: "#1e8449", borderRadius: 4}} />
+            </div>
+            <div style={{fontSize: "0.85rem"}}>Downloads until {run.dlDone} ms, runs {run.start} to {run.end} ms</div>
+          </div>
+        );
+      })}
+      <p style={{fontSize: "0.85rem", margin: "0 0 0.5rem"}}>Blue is the download, green is the script running.</p>
+      <ul aria-live="polite">
+        <li><strong>Page can first appear at:</strong> about {r.pageVisible} ms</li>
+        <li><strong>All scripts finished by:</strong> {r.allDone} ms</li>
+        <li>
+          <strong>app.js needs lib.js first:</strong>{" "}
+          <span style={{color: r.depOk ? "#1e8449" : "#c0392b", fontWeight: 600}}>
+            {r.depOk ? "OK, lib.js ran first." : "Broken. app.js ran before lib.js finished."}
+          </span>
+        </li>
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model with fixed sizes. The scripts are found at 100 ms, the rest of the page takes 200 ms to read, and styles are ignored. Real pages differ, so measure your own.
+      </p>
+    </div>
+  );
+}
+
+export const weightScripts = [
+  {id: "framework", name: "UI framework", kb: 150},
+  {id: "app", name: "Your app code", kb: 80},
+  {id: "analytics", name: "Analytics", kb: 60},
+  {id: "chat", name: "Chat widget", kb: 120},
+  {id: "ads", name: "Advertising tags", kb: 200}
+];
+
+export function scriptCost(selectedIds, mbps, cpu) {
+  const kb = weightScripts.filter(function (s) { return selectedIds.indexOf(s.id) !== -1; }).reduce(function (sum, s) { return sum + s.kb; }, 0);
+  return {kb: kb, downloadMs: Math.round(kb * 8 / mbps), executeMs: Math.round(kb * 0.3 * cpu)};
+}
+
+export function ScriptWeightLab() {
+  const [selected, setSelected] = useState(["framework", "app", "analytics", "chat"]);
+  const [mbps, setMbps] = useState(5);
+  const [cpu, setCpu] = useState(4);
+  const r = scriptCost(selected, mbps, cpu);
+  const toggle = function (id) {
+    setSelected(selected.indexOf(id) === -1 ? selected.concat([id]) : selected.filter(function (x) { return x !== id; }));
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Scripts on the page</legend>
+        {weightScripts.map(function (s) {
+          return (
+            <label key={s.id} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="checkbox" checked={selected.indexOf(s.id) !== -1} onChange={function () { toggle(s.id); }} /> {s.name} ({s.kb} KB)
+            </label>
+          );
+        })}
+      </fieldset>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Connection</legend>
+        {[1, 5, 25].map(function (m) {
+          return (
+            <label key={m} style={{marginRight: "1rem"}}>
+              <input type="radio" name="sw-net" checked={mbps === m} onChange={function () { setMbps(m); }} /> {m} Mbps
+            </label>
+          );
+        })}
+      </fieldset>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Device</legend>
+        {[[1, "Fast laptop"], [4, "Mid-range phone"], [8, "Low-end phone"]].map(function (d) {
+          return (
+            <label key={d[0]} style={{marginRight: "1rem"}}>
+              <input type="radio" name="sw-cpu" checked={cpu === d[0]} onChange={function () { setCpu(d[0]); }} /> {d[1]}
+            </label>
+          );
+        })}
+      </fieldset>
+      <ul aria-live="polite">
+        <li><strong>Total to download:</strong> {r.kb} KB, about {r.downloadMs} ms</li>
+        <li><strong>Time the main thread is busy running it:</strong> about {r.executeMs} ms</li>
+      </ul>
+      <p>
+        While the main thread is busy, taps, clicks, and typing have to wait. That waiting is what Interaction to Next Paint (INP) measures.
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        These numbers use made-up, illustrative assumptions: 0.3 ms of work per KB on a fast laptop, multiplied for slower devices. Real costs depend on what the code does. Use them to compare options, not to predict your page.
+      </p>
+    </div>
+  );
+}
+
+If images are the heaviest files on a page, JavaScript is the most **expensive**. A 100 KB image costs time to download, and then the browser simply paints it. A 100 KB script costs time to download, then to read and compile, and then to run, and all of that running happens on the same single thread that responds to the visitor's taps and clicks.
+
+The basics of the `script` element, with `defer`, `async`, and modules, are in the earlier [Script lesson](/tutorials/html/html-head/script). This lesson looks at scripts through a performance lens: what the browser does with them, what they cost, and how to load them without hurting the page.
+
+## What You Will Learn
+
+- What the browser does when it meets a script
+- Why a plain script blocks the page
+- How loading modes change the order scripts run in
+- Why JavaScript costs more than its download size suggests
+- Practical ways to send less, split, and delay scripts
+- How to handle third-party scripts carefully
+- How to measure script cost in DevTools
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Scripts have two jobs on the loading timeline: **getting there** (download) and **getting done** (run). Plain scripts make the page wait for both. `defer` and `async` let the page carry on while the download happens.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+  <link rel="stylesheet" href="/site.css">
+
+  <!-- Your own scripts: download now, run in order after the page is read -->
+  <script src="/js/lib.js" defer></script>
+  <script src="/js/app.js" defer></script>
+
+  <!-- An independent script: run whenever it arrives -->
+  <script src="/js/analytics.js" async></script>
+</head>
+<body>
+  <h1>Fresh bread, every morning</h1>
+</body>
+```
+
+</TabItem>
+<TabItem value="lab" label="Script Order Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ScriptOrderLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, set all three scripts to **plain** and see when the page can first appear. Then set them to **defer**. Finally, set all three to **async**, and watch what happens to `app.js`, which needs `lib.js` first.
+
+## What the Browser Does with a Script
+
+For every script, the browser goes through the same steps:
+
+1. **Find it.** The browser notices the `script` tag in the HTML.
+2. **Fetch it.** It downloads the file (unless it is inline).
+3. **Parse and compile it.** It reads the code and prepares it to run.
+4. **Run it.** The code executes on the **main thread**, the same one that builds the page and handles clicks.
+
+A plain script does all four steps while the HTML parser waits. Nothing after it on the page is read until it has finished. That is why a plain script in the head can leave visitors staring at a blank screen.
+
+`defer` and `async` move steps 2 and 3 into the background. They differ in step 4, which you will explore in depth in the next two lessons, [Defer](./defer) and [Async](./async).
+
+## Order and Dependencies
+
+When scripts depend on each other, the order they run in matters.
+
+| Mode | Runs when | Order | Safe for dependent scripts? |
+| :-- | :-- | :-- | :-- |
+| Plain | Straight away, page waits | In page order | Yes, but blocks the page |
+| `defer` | After the page is read | In page order | Yes |
+| `async` | As soon as it arrives | Whoever arrives first | **No** |
+
+In the lab, the app code needs the library first. With `defer` on both, the order is kept. With `async` on both, the smaller file arrives first, runs first, and breaks. This is one of the most common bugs after adding `async`. If order matters, use `defer` (or modules), and save `async` for scripts that depend on nothing and that nothing depends on.
+
+:::info
+Dynamically inserted scripts, created with `document.createElement("script")`, behave like `async` by default. Set `script.async = false` if you need them to run in order.
+:::
+
+## Why JavaScript Costs More Than You Think
+
+Two scripts of the same size can cost very different amounts. Downloading is only part of the bill. After the download, the browser must parse, compile, and run the code, and a slow phone does that much slower than a fast laptop. Try it:
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ScriptWeightLab />
+</>
+</BrowserWindow>
+
+The lesson from the lab is not the exact numbers (they are illustrative), but the pattern: the same scripts that feel instant on your development machine can keep a modest phone busy for a long time, and anything you add makes it worse.
+
+## Six Ways to Make Scripts Cheaper
+
+### 1. Send less
+
+The fastest script is the one you do not load. Remove libraries you barely use, check whether a feature needs JavaScript at all (HTML and CSS can do a lot, such as `details`, `dialog`, and CSS animations), and delete old code. Build tools can also remove unused code ("tree shaking") and shrink files ("minification"), and servers can compress them.
+
+### 2. Do not block
+
+Use `defer` for your own scripts, and `async` for independent ones. This is the single biggest and cheapest improvement for most pages.
+
+### 3. Split big files
+
+Instead of one huge file, send only what the current page needs, and load the rest when it is required. Modern JavaScript can do this with a dynamic `import()`:
+
+```js
+document.querySelector("#open-chart").addEventListener("click", async function () {
+  const mod = await import("/js/chart.js");
+  mod.drawChart();
+}, { once: true });
+```
+
+The chart code is downloaded only if someone asks for the chart.
+
+### 4. Load non-essential scripts later
+
+A chat widget or survey does not need to be ready the moment the page appears. You can load it once the page has finished loading and the browser is idle:
+
+```js
+function loadScript(src) {
+  const s = document.createElement("script");
+  s.src = src;
+  s.async = true;
+  document.head.appendChild(s);
+}
+
+window.addEventListener("load", function () {
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(function () { loadScript("/js/chat.js"); });
+  } else {
+    setTimeout(function () { loadScript("/js/chat.js"); }, 2000);
+  }
+});
+```
+
+The check for `requestIdleCallback` is there because not every browser supports it.
+
+### 5. Load on interaction
+
+Better still, load a script only when the visitor shows they want it, such as on hover or click. The click-to-load pattern in the [Lazy Loading lesson](./lazy-loading) is the same idea for embeds.
+
+### 6. Break up long tasks
+
+A script that runs for a long time without a pause keeps the main thread busy, and the page cannot respond. Browsers treat any task over about 50 milliseconds as "long". Splitting heavy work into smaller pieces lets clicks and typing get through in between. This is an advanced topic, but it is worth knowing why a fast-loading page can still feel sluggish.
+
+## Third-Party Scripts
+
+Analytics, ads, chat, social buttons, and tag managers often add more JavaScript than your own code, and you do not control them. Treat each one as a purchase:
+
+- **Is it worth its cost?** Ask what it brings, and what it costs in time and data.
+- **Load it with `async` or `defer`,** never plain.
+- **Load it late** if it does not need to be ready at once.
+- **Replace it with a lighter option** or a click-to-load version where you can.
+- **Review them regularly.** Old tags tend to pile up.
+- **Make sure the page works if it fails.** Visitors with blockers, slow networks, or strict regions may never load it.
+
+## Where Do the Events Fire?
+
+You will hear two names often:
+
+| Event | When it fires | Waits for |
+| :-- | :-- | :-- |
+| `DOMContentLoaded` | The HTML has been read and deferred scripts have run | Scripts, not images |
+| `load` | Everything, including images and styles, has finished | All files |
+
+Scripts that only need the page structure can run on `DOMContentLoaded`, and `defer` scripts run just before it. Do not make visitors wait for the `load` event to see or use your page.
+
+## Measuring Script Cost
+
+1. Open DevTools, then **Network**, and filter by **JS**. Sort by size to see the heaviest files.
+2. Open the **Performance** panel, record a page load, and look for long red-marked tasks on the main thread. Click one to see which script caused it.
+3. Open the **Coverage** tool (in the DevTools menu) to see how much of each script was never used on this page.
+4. Run Lighthouse, and read the suggestions about unused JavaScript and long main-thread work. It reports a lab number called Total Blocking Time (TBT).
+5. Look at your field data for Interaction to Next Paint (INP) in PageSpeed Insights or Search Console, where it is available, because that is what your visitors actually feel.
+6. Test with a CPU slowdown and a slow network turned on in DevTools.
+
+## Best Practices
+
+1. **Send less JavaScript.** Remove what you do not use.
+2. **Use `defer` for your own scripts,** and `async` for independent ones.
+3. **Never use `async` for scripts that depend on each other.**
+4. **Split large bundles,** and load heavy features on demand.
+5. **Load non-essential scripts late,** or on interaction.
+6. **Treat third-party scripts as a cost,** and review them often.
+7. **Keep the page working** if a script fails or is blocked.
+8. **Measure on a slow phone,** not only on your own laptop.
+
+## Quick Checklist
+
+- [ ] No plain `script` tags with `src` in the head
+- [ ] Dependent scripts use `defer`, not `async`
+- [ ] Independent scripts use `async` or `defer`
+- [ ] Unused libraries and old tags have been removed
+- [ ] Large features load on demand
+- [ ] Third-party scripts load late, and are reviewed
+- [ ] The page still works with a script blocked
+- [ ] DevTools shows no long tasks that block the first interaction
+
+## Security and Privacy Notes
+
+- **A script has the full power of your page.** It can read what visitors type, change the page, and send data elsewhere. Load scripts only from sources you trust, and keep the list short.
+- **Use Subresource Integrity for fixed files.** For a script from a CDN that does not change, add an `integrity` hash and `crossorigin="anonymous"`. The browser then refuses the file if it has been altered. Do not use it for files that change at the source.
+- **Add a Content Security Policy.** A policy limits which hosts scripts may come from, and can stop injected scripts. It is a server setting, and it can also block inline scripts and inline `onload` handlers, so test it carefully.
+- **Third-party scripts see your visitors.** Analytics, ads, and chat tools may collect data and set cookies. If you need consent before they run, do not load them until consent is given. This is not legal advice, so check the rules that apply to you.
+- **Never build a script URL from untrusted input,** such as a query string.
+- **Keep dependencies updated.** Old libraries can contain known security problems.
+
+## Global Audience Notes
+
+- **Many visitors use modest phones.** Slower processors make the "run" step take several times longer than on your own device, so JavaScript hits them hardest.
+- **Data costs real money in many places,** and scripts are often large. Smaller bundles help people on limited plans.
+- **Some third-party services are slow or blocked in some regions.** A plain script that waits on one can freeze your page for those visitors. Always use `async` or `defer`, and make sure the page works without them.
+- **Slow networks make late scripts feel worse.** Test with throttling, and design so the content shows first and extras follow.
+- **Do not make content depend on JavaScript** when plain HTML can do the job. It is faster, and it works everywhere.
+
+## Common Mistakes to Avoid
+
+1. **Plain scripts in the head.**
+2. **Using `async` for scripts that depend on each other.**
+3. **Loading a huge library for one small feature.**
+4. **Never removing old third-party tags.**
+5. **Loading every feature on every page.**
+6. **Adding `defer` to a script that must run before the page is read** (without checking it still works).
+7. **Waiting for the `load` event** before showing or enabling the page.
+8. **Testing only on a fast laptop.**
+9. **Ignoring long tasks,** so the page loads fast but feels slow.
+10. **Letting the page depend on a third-party script** that may fail.
+
+## Practice Time
+
+1. In the Script Order Lab, set all scripts to plain. When can the page first appear? Now set them to defer.
+2. Set all three to async. What goes wrong?
+3. Find a combination where the page appears early and the dependency is still kept.
+4. In the Script Weight Lab, add the advertising tags, then switch device from laptop to low-end phone. How does the busy time change?
+5. Remove scripts one at a time. Which one saves the most?
+6. Open a page you built, and sort the Network panel by size, filtered to JS. Which file is biggest?
+7. Use the Coverage tool. How much of the biggest file was unused?
+8. Bonus: record a Performance trace and find the longest task. Which script caused it?
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does a browser do with a script?</summary>
+
+It finds it, fetches it, parses and compiles it, and runs it on the main thread. A plain script makes the HTML parser wait through all of those steps.
+
+</details>
+
+<details>
+<summary>2. Which loading mode keeps scripts in order?</summary>
+
+`defer` (and modules). Deferred scripts run after the page is read, in the order they are written. `async` scripts run in whatever order they arrive.
+
+</details>
+
+<details>
+<summary>3. Why does JavaScript cost more than an image of the same size?</summary>
+
+After downloading, it must be parsed, compiled, and run on the main thread, which is slower on modest devices and delays responses to taps and clicks.
+
+</details>
+
+<details>
+<summary>4. How can you avoid loading a heavy feature up front?</summary>
+
+Split it into its own file and load it on demand, with a dynamic `import()`, on interaction, or when the browser is idle.
+
+</details>
+
+<details>
+<summary>5. How should third-party scripts be handled?</summary>
+
+Only load ones that are worth their cost, use `async` or `defer`, load them late where possible, review them often, and make sure the page works if they fail.
+
+</details>
+
+<details>
+<summary>6. How do you see which scripts are expensive?</summary>
+
+Use the Network panel to see sizes, the Performance panel to find long tasks, the Coverage tool to see unused code, and Lighthouse and field data for the overall effect.
+
+</details>
+
+## Key Takeaways
+
+- **JavaScript is the most expensive file type:** download, compile, and run.
+- **Plain scripts block the page.** Use `defer` and `async`.
+- **Order matters.** `defer` keeps it, `async` does not.
+- **Send less, split, and delay** what is not needed at first.
+- **Third-party scripts are a cost and a risk.** Review them often.
+- **Mind security:** trust the source, use integrity hashes for fixed files, and consider a content security policy.
+- **Test on a slow phone,** and look at INP as well as load time.
+
+Next up: [Defer](./defer), where you will see exactly how deferred scripts behave, and when they are the right choice.

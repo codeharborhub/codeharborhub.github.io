@@ -1,0 +1,517 @@
+---
+id: html-perf-critical-resources
+title: "Critical Resources in HTML"
+sidebar_label: "Critical Resources"
+sidebar_position: 13
+slug: /html/performance/critical-resources
+description: "Learn how to find the few files that decide how fast your page feels: the critical rendering path, dependency chains, render-blocking CSS and fonts, and the techniques that shorten them. Includes a chain lab and a critical-or-not quiz."
+keywords:
+  - critical resources
+  - critical rendering path
+  - render blocking CSS
+  - critical CSS
+  - request chains
+  - font loading
+  - first paint
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, critical-path, render-blocking, css, fonts, frontend]
+---
+
+import {useState} from 'react';
+
+export function simulateCritical(o) {
+  const start = 120;
+  const htmlDone = 300;
+  const css1Done = start + 300;
+  const fontsCssDone = o.flatten ? start + 200 : css1Done + 200;
+  const cssFull = Math.max(css1Done, fontsCssDone);
+  const cssDone = o.inlineCss ? htmlDone : cssFull;
+  const scriptEnd = start + 400 + 100;
+  let fcp = Math.max(htmlDone, cssDone);
+  if (!o.deferScript) fcp = Math.max(fcp, scriptEnd);
+  const fontFile = o.preloadFont ? start + 300 : fontsCssDone + 300;
+  const fontReady = Math.max(fontFile, cssDone);
+  const heroFound = o.inlineCss ? htmlDone : css1Done;
+  const heroReady = o.preloadHero ? start + 500 : heroFound + 500;
+  const lcp = Math.max(fcp, heroReady);
+  const fontChain = o.preloadFont ? 2 : (o.flatten ? 3 : 4);
+  const heroChain = o.preloadHero || o.inlineCss ? 2 : 3;
+  const cssChain = o.flatten ? 2 : 3;
+  return {fcp: fcp, fontReady: fontReady, lcp: lcp, chain: Math.max(fontChain, heroChain, cssChain)};
+}
+
+export function ChainLab() {
+  const [o, setO] = useState({flatten: false, inlineCss: false, deferScript: false, preloadFont: false, preloadHero: false});
+  const base = simulateCritical({flatten: false, inlineCss: false, deferScript: false, preloadFont: false, preloadHero: false});
+  const r = simulateCritical(o);
+  const fixes = [
+    ["flatten", "Link fonts.css directly, instead of using @import inside site.css"],
+    ["inlineCss", "Put the critical CSS inside the page, and load the rest later"],
+    ["deferScript", "Add defer to the main script"],
+    ["preloadFont", "Preload the font file"],
+    ["preloadHero", "Preload the hero image (a CSS background)"]
+  ];
+  const rows = [
+    ["First paint (FCP)", r.fcp, base.fcp],
+    ["Custom font ready", r.fontReady, base.fontReady],
+    ["Hero image shown (LCP)", r.lcp, base.lcp]
+  ];
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        The page loads <code>site.css</code>, which uses <code>@import</code> for <code>fonts.css</code>, which names a font file. <code>site.css</code> also sets the hero image as a background. A plain <code>main.js</code> sits in the head.
+      </p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Fixes to apply</legend>
+        {fixes.map(function (f) {
+          return (
+            <label key={f[0]} style={{display: "block", margin: "0.2rem 0"}}>
+              <input
+                type="checkbox"
+                checked={o[f[0]]}
+                onChange={function (e) { setO(Object.assign({}, o, {[f[0]]: e.target.checked})); }}
+              />{" "}
+              {f[1]}
+            </label>
+          );
+        })}
+      </fieldset>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>Moment</th>
+            <th style={{textAlign: "left"}}>Now</th>
+            <th style={{textAlign: "left"}}>With no fixes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(function (row) {
+            const saved = row[2] - row[1];
+            return (
+              <tr key={row[0]}>
+                <td>{row[0]}</td>
+                <td><strong>{row[1]} ms</strong>{saved > 0 ? " (" + saved + " ms sooner)" : ""}</td>
+                <td>{row[2]} ms</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p aria-live="polite">
+        Longest chain of files that must arrive one after another: <strong>{r.chain} steps</strong>. Shorter chains are faster, especially on slow connections.
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model with fixed sizes and times. It assumes the critical CSS inlined in the page is enough for the first screen. Real results depend on your files and network, so measure your own.
+      </p>
+    </div>
+  );
+}
+
+export const criticalItems = [
+  {
+    name: "The HTML document itself",
+    answer: "critical",
+    why: "Nothing else can start until it arrives. Keep it fast to serve, and small."
+  },
+  {
+    name: "The main stylesheet in the head",
+    answer: "critical",
+    why: "The browser will not paint until it has the styles, so this blocks the first paint."
+  },
+  {
+    name: "The big photo at the top of the page",
+    answer: "critical",
+    why: "It is probably your Largest Contentful Paint. It is not render-blocking, but it decides how fast the page feels."
+  },
+  {
+    name: "The font used for the main headline",
+    answer: "critical",
+    why: "Text in the first screen waits for it, or swaps late. Preload it, host it close, and use font-display."
+  },
+  {
+    name: "An analytics script",
+    answer: "wait",
+    why: "Nothing visual depends on it. Load it with async, or after the page."
+  },
+  {
+    name: "A photo in the footer",
+    answer: "wait",
+    why: "Visitors may never scroll that far. Use loading=\"lazy\"."
+  },
+  {
+    name: "The script that powers a menu that opens on click",
+    answer: "wait",
+    why: "It is needed soon, but not for the first paint. Use defer, so it downloads early but does not block."
+  },
+  {
+    name: "A print stylesheet",
+    answer: "wait",
+    why: "It only matters when printing. Add media=\"print\" so it does not hold up rendering."
+  },
+  {
+    name: "Images in a carousel after the first slide",
+    answer: "wait",
+    why: "Only the first slide is visible. Lazy-load the others."
+  },
+  {
+    name: "CSS for a pop-up dialog that opens later",
+    answer: "wait",
+    why: "It is not seen at first, so it should not delay the first paint. Split it out, or load it on demand."
+  }
+];
+
+export function CriticalFinder() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const score = criticalItems.filter(function (c, i) { return picked[i] === c.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        For the first screen of a bakery page, which of these is critical, and which can wait?
+      </p>
+      {criticalItems.map(function (c, i) {
+        const right = picked[i] === c.answer;
+        return (
+          <fieldset key={i} style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+            <legend style={{fontWeight: 600}}>{c.name}</legend>
+            {[["critical", "Critical"], ["wait", "Can wait"]].map(function (o) {
+              return (
+                <label key={o[0]} style={{marginRight: "1.25rem"}}>
+                  <input
+                    type="radio"
+                    name={"cf-" + i}
+                    disabled={checked}
+                    checked={picked[i] === o[0]}
+                    onChange={function () { setPicked(Object.assign({}, picked, {[i]: o[0]})); }}
+                  />{" "}
+                  {o[1]}
+                </label>
+              );
+            })}
+            {checked ? (
+              <p style={{margin: "0.25rem 0 0"}}>
+                <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Right. " : "Not quite. "}</strong>
+                {c.why}
+              </p>
+            ) : null}
+          </fieldset>
+        );
+      })}
+      {!checked ? (
+        <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      ) : (
+        <p aria-live="polite">
+          <strong>Score: {score} of {criticalItems.length}.</strong>{" "}
+          <button type="button" onClick={function () { setChecked(false); setPicked({}); }}>Start again</button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+# Critical Resources in HTML
+
+A page can contain hundreds of files, but only a handful decide how fast it feels. Those few are the **critical resources**: the files the browser must have before it can show something useful.
+
+Performance work is largely a hunt for them. Once you know which files are critical, you can make them small, find them early, and stop everything else from getting in their way. This lesson shows you how to find them and how to shorten the path they take.
+
+## What You Will Learn
+
+- What makes a resource critical
+- What the critical rendering path is
+- Why chains of files are slower than the same files side by side
+- Which resources block painting, and how to unblock them
+- Techniques: flattening, inlining, `media`, `defer`, fonts, and preload
+- How to find your own critical resources in DevTools
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Think of the first screen as a meal, and the critical resources as the ingredients without which you cannot serve anything. Everything else is a side dish: it can arrive later.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Bread Bin</title>
+
+  <!-- Open the connection to the font host early -->
+  <link rel="preconnect" href="https://fonts.example.com" crossorigin>
+
+  <!-- A font the headline needs, found early instead of late -->
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- Only the CSS the first screen needs, inside the page -->
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    .hero { min-height: 60vh; background: #f3e9dc; }
+  </style>
+
+  <!-- The rest of the CSS: does not block the first paint -->
+  <link rel="stylesheet" href="/css/rest.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/css/rest.css"></noscript>
+
+  <!-- Downloads now, runs after the page is read -->
+  <script src="/js/app.js" defer></script>
+</head>
+```
+
+</TabItem>
+<TabItem value="lab" label="Chain Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ChainLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, tick the fixes one by one and read the three moments. Some fixes help the first paint, some help the font, and some help the hero image. Which single fix helps the most? Which ones help only in combination?
+
+## What Makes a Resource Critical?
+
+Ask three questions about any file:
+
+1. **Does the browser need it before it can paint?** CSS in the head and plain scripts do. These are **render-blocking**.
+2. **Is it part of the first screen?** The main image, the headline font, and the logo are.
+3. **Does something else wait for it?** A stylesheet that imports another one makes the second file critical too.
+
+A file that answers "no" to all three can wait, or be lazy, deferred, or removed.
+
+## The Critical Rendering Path
+
+The critical rendering path is the sequence of steps from "the browser got the HTML" to "pixels on the screen":
+
+1. Read the HTML and build the page structure.
+2. Fetch and read the CSS, then work out how everything looks.
+3. Run any blocking scripts.
+4. Lay out the page and paint it.
+
+Every file in those steps is on the critical path. The **length** of the path matters in two ways: how many bytes it carries, and how many separate steps, one after another, it needs.
+
+## Chains Are the Hidden Cost
+
+Files that can be fetched side by side cost roughly the time of the slowest one. Files that must be fetched one **after another** cost the **sum** of their times, plus a delay for each hand-off.
+
+Here is a typical chain:
+
+```text
+index.html  ->  site.css  ->  fonts.css (via @import)  ->  inter.woff2
+```
+
+The browser cannot know about `fonts.css` until it has read `site.css`, and cannot know about the font file until it has read `fonts.css`. Each link in the chain adds a full round trip to the server. On a slow or distant connection, round trips are the most expensive thing there is.
+
+The cure is to **make chains shorter and wider**: get files discovered in the HTML, where the browser finds them immediately and can fetch them in parallel.
+
+## What Blocks, and How to Unblock
+
+| Resource | What it blocks | How to unblock |
+| :-- | :-- | :-- |
+| CSS in the head | The first paint | Keep it small, inline the critical part, split out the rest |
+| A plain script | Reading the rest of the HTML | Use `defer` or `async` |
+| `@import` in CSS | The CSS, and what depends on it | Use a `link` element instead |
+| A web font | Text in that font, or it swaps late | Preload, host it close, and use `font-display` |
+| A CSS background image | Found only after the CSS is read | Preload it, or use an `img` element |
+| A third-party stylesheet | The first paint, if it is in the head | Host it yourself, or load it later |
+
+## Seven Techniques
+
+### 1. Flatten the chain
+
+Replace `@import` with `link` elements in the HTML, so the browser finds every file at once.
+
+```html
+<!-- Before: site.css contains  @import url("fonts.css");  -->
+<link rel="stylesheet" href="/css/site.css">
+
+<!-- After: both are found immediately -->
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/site.css">
+```
+
+### 2. Inline the critical CSS
+
+Put the few rules the first screen needs directly inside a `style` element, so the first paint does not wait for a CSS file. Keep it small: a commonly quoted rule of thumb is to keep the whole first response within roughly 14 KB compressed, so it arrives in the first round trip, but treat that as a guide and measure. Remember that inline CSS is repeated on every page and cannot be cached on its own, so it is a trade-off, and works best for a short, stable set of rules. Many build tools can extract critical CSS for you.
+
+### 3. Do not let unneeded CSS block
+
+A stylesheet with a `media` value that does not match the current screen is not render-blocking. Browsers still download it, usually at a lower priority.
+
+```html
+<link rel="stylesheet" href="/css/print.css" media="print">
+<link rel="stylesheet" href="/css/wide.css" media="(min-width: 1200px)">
+```
+
+The "print then switch to all" trick in the code above uses the same idea to load the rest of your CSS without blocking. It needs JavaScript (hence the `noscript` fallback), and an inline `onload` may conflict with a strict content security policy. It can also cause a brief flash if the rest of the CSS styles things on the first screen, so check carefully.
+
+### 4. Defer scripts
+
+Use `defer` for your own scripts and `async` for independent ones, as covered in [Script Loading](./script-loading), [Defer](./defer), and [Async](./async).
+
+### 5. Treat fonts with care
+
+A font file is discovered late, because it is named inside CSS. Help the browser:
+
+- **Preload** the one or two files the headline needs, with `crossorigin` (see [Preload](./preload)).
+- **Preconnect** if the font comes from another host (see [Preconnect](./preconnect)).
+- **Use `font-display: swap`** in your `@font-face`, so text shows in a fallback font at once and swaps when the font arrives. There is a short change of look, so test how it feels.
+- **Use fewer files and weights,** and subset large fonts.
+- **Consider hosting fonts yourself,** which removes a third-party connection from the critical path.
+
+### 6. Preload what is found late
+
+For the hero image set in CSS, or any critical file the browser discovers late, a [preload](./preload) starts the download earlier. Use it sparingly.
+
+### 7. Remove what you do not need
+
+The fastest critical resource is the one that is not there. Delete unused CSS, unused fonts, and old scripts.
+
+## Find Your Own Critical Resources
+
+Try the quiz first, to sharpen your instincts.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CriticalFinder />
+</>
+</BrowserWindow>
+
+Then find the real ones on your own pages:
+
+1. Open DevTools, then **Network**, and reload on a throttled connection.
+2. Look at the **Waterfall**, and find the files that start late. A file that starts only after another finishes is part of a chain.
+3. Click a file and open its **Initiator** to see what caused it to load.
+4. Check the **Priority** column. High priority files are the ones the browser thinks are critical.
+5. Run **Lighthouse** and read the suggestions about render-blocking requests and chained critical requests. Names of audits change over time, so read the descriptions.
+6. Open the **Performance** panel, and watch which files stand between navigation and the first paint.
+7. Use the **Coverage** tool to see how much CSS and JavaScript the page does not use.
+
+## Best Practices
+
+1. **Know your critical resources.** Write the list down for each key page.
+2. **Keep the list short,** and each file small.
+3. **Shorten chains.** Get files discovered in the HTML.
+4. **Never use `@import`** for important CSS.
+5. **Defer scripts,** and keep third-party code off the critical path.
+6. **Give fonts special care:** preload, host close, and use `font-display`.
+7. **Preload only what is late-found and important.**
+8. **Measure on a slow connection,** since chains hurt most there.
+
+## Quick Checklist
+
+- [ ] The critical resources for the first screen are known
+- [ ] No `@import` for important CSS
+- [ ] CSS in the head is small, with the critical part inlined if it helps
+- [ ] Non-critical CSS does not block the first paint
+- [ ] Scripts use `defer` or `async`
+- [ ] Fonts are few, preloaded if critical, and use `font-display`
+- [ ] The hero image is found early, and not lazy
+- [ ] No third-party stylesheet in the head that you do not control
+- [ ] The waterfall shows no long chains
+
+## Security and Privacy Notes
+
+- **Critical third-party files are a single point of failure.** If a font or stylesheet host is slow or down, your first paint waits for it. Hosting critical files yourself is both faster and more reliable.
+- **Third-party hosts see your visitors.** Fonts and styles from another host share the visitor's address and some details with it. Self-hosting avoids this. If you must use one, load it in line with the rules that apply to you. This is not legal advice.
+- **Inline CSS and inline handlers can clash with a content security policy.** A strict policy blocks inline styles and `onload` attributes unless you allow them with a nonce or hash. Plan for this if you inline critical CSS.
+- **Use integrity hashes for fixed third-party files.** The `integrity` attribute lets the browser reject a file that has been altered.
+- **Preloads contact hosts early.** Do not preload from hosts that need consent first.
+
+## Global Audience Notes
+
+- **Round trips cost more where latency is high.** Visitors far from your servers, on mobile networks, or on satellite links pay for every step in a chain. Short chains and a nearby CDN help them most.
+- **Self-hosted fonts save a connection** to another country's servers, and avoid problems where a font host is slow or blocked.
+- **Fonts for some scripts are large.** Chinese, Japanese, and Korean fonts can be very big. Subset them, use system fonts for body text, or keep web fonts for headings only.
+- **Test on slow connections and modest phones.** What is critical on a fast laptop is not always the same as on a slow phone.
+- **Keep the page useful** without the extras: text should be readable even before the custom font arrives.
+
+## Common Mistakes to Avoid
+
+1. **`@import` chains** for important CSS.
+2. **A huge CSS file** where most rules are unused.
+3. **Plain scripts in the head.**
+4. **A web font discovered late,** with no preload.
+5. **A hero image hidden in CSS** with no preload.
+6. **Third-party stylesheets in the head** that you do not control.
+7. **Inlining far too much CSS,** so every page is heavy.
+8. **Preloading everything,** so nothing stands out.
+9. **Splitting CSS carelessly,** so the first screen flashes unstyled.
+10. **Only testing on a fast connection.**
+
+## Practice Time
+
+1. In the Chain Lab, tick one fix at a time. Which helps the first paint most?
+2. Which fix helps the hero image most? Which helps the font most?
+3. Tick them all. How long is the chain now?
+4. Take the critical-or-not quiz. Which answer surprised you?
+5. Open a page you built, and sort the Network waterfall by start time. Find a chain.
+6. Replace an `@import` with a `link`, and compare.
+7. Add `media="print"` to a print stylesheet.
+8. Bonus: run Lighthouse, read the suggestions about chained requests, and fix the longest chain.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a critical resource?</summary>
+
+A file the browser needs before it can show something useful: render-blocking CSS and scripts, plus the files that make up the first screen, such as the main image and headline font.
+
+</details>
+
+<details>
+<summary>2. Why are chains slow?</summary>
+
+Each file in a chain can only be discovered after the one before it arrives, so you pay for each round trip one after another, instead of fetching them side by side.
+
+</details>
+
+<details>
+<summary>3. How do you flatten a chain?</summary>
+
+Make the browser discover every file in the HTML, for example by replacing `@import` with `link` elements, or by preloading late-found files.
+
+</details>
+
+<details>
+<summary>4. What does inlining critical CSS do, and what is its cost?</summary>
+
+It lets the first paint happen without waiting for a CSS file. The cost is that the CSS is repeated on every page and cannot be cached on its own, so keep it small.
+
+</details>
+
+<details>
+<summary>5. How can a stylesheet avoid blocking rendering?</summary>
+
+Give it a `media` value that does not match the current screen, such as `print`. It still downloads, but does not hold up the first paint.
+
+</details>
+
+<details>
+<summary>6. How do you find your critical resources?</summary>
+
+Use the Network waterfall, the Initiator and Priority columns, Lighthouse's suggestions, and the Performance panel to see which files stand between navigation and the first paint.
+
+</details>
+
+## Key Takeaways
+
+- **A few files decide how fast the page feels.** Find them first.
+- **Chains cost the sum of their steps.** Make them shorter and wider.
+- **CSS in the head and plain scripts block painting.** Keep CSS small, and defer scripts.
+- **Fonts and CSS backgrounds are found late.** Preload them, or move them into the HTML.
+- **Host critical files yourself** where you can, for speed, reliability, and privacy.
+- **Remove what you do not need.**
+- **Measure on slow connections,** and re-check after every change.
+
+Next up: [Core Web Vitals](./core-web-vitals), where you will learn the three numbers that measure how all of this feels to real visitors.

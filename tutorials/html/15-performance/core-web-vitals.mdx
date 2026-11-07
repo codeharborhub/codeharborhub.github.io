@@ -1,0 +1,505 @@
+---
+id: html-perf-core-web-vitals
+title: "Core Web Vitals in Depth"
+sidebar_label: "Core Web Vitals"
+sidebar_position: 14
+slug: /html/performance/core-web-vitals
+description: "Understand the three Core Web Vitals in depth: what LCP, INP and CLS measure, how each is made of parts you can fix, how to measure them in the lab and the field, and which HTML changes move each number. Includes a breakdown lab and a layout shift calculator."
+keywords:
+  - Core Web Vitals
+  - LCP
+  - INP
+  - CLS
+  - largest contentful paint
+  - interaction to next paint
+  - cumulative layout shift
+  - web vitals measurement
+  - field data
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, core-web-vitals, lcp, inp, cls, frontend]
+---
+
+import {useState} from 'react';
+
+export const vitalConfigs = {
+  lcp: {
+    name: "Largest Contentful Paint (LCP)",
+    good: 2500,
+    poor: 4000,
+    parts: [
+      {id: "ttfb", label: "Time to first byte", max: 2000, start: 800, fix: "Speed up the server, use a CDN, and cache the HTML."},
+      {id: "delay", label: "Resource load delay", max: 2000, start: 1000, fix: "Help the browser find the main image early: put it in an img tag, do not lazy-load it, add fetchpriority, or preload it."},
+      {id: "duration", label: "Resource load duration", max: 2000, start: 900, fix: "Send a smaller file: right-sized responsive images, modern formats, compression, and a nearby server."},
+      {id: "render", label: "Element render delay", max: 1500, start: 300, fix: "Remove render-blocking CSS and scripts, defer scripts, and avoid waiting for JavaScript to build the page."}
+    ]
+  },
+  inp: {
+    name: "Interaction to Next Paint (INP)",
+    good: 200,
+    poor: 500,
+    parts: [
+      {id: "input", label: "Input delay", max: 400, start: 80, fix: "Do not keep the main thread busy: send less JavaScript, defer it, and split long tasks."},
+      {id: "processing", label: "Processing time", max: 500, start: 150, fix: "Make your event handlers lighter. Do the minimum work first, and move the rest later."},
+      {id: "presentation", label: "Presentation delay", max: 300, start: 60, fix: "Keep the page simple to redraw: a smaller page structure and cheaper styles update faster."}
+    ]
+  }
+};
+
+export function vitalRating(total, cfg) {
+  if (total <= cfg.good) return "good";
+  if (total <= cfg.poor) return "needs";
+  return "poor";
+}
+
+export function BreakdownLab() {
+  const [which, setWhich] = useState("lcp");
+  const [values, setValues] = useState({
+    lcp: {ttfb: 800, delay: 1000, duration: 900, render: 300},
+    inp: {input: 80, processing: 150, presentation: 60}
+  });
+  const cfg = vitalConfigs[which];
+  const v = values[which];
+  const total = cfg.parts.reduce(function (sum, p) { return sum + v[p.id]; }, 0);
+  const rating = vitalRating(total, cfg);
+  const biggest = cfg.parts.reduce(function (best, p) { return v[p.id] > v[best.id] ? p : best; }, cfg.parts[0]);
+  const colors = {good: "#1e8449", needs: "#b9770e", poor: "#c0392b"};
+  const labels = {good: "Good", needs: "Needs improvement", poor: "Poor"};
+  const palette = ["#3478c8", "#8e44ad", "#16a085", "#d35400"];
+  const setPart = function (id, value) {
+    const next = Object.assign({}, values);
+    next[which] = Object.assign({}, values[which], {[id]: value});
+    setValues(next);
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>Metric</legend>
+        {[["lcp", "LCP"], ["inp", "INP"]].map(function (m) {
+          return (
+            <label key={m[0]} style={{marginRight: "1rem"}}>
+              <input type="radio" name="bl-which" checked={which === m[0]} onChange={function () { setWhich(m[0]); }} /> {m[1]}
+            </label>
+          );
+        })}
+      </fieldset>
+      {cfg.parts.map(function (p) {
+        return (
+          <p key={p.id} style={{margin: "0 0 0.75rem"}}>
+            <label htmlFor={"bl-" + p.id}>{p.label}: <strong>{v[p.id]} ms</strong></label>
+            <br />
+            <input id={"bl-" + p.id} type="range" min="0" max={p.max} step="20" value={v[p.id]} onChange={function (e) { setPart(p.id, Number(e.target.value)); }} style={{width: "100%"}} />
+          </p>
+        );
+      })}
+      <div style={{display: "flex", height: "1.2rem", background: "rgba(128,128,128,0.15)", borderRadius: 4, overflow: "hidden"}}>
+        {cfg.parts.map(function (p, i) {
+          return <div key={p.id} title={p.label} style={{width: Math.min(100, v[p.id] / (cfg.poor * 1.25) * 100) + "%", background: palette[i % palette.length]}} />;
+        })}
+      </div>
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {cfg.name}: {total} ms.{" "}
+        <span style={{color: colors[rating]}}>{labels[rating]}</span>{" "}
+        (good is {cfg.good} ms or less, poor is over {cfg.poor} ms)
+      </p>
+      <p aria-live="polite">
+        <strong>Biggest part: {biggest.label} ({v[biggest.id]} ms).</strong> {biggest.fix}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        The thresholds are the published ones at the time of writing. The sliders are for learning, not measuring. Real pages show these parts in DevTools and in tools such as PageSpeed Insights.
+      </p>
+    </div>
+  );
+}
+
+export function layoutShiftScore(contentHeight, shiftDistance) {
+  const viewportHeight = 800;
+  const union = Math.min(viewportHeight, contentHeight + shiftDistance);
+  const impact = union / viewportHeight;
+  const distance = Math.min(1, shiftDistance / viewportHeight);
+  return {impact: Math.round(impact * 1000) / 1000, distance: Math.round(distance * 1000) / 1000, score: Math.round(impact * distance * 1000) / 1000};
+}
+
+export function clsRating(score) {
+  if (score <= 0.1) return "good";
+  if (score <= 0.25) return "needs";
+  return "poor";
+}
+
+export function ShiftCalculator() {
+  const [content, setContent] = useState(500);
+  const [shift, setShift] = useState(300);
+  const r = layoutShiftScore(content, shift);
+  const rating = clsRating(r.score);
+  const colors = {good: "#1e8449", needs: "#b9770e", poor: "#c0392b"};
+  const labels = {good: "Good", needs: "Needs improvement", poor: "Poor"};
+  const presets = [
+    ["Image with no height", 500, 300],
+    ["Banner pushed in at the top", 700, 60],
+    ["Ad slot appears late", 600, 250],
+    ["Space was reserved", 500, 0]
+  ];
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        {presets.map(function (p) {
+          return <button key={p[0]} type="button" onClick={function () { setContent(p[1]); setShift(p[2]); }}>{p[0]}</button>;
+        })}
+      </div>
+      <p>
+        <label htmlFor="sc-content">Height of the content that gets pushed: <strong>{content} px</strong></label>
+        <br />
+        <input id="sc-content" type="range" min="100" max="800" step="20" value={content} onChange={function (e) { setContent(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <p>
+        <label htmlFor="sc-shift">How far it moves: <strong>{shift} px</strong></label>
+        <br />
+        <input id="sc-shift" type="range" min="0" max="500" step="10" value={shift} onChange={function (e) { setShift(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <ul aria-live="polite">
+        <li><strong>Impact fraction:</strong> {r.impact} (how much of the screen was affected)</li>
+        <li><strong>Distance fraction:</strong> {r.distance} (how far, compared with the screen)</li>
+        <li><strong>This shift scores:</strong> {r.impact} x {r.distance} = {r.score}</li>
+      </ul>
+      <p aria-live="polite" style={{fontWeight: 600, color: colors[rating]}}>
+        {labels[rating]} (good is 0.1 or less, poor is over 0.25)
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This follows the published formula for a single shift on a phone-sized screen (400 by 800 px) with content that spans the full width. The real CLS for a page also adds up several shifts in a time window, so use it to understand the idea, not to predict your score.
+      </p>
+    </div>
+  );
+}
+
+# Core Web Vitals in Depth
+
+The [Performance overview](/tutorials/html/performance) introduced the three Core Web Vitals. This lesson opens them up. Each is built from smaller parts, and each part has a different cause and a different cure. Once you can see the parts, a vague "the page is slow" becomes a specific list of things to fix, and you will notice that almost every lesson in this section moves one of the three numbers.
+
+## What You Will Learn
+
+- What LCP, INP, and CLS each measure, and what counts
+- The parts that make up LCP and INP
+- How a layout shift is scored
+- The HTML changes that improve each metric
+- The difference between lab data and field data
+- How to measure the vitals on your own pages
+- How the lessons in this section map to the three numbers
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Each vital asks one question about the visitor's experience:
+
+| Metric | The question | Good | Needs improvement | Poor |
+| :-- | :-- | :-- | :-- | :-- |
+| **LCP** (Largest Contentful Paint) | How soon does the main content appear? | 2.5 s or less | up to 4 s | over 4 s |
+| **INP** (Interaction to Next Paint) | How quickly does the page respond when I use it? | 200 ms or less | up to 500 ms | over 500 ms |
+| **CLS** (Cumulative Layout Shift) | Does the page stay still while I read? | 0.1 or less | up to 0.25 | over 0.25 |
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Bread Bin</title>
+
+  <!-- LCP: find the important font early -->
+  <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/site.css">
+
+  <!-- INP and LCP: scripts do not block, and cost less -->
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <!-- LCP and CLS: the main image is early, sized, and not lazy -->
+  <img src="/img/hero-1200.webp"
+       srcset="/img/hero-800.webp 800w, /img/hero-1200.webp 1200w"
+       sizes="100vw"
+       alt="A golden loaf on a wooden board"
+       width="1200" height="600" fetchpriority="high">
+
+  <!-- CLS: reserve the space an ad will fill -->
+  <div style="min-height: 250px"></div>
+</body>
+```
+
+</TabItem>
+<TabItem value="breakdown" label="Breakdown Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<BreakdownLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="shift" label="Shift Calculator">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ShiftCalculator />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## LCP: How Soon the Main Content Appears
+
+LCP measures the time from the start of loading to when the **largest visible piece of content** in the first screen is painted. The browser keeps updating its choice as the page loads, and the final candidate is the one that counts.
+
+What can be the LCP element:
+
+- An `img` element, or the poster image of a video
+- An image set with `background-image` in CSS
+- A block of text, such as a heading or paragraph
+
+LCP is made of four parts, and the lab above lets you change each:
+
+1. **Time to first byte.** How long the server takes to start sending the HTML.
+2. **Resource load delay.** How long before the browser **starts** loading the main image (it must find it first).
+3. **Resource load duration.** How long the image takes to download.
+4. **Element render delay.** The gap between the file arriving and it being painted, often caused by render-blocking CSS or scripts.
+
+Most slow LCPs are dominated by one part. Find the biggest, and fix that first.
+
+| If the biggest part is... | Try... | Lesson |
+| :-- | :-- | :-- |
+| Time to first byte | Faster server, CDN, caching | Server-side |
+| Resource load delay | Image in HTML, no lazy loading, `fetchpriority`, preload | [Preload](./preload), [Lazy Loading](./lazy-loading) |
+| Resource load duration | Smaller file, right size, modern format | [Responsive Images](./responsive-images-performance) |
+| Element render delay | Less render-blocking CSS and scripts | [Critical Resources](./critical-resources), [Defer](./defer) |
+
+## INP: How Quickly the Page Responds
+
+INP measures how long it takes, after a visitor **clicks, taps, or presses a key**, for the page to show the result. Scrolling and hovering do not count. The browser looks at the interactions during the visit and reports a value close to the slowest one (for busy pages it ignores a few extreme outliers).
+
+An interaction has three parts:
+
+1. **Input delay.** The click happens, but the main thread is busy with something else, so it waits.
+2. **Processing time.** Your event handlers run.
+3. **Presentation delay.** The browser works out the new look and paints it.
+
+Unlike LCP, INP depends heavily on **JavaScript**. Long tasks, heavy third-party scripts, and slow handlers all raise it. The HTML-level habits that help are the ones from [Script Loading](./script-loading): send less JavaScript, use `defer` and `async`, split heavy work, and load non-essential scripts late. In the lab's INP view, try making the input delay large. That is what a page busy running a big script feels like.
+
+:::info
+INP replaced an older metric called First Input Delay (FID) as a Core Web Vital. If you read older articles that mention FID, the advice about busy main threads still applies, but INP looks at the whole visit, not just the first click.
+:::
+
+## CLS: Whether the Page Stays Still
+
+CLS measures unexpected movement. You are reading, an image loads above, and the text jumps down. Or you go to tap a button, an ad appears, and you tap the wrong thing.
+
+Each shift is scored with a simple formula:
+
+> **score = impact fraction x distance fraction**
+
+- **Impact fraction:** how much of the screen the moving content touched (before and after).
+- **Distance fraction:** how far it moved, compared with the largest screen dimension.
+
+Open the Shift Calculator tab and try the presets. A large image with no reserved height that pushes a whole screen of text down 300 px scores far above 0.25. A small banner nudging content 60 px scores much lower. A shift of zero scores nothing.
+
+The usual causes, and their cures:
+
+| Cause | Cure |
+| :-- | :-- |
+| Images with no `width` and `height` | Always give both |
+| Ads, embeds, and iframes with no reserved space | Set a size or a `min-height` (or `aspect-ratio`) |
+| A late web font that changes the text size | `font-display`, preload the font, and choose a similar fallback |
+| Banners or messages inserted above content | Reserve their space, or add them below, or overlay them |
+| Animations that change `top`, `left`, `width`, or `height` | Animate `transform` and `opacity` instead |
+
+Shifts that happen right after a click or tap (within about half a second) are treated as expected, and are not counted. A menu that opens when you tap its button is fine. A page that jumps while you are just reading is not.
+
+## Lab Data and Field Data
+
+You will meet two kinds of numbers:
+
+- **Lab data** comes from a test you run: Lighthouse, WebPageTest, DevTools. It is repeatable and good for **finding and fixing** problems, but it is one device, one connection, and no real interaction.
+- **Field data** comes from **real visitors**, on their devices and networks. It is what shows how the page really performs, and it is what the search engine report in your site tools uses. Chrome collects it for many sites in a public data set, shown in PageSpeed Insights and Search Console.
+
+Field results are usually judged at the **75th percentile**: a page "passes" a vital if at least three out of four visits are good. That is deliberately strict. It means the slower quarter of your visitors matter, so a fast lab test on a fast laptop is not enough.
+
+Not every page has field data, because small sites may not have enough visits. In that case use lab data, and treat it as a guide. Lab tools also report a measure called Total Blocking Time (TBT), which is often used as a stand-in for INP in the lab, since INP needs a real person interacting.
+
+## Measure Them Yourself
+
+**In the tools:** run PageSpeed Insights (lab and field together), open the Core Web Vitals report in Search Console, and record a trace in the DevTools Performance panel.
+
+**In the browser console,** you can watch the raw events. Here is a small snippet to see the LCP candidates:
+
+```js
+new PerformanceObserver(function (list) {
+  const entries = list.getEntries();
+  const last = entries[entries.length - 1];
+  console.log("LCP candidate:", Math.round(last.startTime), "ms", last.element);
+}).observe({ type: "largest-contentful-paint", buffered: true });
+```
+
+And a simple view of layout shifts:
+
+```js
+let total = 0;
+new PerformanceObserver(function (list) {
+  list.getEntries().forEach(function (entry) {
+    if (!entry.hadRecentInput) total += entry.value;
+  });
+  console.log("Shifts so far:", total.toFixed(3));
+}).observe({ type: "layout-shift", buffered: true });
+```
+
+That sum is a simplification, because the official CLS groups shifts into time windows and reports the worst window, but it is good for spotting what moves.
+
+**From real visitors,** you can collect the vitals with Google's small open-source `web-vitals` library, which handles the details for you:
+
+```js
+import { onLCP, onINP, onCLS } from "web-vitals";
+
+function send(metric) {
+  navigator.sendBeacon("/vitals", JSON.stringify({ name: metric.name, value: metric.value }));
+}
+
+onLCP(send);
+onINP(send);
+onCLS(send);
+```
+
+Install it with your package manager and pin the version, and check its documentation for the current API, since details can change.
+
+## How This Section Moves the Numbers
+
+| Lesson | Mainly helps |
+| :-- | :-- |
+| [HTML Performance Basics](./html-performance-basics) | All three |
+| [Resource Hints](./resource-hints), [Preload](./preload) | LCP |
+| [Prefetch](./prefetch) | Navigation speed to the next page |
+| [DNS Prefetch](./dns-prefetch), [Preconnect](./preconnect) | LCP, when third-party hosts are involved |
+| [Lazy Loading](./lazy-loading) | LCP (by not lazy-loading the main image), data use |
+| [Script Loading](./script-loading), [Defer](./defer), [Async](./async) | INP and LCP |
+| [Responsive Images](./responsive-images-performance) | LCP, and CLS (with `width` and `height`) |
+| [Critical Resources](./critical-resources) | LCP |
+
+## Best Practices
+
+1. **Measure first,** in the lab and, where you can, in the field.
+2. **Find the biggest part** of each slow metric, and fix that.
+3. **Make the main image early, sized, and not lazy.**
+4. **Keep the main thread free:** less JavaScript, deferred, and split.
+5. **Reserve space** for images, embeds, ads, and late messages.
+6. **Test on a modest phone** and a slow connection.
+7. **Change one thing at a time,** and measure again.
+8. **Watch field data over time,** because releases can quietly undo your gains.
+
+## Quick Checklist
+
+- [ ] The LCP element is known for each key page
+- [ ] The biggest part of LCP has been identified
+- [ ] The main image is not lazy, and has `width` and `height`
+- [ ] Scripts use `defer` or `async`, and there are no long tasks on load
+- [ ] Every image, ad, and embed has reserved space
+- [ ] Animations use `transform` and `opacity`
+- [ ] Lab and field data have both been checked
+- [ ] Results are rechecked after each release
+
+## Security and Privacy Notes
+
+- **Collecting vitals is collecting data.** Real user monitoring records things about your visitors' devices, connections, and pages. Collect the least you need, keep it anonymous where you can, and say what you collect.
+- **Do not send private information with a metric.** Page addresses can contain tokens, search terms, or personal details. Strip them before you send anything.
+- **Check consent rules.** Depending on where your visitors are and what you collect, you may need consent first. This is not legal advice, so check the rules that apply to you.
+- **A third-party monitoring script is a script.** It runs with the power of your page and adds to your page weight. Load it with `async`, from a provider you trust.
+- **Public field data is aggregated.** The public data sets show combined results and not individual visits, but your own collected data may identify people if you are careless.
+
+## Global Audience Notes
+
+- **Your visitors are not all in one place.** Networks, phones, and distance differ widely between countries, so a page that passes for one market can fail for another. Look at field data by country and device where your tools allow it.
+- **The 75th percentile is the slower quarter.** For many audiences, that quarter is on a modest phone and a slow connection, so test there on purpose.
+- **A CDN, smaller images, and less JavaScript** help the visitors with the most to gain.
+- **Fonts for some scripts are large,** and late font swaps can cause shifts. Reserve space and use system fonts or subsets where they fit.
+- **Do not chase a single score.** A perfect lab number means little if real visitors in your main market still wait.
+
+## Common Mistakes to Avoid
+
+1. **Optimising for a lab score** and ignoring real visitors.
+2. **Testing only on a fast machine.**
+3. **Lazy-loading the LCP image.**
+4. **Images without `width` and `height`.**
+5. **Heavy third-party scripts** on the first load.
+6. **Ads and embeds with no reserved space.**
+7. **Animating layout properties** instead of `transform`.
+8. **Fixing the wrong part,** such as shrinking an image when the real delay is finding it.
+9. **Changing many things at once,** so you cannot tell what helped.
+10. **Collecting more visitor data than you need.**
+
+## Practice Time
+
+1. In the Breakdown Lab, use the LCP view. Which part is the biggest? What does the lab suggest?
+2. Lower that part until the total is "Good". How far did you have to go?
+3. Switch to INP, and raise the input delay. What kind of page does that feel like?
+4. In the Shift Calculator, try each preset. Which one is worst? Which is acceptable?
+5. Make the shift distance zero. What happens to the score?
+6. Run PageSpeed Insights on a page you built. What is the LCP element?
+7. Paste the LCP snippet into the Console, and compare its result with PageSpeed Insights.
+8. Bonus: pick one lesson from this section, apply it to a page, and measure LCP, INP, and CLS before and after.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do the three Core Web Vitals measure?</summary>
+
+LCP measures how soon the main content appears, INP measures how quickly the page responds to interaction, and CLS measures how much the layout jumps.
+
+</details>
+
+<details>
+<summary>2. What are the four parts of LCP?</summary>
+
+Time to first byte, resource load delay, resource load duration, and element render delay. Fix the biggest one first.
+
+</details>
+
+<details>
+<summary>3. What makes up INP?</summary>
+
+Input delay, processing time, and presentation delay. JavaScript that keeps the main thread busy is the most common cause of a poor INP.
+
+</details>
+
+<details>
+<summary>4. How is a layout shift scored?</summary>
+
+Impact fraction times distance fraction. A bigger area moving a longer distance scores worse. A shift of zero scores nothing.
+
+</details>
+
+<details>
+<summary>5. What is the difference between lab and field data?</summary>
+
+Lab data comes from a test you run, and is good for finding problems. Field data comes from real visitors and shows what they really experience, usually judged at the 75th percentile.
+
+</details>
+
+<details>
+<summary>6. Name three HTML habits that help the vitals.</summary>
+
+Give images `width` and `height`, never lazy-load the main image, and use `defer` or `async` for scripts. Reserving space for ads and embeds also helps.
+
+</details>
+
+## Key Takeaways
+
+- **The three vitals ask three questions:** how soon, how responsive, and how steady.
+- **Each is made of parts.** Find the biggest, and fix that first.
+- **LCP** is helped by finding the main image early and keeping CSS and scripts out of the way.
+- **INP** is helped by sending less JavaScript and keeping the main thread free.
+- **CLS** is helped by reserving space for everything that loads late.
+- **Use lab data to fix, and field data to confirm.** Judge by the slower quarter of your visitors.
+- **Collect only the data you need,** and respect consent.
+
+You have now finished the Performance section. Return to the [Performance overview](/tutorials/html/performance) to review the whole path, or apply one lesson at a time to a real page and measure what changes.

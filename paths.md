@@ -955,9 +955,9 @@ Keep the primary navbar simple:
 
 ```text
 ┌─────────────────────────────────────────────────────┐
-│ CodeHarborHub                                        │
+│ CodeHarborHub                                       │
 │                                                     │
-│ Learn   Practice   Build   Roadmaps   AI   Community │
+│ Learn   Practice   Build   Roadmaps   AI  Community │
 │                                      Search  Login   │
 └─────────────────────────────────────────────────────┘
 ```

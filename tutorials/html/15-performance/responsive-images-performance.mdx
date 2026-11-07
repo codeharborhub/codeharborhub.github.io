@@ -1,0 +1,517 @@
+---
+id: html-perf-responsive-images
+title: "Responsive Images and Performance"
+sidebar_label: "Responsive Images"
+sidebar_position: 12
+slug: /html/performance/responsive-images-performance
+description: "Learn how srcset, sizes and picture affect page speed: how the browser picks an image, why a wrong sizes value wastes data, which formats save bytes, and how to audit a page. Includes a selection lab and a live image checker."
+keywords:
+  - responsive images performance
+  - srcset and sizes
+  - sizes attribute mistakes
+  - image optimization
+  - WebP AVIF
+  - oversized images
+  - LCP image
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, images, responsive-images, srcset, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const imageCandidates = [400, 800, 1200, 1600, 2400];
+
+export function candidateKb(w) {
+  return Math.round(((w / 400) * (w / 400)) * 25);
+}
+
+export function pickCandidate(neededPx) {
+  for (let i = 0; i < imageCandidates.length; i++) {
+    if (imageCandidates[i] >= neededPx) return imageCandidates[i];
+  }
+  return imageCandidates[imageCandidates.length - 1];
+}
+
+export function slotWidth(mode, vw) {
+  if (mode === "match") return vw >= 800 ? vw * 0.5 : vw;
+  return vw;
+}
+
+export function selection(vw, dpr, mode) {
+  const assumed = slotWidth(mode, vw);
+  const actual = slotWidth("match", vw);
+  const chosen = pickCandidate(assumed * dpr);
+  const ideal = pickCandidate(actual * dpr);
+  const chosenKb = candidateKb(chosen);
+  const idealKb = candidateKb(ideal);
+  return {
+    assumed: Math.round(assumed),
+    actual: Math.round(actual),
+    needed: Math.round(assumed * dpr),
+    chosen: chosen,
+    ideal: ideal,
+    chosenKb: chosenKb,
+    idealKb: idealKb,
+    wastedKb: chosenKb - idealKb,
+    wastedPercent: chosenKb === 0 ? 0 : Math.round(((chosenKb - idealKb) / chosenKb) * 100)
+  };
+}
+
+export function SelectionLab() {
+  const [vw, setVw] = useState(1200);
+  const [dpr, setDpr] = useState(2);
+  const [mode, setMode] = useState("none");
+  const r = selection(vw, dpr, mode);
+  const modes = [
+    ["none", "No sizes attribute (the browser assumes 100vw)"],
+    ["100vw", 'sizes="100vw"'],
+    ["match", 'sizes="(min-width: 800px) 50vw, 100vw" (matches the layout)']
+  ];
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        The page shows this image full width on small screens, and in a two-column layout (half the screen) from 800 px up. The file comes in 400, 800, 1200, 1600, and 2400 px widths.
+      </p>
+      <p>
+        <label htmlFor="sel-vw">Screen width: <strong>{vw} px</strong></label>
+        <br />
+        <input id="sel-vw" type="range" min="320" max="1600" step="40" value={vw} onChange={function (e) { setVw(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Screen density</legend>
+        {[1, 2, 3].map(function (d) {
+          return (
+            <label key={d} style={{marginRight: "1rem"}}>
+              <input type="radio" name="sel-dpr" checked={dpr === d} onChange={function () { setDpr(d); }} /> {d}x
+            </label>
+          );
+        })}
+      </fieldset>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 1rem"}}>
+        <legend style={{fontWeight: 600}}>What the HTML says</legend>
+        {modes.map(function (m) {
+          return (
+            <label key={m[0]} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="sel-mode" checked={mode === m[0]} onChange={function () { setMode(m[0]); }} /> {m[1]}
+            </label>
+          );
+        })}
+      </fieldset>
+      <ul aria-live="polite">
+        <li>The browser believes the image is <strong>{r.assumed} px</strong> wide, so it needs about <strong>{r.needed} px</strong> of image.</li>
+        <li>It downloads the <strong>{r.chosen}w</strong> file, about {r.chosenKb} KB.</li>
+        <li>The best file for the real layout is <strong>{r.ideal}w</strong>, about {r.idealKb} KB.</li>
+      </ul>
+      <p aria-live="polite" style={{fontWeight: 600, color: r.wastedKb > 0 ? "#c0392b" : "#1e8449"}}>
+        {r.wastedKb > 0 ? "Wasted: about " + r.wastedKb + " KB (" + r.wastedPercent + "% of this download)." : "A perfect match. Nothing is wasted."}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        File sizes are illustrative (they grow with the square of the width). Real browsers also consider things like their cache, so they may choose a file you did not expect. Always check what was actually downloaded.
+      </p>
+    </div>
+  );
+}
+
+export const imageSamples = {
+  messy: [
+    '<img src="/img/hero-2400.jpg" alt="A golden loaf" width="2400" height="1200" loading="lazy">',
+    '<img src="/img/card-800.jpg" srcset="/img/card-400.jpg 400w, /img/card-800.jpg 800w" alt="Rye loaves" width="800" height="533">',
+    '<img src="/img/rolls.jpg" srcset="/img/rolls-1x.jpg 1x, /img/rolls-800.jpg 800w" sizes="50vw" alt="Rolls" width="800" height="533">',
+    '<img src="/img/logo.png" sizes="100vw" alt="The Bread Bin" width="120" height="40">',
+    '<img srcset="/img/loaf-400.jpg 400w, /img/loaf-800.jpg 800w" sizes="100vw" alt="Sourdough" width="800" height="533">',
+    '<picture>',
+    '  <source srcset="/img/banner.avif">',
+    '  <img src="/img/banner.jpg" alt="Banner">',
+    '</picture>'
+  ].join("\n"),
+  fixed: [
+    '<img src="/img/hero-1200.jpg" srcset="/img/hero-800.jpg 800w, /img/hero-1200.jpg 1200w, /img/hero-1600.jpg 1600w" sizes="100vw" alt="A golden loaf" width="1600" height="800" fetchpriority="high">',
+    '<img src="/img/card-800.jpg" srcset="/img/card-400.jpg 400w, /img/card-800.jpg 800w" sizes="(min-width: 800px) 33vw, 100vw" alt="Rye loaves" width="800" height="533" loading="lazy">',
+    '<img src="/img/logo.png" alt="The Bread Bin" width="120" height="40">',
+    '<picture>',
+    '  <source type="image/avif" srcset="/img/banner.avif">',
+    '  <img src="/img/banner.jpg" alt="Banner" width="1200" height="400" loading="lazy">',
+    '</picture>'
+  ].join("\n")
+};
+
+export function auditImages(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out = [];
+  const add = (level, text) => out.push({level: level, text: text});
+  const imgs = Array.from(doc.querySelectorAll("img")).filter(function (i) { return !i.closest("noscript"); });
+  const hasW = function (s) { return /\s\d+w(\s|,|$)/.test(" " + s); };
+  const hasX = function (s) { return /\s[\d.]+x(\s|,|$)/.test(" " + s); };
+  if (imgs.length > 0 && (imgs[0].getAttribute("loading") || "").toLowerCase() === "lazy") {
+    add("problem", "The first image is lazy-loaded. If it is on the first screen, remove loading=lazy.");
+  }
+  const noSizes = imgs.filter(function (i) { return hasW(i.getAttribute("srcset") || "") && !i.hasAttribute("sizes"); });
+  if (noSizes.length > 0) add("problem", noSizes.length + " image(s) use w descriptors but have no sizes, so the browser assumes 100vw and may download too much.");
+  const mixed = imgs.filter(function (i) { const s = i.getAttribute("srcset") || ""; return hasW(s) && hasX(s); });
+  if (mixed.length > 0) add("problem", mixed.length + " image(s) mix w and x descriptors in one srcset. Use one kind per image.");
+  const noSrc = imgs.filter(function (i) { return !i.hasAttribute("src"); });
+  if (noSrc.length > 0) add("problem", noSrc.length + " image(s) have no src. An img element needs one, as the fallback.");
+  const sizesNoSet = imgs.filter(function (i) { return i.hasAttribute("sizes") && !i.hasAttribute("srcset"); });
+  if (sizesNoSet.length > 0) add("tip", sizesNoSet.length + " image(s) have sizes but no srcset, so sizes does nothing.");
+  const single = imgs.filter(function (i) {
+    const s = (i.getAttribute("srcset") || "").trim();
+    return s !== "" && s.split(",").length === 1;
+  });
+  if (single.length > 0) add("tip", single.length + " image(s) have a srcset with only one choice, which gives the browser nothing to pick from.");
+  const bigSingle = imgs.filter(function (i) { return !i.hasAttribute("srcset") && Number(i.getAttribute("width") || 0) > 800 && !i.closest("picture"); });
+  if (bigSingle.length > 0) add("tip", bigSingle.length + " large image(s) have no srcset, so every screen downloads the same big file.");
+  const noSize = imgs.filter(function (i) { return !i.hasAttribute("width") || !i.hasAttribute("height"); });
+  if (noSize.length > 0) add("problem", noSize.length + " image(s) have no width and height, so the layout can jump.");
+  const loose = Array.from(doc.querySelectorAll("picture source")).filter(function (s) { return !s.hasAttribute("type") && !s.hasAttribute("media"); });
+  if (loose.length > 0) add("tip", loose.length + " source element(s) have neither type nor media. For a format choice, add type, such as image/avif.");
+  const goodSets = imgs.filter(function (i) { return hasW(i.getAttribute("srcset") || "") && i.hasAttribute("sizes"); });
+  if (goodSets.length > 0) add("good", goodSets.length + " image(s) pair srcset w descriptors with sizes.");
+  if (out.length === 0) add("good", "Nothing to flag. Paste some img or picture elements.");
+  return out;
+}
+
+export function ImageAuditInner() {
+  const [html, setHtml] = useState(imageSamples.messy);
+  const results = auditImages(html);
+  const problems = results.filter(function (r) { return r.level === "problem"; }).length;
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(imageSamples.messy); }}>Load the messy images</button>
+        <button type="button" onClick={function () { setHtml(imageSamples.fixed); }}>Load the fixed images</button>
+      </div>
+      <label htmlFor="img-html" style={{display: "block", fontWeight: 600}}>Image HTML (edit it)</label>
+      <textarea
+        id="img-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={11}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      <p aria-live="polite" style={{fontWeight: 600}}>
+        {problems === 0 ? "No problems found." : problems + " problem(s) found."}
+      </p>
+      <ul style={{listStyle: "none", padding: 0}}>
+        {results.map(function (r, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[r.level]}}>{labels[r.level]}: </strong>
+              {r.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a teaching checker. It reads markup only, so it cannot see how big your files really are or how wide the image is on screen. Confirm with DevTools.
+      </p>
+    </div>
+  );
+}
+
+export function ImageAudit() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <ImageAuditInner />; }}
+    </BrowserOnly>
+  );
+}
+
+# Responsive Images and Performance
+
+Images are usually the heaviest part of a page, and the easiest place to waste a visitor's data. The most common waste is simple: sending a huge picture to a small screen. A phone that needs 400 pixels of image gets 2400, and downloads six times more pixels than it can show.
+
+Responsive images are the fix. You offer the browser several versions of the same picture and tell it how big the picture will be on the page, and it picks the one that fits. The basics of `srcset`, `sizes`, and `picture` are in the earlier [Responsive Images](/tutorials/html/images/responsive-images) and [Picture Element](/tutorials/html/images/picture-element) lessons. This lesson takes the performance view: how the choice is made, where it goes wrong, and how to check it.
+
+## What You Will Learn
+
+- How the browser chooses a file from a `srcset`
+- Why `sizes` matters more than most people think
+- The three common ways images waste data
+- When to use width descriptors, and when to use density descriptors
+- How formats and compression save bytes
+- How to treat the main (LCP) image
+- How to audit a page, in markup and in DevTools
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+You provide the choices. The browser knows the screen, so it makes the decision.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<img
+  src="/img/hero-1200.jpg"
+  srcset="/img/hero-800.jpg 800w,
+          /img/hero-1200.jpg 1200w,
+          /img/hero-1600.jpg 1600w,
+          /img/hero-2400.jpg 2400w"
+  sizes="(min-width: 800px) 50vw, 100vw"
+  alt="A golden loaf on a wooden board"
+  width="1600" height="800"
+  fetchpriority="high">
+```
+
+</TabItem>
+<TabItem value="lab" label="Selection Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SelectionLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="checker" label="Image Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ImageAudit />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the Selection Lab, set a wide screen and choose "No sizes attribute". The browser assumes the image fills the whole screen, though the layout shows it at half width. Now switch to the matching `sizes` and see how much is saved.
+
+## How the Browser Chooses
+
+The choice follows a few steps:
+
+1. **Work out the slot.** The `sizes` attribute tells the browser how wide the image will be on the page, in CSS pixels.
+2. **Multiply by the screen density.** A 400 px slot on a 2x screen needs about 800 pixels of image.
+3. **Pick a candidate.** The browser generally picks the smallest file that is at least as wide as it needs.
+4. **Download only that one.** The others are never fetched.
+
+This happens **before** the page layout is known, because the browser wants to start the download early. That is why it cannot measure the image itself, and why it relies on `sizes`. Browsers are also free to use their own judgement, for example by reusing a larger image they already have cached, so you cannot rely on one exact result.
+
+## `sizes` Is Where Things Go Wrong
+
+If you give a `srcset` with width descriptors (`800w`) and no `sizes`, the browser assumes the image will fill the whole width of the screen (`100vw`). For a picture that really sits in a half-width column, that means it picks a file about twice as wide as it should, and downloads roughly four times the pixels.
+
+```html
+<!-- Wrong: the layout shows this in a narrow column, but sizes is missing -->
+<img src="/img/card-800.jpg" srcset="/img/card-400.jpg 400w, /img/card-800.jpg 800w" alt="Rye loaves">
+
+<!-- Better: sizes matches the real layout -->
+<img src="/img/card-800.jpg"
+     srcset="/img/card-400.jpg 400w, /img/card-800.jpg 800w"
+     sizes="(min-width: 800px) 33vw, 100vw"
+     alt="Rye loaves" width="800" height="533">
+```
+
+Write `sizes` from your layout: look at how wide the image is at each breakpoint, and describe that. List the conditions from the widest to the narrowest, and end with a default.
+
+## Three Ways Images Waste Data
+
+| Problem | What happens | The fix |
+| :-- | :-- | :-- |
+| One huge file for everyone | A phone downloads a desktop image | Add a `srcset` with several widths |
+| `srcset` with no `sizes` | The browser assumes 100vw | Add a `sizes` that matches the layout |
+| A `sizes` that does not match the layout | The wrong file is chosen | Update `sizes` when the layout changes |
+
+The third one is the sneakiest. A designer changes a three-column grid to two columns, nobody updates `sizes`, and the page quietly downloads a bigger image than it needs for months.
+
+## Width Descriptors or Density Descriptors?
+
+| | Width descriptors (`800w`) | Density descriptors (`2x`) |
+| :-- | :-- | :-- |
+| You describe | How wide each file is | How sharp each file is |
+| Needs `sizes` | Yes | No |
+| Best for | Images whose size changes with the layout | Images with a fixed display size, such as a logo or an avatar |
+| Example | `card-400.jpg 400w, card-800.jpg 800w` | `logo.png 1x, logo-2x.png 2x` |
+
+Use one kind per image, never both. Fluid, full-width, or column images almost always want width descriptors, while a logo with a fixed size is a good fit for densities.
+
+## How Many Sizes?
+
+Offer enough choices that no screen is far from a good match, but not so many that you create dozens of files to build, store, and cache. A handful (for example 400, 800, 1200, 1600) is often plenty, and spacing them by roughly a quarter to a half is a common rule of thumb. Beyond that, extra files add work for little gain. An image service or build tool can generate the sizes for you.
+
+## Formats and Compression
+
+Pixels are one lever, and the way they are stored is another.
+
+| Format | Good for | Notes |
+| :-- | :-- | :-- |
+| JPEG | Photos | Works everywhere, and a good fallback |
+| PNG | Sharp graphics, transparency | Large for photos |
+| WebP | Photos and graphics | Often noticeably smaller than JPEG, and widely supported |
+| AVIF | Photos | Often smaller still, but slower to create, and support is not as universal |
+| SVG | Logos, icons, simple drawings | Scales without blur, and is tiny for simple shapes |
+
+Savings depend on the picture, so test your own images. More on formats is in the [Image Formats lesson](/tutorials/html/images/image-formats).
+
+To offer a modern format with a safe fallback, use `picture` with a `type` on each source:
+
+```html
+<picture>
+  <source type="image/avif" srcset="/img/banner-800.avif 800w, /img/banner-1600.avif 1600w" sizes="100vw">
+  <source type="image/webp" srcset="/img/banner-800.webp 800w, /img/banner-1600.webp 1600w" sizes="100vw">
+  <img src="/img/banner-1600.jpg" alt="Our shop at sunrise" width="1600" height="533" loading="lazy">
+</picture>
+```
+
+The browser takes the first source whose `type` it supports, and falls back to the `img`. Compression quality matters too. Many sites find that a moderate quality setting (often somewhere around 75 to 85 for JPEG) looks fine and cuts size a lot, but check your own pictures. Also remove extra metadata when you do not need it.
+
+## The Main Image Is Special
+
+The largest image on the first screen is often your Largest Contentful Paint. Treat it with care:
+
+- **Never lazy-load it.** See [Lazy Loading](./lazy-loading).
+- **Give it `fetchpriority="high"`** so the browser starts it early. Check [MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/fetchPriority) for current support.
+- **Give it `width` and `height`,** so no layout jumps.
+- **Pick its sizes carefully.** It is the file most worth getting right.
+- **Preload it only if it is found late.** If it is set in CSS, a [preload](./preload) with `imagesrcset` and `imagesizes` picks the same file as the `img` would.
+
+## Check Your Own Images
+
+First, try the checker from the earlier tab with your own markup. Then confirm in the browser, because only the browser knows what was really chosen.
+
+1. Open DevTools, then **Network**, filter by **Img**, and reload. Check the size of each file.
+2. Right-click an image and open it, or check the **Elements** panel: the `currentSrc` property shows which file was chosen.
+3. Run this in the Console to find images that are much bigger than needed:
+
+```js
+document.querySelectorAll("img").forEach(function (img) {
+  const ratio = img.naturalWidth / (img.clientWidth * devicePixelRatio);
+  if (ratio > 1.5) {
+    console.log("Oversized:", img.currentSrc, Math.round(ratio * 10) / 10 + "x");
+  }
+});
+```
+
+4. Resize the browser window, and reload at several widths. The chosen file should change.
+5. Use Lighthouse, whose suggestions include properly sizing images and using modern formats.
+6. Test with a throttled network, and look at your LCP before and after.
+
+## Best Practices
+
+1. **Always offer several widths** for any image bigger than a small icon.
+2. **Write `sizes` from your real layout,** and update it when the layout changes.
+3. **Use width descriptors for fluid images,** and density descriptors for fixed ones.
+4. **Never mix the two kinds** in one `srcset`.
+5. **Offer a modern format** with a safe fallback.
+6. **Compress sensibly,** and test the result by eye.
+7. **Give every image `width` and `height`.**
+8. **Treat the main image with care:** early, sized, and not lazy.
+9. **Automate the resizing** with a build tool or an image service.
+
+## Quick Checklist
+
+- [ ] Every large image has a `srcset` with several widths
+- [ ] Every `srcset` with `w` descriptors has a matching `sizes`
+- [ ] `sizes` matches the current layout
+- [ ] No `srcset` mixes `w` and `x`
+- [ ] The `img` has a `src` as a fallback
+- [ ] Modern formats are offered with `type`
+- [ ] Every image has `width` and `height`
+- [ ] The main image is not lazy, and is prioritised
+- [ ] DevTools shows no image far bigger than it needs to be
+
+## Security and Privacy Notes
+
+- **Remove location data from photos.** Photos from phones can carry hidden metadata, including the place they were taken. Strip it before you publish, unless you want it shown.
+- **Be careful with image resizing services.** If your server or CDN resizes images from a URL, let it produce only a fixed list of sizes, or sign the URLs. Otherwise anyone can ask for huge or endless variations, which costs you money and can overload the service.
+- **Treat uploaded SVG files as code.** An SVG can contain scripts. Never embed untrusted SVG inline, and serve or sanitise user uploads carefully. SVG used through an `img` tag does not run scripts, but inline SVG can.
+- **Images from other hosts share visitor details.** Loading an image from a third party tells that host about the visitor. Use hosts you trust, and consider hosting your own.
+- **Do not put private information in image URLs,** because they appear in the page source and may be logged.
+
+## Global Audience Notes
+
+- **Many visitors use limited data.** Right-sized images are one of the kindest things you can do for them. A phone on a slow plan benefits most.
+- **High-density screens are common,** but a 3x screen does not always need a 3x image on a slow connection. A well-compressed 2x image often looks good enough, so test.
+- **Slow networks make large images painful.** Smaller files, modern formats, and lazy loading all help.
+- **Avoid putting text inside images.** It cannot be translated, resized, or read by a screen reader. Use real text on top of, or beside, the picture, and keep the image itself light.
+- **Write good `alt` text in the page's language,** for every image that carries meaning.
+
+## Common Mistakes to Avoid
+
+1. **One huge file for every screen.**
+2. **A `srcset` with `w` descriptors and no `sizes`.**
+3. **A `sizes` that was never updated** after a layout change.
+4. **Mixing `w` and `x` descriptors.**
+5. **A `srcset` with a single choice.**
+6. **Forgetting `type` on format sources** in a `picture` element.
+7. **No `src` on the `img`.**
+8. **Lazy-loading the main image.**
+9. **No `width` and `height`.**
+10. **Never checking** which file the browser actually chose.
+
+## Practice Time
+
+1. In the Selection Lab, set the screen to 1200 px and the density to 2x. How much is wasted with no `sizes`?
+2. Switch to the matching `sizes`. How much is saved?
+3. Try a 3x screen at a small width. Which file is chosen?
+4. Load the messy images into the checker and fix every problem it reports.
+5. Open a page you built, and run the Console snippet. Which image is the most oversized?
+6. Add a `srcset` and `sizes` to it, and reload at two window widths.
+7. Check `currentSrc` at each width.
+8. Bonus: convert one photo to WebP or AVIF and compare the file size.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. How does the browser choose an image?</summary>
+
+It works out the slot width from `sizes`, multiplies by the screen density, and picks the smallest candidate that is at least that wide. It then downloads only that file.
+
+</details>
+
+<details>
+<summary>2. Why is `sizes` important?</summary>
+
+The browser chooses before the layout is known, so it relies on `sizes` for the image's width. Without it, it assumes the image fills the whole screen, and may download far too much.
+
+</details>
+
+<details>
+<summary>3. When should you use `w` descriptors, and when `x`?</summary>
+
+Use `w` descriptors for images whose size changes with the layout, together with `sizes`. Use `x` descriptors for fixed-size images such as logos. Never mix them in one `srcset`.
+
+</details>
+
+<details>
+<summary>4. How do you offer a modern format safely?</summary>
+
+Use a `picture` element with a `source` for each format, each with a `type`, and a normal `img` inside as the fallback.
+
+</details>
+
+<details>
+<summary>5. How should you treat the main image?</summary>
+
+Do not lazy-load it, give it `width` and `height`, consider `fetchpriority="high"`, and choose its sizes carefully, because it is often the Largest Contentful Paint.
+
+</details>
+
+<details>
+<summary>6. How can you see which file was chosen?</summary>
+
+Use the Network panel, or read the image's `currentSrc` in the Console. Resize the window and reload to see it change.
+
+</details>
+
+## Key Takeaways
+
+- **Send each screen the size it needs,** not more.
+- **`sizes` tells the browser how big the image will be,** and wrong or missing values waste data.
+- **Use `w` descriptors for fluid images,** `x` for fixed ones, and never both.
+- **Modern formats and sensible compression** cut bytes further.
+- **The main image gets special care:** early, sized, and not lazy.
+- **Check in DevTools.** The browser's choice is the truth.
+- **Strip hidden metadata,** and protect any image resizing service.
+
+Next up: [Critical Resources](./critical-resources), where you will learn how to find the few files that decide how fast your page feels.

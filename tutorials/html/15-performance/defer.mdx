@@ -1,0 +1,496 @@
+---
+id: html-perf-defer
+title: "The defer Attribute"
+sidebar_label: "Defer"
+sidebar_position: 10
+slug: /html/performance/defer
+description: "Learn exactly how the defer attribute works: when deferred scripts download and run, what order they keep, which bugs appear when you add it, and how to move an old page to defer safely. Includes a run order simulator and a migration helper."
+keywords:
+  - defer attribute
+  - script defer
+  - defer vs async
+  - DOMContentLoaded
+  - deferred scripts order
+  - move scripts to head
+  - render blocking JavaScript
+  - HTML performance
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, performance, javascript, defer, scripts, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function simulateRunOrder(o) {
+  const log = [];
+  let ranLib = false;
+  let plainBefore = 0;
+  const check = function (who) {
+    if (ranLib) log.push({text: who + " uses Lib, and it works.", error: false});
+    else log.push({text: who + ": ReferenceError, Lib is not defined.", error: true});
+  };
+  if (!o.libDefer) {
+    plainBefore += 1;
+    ranLib = true;
+    log.push({text: "lib.js downloads, then runs (the parser waited). It defines Lib.", error: false});
+  }
+  let inlineLater = false;
+  if (o.wrapInline) inlineLater = true;
+  else check("The inline script");
+  if (!o.appDefer) {
+    plainBefore += 1;
+    log.push({text: "app.js downloads, then runs (the parser waited).", error: false});
+    check("app.js");
+  }
+  log.push({text: "The parser reaches the heading, so the page can start to appear.", error: false, marker: true});
+  log.push({text: "HTML is fully read. document.readyState is now interactive.", error: false});
+  if (o.libDefer) {
+    ranLib = true;
+    log.push({text: "Deferred: lib.js runs. It defines Lib.", error: false});
+  }
+  if (o.appDefer) {
+    log.push({text: "Deferred: app.js runs.", error: false});
+    check("app.js");
+  }
+  log.push({text: "DOMContentLoaded fires.", error: false});
+  if (inlineLater) check("The inline script, inside a DOMContentLoaded listener,");
+  return {log: log, plainBefore: plainBefore, errors: log.filter(function (l) { return l.error; }).length};
+}
+
+export function RunOrderLab() {
+  const [libDefer, setLibDefer] = useState(false);
+  const [appDefer, setAppDefer] = useState(false);
+  const [wrapInline, setWrapInline] = useState(false);
+  const r = simulateRunOrder({libDefer: libDefer, appDefer: appDefer, wrapInline: wrapInline});
+  const tag = function (name, deferred) {
+    return '<script src="/js/' + name + '.js"' + (deferred ? " defer" : "") + "></script>";
+  };
+  const inlineCode = wrapInline
+    ? 'document.addEventListener("DOMContentLoaded", function () { Lib.start(); });'
+    : "Lib.start();";
+  const source = [
+    tag("lib", libDefer),
+    "<script>" + inlineCode + "</script>",
+    tag("app", appDefer),
+    "<h1>The Bread Bin</h1>"
+  ].join("\n");
+  return (
+    <div style={{padding: "1rem"}}>
+      <label style={{display: "block", margin: "0.2rem 0"}}>
+        <input type="checkbox" checked={libDefer} onChange={function (e) { setLibDefer(e.target.checked); }} /> Add defer to lib.js
+      </label>
+      <label style={{display: "block", margin: "0.2rem 0"}}>
+        <input type="checkbox" checked={appDefer} onChange={function (e) { setAppDefer(e.target.checked); }} /> Add defer to app.js
+      </label>
+      <label style={{display: "block", margin: "0.2rem 0 1rem"}}>
+        <input type="checkbox" checked={wrapInline} onChange={function (e) { setWrapInline(e.target.checked); }} /> Wait for DOMContentLoaded in the inline script
+      </label>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{source}</code></pre>
+      <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>What happens, in order</p>
+      <ol aria-live="polite">
+        {r.log.map(function (l, i) {
+          return (
+            <li key={i} style={{color: l.error ? "#c0392b" : "inherit", fontWeight: l.marker ? 600 : 400}}>{l.text}</li>
+          );
+        })}
+      </ol>
+      <p>
+        Scripts that held up the heading: <strong>{r.plainBefore}</strong>. Errors: <strong style={{color: r.errors > 0 ? "#c0392b" : "#1e8449"}}>{r.errors}</strong>.
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a simplified model of the usual order of events. It leaves out styles and timing, so confirm real behaviour in your browser.
+      </p>
+    </div>
+  );
+}
+
+export function attrsToString(el, extra) {
+  const parts = [];
+  Array.from(el.attributes).forEach(function (a) {
+    if (a.value === "") parts.push(a.name);
+    else parts.push(a.name + '="' + a.value.replace(/&/g, "&amp;").replace(/"/g, "&quot;") + '"');
+  });
+  if (extra && parts.indexOf(extra) === -1) parts.push(extra);
+  return parts.join(" ");
+}
+
+export function migrateScripts(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const scripts = Array.from(doc.querySelectorAll("script"));
+  const notes = [];
+  const head = [];
+  let hasPlainExternal = false;
+  scripts.forEach(function (s) {
+    const src = s.getAttribute("src");
+    const type = (s.getAttribute("type") || "").toLowerCase();
+    const where = s.closest("head") ? "head" : "body";
+    const label = src ? src : "inline script";
+    if (type === "module") {
+      notes.push({level: "good", text: label + ": a module, so it is already deferred."});
+      if (src) head.push("<script " + attrsToString(s) + "></script>");
+    } else if (type !== "" && type !== "text/javascript" && type !== "application/javascript") {
+      notes.push({level: "good", text: label + ": a data block, not a script that runs. Leave it alone."});
+    } else if (src && s.hasAttribute("async")) {
+      notes.push({level: "good", text: src + ": async. Leave it alone if it is independent."});
+      head.push("<script " + attrsToString(s) + "></script>");
+    } else if (src && s.hasAttribute("defer")) {
+      notes.push({level: "good", text: src + ": already deferred."});
+      head.push("<script " + attrsToString(s) + "></script>");
+    } else if (src) {
+      hasPlainExternal = true;
+      notes.push({level: "change", text: src + ": plain script in the " + where + ". Add defer" + (where === "body" ? " and move it to the head" : "") + "."});
+      head.push("<script " + attrsToString(s, "defer") + "></script>");
+    } else if (s.hasAttribute("defer")) {
+      notes.push({level: "tip", text: "An inline script has defer. It does nothing there, so remove it. Inline scripts always run at once."});
+    } else {
+      notes.push({level: "tip", text: "An inline script runs at once. If it uses anything from a script you deferred, wrap it in a DOMContentLoaded listener, or move it into a deferred file."});
+    }
+  });
+  if (scripts.length === 0) notes.push({level: "good", text: "No script elements found."});
+  return {notes: notes, head: head, hasPlainExternal: hasPlainExternal};
+}
+
+export const migrateSample = [
+  '<head>',
+  '  <script src="/js/jquery.js"></script>',
+  '  <script src="/js/plugins.js"></script>',
+  '</head>',
+  '<body>',
+  '  <h1>Hello</h1>',
+  '  <script>$(function () { $("h1").fadeIn(); });</script>',
+  '  <script src="/js/app.js"></script>',
+  '  <script src="/js/analytics.js" async></script>',
+  '  <script defer>console.log("hello");</script>',
+  '  <script type="module" src="/js/main.js"></script>',
+  '</body>'
+].join("\n");
+
+export function MigratorInner() {
+  const [html, setHtml] = useState(migrateSample);
+  const r = migrateScripts(html);
+  const colors = {change: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {change: "Change", tip: "Tip", good: "Fine"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <label htmlFor="mig-html" style={{display: "block", fontWeight: 600}}>Your page's HTML (edit it)</label>
+      <textarea
+        id="mig-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={12}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      <ul style={{listStyle: "none", padding: 0}} aria-live="polite">
+        {r.notes.map(function (n, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[n.level]}}>{labels[n.level]}: </strong>
+              {n.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>Suggested scripts for the head, in the same order</p>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{r.head.length === 0 ? "(none)" : r.head.join("\n")}</code></pre>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a starting point. It cannot see what your scripts do, so test the page after every change, and check any inline script that uses a library.
+      </p>
+    </div>
+  );
+}
+
+export function Migrator() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the helper...</p>}>
+      {function () { return <MigratorInner />; }}
+    </BrowserOnly>
+  );
+}
+
+# The defer Attribute
+
+`defer` is the closest thing HTML has to a free speed-up. Add one word to a `script` tag, and the browser stops waiting for that script. It downloads the file in the background while it carries on reading the page, and runs it later, when the page is ready.
+
+The idea is simple, but the details trip people up: exactly when does a deferred script run, in what order, and what breaks when you add it to an old page? This lesson answers those questions. For a quick overview, see the [Script lesson](/tutorials/html/html-head/script), and for the wider picture, [Script Loading](./script-loading).
+
+## What You Will Learn
+
+- Exactly when a deferred script downloads, and when it runs
+- Why deferred scripts keep their order
+- What `defer` does not work on
+- The four bugs that appear when you add `defer` to an old page
+- How `defer` relates to `DOMContentLoaded`
+- How to convert an old page safely
+- What `defer` does and does not make faster
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+```html
+<script src="/js/app.js" defer></script>
+```
+
+Compare that with a plain `script` tag. The plain one stops the parser, downloads, runs, and only then lets the page continue. The deferred one downloads at the same time as the page is being read, and waits its turn.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<head>
+  <meta charset="utf-8">
+  <title>The Bread Bin</title>
+  <link rel="stylesheet" href="/site.css">
+
+  <!-- Found early, downloaded in the background, run in this order after the page is read -->
+  <script src="/js/lib.js" defer></script>
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <h1>The Bread Bin</h1>
+  <p>This content can appear before either script has run.</p>
+</body>
+```
+
+</TabItem>
+<TabItem value="lab" label="Run Order Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<RunOrderLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, start with everything plain and read the errors. Then add `defer` one script at a time. Watch how the order of events changes, and how the inline script breaks when `lib.js` is deferred. The checkbox at the bottom shows the usual fix.
+
+## The Rules of defer
+
+1. **It downloads in parallel.** The browser finds the script as it reads the head, and starts the download at once, without stopping.
+2. **It runs after the HTML is fully read.** The page is already built, so your script can use any element on it.
+3. **It runs before `DOMContentLoaded`.** That event waits until deferred scripts have finished.
+4. **It keeps its order.** Deferred scripts run in the order they appear in the HTML, even if a later one downloads first. If an earlier script is slow, later ones wait for it.
+5. **It runs once, on the main thread.** Deferring moves the *waiting* out of the way, but the script still has to run, and while it runs the page cannot respond.
+
+## What defer Works On
+
+| Script | Does `defer` apply? | What happens |
+| :-- | :-- | :-- |
+| External classic script (`src`) | Yes | Downloads in parallel, runs after the page is read |
+| Inline classic script (no `src`) | No | `defer` is ignored, and it runs at once |
+| `type="module"` script | Already deferred | Modules defer by default, so the attribute adds nothing |
+| Script added by JavaScript | No | Dynamic scripts act like `async` unless you set `script.async = false` |
+
+If a script has both `defer` and `async`, browsers that understand `async` use `async`. Pick one.
+
+## defer vs the End of the Body
+
+For years the advice was "put your scripts just before the closing body tag." That works, because the page above is already read when the script is found. But `defer` is better:
+
+| | Plain script at the end of the body | `defer` in the head |
+| :-- | :-- | :-- |
+| Blocks the content above it | No | No |
+| When does the download start? | Late, when the parser gets there | Early, as soon as the head is read |
+| Order kept | Yes | Yes |
+| Easy to see all scripts at once | No | Yes |
+
+Both let the page appear. `defer` simply starts the download sooner, which can finish the work sooner.
+
+## Four Bugs When Adding defer
+
+Adding `defer` to an old page is usually safe, but these four problems are common. Each has a simple fix.
+
+### 1. An inline script uses something from a deferred file
+
+```html
+<script src="/js/lib.js" defer></script>
+<script>Lib.start();</script>  <!-- runs at once: Lib does not exist yet -->
+```
+
+The inline script runs while the page is being read, before the deferred file has run. Wrap it so it waits:
+
+```html
+<script>
+  document.addEventListener("DOMContentLoaded", function () { Lib.start(); });
+</script>
+```
+
+Better still, move the code into a deferred file of its own.
+
+### 2. An inline event handler calls a function that does not exist yet
+
+```html
+<button onclick="openMenu()">Menu</button>
+```
+
+If `openMenu` is defined in a deferred script, a very fast click before it has run causes an error. Add the listener from the script itself instead, with `addEventListener`.
+
+### 3. Code that expects the page to still be loading
+
+Some old code checks `document.readyState === "loading"`. A deferred script runs when the state is `"interactive"`, so a check like that can behave differently. Test any code that reads the ready state.
+
+### 4. Code that uses `document.write`
+
+`document.write` does not work in a deferred script, because the page has already been read. Replace it with normal DOM methods such as `append`.
+
+:::tip
+A useful trick: `DOMContentLoaded` still fires **after** deferred scripts run, so a listener added from inside a deferred script works fine. You do not need to add one if your script already runs when the page is ready.
+:::
+
+## Move an Old Page to defer
+
+Paste the scripts from an old page into the helper. It lists what to change, and builds the head block in the original order. The sample is a typical old page.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<Migrator />
+</>
+</BrowserWindow>
+
+The steps in real life are:
+
+1. List every script, in order.
+2. Add `defer` to the external classic scripts, keeping their order.
+3. Leave independent scripts such as analytics as `async`.
+4. Fix any inline script that uses a deferred library.
+5. Reload, and check the console for errors.
+6. Compare timings before and after.
+
+## What defer Does and Does Not Speed Up
+
+- **It helps the first paint.** The page no longer waits for the script, so content can appear sooner. This improves First Contentful Paint (FCP) and often Largest Contentful Paint (LCP).
+- **It does not shrink the script.** The browser still downloads, compiles, and runs every byte.
+- **It can delay `DOMContentLoaded`.** That event waits for deferred scripts, so it may fire later even though the page looks ready sooner. Do not judge by `DOMContentLoaded` alone.
+- **It does not remove the cost of running.** A heavy deferred script still keeps the main thread busy, which can hurt Interaction to Next Paint (INP). Send less code too.
+
+## Checking in DevTools
+
+1. Open DevTools, then **Network**, filter by **JS**, and reload.
+2. In the **Waterfall**, the deferred script should start downloading early, alongside the stylesheet, not after it.
+3. Open the **Performance** panel and record a load. The script should run after the page content appears, not before.
+4. Check the **Console** for errors such as "is not defined", which point to a dependency problem.
+5. Compare First Contentful Paint and Largest Contentful Paint before and after, in Lighthouse or the Performance panel.
+
+## Best Practices
+
+1. **Use `defer` for your own external scripts** by default.
+2. **Put them in the head,** so they are found early.
+3. **Keep the order** that dependencies need.
+4. **Do not rely on inline scripts** that use deferred code. Wrap them or move them.
+5. **Use `addEventListener`,** not inline `onclick` handlers, for code that lives in deferred files.
+6. **Use `async` only for independent scripts.**
+7. **Test the page** after every change, and with a slow connection.
+8. **Send less code,** because `defer` does not make it cheaper to run.
+
+## Quick Checklist
+
+- [ ] External scripts that your page needs use `defer`
+- [ ] They sit in the head, in dependency order
+- [ ] No `defer` on inline scripts
+- [ ] No inline script uses something from a deferred file before it has run
+- [ ] No `document.write` in deferred code
+- [ ] Buttons and links do not depend on a function that may not exist yet
+- [ ] The console shows no "is not defined" errors
+- [ ] FCP and LCP checked before and after
+
+## Security and Privacy Notes
+
+- **`defer` does not change trust.** A deferred script has the same power as a plain one. Load scripts only from sources you trust.
+- **Use integrity hashes for fixed files.** For a script from a CDN that does not change, add `integrity` and `crossorigin="anonymous"`, so the browser refuses a file that has been altered.
+- **A content security policy applies to deferred scripts too.** It can block inline code and inline event handlers, which is another reason to use `addEventListener` and separate files.
+- **Do not defer your way around consent.** A deferred analytics or advertising script still contacts a third party and may collect data. If you need consent first, do not load the script until it is given. This is not legal advice, so check the rules that apply to you.
+- **Do not build script URLs from untrusted input.**
+
+## Global Audience Notes
+
+- **Deferred scripts still run on the visitor's device.** On a modest phone, a heavy bundle can keep the page unresponsive even after it appears. Send less, not just later.
+- **Order creates waiting.** If an earlier deferred script comes from a slow or distant server, later deferred scripts wait for it. Host important scripts close to your visitors, and keep third-party scripts out of the deferred queue where you can.
+- **A blocked or failed script** (a service unavailable in some regions, for example) should not take down your page. Keep your core content independent of third-party scripts.
+- **Test on slow networks,** since the gap between "page appears" and "page works" gets longer there. Make sure the page is useful in between.
+
+## Common Mistakes to Avoid
+
+1. **Adding `defer` to an inline script,** where it does nothing.
+2. **Inline code that uses a deferred library** straight away.
+3. **Inline `onclick` calling a function from a deferred file.**
+4. **Mixing `defer` and `async`** on the same tag.
+5. **Putting scripts in the wrong order,** so a dependency runs second.
+6. **Expecting `defer` to make the script smaller.**
+7. **Judging by `DOMContentLoaded`** instead of the first paint.
+8. **Using `document.write`** in deferred code.
+9. **Not testing** after the change.
+10. **Deferring a script that must run first,** such as one that sets a theme before the page paints, without a plan.
+
+## Practice Time
+
+1. In the Run Order Lab, add `defer` to `lib.js` only. What breaks, and why?
+2. Fix it with the DOMContentLoaded checkbox.
+3. Add `defer` to both scripts. How many scripts now hold up the heading?
+4. Paste an old page of your own into the migration helper. How many changes does it suggest?
+5. Apply them, and reload with the console open.
+6. Find an inline `onclick` in a page you built, and replace it with `addEventListener`.
+7. Record a Performance trace before and after, and compare when the content appears.
+8. Bonus: put an earlier deferred script behind a slow network throttle, and see how it delays the later ones.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. When does a deferred script download, and when does it run?</summary>
+
+It downloads in the background as soon as the browser finds it, and runs after the HTML has been fully read, just before `DOMContentLoaded`.
+
+</details>
+
+<details>
+<summary>2. In what order do deferred scripts run?</summary>
+
+In the order they appear in the HTML, even if a later one finishes downloading first.
+
+</details>
+
+<details>
+<summary>3. Does `defer` work on inline scripts?</summary>
+
+No. It only works on external classic scripts, with a `src`. Module scripts are already deferred.
+
+</details>
+
+<details>
+<summary>4. What is the most common bug after adding `defer`?</summary>
+
+An inline script that uses something from a deferred file. It runs first, so the library is not defined yet. Wrap it in a `DOMContentLoaded` listener, or move it into a deferred file.
+
+</details>
+
+<details>
+<summary>5. Why is `defer` in the head better than a script at the end of the body?</summary>
+
+Both let the content appear, but `defer` is found earlier, so the download starts sooner.
+
+</details>
+
+<details>
+<summary>6. What does `defer` not fix?</summary>
+
+The size and running cost of the script. A heavy deferred script still keeps the main thread busy, which can hurt responsiveness.
+
+</details>
+
+## Key Takeaways
+
+- **`defer` downloads in parallel and runs after the page is read.**
+- **Deferred scripts keep their order,** which makes them safe for dependencies.
+- **It only applies to external classic scripts.** Modules are deferred already.
+- **Watch for inline scripts and inline handlers** that use deferred code.
+- **It helps the first paint, not the size of the script.**
+- **Put deferred scripts in the head,** so they are found early.
+- **Test after every change,** and keep the code you send small.
+
+Next up: [Async](./async), where you will meet the other loading mode, and learn when "run as soon as it arrives" is the right choice.
