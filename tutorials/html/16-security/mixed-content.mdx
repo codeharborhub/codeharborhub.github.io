@@ -1,0 +1,491 @@
+---
+id: html-sec-mixed-content
+title: "Mixed Content"
+sidebar_label: "Mixed Content"
+sidebar_position: 9
+slug: /html/security/mixed-content
+description: "Learn what mixed content is, why an https page that loads anything over http is unsafe, how browsers treat active and passive content, and how to fix it with https URLs, upgrade-insecure-requests and HSTS. Includes a mixed content lab and a markup finder."
+keywords:
+  - mixed content
+  - https http mixed content
+  - upgrade-insecure-requests
+  - Strict-Transport-Security
+  - HSTS
+  - active mixed content
+  - passive mixed content
+  - secure context
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, https, mixed-content, headers, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const mixedResources = [
+  {id: "m1", label: "Photo", type: "image", kind: "passive", url: "http://images.example.org/photo.jpg", hostHttps: true},
+  {id: "m2", label: "Old banner", type: "image", kind: "passive", url: "http://old-ads.example.org/banner.gif", hostHttps: false},
+  {id: "m3", label: "Video clip", type: "video", kind: "passive", url: "http://media.example.net/clip.mp4", hostHttps: true},
+  {id: "m4", label: "Analytics script", type: "script", kind: "active", url: "http://stats.example.net/tracker.js", hostHttps: true},
+  {id: "m5", label: "Legacy widget script", type: "script", kind: "active", url: "http://widgets.example.org/widget.js", hostHttps: false},
+  {id: "m6", label: "Stylesheet", type: "stylesheet", kind: "active", url: "http://cdn.example.net/theme.css", hostHttps: true},
+  {id: "m7", label: "Map frame", type: "iframe", kind: "active", url: "http://maps.example.net/embed", hostHttps: true},
+  {id: "m8", label: "fetch() to an API", type: "fetch", kind: "active", url: "http://api.example.com/data", hostHttps: true},
+  {id: "m9", label: "Live updates socket", type: "WebSocket", kind: "active", url: "ws://live.example.com/feed", hostHttps: true},
+  {id: "m10", label: "Logo", type: "image", kind: "passive", url: "https://www.example.com/logo.png", hostHttps: true},
+  {id: "m11", label: "Local test script", type: "script", kind: "active", url: "http://127.0.0.1:5500/dev.js", hostHttps: false}
+];
+
+export function mixedOutcome(pageScheme, res, upgrade) {
+  let u;
+  try {
+    u = new URL(res.url);
+  } catch (e) {
+    return {state: "bad", text: "Invalid address"};
+  }
+  if (pageScheme === "http") return {state: "ok", text: "Loads (but the page itself is not secure)"};
+  if (u.protocol === "https:" || u.protocol === "wss:") return {state: "ok", text: "Loads securely"};
+  if (u.hostname === "127.0.0.1" || u.hostname === "localhost") return {state: "ok", text: "Loads (local addresses are treated as trustworthy)"};
+  if (upgrade) {
+    return res.hostHttps
+      ? {state: "ok", text: "Upgraded to https, and loads"}
+      : {state: "bad", text: "Upgraded to https, then fails (the host has no https)"};
+  }
+  if (res.kind === "active") return {state: "bad", text: "Blocked"};
+  return res.hostHttps
+    ? {state: "warn", text: "Browser tries an https upgrade, and it loads"}
+    : {state: "bad", text: "Blocked (the https upgrade failed)"};
+}
+
+export function MixedLab() {
+  const [pageScheme, setPageScheme] = useState("https");
+  const [upgrade, setUpgrade] = useState(false);
+  const rows = mixedResources.map(function (r) { return {res: r, out: mixedOutcome(pageScheme, r, upgrade)}; });
+  const failed = rows.filter(function (r) { return r.out.state === "bad"; }).length;
+  const colors = {ok: "#1e8449", warn: "#b9770e", bad: "#c0392b"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.5rem"}}>
+        <legend style={{fontWeight: 600}}>Your page is served over</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="ml-scheme" checked={pageScheme === "https"} onChange={function () { setPageScheme("https"); }} /> https</label>
+        <label><input type="radio" name="ml-scheme" checked={pageScheme === "http"} onChange={function () { setPageScheme("http"); }} /> http</label>
+      </fieldset>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={upgrade} onChange={function (e) { setUpgrade(e.target.checked); }} /> The server sends <code>Content-Security-Policy: upgrade-insecure-requests</code>
+      </label>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>Resource</th>
+            <th style={{textAlign: "left"}}>Kind</th>
+            <th style={{textAlign: "left"}}>What happens</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(function (r) {
+            return (
+              <tr key={r.res.id}>
+                <td>{r.res.label} <span style={{fontSize: "0.8rem", opacity: 0.8}}>({r.res.type})</span><br /><code style={{fontSize: "0.75rem"}}>{r.res.url}</code></td>
+                <td>{r.res.kind}</td>
+                <td style={{fontWeight: 600, color: colors[r.out.state]}}>{r.out.text}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p aria-live="polite" style={{fontWeight: 600}}>{failed} of {rows.length} would fail to load.</p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A simplified model. Exact behaviour differs a little between browsers and versions, and nothing here loads a real address. The fix is not the header: it is to use https addresses, with the header as a safety net.
+      </p>
+    </div>
+  );
+}
+
+export const findSamples = {
+  messy: [
+    '<link rel="stylesheet" href="http://cdn.example.net/theme.css">',
+    '<script src="http://stats.example.net/tracker.js"></script>',
+    '<img src="http://images.example.org/photo.jpg" alt="Photo"',
+    '     srcset="http://images.example.org/photo-2x.jpg 2x">',
+    '<iframe src="http://maps.example.net/embed" title="Map"></iframe>',
+    '<video src="http://media.example.net/clip.mp4" poster="http://media.example.net/poster.jpg"></video>',
+    '<form action="http://www.example.com/subscribe" method="post"></form>',
+    '<a href="http://partner.example.org/">Partner</a>',
+    '<script src="//cdn.example.net/lib.js"></script>',
+    '<script src="http://127.0.0.1:5500/dev.js"></script>'
+  ].join("\n"),
+  fixed: [
+    '<link rel="stylesheet" href="/css/theme.css">',
+    '<script src="https://stats.example.net/tracker.js" defer></script>',
+    '<img src="/images/photo.jpg" alt="Photo" srcset="/images/photo-2x.jpg 2x">',
+    '<iframe src="https://maps.example.net/embed" title="Map"></iframe>',
+    '<form action="/subscribe" method="post"></form>',
+    '<a href="https://partner.example.org/">Partner</a>'
+  ].join("\n")
+};
+
+export function findMixed(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out = [];
+  const isInsecure = function (v) { return /^\s*(http|ws):\/\//i.test(v || ""); };
+  const isLocal = function (v) { return /^\s*(http|ws):\/\/(127\.0\.0\.1|localhost)(:|\/|$)/i.test(v || ""); };
+  Array.from(doc.querySelectorAll("[src],[href],[action],[data],[poster],[srcset]")).forEach(function (el) {
+    const tag = el.tagName.toLowerCase();
+    const rel = (el.getAttribute("rel") || "").toLowerCase();
+    ["src", "href", "action", "data", "poster", "srcset"].forEach(function (attr) {
+      if (!el.hasAttribute(attr)) return;
+      const value = el.getAttribute(attr);
+      const parts = attr === "srcset" ? value.split(",").map(function (p) { return p.trim().split(/\s+/)[0]; }) : [value];
+      parts.forEach(function (part) {
+        const label = tag + " " + attr + '="' + part + '"';
+        if (/^\s*\/\//.test(part)) {
+          out.push({level: "tip", text: label + ": a protocol-relative address. It follows the page's scheme, but write https:// so it is clear."});
+          return;
+        }
+        if (!isInsecure(part)) return;
+        if (isLocal(part)) {
+          out.push({level: "tip", text: label + ": a local address. Browsers treat it as trustworthy, but remove it before publishing."});
+          return;
+        }
+        if (tag === "a" && attr === "href") {
+          out.push({level: "tip", text: label + ": a link, not mixed content, but it sends visitors to an insecure page. Use https if the site supports it."});
+        } else if (tag === "form" && attr === "action") {
+          out.push({level: "problem", text: label + ": a form that would submit over http. Browsers warn about this, and it exposes what visitors type."});
+        } else if (tag === "link" && rel.indexOf("stylesheet") === -1 && rel.indexOf("preload") === -1 && rel.indexOf("modulepreload") === -1) {
+          out.push({level: "tip", text: label + ": a link element. Use https."});
+        } else if (["img", "audio", "video", "source", "track"].indexOf(tag) !== -1 || attr === "poster") {
+          out.push({level: "tip", text: label + ": passive mixed content. Browsers try to upgrade it, and may block it."});
+        } else {
+          out.push({level: "problem", text: label + ": active mixed content. Browsers block it."});
+        }
+      });
+    });
+  });
+  if (out.length === 0) out.push({level: "good", text: "No http:// or ws:// addresses found in the attributes checked."});
+  return out;
+}
+
+export function FinderInner() {
+  const [html, setHtml] = useState(findSamples.messy);
+  const findings = findMixed(html);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Imagine this markup is on a page served over <code>https</code>.</p>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(findSamples.messy); }}>Load the messy page</button>
+        <button type="button" onClick={function () { setHtml(findSamples.fixed); }}>Load the fixed page</button>
+      </div>
+      <label htmlFor="mf-html" style={{display: "block", fontWeight: 600}}>Page HTML (edit it)</label>
+      <textarea id="mf-html" value={html} onChange={function (e) { setHtml(e.target.value); }} rows={10} spellCheck={false} style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}} />
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {findings.map(function (f, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>{f.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A teaching checker. It reads attributes only. It cannot see addresses created by JavaScript, or inside CSS files, so also check the browser Console on the real page.
+      </p>
+    </div>
+  );
+}
+
+export function MixedFinder() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <FinderInner />; }}
+    </BrowserOnly>
+  );
+}
+
+Imagine you post a letter in a locked, tamper-proof envelope, but inside it you tuck a note that says "also fetch this parcel from the corner stall", and the stall is open for anyone to swap the parcel. The envelope was secure. The parcel was not.
+
+That is **mixed content**: a page delivered over secure `https` that loads some of its parts over plain `http`. The secure part is only as safe as the weakest part.
+
+## What You Will Learn
+
+- What mixed content is, and why it is dangerous
+- The difference between active and passive mixed content
+- What browsers block, upgrade, or warn about
+- How to find mixed content on a page
+- How to fix it, with `https` addresses first, and a header as a safety net
+- What HSTS adds
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+`https` protects a connection from being read or changed on its way. Any part of your page loaded over `http` has **no such protection**, and anyone on the path, such as a person on the same public Wi-Fi, can read it or **swap it for something else**.
+
+<Tabs>
+<TabItem value="code" label="The Code" default>
+
+```html title="Mixed content (do not do this)"
+<!-- This page is served over https -->
+<script src="http://stats.example.net/tracker.js"></script>
+<img src="http://images.example.org/photo.jpg" alt="Photo">
+```
+
+```html title="Fixed"
+<script src="https://stats.example.net/tracker.js" defer></script>
+<img src="/images/photo.jpg" alt="Photo">
+```
+
+```text title="Safety net: response header"
+Content-Security-Policy: upgrade-insecure-requests
+```
+
+</TabItem>
+<TabItem value="lab" label="Mixed Content Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MixedLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="finder" label="Mixed Content Finder">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MixedFinder />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Why It Is Dangerous
+
+What an attacker can do depends on what the page loaded:
+
+- **A script over `http`:** the attacker can replace it with their own. That script then runs **inside your secure page**, with full access to it, including forms, cookies that are not `HttpOnly`, and everything the visitor sees. This is as bad as XSS, and it does not need any bug in your code.
+- **A stylesheet over `http`:** it can hide parts of the page, or reposition a fake form over the real one.
+- **An iframe over `http`:** the attacker can show a fake page inside your page.
+- **An image or video over `http`:** it can be swapped for misleading content, and visitors can be tracked, since the request is visible.
+- **A form that submits over `http`:** everything the visitor typed travels unprotected.
+
+## Active and Passive Mixed Content
+
+Browsers split mixed content into two groups, based on how much damage it can do:
+
+| | Passive (display) | Active |
+| :-- | :-- | :-- |
+| **What it is** | Content that is shown but cannot change the page | Content that can run or restructure the page |
+| **Examples** | Images, audio, video | Scripts, stylesheets, iframes, `fetch` and `XMLHttpRequest`, fonts, WebSockets (`ws://`) |
+| **Risk** | Lower, but still tamperable and trackable | High: full takeover is possible |
+| **Typical browser behaviour** | Tries to **upgrade** to `https`, and blocks it if that fails | **Blocked** |
+
+Browsers have also been getting stricter over time, and the details differ a little between them. Do not rely on "the browser will fix it". Treat every `http` address on an `https` page as a bug.
+
+### Links and forms are different
+
+A normal link to an `http` page is **not** mixed content, because the visitor is navigating there, not loading it into your page. But it still takes them to an insecure page, so use `https` when the destination supports it.
+
+A **form** on an `https` page that submits to an `http` address is a different problem. Browsers show warnings, and may block it, because what the visitor types is sent without protection. See [Secure Forms](./secure-forms).
+
+## Finding Mixed Content
+
+1. **Open the Console.** On a page served over `https`, DevTools prints messages beginning "Mixed Content:" that name the blocked or upgraded address.
+2. **Check the Network panel,** and filter by the address starting with `http:`.
+3. **Search your source code** for `http://` and `ws://`. Check templates, stylesheets (`url(...)`), JavaScript strings, and your database content.
+4. **Use the Finder tab above** on your own markup.
+5. **Check old content.** Posts and pages written years ago often hold hard-coded `http://` image links.
+
+## Fixing It
+
+### Step 1: Serve your own site over https
+
+Your site needs a valid certificate. Many hosts provide this automatically, and free certificate services exist. Redirect every `http` request to the `https` version of the same address.
+
+### Step 2: Use https addresses
+
+Change `http://` to `https://` for every resource. Most reputable hosts support it. If a host does not, **stop using that host**, copy the file to your own site if the licence allows, or find an alternative.
+
+### Step 3: Prefer relative addresses for your own files
+
+For files on your own site, use paths such as `/images/photo.jpg`. A relative address always follows the page's scheme, so it cannot be mixed content.
+
+```html
+<img src="/images/photo.jpg" alt="Photo">
+```
+
+You may still see old protocol-relative addresses such as `//cdn.example.net/lib.js`. They work, but writing `https://` is clearer, because every site should be on `https` now.
+
+### Step 4: Add the safety net
+
+The CSP directive `upgrade-insecure-requests` tells the browser to **rewrite `http` subresource addresses to `https`** before loading them:
+
+```text
+Content-Security-Policy: upgrade-insecure-requests
+```
+
+It is useful when you have a lot of old content to clean up. But it is a **net, not a cure**:
+
+- If the host does **not** support `https`, the upgraded request simply **fails**.
+- It hides the problem. Your source code still contains `http://`, and a header change, or a different server, may expose it again.
+
+Open the lab, switch the checkbox on and off, and compare the "Legacy widget script" row. Fix the addresses, then keep the header as a backup. Do not use it as a substitute for fixing them.
+
+### Step 5: Add HSTS, carefully
+
+`Strict-Transport-Security` (HSTS) tells the browser: "for the next while, always use `https` for my site, even if someone types `http://`":
+
+```text
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+:::warning
+HSTS is hard to undo, because browsers remember it for the length of `max-age`. Turn it on **only after** your whole site, including subdomains, works over `https`. Start with a short `max-age`, such as a day, test, and raise it step by step. Treat the `preload` option as a long-term commitment, and read the current requirements before using it.
+:::
+
+### Step 6: Add integrity for third-party files
+
+For scripts and styles from other hosts, the `integrity` attribute lets the browser check that the file is exactly the one you reviewed. It needs `crossorigin` for cross-origin files. Details and cautions are in [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security).
+
+```html
+<script src="https://cdn.example.net/lib.js"
+        integrity="sha384-REPLACE_WITH_THE_REAL_HASH"
+        crossorigin="anonymous"></script>
+```
+
+## A Few Related Points
+
+- **WebSockets:** use `wss://`, not `ws://`, on an `https` page.
+- **Local development:** `http://localhost` and `http://127.0.0.1` are treated as trustworthy by browsers, so your local test pages can load local `http` resources. That is why this tutorial's live demos run from an address like `http://127.0.0.1:5500`. Do not leave those addresses in published pages.
+- **Secure contexts:** many powerful features only work on `https` pages (and local addresses), such as location, the camera, service workers, and the clipboard. A site that is not on `https` loses these. This ties to the [HTML Security Basics](./html-security-basics) lesson on the https-first rule.
+- **Browser labels:** pages served over `http` are marked "Not secure" in current browsers, and visitors notice.
+
+## Checking Your Setup
+
+1. Load your page over `https`, open the **Console**, and reload. There should be no "Mixed Content" messages.
+2. In **Network**, filter by `http:` and confirm nothing is listed.
+3. Visit the `http` version of your address. It should redirect to `https`.
+4. Inspect the **Response Headers** for `Strict-Transport-Security` and `Content-Security-Policy`.
+5. Search your content database for `http://`, and update old links.
+6. Test with a private window, in case a browser extension is hiding a problem.
+
+## Best Practices
+
+1. **Serve the whole site over https,** and redirect `http` to it.
+2. **Use `https://` or relative addresses** for every resource.
+3. **Treat any `http://` on a secure page as a bug,** even if a browser upgrades it.
+4. **Drop hosts that do not support https.**
+5. **Add `upgrade-insecure-requests`** as a safety net, not a cure.
+6. **Enable HSTS** only when everything works, and raise it gradually.
+7. **Use `wss://`** for WebSockets.
+8. **Clean old content,** especially hard-coded image links.
+9. **Add `integrity`** to third-party scripts and styles.
+10. **Remove local development addresses** before you publish.
+
+## Quick Checklist
+
+- [ ] The site has a valid certificate, and `http` redirects to `https`
+- [ ] No `http://` or `ws://` addresses in HTML, CSS, JavaScript, or content
+- [ ] Forms submit to `https` or relative addresses
+- [ ] The Console shows no "Mixed Content" messages
+- [ ] `upgrade-insecure-requests` is set as a backup
+- [ ] HSTS is set only after testing
+- [ ] Third-party files use `https`, and ideally `integrity`
+- [ ] No local addresses are left in published pages
+
+## Security and Privacy Notes
+
+- **Insecure requests leak information.** An `http` request shows the address, and often the referrer, to anyone on the path. See [noreferrer](./noreferrer).
+- **A padlock is not a guarantee of a safe site.** It says the connection is encrypted, not that the page is trustworthy. Mixed content weakens even that.
+- **Public Wi-Fi is where this attack happens.** Visitors in cafes, airports, and shared networks are the most exposed.
+- **Certificates need renewal.** An expired certificate breaks your whole site and teaches visitors to click through warnings. Automate renewal, and monitor it.
+
+## Global Audience Notes
+
+- **Some networks and older devices are slow to adapt.** Older phones may not trust newer certificates, and some regions still have many `http`-only services. Test on realistic devices, and have a plan if a partner site has no `https`.
+- **Shared and public networks** are more common in some regions, which makes `https` everywhere more important there.
+- **Interrupted connections** can cause partial loads. A page that mixes secure and insecure resources can break in confusing ways when parts fail. Keep everything on one scheme.
+
+## Common Mistakes to Avoid
+
+1. **Hard-coding `http://`** in templates, stylesheets, or database content.
+2. **Relying on browsers to upgrade** passive content.
+3. **Using `upgrade-insecure-requests` as the only fix,** against a host with no https.
+4. **Enabling HSTS** before everything works on `https`.
+5. **Forgetting `ws://`,** fonts inside CSS, and `fetch` URLs in JavaScript.
+6. **Leaving `localhost` addresses** in a published page.
+7. **Letting a certificate expire.**
+8. **Linking forms to `http` addresses.**
+9. **Ignoring Console warnings** because "the page still looks fine".
+10. **Testing only your own browser,** and not a private window or another device.
+
+## Practice Time
+
+1. In the Mixed Content Lab, keep the page on `https` with the header off. Which resources fail, and which are upgraded?
+2. Switch the header on. Which resources still fail, and why?
+3. Switch the page to `http`. What changes? Is that a good result?
+4. Find the local test script in the table. Why does it load?
+5. Load the messy page in the Mixed Content Finder, and fix every problem until it reports a clean page.
+6. Open any page of your own site, open the Console, and look for "Mixed Content" messages.
+7. Search one of your own templates for `http://`. How many did you find?
+8. Bonus: write the `Strict-Transport-Security` header you would use for your first week of testing.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is mixed content?</summary>
+
+A page served over `https` that loads some resources, such as scripts or images, over plain `http`.
+
+</details>
+
+<details>
+<summary>2. Why is it dangerous?</summary>
+
+Resources loaded over `http` can be read or replaced by anyone on the path. A swapped script runs inside your secure page.
+
+</details>
+
+<details>
+<summary>3. What is the difference between active and passive mixed content?</summary>
+
+Passive content, such as images and video, is displayed only. Active content, such as scripts, stylesheets, and frames, can run or change the page, so browsers block it.
+
+</details>
+
+<details>
+<summary>4. What is the real fix?</summary>
+
+Use `https://` or relative addresses for every resource, and serve your own site over `https`.
+
+</details>
+
+<details>
+<summary>5. What does `upgrade-insecure-requests` do?</summary>
+
+It tells the browser to load `http` subresources over `https`. It is a safety net, and fails when the host does not support `https`.
+
+</details>
+
+<details>
+<summary>6. When should you enable HSTS?</summary>
+
+Only after the whole site, including subdomains, works over `https`, because browsers remember it for the full `max-age`. Start with a short value.
+
+</details>
+
+## Key Takeaways
+
+- **Mixed content is an `http` resource on an `https` page.** It breaks the protection `https` gives.
+- **Active content is blocked, and passive content may be upgraded or blocked.** Do not depend on either.
+- **Fix addresses first:** `https://` or relative paths.
+- **`upgrade-insecure-requests` is a safety net,** and HSTS is a commitment to apply with care.
+- **Check the Console,** your source, and your old content.
+- **Local addresses are trusted for testing,** but never publish them.
+
+Next up: [Secure Forms](./secure-forms), where you will learn how to protect what visitors type: submission over `https`, safe autofill and password fields, and the checks that belong on the server.

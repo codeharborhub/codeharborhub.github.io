@@ -1,14 +1,468 @@
+---
+id: security-overview
+title: "HTML Security: Keeping Pages and Visitors Safe"
+sidebar_label: "Security"
+sidebar_position: 1
+slug: /html/security
+description: "Start learning HTML security: where web page risks come from, which HTML features protect visitors (escaping, rel noopener and noreferrer, iframe sandbox, CSP, https), and which protections live on the server. Includes an escaping lab and a defence matcher."
+keywords:
+  - HTML security
+  - web security for beginners
+  - XSS basics
+  - content security policy
+  - iframe sandbox
+  - rel noopener noreferrer
+  - mixed content
+  - secure forms
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, xss, csp, iframe, secure-forms, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function analyzeMarkup(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const found = [];
+  Array.from(doc.documentElement.querySelectorAll("*")).forEach(function (el) {
+    const tag = el.tagName.toLowerCase();
+    if (["head", "body"].indexOf(tag) !== -1) return;
+    const flags = [];
+    if (["script", "iframe", "object", "embed"].indexOf(tag) !== -1) flags.push("can load or run other code");
+    Array.from(el.attributes).forEach(function (a) {
+      const name = a.name.toLowerCase();
+      const value = a.value.trim().toLowerCase();
+      if (name.indexOf("on") === 0) flags.push("event handler attribute: " + a.name);
+      if (["href", "src", "action", "formaction"].indexOf(name) !== -1 && value.indexOf("javascript:") === 0) flags.push("javascript: address in " + a.name);
+    });
+    found.push({tag: tag, flags: flags});
+  });
+  return found;
+}
+
+export const escapeSample = 'Great post! <b>Thanks</b> <img src="x" onerror="alert(1)">';
+
+export function EscapeLabInner() {
+  const [text, setText] = useState(escapeSample);
+  const [mode, setMode] = useState("unsafe");
+  const found = analyzeMarkup(text);
+  const risky = found.filter(function (f) { return f.flags.length > 0; });
+  return (
+    <div style={{padding: "1rem"}}>
+      <label htmlFor="esc-text" style={{display: "block", fontWeight: 600}}>A visitor's comment (edit it)</label>
+      <textarea
+        id="esc-text"
+        value={text}
+        onChange={function (e) { setText(e.target.value); }}
+        rows={3}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.85rem", boxSizing: "border-box"}}
+      />
+      <fieldset style={{border: "none", padding: 0, margin: "0.75rem 0"}}>
+        <legend style={{fontWeight: 600}}>How the page adds it</legend>
+        <label style={{display: "block", margin: "0.2rem 0"}}>
+          <input type="radio" name="esc-mode" checked={mode === "unsafe"} onChange={function () { setMode("unsafe"); }} /> As HTML (unsafe)
+        </label>
+        <label style={{display: "block", margin: "0.2rem 0"}}>
+          <input type="radio" name="esc-mode" checked={mode === "safe"} onChange={function () { setMode("safe"); }} /> As text (escaped)
+        </label>
+      </fieldset>
+      {mode === "unsafe" ? (
+        <div aria-live="polite">
+          <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>What the browser would build from that text</p>
+          <ul>
+            {found.length === 0 ? <li>Only plain text. No elements.</li> : null}
+            {found.map(function (f, i) {
+              return (
+                <li key={i}>
+                  <code>{"<" + f.tag + ">"}</code>
+                  {f.flags.length > 0 ? (
+                    <strong style={{color: "#c0392b"}}>{" Risky: " + f.flags.join("; ") + "."}</strong>
+                  ) : " Harmless on its own."}
+                </li>
+              );
+            })}
+          </ul>
+          <p style={{fontWeight: 600, color: risky.length > 0 ? "#c0392b" : "#1e8449"}}>
+            {risky.length > 0 ? "Visitor-written code could run in your page. This is cross-site scripting (XSS)." : "Nothing risky found in this text, but never rely on checking by eye."}
+          </p>
+        </div>
+      ) : (
+        <div aria-live="polite">
+          <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>What is sent to the page</p>
+          <pre style={{whiteSpace: "pre-wrap"}}><code>{escapeHtml(text)}</code></pre>
+          <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>What the visitor sees</p>
+          <p style={{border: "1px solid rgba(128,128,128,0.4)", padding: "0.5rem", borderRadius: 4}}>{text}</p>
+          <p style={{fontWeight: 600, color: "#1e8449"}}>Every special character became harmless text. Nothing was created, so nothing can run.</p>
+        </div>
+      )}
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This lab never inserts your text into the page as HTML. In unsafe mode it only lists what a browser would create, using an inert parser that runs no code.
+      </p>
+    </div>
+  );
+}
+
+export function EscapeLab() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the lab...</p>}>
+      {function () { return <EscapeLabInner />; }}
+    </BrowserOnly>
+  );
+}
+
+export const defenseOptions = [
+  ["", "Choose..."],
+  ["escape", "Escape output"],
+  ["noopener", "rel=noopener"],
+  ["noreferrer", "rel=noreferrer"],
+  ["sandbox", "iframe sandbox"],
+  ["csp", "Content Security Policy"],
+  ["https", "Use https everywhere"],
+  ["form", "Secure form practices"]
+];
+
+export const defenseItems = [
+  {
+    risk: "A comment box shows visitors' text on the page.",
+    answer: "escape",
+    alt: "",
+    why: "Treat what visitors type as text, not markup. Escaping stops it from becoming elements or code."
+  },
+  {
+    risk: "You link to another website with target=\"_blank\".",
+    answer: "noopener",
+    alt: "noreferrer",
+    why: "noopener stops the new page from reaching back to yours through window.opener. noreferrer also does this, and additionally hides the referrer."
+  },
+  {
+    risk: "You embed a third-party widget in an iframe and want to limit what it can do.",
+    answer: "sandbox",
+    alt: "",
+    why: "The sandbox attribute switches off powers (scripts, forms, popups) unless you allow them one by one."
+  },
+  {
+    risk: "You want the browser to refuse scripts from hosts you did not list.",
+    answer: "csp",
+    alt: "",
+    why: "A Content Security Policy tells the browser which sources are allowed, as a second line of defence against injected code."
+  },
+  {
+    risk: "Your https page loads an image from an http address.",
+    answer: "https",
+    alt: "",
+    why: "That is mixed content. Serve every resource over https, so nothing can be read or altered on the way."
+  },
+  {
+    risk: "You link to a partner's site and do not want them to learn which page the visitor came from.",
+    answer: "noreferrer",
+    alt: "",
+    why: "noreferrer tells the browser not to send the referrer. It also gives the protection of noopener."
+  },
+  {
+    risk: "A sign-up form collects passwords and email addresses.",
+    answer: "form",
+    alt: "",
+    why: "Use https, the right input types, and server-side checks. HTML attributes help the visitor, but the server must enforce the rules."
+  }
+];
+
+export function DefenseMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const ok = function (item, v) { return v === item.answer || (item.alt !== "" && v === item.alt); };
+  const score = defenseItems.filter(function (d, i) { return ok(d, picked[i]); }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      {defenseItems.map(function (d, i) {
+        const right = ok(d, picked[i]);
+        return (
+          <div key={i} style={{marginBottom: "1rem"}}>
+            <label htmlFor={"dm-" + i}><strong>{i + 1}.</strong> {d.risk}</label>
+            <br />
+            <select
+              id={"dm-" + i}
+              disabled={checked}
+              value={picked[i] || ""}
+              onChange={function (e) { setPicked(Object.assign({}, picked, {[i]: e.target.value})); }}
+            >
+              {defenseOptions.map(function (o) { return <option key={o[0]} value={o[0]}>{o[1]}</option>; })}
+            </select>
+            {checked ? (
+              <p style={{margin: "0.25rem 0 0"}}>
+                <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Right. " : "Not quite. "}</strong>
+                {d.why}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+      {!checked ? (
+        <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      ) : (
+        <p aria-live="polite">
+          <strong>Score: {score} of {defenseItems.length}.</strong>{" "}
+          <button type="button" onClick={function () { setChecked(false); setPicked({}); }}>Start again</button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+A web page is a conversation between your site, your visitors, and a crowd of other parties: browsers, third-party scripts, embedded content, and people who would like to misuse any of them. Security is the habit of deciding who is allowed to do what on your page, and making the browser enforce it.
+
+HTML cannot make a site secure by itself. But HTML decides what a page loads, what it embeds, how it links to other sites, and how it collects information, and each of those is a place where things go wrong or are done safely. This section teaches the HTML-level protections, and is honest about which protections belong on the server.
+
+## What You Will Learn
+
+- Where web page security problems come from
+- The three rules behind almost every defence
+- The main threats: XSS, risky embeds, tab hijacking, mixed content, and unsafe forms
+- Which HTML features and attributes defend against each
+- Which defences are HTTP headers set on the server, not tags in your page
+- What HTML can never do for you
+- How to pick the right defence for a given risk
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Most security problems on web pages share one root cause: **something untrusted is given more power than it should have.** A visitor's comment becomes code. A third-party widget can read the whole page. A link gives another site control of your tab. The defences all do the same thing in different ways: reduce what untrusted things can do.
+
+<Tabs>
+<TabItem value="code" label="HTML Code" default>
+
+```html title="index.html"
+<!-- 1. A link that opens another site safely -->
+<a href="https://partner.example.com" target="_blank" rel="noopener noreferrer">Our partner</a>
+
+<!-- 2. A third-party embed with its powers switched off -->
+<iframe
+  src="https://widgets.example.com/map"
+  sandbox="allow-scripts"
+  title="Map to the bakery"
+  width="600" height="400" loading="lazy"></iframe>
+
+<!-- 3. A form that sends data safely (the page itself must be https) -->
+<form action="/signup" method="post">
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" autocomplete="email" required>
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" autocomplete="new-password" required>
+  <button type="submit">Sign up</button>
+</form>
+
+<!-- 4. A third-party script that must match a known fingerprint -->
+<script src="https://cdn.example.com/lib.js"
+        integrity="sha384-REPLACE_WITH_REAL_HASH"
+        crossorigin="anonymous" defer></script>
 ```
-        ├── 16-security/
-        │   ├── index.mdx
-        │   ├── html-security-basics.mdx
-        │   ├── xss-basics.mdx
-        │   ├── iframe-security.mdx
-        │   ├── sandbox-attribute.mdx
-        │   ├── noreferrer.mdx
-        │   ├── noopener.mdx
-        │   ├── content-security-policy.mdx
-        │   ├── mixed-content.mdx
-        │   ├── secure-forms.mdx
-        │   └── html-security-checklist.mdx
-```
+
+</TabItem>
+<TabItem value="lab" label="Escaping Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EscapeLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the lab, leave the sample comment as it is and switch between the two modes. In unsafe mode, a comment that looks like a friendly message contains an element with an event handler. In escaped mode, the same text is only text. That difference is the foundation of the next lessons.
+
+## Three Rules Behind Almost Every Defence
+
+1. **Never trust input.** Anything that comes from outside your own code can be wrong or hostile: form fields, URLs, query strings, cookies, files, other sites, and the output of third-party scripts.
+2. **Escape for the place the data goes.** Text inserted into HTML, into an attribute, into a URL, and into JavaScript each needs its own kind of escaping. Use the browser's safe methods and your framework's defaults, and avoid building markup out of strings.
+3. **Give the least power that works.** Sandbox embeds, restrict where scripts may come from, ask for only the permissions you need, and use `https`. No single layer is perfect, so use several (this is called defence in depth).
+
+## Where the Risks Come From
+
+| Threat | What it is | Main defence | Lesson |
+| :-- | :-- | :-- | :-- |
+| Cross-site scripting (XSS) | Untrusted text becomes code running in your page | Escape output, avoid unsafe insertion, add a CSP | [XSS Basics](./security.xss-basics) |
+| Risky embeds | A third-party frame or widget does more than you intended | `sandbox`, limited permissions, trusted sources | [iFrame Security](./security/iframe-security), [Sandbox](./sandbox-attribute) |
+| Tab hijacking | A page you open can redirect your original tab | `rel="noopener"` | [noopener](./security/noopener) |
+| Leaking where visitors came from | The destination learns the full previous address | `rel="noreferrer"`, referrer policy | [noreferrer](./security/noreferrer) |
+| Injected or untrusted scripts and styles | Code from unexpected hosts runs | Content Security Policy, integrity hashes | [Content Security Policy](./security/content-security-policy) |
+| Mixed content | An https page loads http resources | Use https for everything | [Mixed Content](./security/mixed-content) |
+| Unsafe forms | Sensitive data is sent or handled carelessly | https, correct input types, server checks | [Secure Forms](./security/secure-forms) |
+
+## Who Sets What: HTML or the Server?
+
+Some protections are tags and attributes in your page. Others are HTTP **headers**, sent by the server before the page. A header cannot be set from inside the HTML (with a few limited exceptions), so you need to know which is which.
+
+| Protection | Where it lives | Notes |
+| :-- | :-- | :-- |
+| Escaping output | Your code (server or browser) | The most important defence against XSS |
+| `rel="noopener"`, `rel="noreferrer"` | HTML attribute | On links and forms that open new pages |
+| `sandbox` on an iframe | HTML attribute | Restricts what the embedded page can do |
+| `integrity` on scripts and styles | HTML attribute | Checks a file matches a known hash |
+| Content Security Policy | HTTP header, or a `meta` tag with limits | The header is preferred and more complete |
+| `https` and redirects | Server or hosting setup | Not something HTML can switch on |
+| Cookie flags (`Secure`, `HttpOnly`, `SameSite`) | HTTP header | Set when the server creates the cookie |
+| Who may embed your page | HTTP header | Set with `frame-ancestors` in a CSP |
+| Input validation and authorisation | Server code | The browser's checks are never enough |
+
+If you use a static host or a platform such as Netlify, Vercel, or GitHub Pages, headers are usually set in a configuration file or the platform's settings. Check your host's documentation.
+
+## What HTML Can Never Do for You
+
+:::warning
+Attributes such as `required`, `maxlength`, `pattern`, `type="email"`, `hidden`, `disabled`, and `readonly` are conveniences for honest visitors. Anyone can bypass them with developer tools or by sending requests directly. **They are not security.** Every rule that matters must also be checked on the server.
+:::
+
+- HTML cannot hide secrets. Anything in the page source, including comments and hidden fields, is readable by anyone.
+- HTML cannot authenticate or authorise anyone. Deciding who may see or do something is the server's job.
+- HTML cannot make an insecure connection secure. That needs `https` on the server.
+- HTML cannot clean up untrusted data on its own. You must escape or sanitise it where it is used.
+
+## Pick the Right Defence
+
+Match each situation to the defence that fits it best, then check your answers.
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DefenseMatcher />
+</>
+</BrowserWindow>
+
+## What Is in This Section
+
+Some of these topics already have an introduction in earlier lessons: [Link Security](/tutorials/html/links-and-navigation/link-security), [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security), and [Secure Form Design](/tutorials/html/forms/secure-form-design). The lessons here go deeper, one topic at a time, and link back to those.
+
+<DocCardList />
+
+## Good Habits to Start With
+
+1. **Escape output by default,** and let your framework or template engine do it.
+2. **Add `rel="noopener"`** to links that open in a new tab (and `noreferrer` when privacy calls for it).
+3. **Use `https` everywhere,** for the page and for every file it loads.
+4. **Treat every embed and third-party script as a guest.** Give it only the power it needs.
+5. **Check on the server** every rule you check in the browser.
+6. **Keep secrets out of the page,** including comments, hidden fields, and public code.
+7. **Keep software and libraries updated,** and remove what you no longer use.
+
+## A Ten-Minute Security Check
+
+Run through this on any page you are about to publish. The full list is in the last lesson, [HTML Security Checklist](./security/html-security-checklist).
+
+- [ ] The page and all its files load over `https`
+- [ ] Visitor-supplied text is escaped wherever it is shown
+- [ ] Links with `target="_blank"` have `rel="noopener"`
+- [ ] Every iframe is from a trusted source, and sandboxed where possible
+- [ ] Third-party scripts are few, trusted, and use `integrity` when the file is fixed
+- [ ] Forms use `https`, the right input types, and server-side checks
+- [ ] No secrets, keys, or private notes appear in the page source
+- [ ] The server sends the security headers you rely on
+
+## Practise Responsibly
+
+- **Test only what you own,** or have written permission to test. Probing other people's sites can be illegal, even with good intentions.
+- **The demos in this section are inert.** They analyse text without running it. Keep your own experiments in a local or throwaway project.
+- **If you find a problem on someone else's site,** report it privately to the owner. Many sites publish a contact in a `security.txt` file at `/.well-known/security.txt`, and you can offer one on your own site too.
+- **Collecting less data is a security measure.** Information you never stored cannot leak.
+- **Never put real passwords, keys, or personal data into examples,** screenshots, or public repositories.
+
+## Global Audience Notes
+
+- **Threats and good practice are the same everywhere,** but the rules that apply to you may not be. Laws about data, consent, and breach reporting differ between countries. This section is not legal advice, so check the rules for the places your visitors live.
+- **Visitors use shared and public computers.** Do not turn off password managers, and use the right `autocomplete` values, so people can use strong, unique passwords without typing them on a stranger's keyboard.
+- **Slow and unreliable networks are common.** Make sure security features do not depend on a heavy script that may never load.
+- **Names and addresses use many scripts.** Look-alike characters from different alphabets can make a malicious web address resemble a trusted one. Show visitors the real destination of a link where it matters.
+- **Error messages should be clear in the visitor's language** without revealing details an attacker could use, such as which half of a login was wrong.
+- **Security must stay accessible.** Prefer verification methods that work with screen readers and keyboards over puzzles that exclude people.
+
+## Common Mistakes to Avoid
+
+1. **Treating HTML attributes as security,** such as `required`, `hidden`, or `maxlength`.
+2. **Building markup out of strings** that include visitor text.
+3. **Trusting content because it came from your own database.** It may have started as visitor input.
+4. **Opening external links in a new tab** with no `rel`.
+5. **Embedding third-party content** with no sandbox and no limits.
+6. **Loading any resource over `http`** on an `https` page.
+7. **Putting keys, tokens, or passwords** in the page or public code.
+8. **Copying a security snippet** without understanding what it does.
+9. **Relying on one layer.** If a single defence fails, nothing else protects you.
+10. **Never testing.** Many protections fail quietly.
+
+## Practice Time
+
+1. In the Escaping Lab, leave the sample as it is and switch modes. What changes?
+2. Change the comment to plain text. What does unsafe mode show now?
+3. Add a link with `href="javascript:..."` to the comment. What does the lab flag?
+4. Take the defence matcher quiz. Which two defences did you confuse?
+5. Look at the source of a page you built. Is there anything in a comment or a hidden field that should not be public?
+6. Find every `target="_blank"` link on a page. Which lack `rel`?
+7. Open DevTools on a page of yours, and look at the Network panel. Does anything load over `http`?
+8. Bonus: open the Network panel and look at the response headers of your home page. Which security headers does your site send?
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the root cause of most web page security problems?</summary>
+
+Something untrusted is given more power than it should have, such as visitor text becoming code, an embed reading the whole page, or a link controlling your tab.
+
+</details>
+
+<details>
+<summary>2. What are the three rules behind most defences?</summary>
+
+Never trust input, escape for the place the data goes, and give the least power that works, using several layers.
+
+</details>
+
+<details>
+<summary>3. Is `required` or `maxlength` a security feature?</summary>
+
+No. They are conveniences for honest visitors. Anyone can bypass them, so the server must check every rule that matters.
+
+</details>
+
+<details>
+<summary>4. Which defences are HTTP headers rather than HTML?</summary>
+
+Cookie flags, `frame-ancestors`, and the full Content Security Policy are set by the server. Escaping, `rel` values, `sandbox`, and `integrity` are in your HTML or code.
+
+</details>
+
+<details>
+<summary>5. What does escaping do?</summary>
+
+It turns characters that have a special meaning in HTML, such as the angle brackets and quotes, into harmless text, so visitor input cannot create elements or code.
+
+</details>
+
+<details>
+<summary>6. Why use more than one defence?</summary>
+
+Any single protection can fail or be bypassed. Layers mean that when one fails, another still limits the damage.
+
+</details>
+
+## Key Takeaways
+
+- **Security is about limiting what untrusted things can do.**
+- **Escape output, give least power, and layer your defences.**
+- **HTML provides some defences,** such as `rel`, `sandbox`, and `integrity`, and the server provides others, such as headers and `https`.
+- **Browser-side checks are conveniences, not security.** Always check on the server.
+- **Embeds, third-party scripts, and links are the places to be careful.**
+- **Collect less, expose less, and test your own work.**
+
+Start with [HTML Security Basics](./security/html-security-basics), and work through the lessons in order.

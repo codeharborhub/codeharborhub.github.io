@@ -1,0 +1,564 @@
+---
+id: html-sec-secure-forms
+title: "Secure Forms"
+sidebar_label: "Secure Forms"
+sidebar_position: 10
+slug: /html/security/secure-forms
+description: "Learn the HTML side of secure forms: choosing POST over GET, https actions, password and autocomplete attributes, hidden fields, formaction pitfalls, the form-action CSP directive, and what HTML can never protect. Includes a submit lab, a form auditor and an autocomplete matcher."
+keywords:
+  - secure forms
+  - form method post get
+  - password input autocomplete
+  - current-password new-password
+  - one-time-code
+  - hidden field security
+  - formaction
+  - form-action CSP
+  - CSRF token field
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, forms, passwords, autocomplete, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function submitView(method, https, fields) {
+  const query = new URLSearchParams(fields).toString();
+  const action = (https ? "https" : "http") + "://www.example.com/login";
+  const isGet = method === "get";
+  return {
+    url: action + (isGet ? "?" + query : ""),
+    body: isGet ? "(none)" : query,
+    rows: [
+      {who: "Address bar and browser history", seen: isGet ? "Yes, including the password" : "No, only the action address", bad: isGet},
+      {who: "Server and proxy logs", seen: isGet ? "Often yes, because addresses are commonly logged" : "Not by default, because bodies are not normally logged", bad: isGet},
+      {who: "Other sites, through the Referer header", seen: isGet ? "Possibly, from the results page, unless a referrer policy hides it" : "No", bad: isGet},
+      {who: "Someone on the network", seen: https ? "Only the host name and the amount of data" : "Everything, including the password", bad: !https}
+    ]
+  };
+}
+
+export function SubmitLab() {
+  const [method, setMethod] = useState("get");
+  const [https, setHttps] = useState(false);
+  const [user, setUser] = useState("ada");
+  const [pass, setPass] = useState("correct horse");
+  const v = submitView(method, https, {username: user, password: pass});
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.5rem"}}>
+        <legend style={{fontWeight: 600}}>Form method</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="sl-method" checked={method === "get"} onChange={function () { setMethod("get"); }} /> <code>get</code> (the default)</label>
+        <label><input type="radio" name="sl-method" checked={method === "post"} onChange={function () { setMethod("post"); }} /> <code>post</code></label>
+      </fieldset>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={https} onChange={function (e) { setHttps(e.target.checked); }} /> The form's action uses https
+      </label>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="sl-user">Username</label>{" "}
+        <input id="sl-user" type="text" value={user} onChange={function (e) { setUser(e.target.value); }} />
+      </p>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="sl-pass">Password (a made-up one)</label>{" "}
+        <input id="sl-pass" type="text" value={pass} onChange={function (e) { setPass(e.target.value); }} />
+      </p>
+      <p style={{margin: "0 0 0.25rem"}}>Address the browser requests:</p>
+      <pre style={{whiteSpace: "pre-wrap", wordBreak: "break-all", margin: "0 0 0.5rem"}}><code>{v.url}</code></pre>
+      <p style={{margin: "0 0 0.25rem"}}>Request body:</p>
+      <pre style={{whiteSpace: "pre-wrap", wordBreak: "break-all", margin: "0 0 0.75rem"}}><code>{v.body}</code></pre>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>Who can see the password?</th>
+            <th style={{textAlign: "left"}}>Answer</th>
+          </tr>
+        </thead>
+        <tbody>
+          {v.rows.map(function (r) {
+            return (
+              <tr key={r.who}>
+                <td>{r.who}</td>
+                <td style={{fontWeight: 600, color: r.bad ? "#c0392b" : "#1e8449"}}>{r.seen}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This only builds text. No request is made. Use made-up values, never a real password.
+      </p>
+    </div>
+  );
+}
+
+export const formSamples = {
+  messy: [
+    '<form action="http://www.example.com/login" method="get">',
+    '  <input type="text" name="password">',
+    '  <input type="password" name="pin" autocomplete="off">',
+    '  <input type="hidden" name="role" value="member">',
+    '  <input type="text" name="otp">',
+    '  <button formaction="https://tracker.example.net/collect">Sign in</button>',
+    '</form>',
+    '<form action="/pay" method="post" target="_blank">',
+    '  <input type="text" name="card_number">',
+    '  <input type="hidden" name="amount" value="19.99">',
+    '</form>'
+  ].join("\n"),
+  fixed: [
+    '<form action="/login" method="post">',
+    '  <input type="hidden" name="csrf_token" value="SERVER_GENERATED_VALUE">',
+    '  <label>Email <input type="email" name="email" autocomplete="username"></label>',
+    '  <label>Password <input type="password" name="password" autocomplete="current-password" required></label>',
+    '  <button type="submit">Sign in</button>',
+    '</form>'
+  ].join("\n")
+};
+
+export function auditForms(html) {
+  const pageText = "https://www.example.com/signin";
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const forms = Array.from(doc.querySelectorAll("form"));
+  const out = [];
+  const add = function (level, text) { out.push({level: level, text: text}); };
+  const sensitive = /pass|pwd|token|secret|ssn|card|cvv|cvc|otp|\bpin\b/i;
+  const resolve = function (v) {
+    try { return new URL(v || "", pageText); } catch (e) { return null; }
+  };
+  if (forms.length === 0) {
+    add("tip", "No form element found. Paste at least one form.");
+    return out;
+  }
+  forms.forEach(function (form, i) {
+    const n = "Form " + (i + 1);
+    const method = (form.getAttribute("method") || "get").toLowerCase();
+    const actionRaw = form.getAttribute("action");
+    const action = resolve(actionRaw);
+    const inputs = Array.from(form.querySelectorAll("input, textarea, select"));
+    if (/^\s*javascript:/i.test(actionRaw || "")) add("problem", n + ": the action is a javascript: address.");
+    else if (action && action.protocol === "http:") add("problem", n + ": the action is http, so what visitors type travels unprotected, and browsers warn about it.");
+    else if (action && action.origin !== new URL(pageText).origin) add("tip", n + ": the action sends data to another site (" + action.host + "). Make sure that is intended.");
+    if ((form.getAttribute("target") || "").toLowerCase() === "_blank" && !/noopener|noreferrer/i.test(form.getAttribute("rel") || "")) add("tip", n + ': target="_blank" without rel="noopener".');
+    inputs.forEach(function (el) {
+      const type = (el.getAttribute("type") || "text").toLowerCase();
+      const name = (el.getAttribute("name") || el.getAttribute("id") || "").toLowerCase();
+      const ac = (el.getAttribute("autocomplete") || "").toLowerCase();
+      const label = n + ', field "' + name + '"';
+      if (type === "hidden") {
+        if (/price|amount|total|role|admin|user_?id|discount|balance/.test(name)) add("tip", label + ": hidden fields can be edited by the visitor. Check this value on the server.");
+        return;
+      }
+      if (type === "password") {
+        if (method === "get") add("problem", label + ": a password field in a GET form puts the password in the address.");
+        if (ac === "off") add("tip", label + ": autocomplete=\"off\" is usually ignored by password managers. Use current-password or new-password.");
+        else if (ac.indexOf("current-password") === -1 && ac.indexOf("new-password") === -1) add("tip", label + ": add autocomplete=\"current-password\" or \"new-password\" to help password managers.");
+        return;
+      }
+      if (/pass|pwd/.test(name) && ["text", "email", "tel", "search"].indexOf(type) !== -1) add("problem", label + ": looks like a password, but the type is " + type + ", so it is shown on screen.");
+      else if (method === "get" && sensitive.test(name)) add("problem", label + ": sensitive data in a GET form ends up in the address, history and logs.");
+      if (/otp|2fa|verification|sms/.test(name) && ac.indexOf("one-time-code") === -1) add("tip", label + ': add autocomplete="one-time-code" so browsers can offer the texted code.');
+      if (/card.?(num|no)|cc.?num/.test(name) && ac.indexOf("cc-number") === -1) add("tip", label + ': add autocomplete="cc-number" to help autofill.');
+    });
+    if (method === "post" && !inputs.some(function (el) { return (el.getAttribute("type") || "").toLowerCase() === "hidden" && /csrf|xsrf|token|authenticity|nonce/i.test(el.getAttribute("name") || ""); })) {
+      add("tip", n + ": no CSRF token field found. That is fine if your framework or a SameSite cookie setup handles it, but check.");
+    }
+  });
+  Array.from(doc.querySelectorAll("[formaction]")).forEach(function (el) {
+    const raw = el.getAttribute("formaction");
+    const u = resolve(raw);
+    if (!u) return;
+    if (u.protocol === "http:") add("problem", 'formaction="' + raw + '": this button submits over http.');
+    else if (u.origin !== new URL(pageText).origin) add("problem", 'formaction="' + raw + '": this button sends the form to another site, whatever the form action says.');
+  });
+  if (out.length === 0) add("good", "No issues found by this simple check.");
+  return out;
+}
+
+export function AuditorInner() {
+  const [html, setHtml] = useState(formSamples.messy);
+  const findings = auditForms(html);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Imagine this markup is on <code>https://www.example.com/signin</code>.</p>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(formSamples.messy); }}>Load the messy forms</button>
+        <button type="button" onClick={function () { setHtml(formSamples.fixed); }}>Load the fixed form</button>
+      </div>
+      <label htmlFor="fa-html" style={{display: "block", fontWeight: 600}}>Form HTML (edit it)</label>
+      <textarea id="fa-html" value={html} onChange={function (e) { setHtml(e.target.value); }} rows={11} spellCheck={false} style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}} />
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {findings.map(function (f, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>{f.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A teaching checker. It reads markup only, so it cannot see your server code, which does the real protecting.
+      </p>
+    </div>
+  );
+}
+
+export function FormAuditor() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <AuditorInner />; }}
+    </BrowserOnly>
+  );
+}
+
+export const acOptions = ["current-password", "new-password", "one-time-code", "cc-number", "username", "email", "off"];
+
+export const acItems = [
+  {field: "The password on a sign-in form", answer: "current-password"},
+  {field: "The password on a sign-up or change-password form", answer: "new-password"},
+  {field: "The code that was texted to the visitor", answer: "one-time-code"},
+  {field: "The card number on a checkout form", answer: "cc-number"},
+  {field: "The email address a visitor signs in with, which is also their account name", answer: "username"}
+];
+
+export function AutocompleteMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = acItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Choose the <code>autocomplete</code> value that fits each field.</p>
+      {acItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.field} style={{margin: "0 0 0.6rem"}}>
+            <label htmlFor={"ac-" + i}>{it.field}</label>
+            <br />
+            <select id={"ac-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {acOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + acItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+# Secure Forms
+
+A form is the front door of your site. It is where visitors hand you passwords, card numbers, messages, and personal details. HTML gives you several attributes that make that handover safer, and a few tempting ones that do nothing at all for security.
+
+The server-side half of form safety, such as validating input, stopping SQL injection, and building CSRF protection, is covered in [Secure Form Design](/tutorials/html/forms/secure-form-design). Validation messages and flags are in [Form Validation](/tutorials/html/forms/form-validation). This lesson is about **what you write in the HTML itself**, and where HTML's protection ends.
+
+## What You Will Learn
+
+- Why sensitive forms use `POST`, never `GET`
+- Why the form's action must be `https`
+- How to mark up password and one-time code fields
+- What hidden fields, `formaction` and `target` can do to you
+- How the CSP `form-action` directive limits where forms can send data
+- Which HTML attributes look like security but are not
+- How to audit a form
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+HTML decides **how the data travels and how browsers help the visitor**. It cannot decide whether the data is allowed. Anything in a form can be changed by the visitor, or sent without using your form at all, so the server must check everything. Use HTML to avoid **leaks** and **mistakes**. Use the server to enforce **rules**.
+
+<Tabs>
+<TabItem value="code" label="The Code" default>
+
+```html title="index.html"
+<form action="/login" method="post">
+  <input type="hidden" name="csrf_token" value="SERVER_GENERATED_VALUE">
+
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" autocomplete="username" required>
+
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password"
+         autocomplete="current-password" required>
+
+  <button type="submit">Sign in</button>
+</form>
+```
+
+```text title="Response headers"
+Content-Security-Policy: form-action 'self'; frame-ancestors 'self'
+```
+
+</TabItem>
+<TabItem value="submit" label="Submit Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SubmitLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="auditor" label="Form Auditor">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FormAuditor />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="matcher" label="Autocomplete Matcher">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<AutocompleteMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## 1. Use POST for Anything Sensitive
+
+If you do not write a `method`, a form uses **`GET`**, which puts every field into the address. Open the **Submit Lab**, keep the method on `get`, and read the address aloud: the password is part of it.
+
+An address ends up in many places:
+
+- the browser **history** and the address bar, which anyone at the screen can read,
+- **server and proxy logs,** which are often kept for a long time,
+- the **`Referer`** header sent to other sites that the results page loads from (see [noreferrer](./noreferrer)),
+- bookmarks, and links the visitor shares without thinking.
+
+So for passwords, tokens, personal data, and anything that changes something on the server, use `method="post"`. Use `GET` only for harmless, repeatable requests, such as search.
+
+`POST` is **not encryption.** It only keeps the data out of the address. Without `https`, the body can still be read on the network.
+
+## 2. The Action Must Be https
+
+On a page served over `https`, an `action` that points to `http` sends everything the visitor typed **unprotected**. Browsers warn about it, and may block it. Use `https://` or a relative address such as `/login`, which follows the page's scheme. See [Mixed Content](./mixed-content).
+
+Turn the https checkbox on and off in the Submit Lab, and see what a person on the network can learn in each case.
+
+## 3. Mark Up Password and Code Fields Properly
+
+```html
+<!-- Sign in -->
+<input type="password" name="password" autocomplete="current-password">
+
+<!-- Sign up or change password -->
+<input type="password" name="new_password" autocomplete="new-password">
+
+<!-- A texted or app-generated code -->
+<input type="text" name="otp" inputmode="numeric" autocomplete="one-time-code">
+```
+
+What each choice does:
+
+- **`type="password"`** hides the characters on screen. It does **not** encrypt anything.
+- **`autocomplete="current-password"`** and **`new-password`** tell password managers which is which. A manager can then fill the right password, or suggest a strong new one.
+- **`autocomplete="one-time-code"`** lets browsers offer a code that arrived by text message.
+- **`autocomplete="username"`** on the account name field helps managers pair it with the password.
+- **`autocomplete="off"` on a password field** is usually ignored by password managers and it makes things worse for visitors. Do not use it as a security feature.
+- **Do not block pasting** into password fields. It stops password managers, pushes people toward shorter passwords, and does not protect anyone.
+
+Practise in the **Autocomplete Matcher** tab.
+
+:::info
+Some browsers can send text from fields to a spelling service. For secrets such as recovery keys, add `spellcheck="false"` as well. Behaviour varies, so treat it as a small extra, not a protection.
+:::
+
+## 4. Hidden Fields Are Not Secret
+
+An `input type="hidden"` is hidden only from the screen. The visitor can read and edit it in DevTools, and anyone can send a request with any value they like.
+
+```html
+<!-- Do not trust this on the server -->
+<input type="hidden" name="price" value="19.99">
+<input type="hidden" name="role" value="member">
+```
+
+Use hidden fields for harmless state and for **tokens the server generates and checks**. Never use them to carry prices, discounts, roles, or user identifiers that the server accepts without checking. Look the real value up on the server instead.
+
+## 5. CSRF Tokens in the Form
+
+Cross-site request forgery tricks a visitor's browser into submitting a form to your site, using the visitor's logged-in session. The standard defence is a **random token** that the server puts into each form, usually as a hidden field, and checks when the form comes back. Cookies with a `SameSite` setting add another layer. Building and checking the token is server work, covered in [Secure Form Design](/tutorials/html/forms/secure-form-design). In HTML, your job is just to include it in every form that changes something.
+
+## 6. Watch for formaction, target, and Rogue Forms
+
+- **`formaction`** on a button or input **overrides** the form's `action`. A button with `formaction="https://tracker.example.net/collect"` sends the form to a different site. Check every use of it.
+- **`target="_blank"`** on a form opens the result in a new tab. Add `rel="noopener"` as you would on a link. See [noopener](./noopener).
+- **Injected forms.** If an attacker can inject HTML into your page (see [XSS Basics](./xss-basics)), they can add a form that looks like yours and posts to their site. This is one reason escaping output matters so much.
+- **Framed forms.** A form inside someone else's frame can be used for clickjacking. Send `frame-ancestors`, as covered in [iFrame Security](./iframe-security).
+
+### Limit where forms can submit: form-action
+
+The CSP directive `form-action` lists the places a form on your page may submit to:
+
+```text
+Content-Security-Policy: form-action 'self' https://pay.example.net
+```
+
+With this in place, an injected or altered form that posts to `attacker.example` is blocked by the browser. It is a useful second layer, and it is **not** covered by `default-src`, so set it explicitly. See [Content Security Policy](./content-security-policy).
+
+## 7. What HTML Cannot Do
+
+These attributes help usability. They are **not security**, because the visitor controls the browser, and requests do not have to come from your page:
+
+| Attribute | Why it is not protection |
+| :-- | :-- |
+| `required`, `pattern`, `min`, `max`, `maxlength`, `type="email"` | Can be removed in DevTools, or skipped by sending a request directly |
+| `readonly`, `disabled` | Editable in DevTools. Disabled fields are simply not sent, and a sender can add them back |
+| `type="hidden"` | Readable and editable |
+| `accept` on a file input | A hint for the file picker only |
+| `autocomplete="off"` | Does not stop browsers or managers reliably |
+| `novalidate`, or its absence | Only affects the browser's messages |
+
+Validate every value on the server, as stressed in [Form Validation](/tutorials/html/forms/form-validation) and [Secure Form Design](/tutorials/html/forms/secure-form-design).
+
+## 8. A Few More Habits
+
+- **Stop double submissions.** Disable the submit button after the first click, and let the server ignore a repeated request. This protects payments and orders.
+- **Redirect after a successful POST,** so a page refresh does not send the form again.
+- **Keep error messages neutral.** "Incorrect email or password" is safer than saying which was wrong.
+- **Use real labels, and clear errors.** Accessible forms are also less error-prone. See [Accessible Forms](/tutorials/html/accessibility/accessible-forms).
+- **Ask for as little as you need.** Data you never collect cannot be leaked.
+
+## Checking Your Setup
+
+1. Open DevTools, then **Network**, submit a test form, and check the request method and whether the address contains your test values.
+2. Check that the form's **Request URL** starts with `https://`.
+3. Look at the **Request Payload** or **Form Data**. Are any values you did not expect being sent?
+4. In **Elements**, search for `formaction`, `type="hidden"`, `autocomplete="off"`, and `method="get"` on forms with sensitive fields.
+5. Try your sign-in form with a password manager. Does it fill the right fields?
+6. Run the **Form Auditor** tab on your own form markup.
+7. Check **Response Headers** for `form-action` and `frame-ancestors`.
+
+## Best Practices
+
+1. **Use `method="post"`** for anything sensitive or state-changing.
+2. **Use `https://` or relative actions.**
+3. **Set `autocomplete` correctly** on password, username, and code fields.
+4. **Never block pasting** in password fields.
+5. **Treat hidden fields as editable.** Check values on the server.
+6. **Include a CSRF token** in every state-changing form.
+7. **Audit `formaction` and `target`.**
+8. **Send `form-action` and `frame-ancestors`** in your CSP.
+9. **Validate everything on the server,** whatever the HTML says.
+10. **Collect only what you need.**
+
+## Quick Checklist
+
+- [ ] Sensitive forms use `method="post"`
+- [ ] Every form action is `https` or relative
+- [ ] Password fields use `type="password"` and the right `autocomplete`
+- [ ] Code fields use `autocomplete="one-time-code"`
+- [ ] No sensitive data in query strings
+- [ ] Hidden fields hold nothing the server trusts blindly
+- [ ] State-changing forms carry a CSRF token
+- [ ] No unexpected `formaction`, and `target="_blank"` forms use `rel="noopener"`
+- [ ] `form-action` and `frame-ancestors` are set
+- [ ] The server validates everything again
+
+## Security and Privacy Notes
+
+- **Collect less, keep less.** Each field is a responsibility. Say why you need it, and delete it when you do not.
+- **Never log passwords or full card numbers,** even in debugging.
+- **Card details** are best handled by a payment provider's own hosted fields or page, which keeps them off your server. Follow that provider's current documentation.
+- **Autofill can fill hidden fields,** and some tools fill every field they find. Do not put fields in a form that the visitor does not need to see, and ask only for what is needed.
+- **Privacy law can apply** to data you collect, depending on where you and your visitors are. This is not legal advice, so check the rules that apply to you.
+
+## Global Audience Notes
+
+- **Names and addresses vary widely.** Do not reject names for length, accents, spaces, or hyphens in the name of "security". See [Autocomplete](/tutorials/html/forms/autocomplete).
+- **Not everyone has a phone for codes,** or a stable connection to receive them. Offer an alternative where you can.
+- **Password managers are less common in some places,** so clear instructions and sensible rules matter, and blocking paste hurts the most.
+- **Show and hide controls for passwords** help people on small keyboards. If you add one, make it a labelled button.
+- **Shared devices are common.** Offer a clear "sign out", and do not leave sensitive data visible after submission.
+
+## Common Mistakes to Avoid
+
+1. **Leaving out `method`,** so the form uses `GET`.
+2. **Sending credentials in the address.**
+3. **An `http` action** on an `https` page.
+4. **`type="text"` for a password field.**
+5. **`autocomplete="off"`** as a security measure.
+6. **Blocking paste** on password fields.
+7. **Trusting hidden fields,** or `readonly` and `disabled` fields.
+8. **Relying on `required` and `pattern`** as validation.
+9. **Forgetting the CSRF token,** or adding it but never checking it.
+10. **Unreviewed `formaction`** attributes.
+
+## Practice Time
+
+1. In the Submit Lab, keep `get` and https off. List every place the password is visible.
+2. Switch to `post` and tick https. What can a person on the network still see?
+3. Switch to `post` with https off. What is still exposed?
+4. Load the messy forms into the Form Auditor, and fix every problem until it reports a clean result.
+5. Complete the Autocomplete Matcher.
+6. Open a sign-in page you own. Does a password manager fill it correctly?
+7. In DevTools, change a hidden field's value and submit. What does your server do?
+8. Bonus: write the CSP line that lets forms submit only to your own site and one payment provider.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why must sensitive forms use `POST`?</summary>
+
+`GET` puts the fields in the address, which ends up in history, logs, and referrers. `POST` keeps them in the request body.
+
+</details>
+
+<details>
+<summary>2. Does `POST` make the data private?</summary>
+
+No. It only keeps the data out of the address. Use `https` so the body cannot be read on the network.
+
+</details>
+
+<details>
+<summary>3. Which `autocomplete` values suit a password field?</summary>
+
+`current-password` for sign-in, and `new-password` for sign-up or change-password. Avoid `off`.
+
+</details>
+
+<details>
+<summary>4. Are hidden fields secret?</summary>
+
+No. Visitors can read and edit them, so the server must check any value they carry, except for tokens it generates and verifies.
+
+</details>
+
+<details>
+<summary>5. What does `formaction` do, and why check it?</summary>
+
+It overrides the form's `action` for that button, so it can send the form to a different site.
+
+</details>
+
+<details>
+<summary>6. Is `required` or `pattern` a security measure?</summary>
+
+No. They are conveniences. A visitor can bypass them, so the server must validate everything.
+
+</details>
+
+## Key Takeaways
+
+- **Sensitive forms use `POST` over `https`.**
+- **Mark password and code fields correctly** and do not block pasting.
+- **Hidden, readonly, and disabled fields are not secure.**
+- **Include a CSRF token,** and check it on the server.
+- **Audit `formaction` and `target`,** and set `form-action` in your CSP.
+- **HTML prevents leaks and mistakes. The server enforces the rules.**
+
+Next up: [HTML Security Checklist](./html-security-checklist), where you will bring the whole section together into one practical review you can run on any page.

@@ -1,0 +1,563 @@
+---
+id: html-sec-iframe-security
+title: "iFrame Security"
+sidebar_label: "iFrame Security"
+sidebar_position: 4
+slug: /html/security/iframe-security
+description: "Learn the two sides of iframe security: embedding other pages safely (trust, sandbox, allow, referrer policy, frame-src) and stopping others from embedding yours (clickjacking, frame-ancestors). Includes a clickjacking lab, a postMessage origin lab, and an embed checker."
+keywords:
+  - iframe security
+  - clickjacking
+  - frame-ancestors
+  - X-Frame-Options
+  - postMessage origin check
+  - iframe sandbox
+  - frame-src
+  - embed third-party content safely
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, iframe, clickjacking, postmessage, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function clickOutcome(protectedByHeader) {
+  if (protectedByHeader) {
+    return "The browser refused to show the bank page inside a frame, so there was nothing hidden to click. Your click reached only the prize button.";
+  }
+  return "The invisible frame was on top, so your click landed on its Delete account button. You thought you were claiming a prize.";
+}
+
+export function ClickjackLab() {
+  const [opacity, setOpacity] = useState(0.4);
+  const [guarded, setGuarded] = useState(false);
+  const [result, setResult] = useState("");
+  return (
+    <div style={{padding: "1rem"}}>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={guarded} onChange={function (e) { setGuarded(e.target.checked); setResult(""); }} />{" "}
+        The bank's server sends <code>Content-Security-Policy: frame-ancestors 'none'</code>
+      </label>
+      <p>
+        <label htmlFor="cj-opacity">How visible the hidden frame is: <strong>{Math.round(opacity * 100)}%</strong></label>
+        <br />
+        <input id="cj-opacity" type="range" min="0" max="1" step="0.05" value={opacity} onChange={function (e) { setOpacity(Number(e.target.value)); }} style={{width: "100%"}} />
+      </p>
+      <div aria-hidden="true" style={{position: "relative", height: "9rem", border: "1px solid rgba(128,128,128,0.5)", borderRadius: 6, overflow: "hidden", marginBottom: "0.75rem"}}>
+        <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(52,120,200,0.12)"}}>
+          <span style={{padding: "0.7rem 1.4rem", background: "#3478c8", color: "#fff", borderRadius: 6, fontWeight: 700}}>Claim your prize!</span>
+        </div>
+        <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: guarded ? 1 : opacity, background: guarded ? "rgba(128,128,128,0.2)" : "rgba(255,255,255,0.85)"}}>
+          {guarded ? (
+            <span style={{fontSize: "0.9rem"}}>This content is blocked from being displayed in a frame.</span>
+          ) : (
+            <span style={{padding: "0.7rem 1.4rem", background: "#c0392b", color: "#fff", borderRadius: 6, fontWeight: 700}}>Delete account</span>
+          )}
+        </div>
+      </div>
+      <button type="button" onClick={function () { setResult(clickOutcome(guarded)); }}>Click "Claim your prize!"</button>
+      <p aria-live="polite" style={{fontWeight: 600, color: result === "" ? "inherit" : (guarded ? "#1e8449" : "#c0392b")}}>{result}</p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a picture of the idea, drawn with ordinary boxes. No real frame is loaded. In a real attack, the attacker's page places your page, made see-through, on top of a decoy so that clicks land on your page's buttons.
+      </p>
+    </div>
+  );
+}
+
+export const pmExpected = "https://widgets.example.net";
+
+export const pmMessages = [
+  {origin: "https://widgets.example.net", label: "The real widget", legit: true},
+  {origin: "https://widgets.example.net.attacker.example", label: "A look-alike host that starts with the same text", legit: false},
+  {origin: "https://notwidgets.example.net", label: "A different host that contains the same text", legit: false},
+  {origin: "http://widgets.example.net", label: "The real host, but over http", legit: false},
+  {origin: "https://attacker.example", label: "An unrelated page", legit: false}
+];
+
+export const pmPolicies = [
+  {id: "none", label: "No check at all", code: "handle(event.data);", test: function () { return true; }},
+  {id: "starts", label: "startsWith", code: 'if (event.origin.startsWith("https://widgets.example.net")) handle(event.data);', test: function (o) { return o.startsWith(pmExpected); }},
+  {id: "includes", label: "includes", code: 'if (event.origin.includes("widgets.example.net")) handle(event.data);', test: function (o) { return o.includes("widgets.example.net"); }},
+  {id: "equals", label: "Strict equality", code: 'if (event.origin === "https://widgets.example.net") handle(event.data);', test: function (o) { return o === pmExpected; }}
+];
+
+export function runPolicy(policyId) {
+  const policy = pmPolicies.filter(function (p) { return p.id === policyId; })[0];
+  const rows = pmMessages.map(function (m) {
+    const accepted = policy.test(m.origin);
+    return {origin: m.origin, label: m.label, accepted: accepted, wrong: accepted !== m.legit};
+  });
+  return {policy: policy, rows: rows, mistakes: rows.filter(function (r) { return r.wrong; }).length};
+}
+
+export function PostMessageLab() {
+  const [policyId, setPolicyId] = useState("starts");
+  const r = runPolicy(policyId);
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        Your page embeds a widget from <code>{pmExpected}</code> and listens for its messages. Pick how your <code>message</code> handler decides who to trust.
+      </p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>The check</legend>
+        {pmPolicies.map(function (p) {
+          return (
+            <label key={p.id} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="pm-policy" checked={policyId === p.id} onChange={function () { setPolicyId(p.id); }} /> {p.label}
+            </label>
+          );
+        })}
+      </fieldset>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{r.policy.code}</code></pre>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>Message from</th>
+            <th style={{textAlign: "left"}}>Handled?</th>
+            <th style={{textAlign: "left"}}>Correct?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {r.rows.map(function (row) {
+            return (
+              <tr key={row.origin}>
+                <td><code>{row.origin}</code><br /><span style={{fontSize: "0.85rem"}}>{row.label}</span></td>
+                <td>{row.accepted ? "Accepted" : "Ignored"}</td>
+                <td style={{color: row.wrong ? "#c0392b" : "#1e8449", fontWeight: 600}}>{row.wrong ? "Wrong" : "Right"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p aria-live="polite" style={{fontWeight: 600, color: r.mistakes === 0 ? "#1e8449" : "#c0392b"}}>
+        {r.mistakes === 0 ? "Only the real widget is trusted." : r.mistakes + " message(s) were handled or ignored wrongly."}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        An origin is the scheme, host, and port. Compare it as a whole, with strict equality, or against a list of exact origins. Partial text checks are easy to fool with look-alike host names.
+      </p>
+    </div>
+  );
+}
+
+export const embedSamples = {
+  messy: [
+    '<iframe src="http://widgets.example.net/map"></iframe>',
+    '<iframe src="https://widgets.example.net/player" title="Player"',
+    '  sandbox="allow-scripts allow-same-origin allow-top-navigation"',
+    '  allow="camera; microphone; geolocation"></iframe>',
+    '<iframe src="/embed/calendar" title="Calendar"',
+    '  sandbox="allow-scripts allow-same-origin"></iframe>',
+    '<iframe src="javascript:void(0)" title="Blank"></iframe>'
+  ].join("\n"),
+  fixed: [
+    '<iframe src="https://widgets.example.net/map" title="Map to the bakery"',
+    '  sandbox="allow-scripts" referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>',
+    '<iframe src="https://widgets.example.net/player" title="Our story (video)"',
+    '  sandbox="allow-scripts allow-same-origin allow-presentation"',
+    '  allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>'
+  ].join("\n")
+};
+
+export function auditEmbeds(html, pageOrigin) {
+  let base;
+  try {
+    base = new URL(pageOrigin);
+  } catch (e) {
+    return {ok: false};
+  }
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const frames = Array.from(doc.querySelectorAll("iframe"));
+  const out = [];
+  const add = function (level, text) { out.push({level: level, text: text}); };
+  const secure = base.protocol === "https:";
+  frames.forEach(function (f, i) {
+    const n = "Frame " + (i + 1);
+    const src = f.getAttribute("src");
+    let u = null;
+    if (src) {
+      try { u = new URL(src, base); } catch (e) { u = null; }
+    }
+    const sandbox = f.hasAttribute("sandbox") ? f.getAttribute("sandbox").toLowerCase().split(/\s+/).filter(Boolean) : null;
+    if (u && u.protocol === "javascript:") add("problem", n + ": the src is a javascript: address.");
+    if (u && secure && u.protocol === "http:") add("problem", n + ": loads over http on an https page (mixed content).");
+    if (!f.hasAttribute("title") || f.getAttribute("title").trim() === "") add("tip", n + ": no title, so screen reader users cannot tell what it is.");
+    if (sandbox === null) {
+      add("tip", n + ": no sandbox, so the embedded page keeps all its normal powers.");
+    } else {
+      const sameOrigin = !u || u.origin === base.origin;
+      if (sandbox.indexOf("allow-scripts") !== -1 && sandbox.indexOf("allow-same-origin") !== -1) {
+        if (sameOrigin) add("problem", n + ": allow-scripts and allow-same-origin on a page from your own origin lets it remove its own sandbox.");
+        else add("tip", n + ": allow-scripts with allow-same-origin gives that host its normal powers. Only do this when it truly needs them.");
+      }
+      if (sandbox.indexOf("allow-top-navigation") !== -1) add("problem", n + ": allow-top-navigation lets the frame send the whole page somewhere else.");
+      if (sandbox.indexOf("allow-popups-to-escape-sandbox") !== -1) add("tip", n + ": popups it opens will not be sandboxed.");
+    }
+    const allow = (f.getAttribute("allow") || "").toLowerCase();
+    ["camera", "microphone", "geolocation"].forEach(function (feature) {
+      if (allow.indexOf(feature) !== -1) add("tip", n + ": allow includes " + feature + ". Make sure the visitor really needs that here.");
+    });
+    if (!f.hasAttribute("referrerpolicy")) add("tip", n + ": no referrerpolicy. Browsers have sensible defaults, but being explicit is clearer.");
+  });
+  const clean = out.filter(function (o) { return o.level !== "good"; });
+  if (frames.length === 0) add("good", "No iframe elements found.");
+  else if (clean.length === 0) add("good", "No issues found in " + frames.length + " frame(s).");
+  return {ok: true, count: frames.length, findings: out};
+}
+
+export function EmbedAuditInner() {
+  const [html, setHtml] = useState(embedSamples.messy);
+  const [origin, setOrigin] = useState("https://www.example.com");
+  const r = auditEmbeds(html, origin);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(embedSamples.messy); }}>Load the messy embeds</button>
+        <button type="button" onClick={function () { setHtml(embedSamples.fixed); }}>Load the fixed embeds</button>
+      </div>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="ea-origin" style={{fontWeight: 600}}>Your page's address</label>
+        <br />
+        <input id="ea-origin" type="text" value={origin} onChange={function (e) { setOrigin(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <label htmlFor="ea-html" style={{display: "block", fontWeight: 600}}>Iframe HTML (edit it)</label>
+      <textarea
+        id="ea-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={9}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      {r.ok ? (
+        <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+          {r.findings.map(function (f, i) {
+            return (
+              <li key={i} style={{marginBottom: "0.4rem"}}>
+                <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>
+                {f.text}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p style={{color: "#c0392b"}}>Enter your page's full address, such as https://www.example.com.</p>
+      )}
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a teaching checker. It reads markup only, and cannot see what the embedded page does or which headers its server sends.
+      </p>
+    </div>
+  );
+}
+
+export function EmbedAudit() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <EmbedAuditInner />; }}
+    </BrowserOnly>
+  );
+}
+
+An `iframe` puts one web page inside another. That makes it useful for maps, videos, payment forms, and widgets, and it also makes it one of the riskiest elements in HTML, because two parties now share one screen.
+
+Iframe security has **two sides**. In one, you embed someone else's page and must limit what it can do to your visitors. In the other, someone else embeds **your** page, usually to trick your visitors. This lesson covers both. The element itself is introduced in the earlier [iFrame lesson](/tutorials/html/embedded-content/iframe), and the wider topic of third-party code in [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security). Here we go deeper on the threats.
+
+## What You Will Learn
+
+- The two directions of iframe risk
+- What an embedded page can do to yours and to your visitors
+- How to harden an embed: trust, `sandbox`, `allow`, `referrerpolicy`, and `frame-src`
+- What clickjacking is, and how `frame-ancestors` stops it
+- How to use `postMessage` safely
+- Why a visitor-supplied iframe address is dangerous
+- How to check a page's embeds
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A frame is a window into someone else's page. Treat it like a guest: decide who may come in, what they may touch, and make sure no one can use your own page as a disguise.
+
+<Tabs>
+<TabItem value="code" label="A Hardened Embed" default>
+
+```html title="index.html"
+<iframe
+  src="https://widgets.example.net/map"
+  title="Map to the bakery"
+  sandbox="allow-scripts"
+  allow=""
+  referrerpolicy="strict-origin-when-cross-origin"
+  loading="lazy"
+  width="600" height="400"></iframe>
+```
+
+```text title="Response headers on YOUR pages"
+Content-Security-Policy: frame-src https://widgets.example.net; frame-ancestors 'self'
+```
+
+</TabItem>
+<TabItem value="clickjack" label="Clickjacking Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ClickjackLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="postmessage" label="postMessage Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PostMessageLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="checker" label="Embed Checker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<EmbedAudit />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Two Directions of Risk
+
+| Direction | The question | Main risks | Main defences |
+| :-- | :-- | :-- | :-- |
+| **You embed them** | What can the embedded page do to my visitors and my page? | Misleading content, popups, redirects, tracking, misuse of powerful features, a compromised provider | Trust the source, `sandbox`, `allow`, `referrerpolicy`, CSP `frame-src`, click to load |
+| **They embed you** | Can someone use my page inside their page against my visitors? | Clickjacking, where a visitor is tricked into clicking your buttons | CSP `frame-ancestors`, `X-Frame-Options` |
+
+## When You Embed Someone Else
+
+A frame from another origin is **separated** from your page by the same-origin policy (see [HTML Security Basics](./html-security-basics)), so it cannot read your page's content. But it still has plenty of power inside its own rectangle, and some outside it:
+
+- **It can show anything,** including a fake login form designed to fool your visitors.
+- **It can run its own scripts,** load its own resources, and track visitors with its own cookies.
+- **It can try to navigate the whole page** somewhere else, or open popups and new windows. Browsers restrict some of this, but not all, and not in all cases.
+- **It can ask for powerful features,** such as the camera, microphone, location, or fullscreen, if you let it.
+- **It can turn bad overnight.** If the provider is hacked or sold, every site that embeds it inherits the change.
+
+### Harden it, step by step
+
+1. **Choose the source carefully.** Embed only from providers you trust. Prefer ones with a good record and clear privacy terms.
+2. **Never let a visitor choose the address.** If your page builds an `iframe` from visitor input, an attacker can point it anywhere. Allow only a short list of exact hosts, and check the scheme.
+3. **Add `sandbox`.** An empty `sandbox` removes almost every power. Then add back only what the embed needs, as covered in [Sandbox Attribute](./sandbox-attribute).
+4. **Control `allow`.** Features such as the camera need explicit permission through `allow`. Grant none by default, and name only what is needed, such as `allow="fullscreen"`.
+5. **Set `referrerpolicy`.** This controls how much of your page's address is sent to the embedded host. `strict-origin-when-cross-origin` is a common, sensible choice. See [noreferrer](./noreferrer).
+6. **Restrict what you can embed with CSP.** The `frame-src` directive of a Content Security Policy lists the hosts your page may frame, so a mistake or injected code cannot add a frame from elsewhere. See [Content Security Policy](./content-security-policy).
+7. **Use `https` only.** An `http` frame on an `https` page is mixed content, and is blocked or upgraded by browsers.
+8. **Give it a `title`,** so screen reader users know what the frame is.
+9. **Load it only when needed.** Use `loading="lazy"`, or a click-to-load button, so no third party is contacted until the visitor chooses. See [Lazy Loading](/tutorials/html/performance/lazy-loading).
+
+The Embed Checker tab above reviews a few of these automatically. Load the messy embeds and fix the findings.
+
+## When Someone Embeds You: Clickjacking
+
+In **clickjacking**, an attacker builds a page and loads **your** page in a hidden, see-through frame on top of a harmless-looking decoy. The visitor thinks they are clicking "Claim your prize", but the click lands on your page's button underneath, such as "Delete account", "Transfer", or "Like".
+
+Open the Clickjacking Lab. Drag the slider to reveal the hidden frame, then tick the checkbox that represents the defence, and click the prize button.
+
+The defence is to tell the browser that **your pages must not be shown in someone else's frame.**
+
+### `frame-ancestors`
+
+The modern way is the `frame-ancestors` directive of a Content Security Policy, sent as an HTTP response header:
+
+```text
+Content-Security-Policy: frame-ancestors 'none'
+```
+
+| Value | Who may frame the page |
+| :-- | :-- |
+| `'none'` | Nobody |
+| `'self'` | Only your own origin |
+| `https://partner.example.com` | Only that origin |
+
+:::warning
+`frame-ancestors` only works as an **HTTP header.** It is ignored in a CSP that is set with a `meta` tag in the HTML. If you cannot set headers, check your hosting platform for a way to add them.
+:::
+
+### `X-Frame-Options`
+
+The older header `X-Frame-Options` has two useful values: `DENY` (nobody) and `SAMEORIGIN` (only your own origin). Many sites send both for older browsers. If both are present, current browsers follow the CSP `frame-ancestors`.
+
+### Why "frame-busting" scripts are not enough
+
+Old advice was to add a script that checks whether the page is inside a frame and breaks out. This is unreliable, because a framing page can interfere with it (for example, by sandboxing the frame). Use the headers, and treat any script as an extra, not the defence.
+
+### More protection for sensitive actions
+
+For actions that matter, such as deleting an account or moving money, do not rely on a single click. Ask for confirmation, re-enter a password, or use a one-time code. Cookies with a `SameSite` setting also reduce what a framed page can do on a visitor's behalf, and are set by the server.
+
+## Talking to a Frame Safely: postMessage
+
+Frames and their parent pages can send each other messages with `postMessage`. It is useful, and a common source of bugs, because **any page can send a message to any window it can reach.** Your handler must decide who to believe.
+
+```js
+window.addEventListener("message", function (event) {
+  if (event.origin !== "https://widgets.example.net") return;
+  // Treat event.data as untrusted input, even from the right origin
+  if (typeof event.data !== "object" || event.data === null) return;
+  if (event.data.type === "resize" && Number.isFinite(event.data.height)) {
+    frame.height = Math.min(Math.max(event.data.height, 100), 2000);
+  }
+});
+```
+
+Rules to follow:
+
+1. **Check `event.origin` against an exact value,** or a list of exact values. Use strict equality, not `startsWith` or `includes`, which look-alike host names can fool. Try it in the postMessage Lab.
+2. **Check the shape of `event.data`,** and never use it with `innerHTML`, `eval`, or as a URL without checking. It is untrusted input.
+3. **When sending, give a specific `targetOrigin`,** such as `"https://widgets.example.net"`, and avoid `"*"` for anything sensitive. With `"*"`, the message goes to whatever page happens to be in that window.
+4. **Check `event.source`** if you have more than one frame, so you know which one sent it.
+
+## Frames From Visitors, and srcdoc
+
+If your site lets visitors add content, think carefully about frames:
+
+- **Never allow raw `iframe` tags** in comments or profiles. Strip or escape them (see [XSS Basics](./xss-basics)).
+- **If you offer an "embed a video" feature,** accept a video identifier or a link from a short allow-list of sites, and build the `iframe` address yourself from that.
+- **`srcdoc` puts HTML directly in the attribute.** If visitor text gets into `srcdoc`, it is XSS inside a frame. Escape it, and combine with `sandbox`.
+- **Do not allow `javascript:` or `data:` addresses** as a frame source. Check the scheme against `https` only.
+
+## When a Site Refuses to Be Framed
+
+Many sites send `frame-ancestors` or `X-Frame-Options` so they cannot be embedded, which is a good thing. If you try to embed one, the frame shows an error, and the console says it refused to display the page. Do not look for a way around it. That setting is a security choice by the owner. Link to the page instead, or use the provider's official embed option if they offer one.
+
+## Checking Your Setup
+
+1. Open DevTools, then **Console**, and reload. Look for messages about frames that were refused or blocked.
+2. Open **Network**, click your page's request, and read the **Response Headers**. Is `frame-ancestors` or `X-Frame-Options` present?
+3. Open **Elements**, and check each `iframe` for `sandbox`, `allow`, `title`, and `referrerpolicy`.
+4. From the command line, `curl -I https://your-site.example` shows a page's headers without downloading it.
+5. Try framing your own page from a simple test page you control. It should be refused if you have set the header.
+6. Review third-party embeds regularly, and remove the ones you no longer use.
+
+## Best Practices
+
+1. **Embed only from sources you trust,** and review them over time.
+2. **Always sandbox third-party frames,** and add back only what is needed.
+3. **Grant no `allow` features by default.**
+4. **Restrict `frame-src`** in your CSP.
+5. **Never build an iframe address from visitor input.**
+6. **Send `frame-ancestors`** (and `X-Frame-Options` for older browsers) on every page that should not be framed.
+7. **Check `event.origin` with strict equality,** and treat message data as untrusted.
+8. **Load embeds on demand,** and give every frame a title.
+9. **Confirm sensitive actions** with more than one click.
+
+## Quick Checklist
+
+- [ ] Every iframe is from a trusted source, over `https`
+- [ ] Every third-party iframe has `sandbox`
+- [ ] `allow` lists only what each frame needs
+- [ ] No iframe address comes from visitor input
+- [ ] `frame-src` limits where frames may come from
+- [ ] Pages that must not be framed send `frame-ancestors`
+- [ ] `message` handlers check `event.origin` exactly
+- [ ] `postMessage` calls use a specific `targetOrigin`
+- [ ] Every frame has a `title`
+
+## Security and Privacy Notes
+
+- **Embedding shares information.** Loading a third-party frame tells that host that the visitor is on your page, and can let it set cookies and track the visitor. For services that need consent, use a click-to-load pattern, or wait for consent first. This is not legal advice, so check the rules that apply to you.
+- **Do not frame sensitive pages of your own,** such as account settings, inside other pages, even your own, unless you must. Fewer places a page can appear means fewer ways to abuse it.
+- **A frame is not an isolation guarantee.** A browser bug or a missing `sandbox` can narrow the gap. Combine layers: `sandbox`, CSP, and keeping browsers updated.
+- **Test only what you own,** or have permission to test. Do not try to frame other people's pages to see what happens.
+
+## Global Audience Notes
+
+- **Embeds are slow and heavy on weak networks,** and some providers are blocked in some countries. Make sure your page works if a frame never loads, and offer a plain link as a fallback.
+- **Many visitors are on shared or mobile devices,** where a hijacked click is easy to make. Confirmations for sensitive actions protect them most.
+- **Screen readers announce the frame title,** so write it in the page's language, and describe the content clearly.
+- **Privacy rules differ by region.** Click to load is a simple way to respect them everywhere.
+
+## Common Mistakes to Avoid
+
+1. **Embedding without `sandbox`.**
+2. **Using `allow-scripts` and `allow-same-origin` together** on content from your own origin.
+3. **Letting visitors choose the frame address.**
+4. **Granting camera or microphone access** without a clear need.
+5. **Skipping `frame-ancestors`** on pages with sensitive actions.
+6. **Setting `frame-ancestors` in a `meta` tag,** where it is ignored.
+7. **Relying on a frame-busting script.**
+8. **Checking `event.origin` with `startsWith` or `includes`.**
+9. **Sending `postMessage` with a target of `"*"`** for sensitive data.
+10. **Embedding a provider** and never reviewing it again.
+
+## Practice Time
+
+1. In the Clickjacking Lab, set the slider to zero and click the prize button. What happens? Turn the checkbox on, and try again.
+2. In the postMessage Lab, try each check. Which checks let the look-alike host through?
+3. Find the strict-equality check. How many messages does it get wrong?
+4. Load the messy embeds into the Embed Checker, and fix every problem.
+5. Open DevTools on a page of yours that has an iframe. Does it have `sandbox`, `allow`, and `title`?
+6. Look at your home page's response headers. Is `frame-ancestors` or `X-Frame-Options` present?
+7. Write the `Content-Security-Policy` line you would use to let only one partner frame your page.
+8. Bonus: add click-to-load to one embed on your own site.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the two directions of iframe risk?</summary>
+
+You embed someone else's page (it might harm your visitors), and someone else embeds yours (it might be used to trick your visitors, as in clickjacking).
+
+</details>
+
+<details>
+<summary>2. How do you harden an embedded third-party frame?</summary>
+
+Trust the source, use `sandbox` and add back only what is needed, grant no `allow` features by default, set `referrerpolicy`, restrict `frame-src` in your CSP, use `https`, and load it on demand.
+
+</details>
+
+<details>
+<summary>3. What is clickjacking?</summary>
+
+An attacker loads your page in a hidden frame over a decoy, so the visitor's click lands on your page's button without them knowing.
+
+</details>
+
+<details>
+<summary>4. How do you stop it?</summary>
+
+Send the `frame-ancestors` directive in a CSP header (and `X-Frame-Options` for older browsers), so your pages cannot be shown in other sites' frames.
+
+</details>
+
+<details>
+<summary>5. Why does `frame-ancestors` need a header?</summary>
+
+Browsers ignore it in a CSP set with a `meta` tag, so it must be sent as an HTTP response header.
+
+</details>
+
+<details>
+<summary>6. How should you check a message's origin?</summary>
+
+Compare `event.origin` with an exact value, or a list of exact values, using strict equality. Never use `startsWith` or `includes`, and treat `event.data` as untrusted.
+
+</details>
+
+## Key Takeaways
+
+- **Frames are windows into other pages.** Treat each one as a guest with limited powers.
+- **Sandbox, restrict `allow`, set `referrerpolicy`, and limit `frame-src`.**
+- **Never let visitors choose a frame address.**
+- **Protect your own pages from being framed** with `frame-ancestors`, sent as a header.
+- **Check `event.origin` exactly,** and treat message data as untrusted.
+- **Load embeds on demand,** and review them regularly.
+- **Layer your defences,** and test only what you own.
+
+Next up: [Sandbox Attribute](./sandbox-attribute), where you will learn what each sandbox permission does, and how to choose the smallest set.
