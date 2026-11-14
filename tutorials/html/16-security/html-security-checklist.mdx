@@ -1,0 +1,520 @@
+---
+id: html-sec-checklist
+title: "HTML Security Checklist"
+sidebar_label: "HTML Security Checklist"
+sidebar_position: 11
+slug: /html/security/html-security-checklist
+description: "A practical, step-by-step security review for any web page: 24 checks grouped by topic, a response header reviewer, fix priorities, and what a checklist cannot cover. Includes an interactive checklist that builds your to-do list."
+keywords:
+  - HTML security checklist
+  - web page security review
+  - security headers check
+  - CSP HSTS cookies review
+  - front-end security audit
+  - security.txt
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, checklist, headers, review, frontend]
+---
+
+import {useState} from 'react';
+import Link from '@docusaurus/Link';
+
+export const checkGroups = ["Foundations", "Third-party code", "Frames and embeds", "Links", "Browser policies", "Forms and cookies"];
+
+export const checkItems = [
+  {id: "c1", group: "Foundations", text: "The whole site is served over https, and http redirects to https.", lesson: "Mixed Content", href: "/html/security/mixed-content"},
+  {id: "c2", group: "Foundations", text: "No secrets or personal data appear in URLs or query strings.", lesson: "noreferrer", href: "/html/security/noreferrer"},
+  {id: "c3", group: "Foundations", text: "Visitor-supplied text is escaped for its context (HTML, attribute, URL, script data) when it is output.", lesson: "XSS Basics", href: "/html/security/xss-basics"},
+  {id: "c4", group: "Foundations", text: "No innerHTML, document.write or similar is used with untrusted data. textContent is used instead.", lesson: "XSS Basics", href: "/html/security/xss-basics"},
+  {id: "c5", group: "Foundations", text: "Visitor-supplied links allow only http and https. HTML that visitors may write is sanitised with a maintained library.", lesson: "XSS Basics", href: "/html/security/xss-basics"},
+  {id: "c6", group: "Third-party code", text: "Every third-party script, stylesheet and iframe is still needed, comes from a trusted host, and is on a written list.", lesson: "HTML Security Basics", href: "/html/security/html-security-basics"},
+  {id: "c7", group: "Third-party code", text: "External scripts and styles use https, and use integrity where practical.", lesson: "Mixed Content", href: "/html/security/mixed-content"},
+  {id: "c8", group: "Third-party code", text: "Third-party scripts load without blocking the page, and a failure does not break the page.", lesson: "HTML Security Basics", href: "/html/security/html-security-basics"},
+  {id: "c9", group: "Frames and embeds", text: "Every third-party iframe has a sandbox with the smallest set of permissions that works.", lesson: "Sandbox Attribute", href: "/html/security/sandbox-attribute"},
+  {id: "c10", group: "Frames and embeds", text: "allow grants only needed features, referrerpolicy is set, and no frame address comes from visitor input.", lesson: "iFrame Security", href: "/html/security/iframe-security"},
+  {id: "c11", group: "Frames and embeds", text: "Pages that should not be framed send frame-ancestors (and X-Frame-Options for older browsers).", lesson: "iFrame Security", href: "/html/security/iframe-security"},
+  {id: "c12", group: "Frames and embeds", text: "postMessage handlers check event.origin with exact comparison and treat event.data as untrusted.", lesson: "iFrame Security", href: "/html/security/iframe-security"},
+  {id: "c13", group: "Links", text: "Every target=\"_blank\" link and every window.open call uses noopener.", lesson: "noopener", href: "/html/security/noopener"},
+  {id: "c14", group: "Links", text: "Links to sensitive destinations use noreferrer, and a page-wide referrer policy is set.", lesson: "noreferrer", href: "/html/security/noreferrer"},
+  {id: "c15", group: "Links", text: "Links that visitors post get rel=\"noopener noreferrer\" added by your code.", lesson: "noopener", href: "/html/security/noopener"},
+  {id: "c16", group: "Browser policies", text: "A Content Security Policy is sent as a header, with a narrow default-src.", lesson: "Content Security Policy", href: "/html/security/content-security-policy"},
+  {id: "c17", group: "Browser policies", text: "The script rules have no 'unsafe-inline', 'unsafe-eval', wildcards or data:. Inline code uses nonces or hashes.", lesson: "Content Security Policy", href: "/html/security/content-security-policy"},
+  {id: "c18", group: "Browser policies", text: "object-src, base-uri, form-action and frame-ancestors are set.", lesson: "Content Security Policy", href: "/html/security/content-security-policy"},
+  {id: "c19", group: "Browser policies", text: "The Console shows no mixed content or unexpected CSP violations. HSTS is set once everything works on https.", lesson: "Mixed Content", href: "/html/security/mixed-content"},
+  {id: "c20", group: "Forms and cookies", text: "Sensitive forms use POST to an https or relative action, and no form has an unreviewed formaction.", lesson: "Secure Forms", href: "/html/security/secure-forms"},
+  {id: "c21", group: "Forms and cookies", text: "Password and code fields use the right type and autocomplete values, and paste is not blocked.", lesson: "Secure Forms", href: "/html/security/secure-forms"},
+  {id: "c22", group: "Forms and cookies", text: "State-changing forms carry a CSRF token, and the server checks it and validates every value again.", lesson: "Secure Forms", href: "/html/security/secure-forms"},
+  {id: "c23", group: "Forms and cookies", text: "Session cookies are set with HttpOnly, Secure and a SameSite value.", lesson: "HTML Security Basics", href: "/html/security/html-security-basics"},
+  {id: "c24", group: "Forms and cookies", text: "X-Content-Type-Options: nosniff, a Referrer-Policy and a Permissions-Policy are sent.", lesson: "HTML Security Basics", href: "/html/security/html-security-basics"}
+];
+
+export function checklistScore(items, answers) {
+  let yes = 0;
+  let no = 0;
+  let na = 0;
+  items.forEach(function (it) {
+    const a = answers[it.id];
+    if (a === "yes") yes += 1;
+    else if (a === "no") no += 1;
+    else if (a === "na") na += 1;
+  });
+  const answered = yes + no;
+  return {yes: yes, no: no, na: na, open: items.length - yes - no - na, percent: answered === 0 ? null : Math.round((yes / answered) * 100)};
+}
+
+export function SecurityChecklist() {
+  const [answers, setAnswers] = useState({});
+  const set = function (id, v) {
+    setAnswers(function (prev) { const n = Object.assign({}, prev); n[id] = v; return n; });
+  };
+  const total = checklistScore(checkItems, answers);
+  const todo = checkItems.filter(function (it) { return answers[it.id] === "no"; });
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Answer for the page or site you are reviewing. Choose Not applicable when an item does not apply.</p>
+      {checkGroups.map(function (g) {
+        const items = checkItems.filter(function (it) { return it.group === g; });
+        const s = checklistScore(items, answers);
+        return (
+          <fieldset key={g} style={{border: "1px solid rgba(128,128,128,0.4)", borderRadius: 6, margin: "0 0 0.75rem", padding: "0.5rem 0.75rem"}}>
+            <legend style={{fontWeight: 700}}>{g}{s.percent === null ? "" : " (" + s.percent + "%)"}</legend>
+            {items.map(function (it) {
+              return (
+                <p key={it.id} style={{margin: "0 0 0.6rem"}}>
+                  <label htmlFor={"ck-" + it.id}>{it.text}</label>
+                  <br />
+                  <select id={"ck-" + it.id} value={answers[it.id] || ""} onChange={function (e) { set(it.id, e.target.value); }}>
+                    <option value="">Not answered</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                    <option value="na">Not applicable</option>
+                  </select>
+                </p>
+              );
+            })}
+          </fieldset>
+        );
+      })}
+      <div aria-live="polite">
+        <p style={{fontWeight: 700, marginBottom: "0.25rem"}}>
+          {total.percent === null ? "No score yet." : "Score: " + total.percent + "% (" + total.yes + " yes, " + total.no + " no)"}
+        </p>
+        <p style={{margin: "0 0 0.75rem"}}>{total.na} not applicable, {total.open} not answered.</p>
+        {todo.length > 0 && (
+          <div>
+            <p style={{fontWeight: 700, margin: "0 0 0.25rem"}}>Your to-do list ({todo.length})</p>
+            <ol>
+              {todo.map(function (it) {
+                return <li key={it.id}>{it.text} <Link to={it.href}>Review: {it.lesson}</Link></li>;
+              })}
+            </ol>
+          </div>
+        )}
+      </div>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        Nothing you choose is saved or sent anywhere. The score is a rough guide to what is left to review, not a certificate of safety.
+      </p>
+    </div>
+  );
+}
+
+export const headerSamples = {
+  weak: [
+    "Content-Type: text/html; charset=utf-8",
+    "Content-Security-Policy: default-src *; script-src 'self' 'unsafe-inline'",
+    "Referrer-Policy: unsafe-url",
+    "Set-Cookie: sessionid=abc123; Path=/",
+    "X-Powered-By: Express"
+  ].join("\n"),
+  strong: [
+    "Content-Type: text/html; charset=utf-8",
+    "Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+    "Strict-Transport-Security: max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options: nosniff",
+    "Referrer-Policy: strict-origin-when-cross-origin",
+    "Permissions-Policy: camera=(), microphone=(), geolocation=()",
+    "Set-Cookie: sessionid=abc123; Path=/; Secure; HttpOnly; SameSite=Lax"
+  ].join("\n")
+};
+
+export function parseHeaderText(text) {
+  return text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) {
+    const i = l.indexOf(":");
+    if (i < 1) return null;
+    return {name: l.slice(0, i).trim().toLowerCase(), value: l.slice(i + 1).trim()};
+  }).filter(Boolean);
+}
+
+export function reviewHeaders(text) {
+  const headers = parseHeaderText(text);
+  const get = function (n) { return headers.filter(function (h) { return h.name === n; }); };
+  const out = [];
+  const add = function (level, t) { out.push({level: level, text: t}); };
+  if (headers.length === 0) {
+    add("tip", "No headers found. Paste response headers, one per line, such as Name: value.");
+    return out;
+  }
+  const csp = get("content-security-policy")[0];
+  if (!csp) {
+    add("problem", "Content-Security-Policy: missing. See the Content Security Policy lesson.");
+  } else {
+    const map = {};
+    csp.value.split(";").forEach(function (part) {
+      const t = part.trim().split(/\s+/).filter(Boolean);
+      if (t.length && !(t[0].toLowerCase() in map)) map[t[0].toLowerCase()] = t.slice(1).map(function (s) { return s.toLowerCase(); });
+    });
+    const scripts = map["script-src"] || map["default-src"] || null;
+    const issues = [];
+    if (scripts === null) issues.push(["problem", "Content-Security-Policy: no script-src or default-src, so scripts are unrestricted."]);
+    else {
+      const hasNonce = scripts.some(function (s) { return /^'(nonce-|sha(256|384|512)-)/.test(s); });
+      if (scripts.indexOf("'unsafe-inline'") !== -1 && !hasNonce) issues.push(["problem", "Content-Security-Policy: 'unsafe-inline' in the script rules lets injected inline scripts run."]);
+      if (scripts.indexOf("'unsafe-eval'") !== -1) issues.push(["problem", "Content-Security-Policy: 'unsafe-eval' allows text to be run as code."]);
+      if (scripts.indexOf("*") !== -1 || scripts.indexOf("https:") !== -1) issues.push(["problem", "Content-Security-Policy: a wildcard or bare scheme in the script rules lets almost any site supply scripts."]);
+    }
+    if (map["default-src"] && map["default-src"].indexOf("*") !== -1) issues.push(["problem", "Content-Security-Policy: default-src * lets everything else load from anywhere."]);
+    if (!map["frame-ancestors"] && get("x-frame-options").length === 0) issues.push(["tip", "Content-Security-Policy: no frame-ancestors (and no X-Frame-Options), so any site may frame your pages."]);
+    if (!map["object-src"] && !(map["default-src"] && map["default-src"].indexOf("'none'") !== -1)) issues.push(["tip", "Content-Security-Policy: add object-src 'none'."]);
+    if (!map["base-uri"]) issues.push(["tip", "Content-Security-Policy: add base-uri 'self'."]);
+    if (!map["form-action"]) issues.push(["tip", "Content-Security-Policy: add form-action. It is not covered by default-src."]);
+    if (issues.length === 0) add("good", "Content-Security-Policy: present, with no issues found by this simple check.");
+    issues.forEach(function (i) { add(i[0], i[1]); });
+  }
+  const hsts = get("strict-transport-security")[0];
+  if (!hsts) add("tip", "Strict-Transport-Security: missing. Add it once your whole site works over https, starting with a short max-age.");
+  else {
+    const m = hsts.value.match(/max-age\s*=\s*(\d+)/i);
+    const age = m ? Number(m[1]) : 0;
+    if (!m) add("problem", "Strict-Transport-Security: no max-age, so it has no effect.");
+    else if (age < 15552000) add("tip", "Strict-Transport-Security: max-age is " + age + " seconds. That is fine while testing. Raise it step by step.");
+    else add("good", "Strict-Transport-Security: present with a long max-age.");
+  }
+  const nosniff = get("x-content-type-options")[0];
+  if (!nosniff) add("tip", "X-Content-Type-Options: missing. Send nosniff.");
+  else if (nosniff.value.toLowerCase() !== "nosniff") add("problem", "X-Content-Type-Options: the only valid value is nosniff.");
+  else add("good", "X-Content-Type-Options: nosniff.");
+  const rp = get("referrer-policy")[0];
+  if (!rp) add("tip", "Referrer-Policy: missing. Browsers use a default, but being explicit is clearer.");
+  else if (rp.value.toLowerCase() === "unsafe-url") add("problem", "Referrer-Policy: unsafe-url sends the full address to every site, even over http.");
+  else add("good", "Referrer-Policy: " + rp.value + ".");
+  if (get("permissions-policy").length === 0) add("tip", "Permissions-Policy: missing. Turn off features your pages do not use.");
+  else add("good", "Permissions-Policy: present.");
+  get("set-cookie").forEach(function (c) {
+    const parts = c.value.split(";").map(function (p) { return p.trim().toLowerCase(); });
+    const name = parts[0].split("=")[0];
+    const sessionLike = /sess|auth|token|sid|login/.test(name);
+    const flags = parts.slice(1);
+    const has = function (f) { return flags.indexOf(f) !== -1; };
+    const same = flags.filter(function (f) { return f.indexOf("samesite=") === 0; })[0];
+    const problems = [];
+    if (!has("httponly")) problems.push([sessionLike ? "problem" : "tip", "no HttpOnly, so page scripts can read it"]);
+    if (!has("secure")) problems.push([sessionLike ? "problem" : "tip", "no Secure, so it can be sent over http"]);
+    if (!same) problems.push(["tip", "no SameSite value"]);
+    else if (same === "samesite=none" && !has("secure")) problems.push(["problem", "SameSite=None needs Secure"]);
+    if (problems.length === 0) add("good", "Set-Cookie " + name + ": HttpOnly, Secure and SameSite are all set.");
+    problems.forEach(function (p) { add(p[0], "Set-Cookie " + name + ": " + p[1] + "."); });
+  });
+  if (get("x-powered-by").length > 0) add("tip", "X-Powered-By: tells everyone which software you run. Remove it if you can.");
+  return out;
+}
+
+export function HeaderReview() {
+  const [text, setText] = useState(headerSamples.weak);
+  const findings = reviewHeaders(text);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setText(headerSamples.weak); }}>Load weak headers</button>
+        <button type="button" onClick={function () { setText(headerSamples.strong); }}>Load stronger headers</button>
+      </div>
+      <label htmlFor="hr-text" style={{display: "block", fontWeight: 600}}>Response headers (one per line, edit them)</label>
+      <textarea id="hr-text" value={text} onChange={function (e) { setText(e.target.value); }} rows={9} spellCheck={false} style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}} />
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {findings.map(function (f, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>{f.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A teaching checker for the common headers. Nothing is requested from any server. Copy real headers from the Network panel, or from curl -I, and remove anything private first.
+      </p>
+    </div>
+  );
+}
+
+You have now covered the ten lessons of this section, from origins and XSS to frames, links, policies, mixed content, and forms. This final lesson pulls them into **one practical review** that you can run on any page, and keep running as the page changes.
+
+A checklist cannot make a site safe. What it does is stop you from **forgetting** the basics, and give a team one shared list to work from.
+
+## What You Will Learn
+
+- How to run a security review in a sensible order
+- A 24-point checklist, grouped by topic
+- How to read your response headers
+- How to decide what to fix first
+- What a front-end checklist does **not** cover
+- How to keep the review going
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Security problems rarely come from one big mistake. They come from many small gaps: one forgotten `rel`, one old `http://`, one script nobody remembers adding. A review that checks the same things every time catches those gaps before attackers do.
+
+<Tabs>
+<TabItem value="checklist" label="Interactive Checklist" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SecurityChecklist />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="headers" label="Header Reviewer">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<HeaderReview />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Essentials">
+
+```text title="Response headers worth having"
+Content-Security-Policy: default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Set-Cookie: sessionid=...; Path=/; Secure; HttpOnly; SameSite=Lax
+```
+
+```html title="Markup habits"
+<a href="https://partner.example.net/" target="_blank" rel="noopener noreferrer">Partner</a>
+
+<iframe src="https://widgets.example.net/map" title="Map"
+        sandbox="allow-scripts" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+
+<form action="/login" method="post">
+  <input type="hidden" name="csrf_token" value="SERVER_GENERATED_VALUE">
+  <input type="password" name="password" autocomplete="current-password">
+</form>
+```
+
+</TabItem>
+</Tabs>
+
+## How to Run a Review
+
+Work in this order. It moves from what is quick to check to what takes longer:
+
+1. **List what the page loads.** Open DevTools, then **Network**, reload, and note every host. Anything you cannot explain needs an answer.
+2. **Read the response headers.** Click the page request, and read **Response Headers**. The Header Reviewer tab helps you read them.
+3. **Check the Console.** Look for mixed content messages, CSP violations, and blocked frames.
+4. **Search the markup and scripts.** Look for `http://`, `target="_blank"`, `window.open`, `innerHTML`, `document.write`, `formaction`, `rel="opener"`, `autocomplete="off"`, and `method="get"` near sensitive fields.
+5. **Test the forms.** Submit one with test values and check the request in **Network**: method, address, and body.
+6. **Try to break your own input.** Enter harmless test text with angle brackets and quotes, and see how each place on the page displays it. Test only your own site, or one you have permission to test.
+7. **Write down what you find,** and fix it in priority order.
+
+Use the Interactive Checklist tab as you go. It builds a to-do list from your "No" answers, with a link back to the lesson that explains each fix.
+
+## The Checklist in Brief
+
+The 24 items in the tool are grouped like this:
+
+| Group | What it checks | Lessons |
+| :-- | :-- | :-- |
+| **Foundations** | `https`, no secrets in URLs, escaping, safe DOM methods, link schemes, sanitising | [Security Basics](./html-security-basics), [XSS Basics](./xss-basics), [Mixed Content](./mixed-content) |
+| **Third-party code** | A list of what you load, trusted hosts, `integrity`, graceful failure | [Security Basics](./html-security-basics), [Mixed Content](./mixed-content) |
+| **Frames and embeds** | `sandbox`, `allow`, `referrerpolicy`, `frame-ancestors`, `postMessage` | [iFrame Security](./iframe-security), [Sandbox Attribute](./sandbox-attribute) |
+| **Links** | `noopener`, `noreferrer`, user-posted links | [noopener](./noopener), [noreferrer](./noreferrer) |
+| **Browser policies** | CSP, mixed content, HSTS | [Content Security Policy](./content-security-policy), [Mixed Content](./mixed-content) |
+| **Forms and cookies** | `POST`, `https`, `autocomplete`, CSRF tokens, cookie flags, extra headers | [Secure Forms](./secure-forms) |
+
+## Reading Your Headers
+
+Most of the strongest protections are **response headers**, which you set on your server or hosting service, not in HTML. A quick guide:
+
+| Header | What it does | Where it was covered |
+| :-- | :-- | :-- |
+| `Content-Security-Policy` | Limits where scripts, styles, frames, and forms may come from or go to | [Content Security Policy](./content-security-policy) |
+| `Strict-Transport-Security` | Makes browsers always use `https` for your site | [Mixed Content](./mixed-content) |
+| `X-Content-Type-Options: nosniff` | Stops browsers from guessing a file's type, so an uploaded text file cannot be run as a script | [HTML Security Basics](./html-security-basics) |
+| `Referrer-Policy` | Controls how much of your address other sites receive | [noreferrer](./noreferrer) |
+| `Permissions-Policy` | Turns off browser features, such as the camera, that you do not use | [iFrame Security](./iframe-security) |
+| `Cross-Origin-Opener-Policy` | Cuts opener links between pages of different origins | [noopener](./noopener) |
+| `Set-Cookie` flags | `HttpOnly`, `Secure` and `SameSite` limit how cookies can be read and sent | [HTML Security Basics](./html-security-basics) |
+
+If you cannot change headers (for example, on a basic static host), look for a headers or settings feature on your platform. If there is none, the `meta` tag works for some policies, but with real limits, as the [CSP lesson](./content-security-policy) explains.
+
+## What to Fix First
+
+Not every gap is equally urgent. A rough order:
+
+| Priority | Examples |
+| :-- | :-- |
+| **Fix now** | Secrets or personal data in URLs. Untrusted data written with `innerHTML`. Scripts or forms over `http`. Sensitive forms using `GET`. A user-supplied iframe address. |
+| **Fix soon** | No CSP at all, or one with `'unsafe-inline'` for scripts. Missing `sandbox` on third-party frames. Session cookies without `HttpOnly`, `Secure`, or `SameSite`. No `frame-ancestors` on pages with sensitive actions. |
+| **Improve** | `noopener` and `noreferrer` on every outbound link. `integrity` on third-party files. `Permissions-Policy`. A reviewed list of third-party hosts. HSTS with a long `max-age`. |
+
+Your own situation may change the order. A site with no login and no user content has fewer high-risk items than one that stores accounts.
+
+## What This Checklist Does Not Cover
+
+This section is about the **HTML and browser side** of security. Real protection also needs things a front-end checklist cannot see:
+
+- **Server code,** such as SQL injection, file upload handling, and access control. See [Secure Form Design](/tutorials/html/forms/secure-form-design) for an introduction.
+- **Login design,** such as password storage, rate limiting, and multi-factor sign-in.
+- **Dependencies,** meaning the libraries and packages you use. Run your package manager's audit command, and keep them updated.
+- **Infrastructure,** such as servers, certificates, backups, and who can access what.
+- **People and process,** such as who can publish, how you respond to a report, and what the law requires where you operate.
+
+If you handle payments, health data, or other sensitive information, get proper security help and read the rules that apply to you. A learning checklist is not an audit.
+
+## Keep the Review Going
+
+- **Review after every change** that adds a script, an embed, a form, or a new third-party service.
+- **Schedule a regular review,** such as once a quarter, and compare with the last one.
+- **Automate what you can.** Many teams add header checks or markup checks to their build process, so a regression shows up before it ships. Check what your tools support.
+- **Monitor.** CSP reports, console errors, and unusual traffic are early signs.
+- **Make it easy to report problems.** A small file at `/.well-known/security.txt` tells researchers how to contact you:
+
+```text title="/.well-known/security.txt"
+Contact: mailto:security@example.com
+Expires: 2027-12-31T23:59:59Z
+Preferred-Languages: en
+```
+
+Replace the address and date with real ones, and check the current format specification before you publish it.
+
+## Practise Responsibly
+
+- **Only test sites you own, or have written permission to test.**
+- **Use made-up data** in test forms. Never use real passwords or card numbers.
+- **If you find a problem on someone else's site,** do not poke further. Look for their security contact, and report it politely.
+- **Do not share screenshots** of headers or cookies that contain real session values.
+
+## Best Practices
+
+1. **Run the same checklist every time,** and keep the answers.
+2. **Fix high-risk items first.**
+3. **Prefer headers** for protections that support them.
+4. **Keep a list of third-party hosts,** and prune it.
+5. **Layer defences:** escaping, CSP, sandbox, cookie flags, and server checks.
+6. **Re-run after changes,** not only after incidents.
+7. **Teach the team** to read the Console and Network panel.
+8. **Be honest about what is not covered.**
+
+## Quick Checklist
+
+- [ ] I listed everything the page loads
+- [ ] I read the response headers, and each one is intentional
+- [ ] The Console shows no mixed content or CSP surprises
+- [ ] I searched the markup and scripts for the risky patterns
+- [ ] I tested forms with made-up data
+- [ ] I wrote down each gap and its priority
+- [ ] I scheduled the next review
+
+## Security and Privacy Notes
+
+- **Reviewing can expose data.** Network captures and header copies may contain cookies, tokens, and addresses. Remove them before sharing.
+- **A checklist is a snapshot.** A page that passes today can fail after the next deployment.
+- **Third parties change.** A host you trusted last year can be sold, hacked, or changed. Review them on a schedule.
+- **Privacy is part of security.** Collecting less data gives attackers less to find, and gives you less to protect.
+
+## Global Audience Notes
+
+- **Rules about data and security differ by country.** Check the ones that apply to you and your visitors.
+- **Documentation and error messages are mostly in English.** Make sure your whole team can read the Console, and write your own visitor-facing messages in your visitors' languages.
+- **Teams are often distributed,** so a written, shared checklist beats memory and chat messages.
+- **Test on the devices and networks your visitors use,** because older browsers and weak connections change what works.
+
+## Common Mistakes to Avoid
+
+1. **Running a review once,** and never again.
+2. **Treating the checklist as a certificate.**
+3. **Fixing the easy items** and leaving the high-risk ones.
+4. **Adding a header** without testing it, then breaking the site.
+5. **Relying on one layer,** such as only a CSP.
+6. **Trusting third parties forever.**
+7. **Sharing captures** that contain real session values.
+8. **Skipping the server side,** because the page looks fine.
+9. **Testing sites you do not own.**
+10. **Never writing results down.**
+
+## Practice Time
+
+1. Open the Interactive Checklist, and answer it for one real page of yours. What is your score? Which items are still open?
+2. Open the "No" list, and pick the one you would fix first. Why?
+3. In the Header Reviewer, load the weak headers. Which problems does it find? Fix them one by one.
+4. Open DevTools on your own page, copy its response headers, and paste them (without cookies) into the Header Reviewer.
+5. Run through the review steps above on a small page you own, and write a short report.
+6. Add one header or markup fix, then check the Console for surprises.
+7. Write a `security.txt` for a project of yours.
+8. Bonus: schedule a quarterly review in your calendar, and write the checklist link in the invite.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why use a checklist?</summary>
+
+Most security gaps are small things that get forgotten. A checklist checks the same things every time, and gives a team a shared list.
+
+</details>
+
+<details>
+<summary>2. What should you fix first?</summary>
+
+High-risk items: secrets in URLs, untrusted data written as HTML, scripts or forms over `http`, sensitive forms using `GET`, and user-supplied frame addresses.
+
+</details>
+
+<details>
+<summary>3. Which protections are mainly headers?</summary>
+
+CSP (including `frame-ancestors` and `form-action`), HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, and cookie flags.
+
+</details>
+
+<details>
+<summary>4. What does a front-end checklist not cover?</summary>
+
+Server code, login design, dependencies, infrastructure, and people and process.
+
+</details>
+
+<details>
+<summary>5. How often should you review?</summary>
+
+After every change that adds a script, embed, form, or third-party service, and on a regular schedule such as quarterly.
+
+</details>
+
+<details>
+<summary>6. Who may you test?</summary>
+
+Only sites you own, or have written permission to test. Use made-up data in test forms.
+
+</details>
+
+## Key Takeaways
+
+- **Security is many small checks, repeated.** A checklist makes that easy.
+- **Work in order:** list what loads, read headers, check the Console, search markup, test forms.
+- **Fix high-risk items first,** and layer your defences.
+- **Many protections are headers,** which you set on the server.
+- **Know the limits.** HTML security is one part of a bigger picture.
+- **Review again after every change,** and keep the answers.
+
+You have finished the security section. To revisit any topic, start from the [Security Overview](/tutorials/html/security), or go straight to the lesson linked from any item on your to-do list.

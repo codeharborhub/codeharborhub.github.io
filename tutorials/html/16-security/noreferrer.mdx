@@ -1,0 +1,477 @@
+---
+id: html-sec-noreferrer
+title: "noreferrer and Referrer Policy"
+sidebar_label: "noreferrer"
+sidebar_position: 6
+slug: /html/security/noreferrer
+description: "Learn what the Referer header tells other sites, how rel=noreferrer, the referrerpolicy attribute, the meta tag and the Referrer-Policy header control it, and why secrets must never live in URLs. Includes a referrer lab and a policy picker."
+keywords:
+  - noreferrer
+  - rel noreferrer
+  - Referer header
+  - referrer policy
+  - referrerpolicy attribute
+  - Referrer-Policy header
+  - document.referrer
+  - strict-origin-when-cross-origin
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, privacy, links, referrer, frontend]
+---
+
+import {useState} from 'react';
+
+export const policyList = [
+  "no-referrer",
+  "no-referrer-when-downgrade",
+  "origin",
+  "origin-when-cross-origin",
+  "same-origin",
+  "strict-origin",
+  "strict-origin-when-cross-origin",
+  "unsafe-url"
+];
+
+export function referrerSent(policy, from, to) {
+  let f;
+  let t;
+  try {
+    f = new URL(from);
+    t = new URL(to);
+  } catch (e) {
+    return null;
+  }
+  if ((f.protocol !== "https:" && f.protocol !== "http:") || (t.protocol !== "https:" && t.protocol !== "http:")) return null;
+  const full = f.origin + f.pathname + f.search;
+  const originOnly = f.origin + "/";
+  const same = f.origin === t.origin;
+  const down = f.protocol === "https:" && t.protocol === "http:";
+  switch (policy) {
+    case "no-referrer": return "";
+    case "no-referrer-when-downgrade": return down ? "" : full;
+    case "origin": return originOnly;
+    case "origin-when-cross-origin": return same ? full : originOnly;
+    case "same-origin": return same ? full : "";
+    case "strict-origin": return down ? "" : originOnly;
+    case "strict-origin-when-cross-origin": return same ? full : (down ? "" : originOnly);
+    case "unsafe-url": return full;
+    default: return null;
+  }
+}
+
+export function riskyParams(from) {
+  let u;
+  try {
+    u = new URL(from);
+  } catch (e) {
+    return [];
+  }
+  const names = [];
+  u.searchParams.forEach(function (value, name) {
+    if (/token|key|secret|session|password|reset|auth|code|email|otp/i.test(name)) names.push(name);
+  });
+  return names;
+}
+
+export function ReferrerLab() {
+  const [from, setFrom] = useState("https://shop.example.com/account/orders?id=4821&token=abc123#details");
+  const [to, setTo] = useState("https://analytics.example.net/collect");
+  const rows = policyList.map(function (p) { return {policy: p, sent: referrerSent(p, from, to)}; });
+  const invalid = rows[0].sent === null;
+  const risky = riskyParams(from);
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="rl-from" style={{fontWeight: 600}}>The page the visitor is on</label>
+        <br />
+        <input id="rl-from" type="text" value={from} onChange={function (e) { setFrom(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="rl-to" style={{fontWeight: 600}}>Where the link, image or script goes</label>
+        <br />
+        <input id="rl-to" type="text" value={to} onChange={function (e) { setTo(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setTo("https://shop.example.com/help"); }}>Same site</button>
+        <button type="button" onClick={function () { setTo("https://analytics.example.net/collect"); }}>Another https site</button>
+        <button type="button" onClick={function () { setTo("http://old-partner.example.org/"); }}>A plain http site</button>
+      </div>
+      {invalid ? (
+        <p style={{color: "#c0392b"}}>Enter two full web addresses that start with http:// or https://.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th style={{textAlign: "left"}}>Policy</th>
+              <th style={{textAlign: "left"}}>What the destination receives</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(function (r) {
+              const isDefault = r.policy === "strict-origin-when-cross-origin";
+              return (
+                <tr key={r.policy}>
+                  <td><code>{r.policy}</code>{isDefault ? <span style={{fontSize: "0.8rem"}}> (common default)</span> : null}</td>
+                  <td>{r.sent === "" ? <em>nothing</em> : <code>{r.sent}</code>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <div aria-live="polite">
+        {!invalid && risky.length > 0 && (
+          <p style={{color: "#c0392b", fontWeight: 600}}>
+            This address contains {risky.join(", ")} in its query. Any policy that sends the full address would hand that value to the destination. Keep secrets out of URLs.
+          </p>
+        )}
+      </div>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        The part after # is never sent. A simplified model of the rules in the Referrer Policy specification.
+      </p>
+    </div>
+  );
+}
+
+export const pickScenarios = [
+  {
+    title: "A password reset page. Its address holds a one-time code, and the page loads a logo and a link from other sites.",
+    ok: ["no-referrer", "same-origin"],
+    why: "Nothing from this address should reach other sites. The deeper fix is to avoid secrets in URLs, and the policy is a safety net."
+  },
+  {
+    title: "A blog that wants a privacy-friendly setting that still lets other sites see which site a visitor came from.",
+    ok: ["strict-origin-when-cross-origin"],
+    why: "Same-site requests get the full address, other https sites get only the origin, and nothing goes to an http site. It is also the usual browser default."
+  },
+  {
+    title: "A company intranet. Internal tools need the full address from each other, but nothing about internal pages may go outside.",
+    ok: ["same-origin"],
+    why: "same-origin sends the full address only to the same origin, and nothing anywhere else."
+  },
+  {
+    title: "A support page links to a sensitive external site. You want that site to learn nothing about where the visitor came from.",
+    ok: ["no-referrer"],
+    why: "no-referrer sends nothing. For a single link, rel=noreferrer does the same job."
+  }
+];
+
+export function PolicyPicker() {
+  const [idx, setIdx] = useState(0);
+  const [choice, setChoice] = useState("");
+  const [checked, setChecked] = useState(false);
+  const sc = pickScenarios[idx];
+  const good = sc.ok.indexOf(choice) !== -1;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}><strong>Scenario {idx + 1} of {pickScenarios.length}:</strong> {sc.title}</p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Which policy fits?</legend>
+        {policyList.map(function (p) {
+          return (
+            <label key={p} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="pp-choice" checked={choice === p} onChange={function () { setChoice(p); setChecked(false); }} /> <code>{p}</code>
+            </label>
+          );
+        })}
+      </fieldset>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+        <button type="button" disabled={choice === ""} onClick={function () { setChecked(true); }}>Check my answer</button>
+        <button type="button" onClick={function () { setIdx((idx + 1) % pickScenarios.length); setChoice(""); setChecked(false); }}>Next scenario</button>
+      </div>
+      <div aria-live="polite">
+        {checked && (
+          <p style={{marginTop: "0.75rem"}}>
+            <strong style={{color: good ? "#1e8449" : "#c0392b"}}>{good ? "Correct. " : "Not quite. "}</strong>
+            {good ? "" : "A good answer here: " + sc.ok.join(" or ") + ". "}
+            {sc.why}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Every time a visitor clicks a link, or a page loads an image or a script, the browser may tell the destination **where the request came from**. That information is called the **referrer**, and you can control it. The tool most people meet first is `rel="noreferrer"`, and behind it sits a small, useful system called **Referrer Policy**.
+
+The link-focused basics are in [Link Security](/tutorials/html/links-and-navigation/link-security). This lesson goes deeper into the referrer itself: what is sent, why it matters, and the controls you have.
+
+## What You Will Learn
+
+- What the referrer is, and why the header is spelled `Referer`
+- What a browser sends by default
+- What `rel="noreferrer"` does, and what it also implies
+- The eight referrer policy values
+- Four ways to set a policy, and which wins
+- Why secrets must never live in URLs
+- The trade-offs for analytics and embeds
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A referrer is a **postcard that travels with the request**, saying "I came from this page". Sometimes that is helpful. Sometimes it reveals more than you intend, such as a private path or a token in the address. Referrer Policy lets you decide how much goes on the postcard.
+
+<Tabs>
+<TabItem value="code" label="The Code" default>
+
+```html title="index.html"
+<!-- One link: send no referrer -->
+<a href="https://sensitive.example.org/" rel="noreferrer">Visit the site</a>
+
+<!-- One link: choose a specific policy -->
+<a href="https://partner.example.com/" referrerpolicy="origin">Partner</a>
+
+<!-- Images, scripts, iframes and more accept it too -->
+<img src="https://cdn.example.net/logo.png" alt="Logo" referrerpolicy="no-referrer">
+
+<!-- Whole page, in the head -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+```
+
+```text title="Or as a response header (all pages)"
+Referrer-Policy: strict-origin-when-cross-origin
+```
+
+</TabItem>
+<TabItem value="lab" label="Referrer Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ReferrerLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="picker" label="Policy Picker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PolicyPicker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Is the Referrer?
+
+When a browser requests something from another site, it can add a header named `Referer` that holds the address of the page making the request. The spelling is a historical typo in the original web standard, and it stuck, so the header is `Referer` while the policy and the attribute use the correct spelling, "referrer". JavaScript can read the same value from `document.referrer`.
+
+The destination can use it for good reasons, such as analytics, "back to where you came from" features, and basic checks on where requests come from. It can also learn things you would rather keep private.
+
+### What gets sent
+
+The browser may send:
+
+- the **full address,** with path and query (`https://shop.example.com/account/orders?id=4821`),
+- or the **origin only** (`https://shop.example.com/`),
+- or **nothing.**
+
+It never sends the part after `#`, and it never sends usernames or passwords from the address.
+
+## The Default
+
+Modern browsers apply a default that is equivalent to `strict-origin-when-cross-origin`:
+
+| Request goes to | What is sent |
+| :-- | :-- |
+| The same origin | The full address |
+| A different origin, still `https` | The origin only |
+| A less secure destination (`https` to `http`) | Nothing |
+
+That is a sensible baseline. But browsers differ in age and settings, and you may want something stricter. Being explicit makes your intent clear, and protects visitors whose browsers use older defaults.
+
+## rel="noreferrer"
+
+Adding `rel="noreferrer"` to a link tells the browser **not to send the `Referer` header** for that click.
+
+```html
+<a href="https://sensitive.example.org/" target="_blank" rel="noreferrer">Visit the site</a>
+```
+
+It also has a **second effect**: it implies `noopener`, so a page opened in a new tab gets no `window.opener` link back to yours. That second effect is the subject of [noopener](./noopener). The two are separate ideas that happen to arrive together.
+
+`rel="noreferrer"` works on `a`, `area`, and `form` elements. For images, scripts, stylesheets, and iframes, use the `referrerpolicy` attribute instead.
+
+:::info
+Modern browsers already treat `target="_blank"` links as if they had `noopener`. They do **not** remove the referrer for you, because that is a separate decision. You choose it with `noreferrer` or a policy.
+:::
+
+## The Eight Policy Values
+
+| Value | Same origin | Other origin (https) | Downgrade to http |
+| :-- | :-- | :-- | :-- |
+| `no-referrer` | Nothing | Nothing | Nothing |
+| `no-referrer-when-downgrade` | Full address | Full address | Nothing |
+| `origin` | Origin | Origin | Origin |
+| `origin-when-cross-origin` | Full address | Origin | Origin |
+| `same-origin` | Full address | Nothing | Nothing |
+| `strict-origin` | Origin | Origin | Nothing |
+| `strict-origin-when-cross-origin` | Full address | Origin | Nothing |
+| `unsafe-url` | Full address | Full address | Full address |
+
+Open the **Referrer Lab**, type a page address with a query string, and change the destination. Watch each row change. Then try the scenarios in the **Policy Picker**.
+
+A quick way to choose:
+
+- **No outside party should learn anything:** `no-referrer`.
+- **A good all-round default:** `strict-origin-when-cross-origin`.
+- **An internal system:** `same-origin`.
+- **Avoid `unsafe-url`.** Its name is a warning, because it sends the full address everywhere, even to insecure sites.
+
+## Four Ways to Set a Policy
+
+| Where | Scope | Example |
+| :-- | :-- | :-- |
+| `Referrer-Policy` HTTP header | The whole page, set by the server | `Referrer-Policy: same-origin` |
+| `meta` tag in the head | The whole page | `<meta name="referrer" content="same-origin">` (written in the page's head) |
+| `referrerpolicy` attribute | One element or request | `<img referrerpolicy="no-referrer">` |
+| `rel="noreferrer"` | One link, area or form | `<a rel="noreferrer">` |
+
+**A setting closer to the request wins.** An element's own `referrerpolicy` or `rel="noreferrer"` overrides the page-wide policy. Choose a page-wide policy first, then add exceptions only where needed.
+
+## Why This Matters: Secrets in URLs
+
+The biggest referrer risk is not the policy. It is what **your own URLs contain**. If a page address holds a password-reset token, a session ID, an email address, or a private document path, any request that page makes can leak it through the referrer: to an analytics script, a font host, a CDN image, or a link the visitor clicks.
+
+Rules to follow:
+
+1. **Never put secrets in a URL.** Send tokens in a request body or a header, or keep them in a cookie marked `HttpOnly` and `Secure`.
+2. **If a one-time code must be in the address,** use a strict policy on that page, and exchange the code for a session and redirect away quickly.
+3. **Avoid putting personal data in query strings.** Names, emails, and IDs end up in history, server logs, and referrers.
+4. **Set a page-wide policy** so one forgotten `img` cannot leak the address.
+
+The Referrer Lab warns you when it spots words such as `token` or `reset` in the address.
+
+## Trade-Offs to Know
+
+- **Analytics.** If you link out with `noreferrer`, the destination site sees the visit as "direct", not as coming from you. That is the point, but you lose credit for sending traffic. Likewise, when visitors arrive **at** your site from places that use strict policies, your analytics may show less detail. For links you control, campaign parameters such as `utm_source` in the address are an alternative, and they are visible to the destination by design.
+- **Embeds and APIs.** Some embedded players, map keys, and image hosts check the referrer, so `no-referrer` can make them fail. If an embed breaks, read the provider's documentation before loosening your policy, and use `origin` rather than the full address if a check needs a site name.
+- **Request-origin checks.** Some servers use `Referer` to check that a request came from their own site. Rely on proper protections instead, such as tokens and `SameSite` cookies, covered in [Secure Forms](./secure-forms). Separately, the `Origin` header is sent on many cross-origin requests, and Referrer Policy does not control it.
+- **Not anonymity.** `noreferrer` hides where the visitor came from. It does not hide their IP address, browser details, or anything else the destination can see.
+
+## Checking Your Setup
+
+1. Open DevTools, then **Network**, and click a request to another site. Under **Request Headers**, look for `Referer`.
+2. Check the **Response Headers** of your page for `Referrer-Policy`.
+3. In the **Console**, type `document.referrer` on a page you reached by a click. It shows what the browser was told.
+4. In **Elements**, search for `referrerpolicy` and `noreferrer` to see where they are used.
+5. Search your site for addresses that contain `token=`, `reset=`, `email=`, or `session=`.
+
+## Best Practices
+
+1. **Set a page-wide policy,** and use `strict-origin-when-cross-origin` as a baseline.
+2. **Use `no-referrer` or `same-origin`** on pages with sensitive addresses.
+3. **Never put secrets in URLs.**
+4. **Use `rel="noreferrer"`** for links to sensitive or unrelated sites.
+5. **Avoid `unsafe-url`.**
+6. **Test embeds** after tightening a policy.
+7. **Document exceptions,** and keep them rare.
+8. **Do not rely on `Referer`** to protect your server.
+
+## Quick Checklist
+
+- [ ] A page-wide policy is set by header or `meta`
+- [ ] No page address contains a secret or personal data
+- [ ] Sensitive pages use `no-referrer` or `same-origin`
+- [ ] `rel="noreferrer"` is used where nothing should be shared
+- [ ] Embeds and analytics still work after the policy
+- [ ] No use of `unsafe-url`
+- [ ] The server does not depend on `Referer` for protection
+
+## Security and Privacy Notes
+
+- **Referrers can reveal behaviour.** A destination may learn which pages of your site its visitors came from, and combine that with other data. Sending less is a privacy-friendly default.
+- **Visitors may have their own settings.** Some browsers and extensions trim or remove referrers. Do not build a feature that breaks when the referrer is empty.
+- **Privacy law can apply to this data.** Whether a referrer counts as personal data depends on where you operate. This is not legal advice, so check the rules that apply to you.
+- **Policies apply to the request, not the content.** They do not stop a page from displaying private information to someone who is allowed to see it.
+
+## Global Audience Notes
+
+- **Privacy expectations vary by region,** and strict defaults are welcome nearly everywhere.
+- **Some partners and payment providers need a referrer** to verify the requesting site. Follow their current guidance, and prefer sending the origin only.
+- **Mixed `http` and `https` sites are still common** in some regions. The downgrade rules above matter more there.
+- **Language does not change anything here,** but addresses can include non-English words, so use clear, neutral address paths that do not reveal personal details.
+
+## Common Mistakes to Avoid
+
+1. **Putting tokens or emails in the address,** then worrying about the policy.
+2. **Using `noreferrer` for security** and expecting it to hide a visitor's IP address.
+3. **Confusing `noreferrer` with `noopener`.** The first controls the header, and the second controls the `window.opener` link.
+4. **Forgetting `referrerpolicy` on images and scripts.**
+5. **Setting `no-referrer` everywhere** and breaking an embed or an analytics tool.
+6. **Using `unsafe-url`.**
+7. **Misspelling the header or attribute.** The header is `Referer`. The policy is `Referrer-Policy`. The attribute is `referrerpolicy`.
+8. **Expecting `Referer` to be present,** and writing code that fails without it.
+9. **Relying on `Referer` as a security check** on your own server.
+10. **Never testing** after changing the policy.
+
+## Practice Time
+
+1. In the Referrer Lab, keep the default values. Which policies send the token to the other site?
+2. Click "Same site". Which policies still send the full address?
+3. Click "A plain http site". Which policies send nothing?
+4. Remove `token=abc123` from the address. What changes in the warning?
+5. Complete all four scenarios in the Policy Picker.
+6. Open DevTools on any page, click a link to another site, and find the `Referer` header in the Network panel.
+7. Add `<meta name="referrer" content="same-origin">` to a test page, and repeat step 6.
+8. Bonus: add `rel="noreferrer"` to one link, click it, and compare the request headers.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the referrer?</summary>
+
+The address of the page that made a request, sent in the `Referer` header (and readable as `document.referrer`), so the destination can see where the visitor came from.
+
+</details>
+
+<details>
+<summary>2. What does `rel="noreferrer"` do?</summary>
+
+It stops the browser from sending the `Referer` header for that link, and it also implies `noopener`.
+
+</details>
+
+<details>
+<summary>3. What is a good default policy?</summary>
+
+`strict-origin-when-cross-origin`: full address to the same origin, origin only to other https sites, and nothing to insecure sites.
+
+</details>
+
+<details>
+<summary>4. Which setting wins when several are used?</summary>
+
+The one closest to the request. An element's `referrerpolicy` or `rel="noreferrer"` overrides the page-wide header or `meta` tag.
+
+</details>
+
+<details>
+<summary>5. Why must secrets stay out of URLs?</summary>
+
+Addresses leak through referrers, history, and server logs. A token in the address can reach any site the page contacts.
+
+</details>
+
+<details>
+<summary>6. Does `noreferrer` make a visitor anonymous?</summary>
+
+No. It only removes the referrer. The destination still sees the IP address and other browser details.
+
+</details>
+
+## Key Takeaways
+
+- **The referrer tells a destination where a request came from.**
+- **`rel="noreferrer"` sends no referrer** and also implies `noopener`.
+- **There are eight policies.** Use `strict-origin-when-cross-origin` as a baseline, and avoid `unsafe-url`.
+- **Closest setting wins:** element, then page.
+- **Keep secrets out of URLs.** This matters more than any policy.
+- **Test embeds and analytics** after you change a policy.
+
+Next up: [noopener](./noopener), where you will learn how a new tab can reach back into the page that opened it, and how to close that door.
