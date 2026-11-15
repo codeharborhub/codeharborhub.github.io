@@ -1,0 +1,429 @@
+---
+id: html-modern-living-standard
+title: "The HTML Living Standard"
+sidebar_label: "HTML Living Standard"
+sidebar_position: 2
+slug: /html/modern-html/html-living-standard
+description: "Learn how HTML is specified and maintained today: the history from HTML 2.0 to the WHATWG Living Standard, how a feature becomes part of HTML, how the parser repairs broken markup, and how to read element definitions in the specification. Includes a live parser lab and a content-model quiz."
+keywords:
+  - HTML living standard
+  - WHATWG HTML
+  - HTML5 history
+  - HTML specification
+  - HTML parsing
+  - content model
+  - how HTML features are added
+  - HTML validator
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, whatwg, specification, parsing, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const parserSamples = {
+  paragraphs: "<p>First paragraph\n<p>Second paragraph",
+  table: "<table>\n  <tr><td>Cell</td></tr>\n</table>",
+  crossed: "<b>bold <i>both</b> italic?</i>",
+  divInP: "<p>Intro <div>A box</div> after the box</p>",
+  bare: "Just some text"
+};
+
+export function treeLines(node, depth, lines) {
+  if (lines.length > 200) return lines;
+  if (node.nodeType === 1) {
+    lines.push({depth: depth, text: "<" + node.tagName.toLowerCase() + ">"});
+    Array.from(node.childNodes).forEach(function (child) { treeLines(child, depth + 1, lines); });
+  } else if (node.nodeType === 3) {
+    const t = node.nodeValue.replace(/\s+/g, " ").trim();
+    if (t !== "") lines.push({depth: depth, text: '"' + (t.length > 40 ? t.slice(0, 40) + "..." : t) + '"'});
+  }
+  return lines;
+}
+
+export function parseOutline(source) {
+  const doc = new DOMParser().parseFromString(source, "text/html");
+  const lines = treeLines(doc.documentElement, 0, []);
+  const added = ["html", "head", "body", "tbody"].filter(function (tag) {
+    const inTree = doc.getElementsByTagName(tag).length > 0;
+    const inSource = new RegExp("<" + tag + "[\\s>/]", "i").test(source);
+    return inTree && !inSource;
+  });
+  return {lines: lines, added: added, count: doc.getElementsByTagName("*").length};
+}
+
+export function ParserLabInner() {
+  const [source, setSource] = useState(parserSamples.paragraphs);
+  const r = parseOutline(source);
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setSource(parserSamples.paragraphs); }}>Unclosed paragraphs</button>
+        <button type="button" onClick={function () { setSource(parserSamples.table); }}>Table without tbody</button>
+        <button type="button" onClick={function () { setSource(parserSamples.crossed); }}>Crossed tags</button>
+        <button type="button" onClick={function () { setSource(parserSamples.divInP); }}>A div inside a p</button>
+        <button type="button" onClick={function () { setSource(parserSamples.bare); }}>Bare text</button>
+      </div>
+      <label htmlFor="pl-source" style={{display: "block", fontWeight: 600}}>Markup you write (edit it)</label>
+      <textarea id="pl-source" value={source} onChange={function (e) { setSource(e.target.value); }} rows={5} spellCheck={false} style={{width: "100%", fontFamily: "monospace", fontSize: "0.85rem", boxSizing: "border-box"}} />
+      <p style={{fontWeight: 600, margin: "0.75rem 0 0.25rem"}}>The page the browser builds ({r.count} elements)</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap"}} aria-live="polite"><code>{r.lines.map(function (l) { return "  ".repeat(l.depth) + l.text; }).join("\n")}</code></pre>
+      <p aria-live="polite" style={{fontWeight: 600, margin: "0.75rem 0 0.25rem"}}>
+        {r.added.length === 0 ? "The parser added no structural elements." : "Added by the parser, not by you: " + r.added.join(", ")}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This uses the browser's own HTML parser to build a separate, inert document. Nothing you type is put into this page as HTML, and no script in it would run. The shape of the result is the same in every modern browser, because the standard defines it step by step.
+      </p>
+    </div>
+  );
+}
+
+export function ParserLab() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the parser lab...</p>}>
+      {function () { return <ParserLabInner />; }}
+    </BrowserOnly>
+  );
+}
+
+export const modelItems = [
+  {code: "<ul><li>One</li><li>Two</li></ul>", valid: true, why: "A ul may contain li elements (and script-supporting elements such as script and template)."},
+  {code: "<ul><div>One</div></ul>", valid: false, why: "A ul may not have a div as a direct child. Put the div inside an li."},
+  {code: "<p>Hello <strong>world</strong></p>", valid: true, why: "A p holds phrasing content, and strong is phrasing content."},
+  {code: "<p>Intro <div>A box</div></p>", valid: false, why: "A p may hold only phrasing content, and div is not. The parser even closes the p before the div, as the Parser Lab shows."},
+  {code: "<a href=\"/x\"><div>Card</div></a>", valid: true, why: "The a element is transparent: it may hold whatever its parent may hold. A div is fine where the parent allows flow content."},
+  {code: "<button><a href=\"/x\">Go</a></button>", valid: false, why: "A button may not contain interactive content, and a link is interactive."},
+  {code: "<details><p>Text</p><summary>Title</summary></details>", valid: false, why: "The content model is one summary element, first, followed by flow content."},
+  {code: "<table><tr><td>Cell</td></tr></table>", valid: true, why: "The model allows tr elements directly in a table. Browsers will still add a tbody to the page they build."},
+  {code: "<table><td>Cell</td></table>", valid: false, why: "A td must sit inside a tr. Without one, the markup is not valid."}
+];
+
+export function ModelQuiz() {
+  const [answers, setAnswers] = useState({});
+  const answered = Object.keys(answers).length;
+  const correct = modelItems.filter(function (it, i) { return answers[i] === (it.valid ? "valid" : "invalid"); }).length;
+  const set = function (i, v) {
+    setAnswers(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; });
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Is each snippet valid HTML according to the content model of its elements?</p>
+      {modelItems.map(function (it, i) {
+        const a = answers[i];
+        const right = a === (it.valid ? "valid" : "invalid");
+        return (
+          <div key={it.code} style={{margin: "0 0 0.9rem"}}>
+            <pre style={{margin: "0 0 0.25rem", whiteSpace: "pre-wrap"}}><code>{it.code}</code></pre>
+            <button type="button" onClick={function () { set(i, "valid"); }} aria-pressed={a === "valid"} style={{marginRight: "0.5rem"}}>Valid</button>
+            <button type="button" onClick={function () { set(i, "invalid"); }} aria-pressed={a === "invalid"}>Not valid</button>
+            <div aria-live="polite">
+              {a && (
+                <p style={{margin: "0.25rem 0 0"}}>
+                  <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Correct. " : "Not quite. "}</strong>{it.why}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <p aria-live="polite" style={{fontWeight: 600}}>{answered === 0 ? "" : "Score so far: " + correct + " of " + answered + " answered."}</p>
+    </div>
+  );
+}
+
+# The HTML Living Standard
+
+Every element you have used in this course, from `p` to `form`, is defined in one place: a long, carefully written document called the **HTML Standard**. It decides what each element means, what it may contain, and exactly how a browser must read your markup. Knowing a little about this document makes you a calmer, more confident developer, because "how does HTML work?" has a real, public answer.
+
+## What You Will Learn
+
+- A short history of HTML, and why "HTML5" is not the end of the story
+- Who maintains the standard, and what "living" means
+- How a new feature gets into HTML
+- How the parser handles broken markup the same way in every browser
+- How to read an element's entry in the specification
+- How the standard, MDN, and validators fit together
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+HTML used to be released in numbered versions. Today there is **one standard that is edited continuously**, and browsers follow it. You do not "upgrade to a new HTML". You learn new features as browsers support them, on top of everything that still works.
+
+<Tabs>
+<TabItem value="parser" label="Parser Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ParserLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="quiz" label="Content Model Quiz">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ModelQuiz />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="Where Rules Live">
+
+```html title="index.html"
+<!-- Rules from the HTML Standard, seen in everyday markup -->
+
+<!-- 1. The doctype puts the browser in standards mode -->
+<!DOCTYPE html>
+
+<!-- 2. Content models: a ul may hold li, not div -->
+<ul>
+  <li>Valid</li>
+</ul>
+
+<!-- 3. The parser repairs this the same way in every browser -->
+<p>First
+<p>Second
+```
+
+</TabItem>
+</Tabs>
+
+## A Short History
+
+| When | What happened |
+| :-- | :-- |
+| Early 1990s | Tim Berners-Lee describes the first version of HTML for the early web |
+| 1995 | **HTML 2.0** is published by the IETF, the first formal standard |
+| 1997 | **HTML 3.2** from the W3C. **HTML 4.01** follows in 1999 |
+| 2000 | **XHTML 1.0**, a stricter, XML-based version of HTML, is published |
+| 2004 | Browser makers (Apple, Mozilla, and Opera) form the **WHATWG**, because they want HTML to grow to fit real web applications |
+| Around 2011 | The WHATWG drops the "5" and calls its document the **HTML Living Standard** |
+| 2014 | The W3C publishes **HTML5** as a finished recommendation |
+| 2019 | The W3C and WHATWG agree that the WHATWG's living standard is the single, official HTML specification |
+
+So "HTML5" was a real milestone, and it is still a handy word for "modern HTML". But there is **no HTML6 planned**. The standard keeps changing in small steps.
+
+:::info
+The WHATWG is a community of browser makers and others. Its steering group includes Apple, Google, Mozilla, and Microsoft. Anyone can suggest a change in the open, on the project's public GitHub repository.
+:::
+
+## What "Living" Means for You
+
+- **No version numbers to wait for.** New features appear in the standard, then in browsers, one at a time.
+- **Backward compatibility is a rule.** Browsers keep supporting old pages. A page written long ago still works, so your skills do not expire.
+- **Support differs by browser and version.** A feature can be in the standard and still be missing in some browsers. That is why you check support, as the [Modern HTML overview](/tutorials/html/modern-html) explains.
+- **The document changes.** When you read a tutorial, an article, or this one, ask how old it is.
+
+## How a Feature Gets Into HTML
+
+The exact process has details, but the broad path is:
+
+1. **A problem is noticed.** For example, "everyone builds pop-ups from scratch, and gets focus wrong".
+2. **An idea is discussed in public,** often in an incubation group or on GitHub, with browser makers, developers, and accessibility experts.
+3. **A specification is written.** It says exactly how the feature must behave, including edge cases and errors.
+4. **Tests are written.** A shared test suite called web-platform-tests checks that every browser behaves the same way.
+5. **Browsers implement it.** Usually the standard needs more than one browser engine to be interested before a change is accepted.
+6. **Documentation is written,** for example on MDN, and the feature gets a Baseline label as support grows.
+7. **Developers use it,** with fallbacks while support is still spreading.
+
+That is why features such as `dialog` and the `popover` attribute took time to be ready: each step needs several groups to agree.
+
+## What Is in the Standard
+
+The HTML Standard is much more than a list of tags. It also defines:
+
+- **Every element,** with its meaning, where it may appear, what it may contain, and its attributes.
+- **How browsers parse HTML,** step by step, including what to do with mistakes.
+- **Web APIs that belong to HTML,** such as `postMessage`, web storage, web workers, the history API, and drag and drop.
+- **Rules for forms, media, canvas, and embedding,** and for how pages load.
+
+It does not define everything on a web page. Other standards cover the rest:
+
+| Topic | Who defines it |
+| :-- | :-- |
+| HTML elements, parsing, and many web APIs | WHATWG HTML Standard |
+| The DOM, URLs, and network requests (`fetch`) | Other WHATWG standards |
+| CSS | The W3C CSS Working Group |
+| JavaScript | Ecma International, TC39 (ECMAScript) |
+| Accessibility roles and attributes (ARIA) | The W3C |
+
+## The Parser: Forgiving, but Exactly Defined
+
+When you forget a closing tag, the browser does not show an error. It repairs the markup. In older days, every browser repaired it a little differently, which was a big source of bugs. The modern standard defines the **repair rules precisely**, so every browser builds the same page from the same markup.
+
+Open the **Parser Lab** tab and try the buttons:
+
+- **Unclosed paragraphs:** the second `p` closes the first.
+- **Table without `tbody`:** the parser adds a `tbody` for you.
+- **Crossed tags:** the parser rearranges `b` and `i` so the page still has a valid tree.
+- **A div inside a p:** a `p` cannot hold a `div`, so the parser closes the `p` first.
+- **Bare text:** the parser adds `html`, `head`, and `body`.
+
+The lab tells you which structural elements the parser added. This is why a page can look right in a browser and still be invalid HTML, and why it is worth validating your markup.
+
+:::warning
+The parser's repairs are about **safety nets**, not about being sloppy on purpose. Do not rely on repairs. Write correct markup, and check the result in DevTools. Differences between how a **sanitiser** and a **browser** parse markup have caused real security bugs, so never write your own HTML cleaner with regular expressions. Use the browser's parser, or a maintained library, as covered in [XSS Basics](/tutorials/html/security/xss-basics).
+:::
+
+## Reading an Element's Entry in the Standard
+
+You do not need to read the standard from start to finish. But once you know its layout, you can look up any element in a few seconds. Each element's entry has the same parts:
+
+| Part | What it tells you |
+| :-- | :-- |
+| **Categories** | Groups the element belongs to, such as flow content, phrasing content, or interactive content |
+| **Contexts in which this element can be used** | Where the element may appear |
+| **Content model** | What the element may contain |
+| **Content attributes** | The attributes it supports |
+| **Accessibility considerations** | Notes on roles and use by assistive technology |
+| **DOM interface** | The JavaScript object and its properties and methods |
+
+The **content model** is the part that settles most arguments. Open the **Content Model Quiz** tab, and decide whether each snippet is valid. Then, on the specification's page for each element, read its content model line to confirm your answer.
+
+### Words you will meet
+
+- **Flow content:** most elements that can appear in the body, such as `p`, `div`, and `section`.
+- **Phrasing content:** the text and inline elements inside a paragraph, such as `strong`, `a`, and `span`.
+- **Interactive content:** elements a visitor can interact with, such as `a`, `button`, and `input`.
+- **Transparent:** the element takes whatever its parent allows, as `a` does.
+
+## The Standard, MDN, and Validators
+
+| Tool | Best for |
+| :-- | :-- |
+| **The HTML Standard** (html.spec.whatwg.org) | The final answer on exact behaviour. Precise, but written for implementers |
+| **MDN Web Docs** | Friendly explanations, examples, and browser support tables |
+| **A validator**, such as the Nu Html Checker | Checking your own pages against the standard's rules |
+| **DevTools** | Seeing the page the browser actually built |
+
+A good habit: use MDN to learn, the standard to settle a disagreement, and a validator to check your work.
+
+## Obsolete Features
+
+Some features from the past, such as `font`, `center`, `marquee`, and presentational attributes like `align`, are **obsolete**. The standard says authors must not use them, but browsers still have to support them so old pages do not break. For new pages, use the modern replacement: CSS for looks, and meaningful elements for structure.
+
+## Checking Your Setup
+
+1. Run your page through the **Nu Html Checker** (the validator at validator.w3.org/nu), and read the messages. Each cites a rule from the standard.
+2. Compare **View Source** with the **Elements** panel in DevTools. Elements shows the page the parser built, with repairs applied.
+3. For any element you are unsure about, read its **content model** in the specification.
+4. Check the date on any tutorial. If it is old, confirm the details on MDN.
+5. For a new feature, check the **Baseline** label and the compatibility table on MDN.
+
+## Best Practices
+
+1. **Write valid markup,** and let the parser's repairs be a safety net only.
+2. **Validate your pages** now and then, especially after big changes.
+3. **Use the standard to settle questions,** and MDN to learn.
+4. **Check support** before using a new feature.
+5. **Prefer current elements and CSS** over obsolete ones.
+6. **Keep the doctype** `<!DOCTYPE html>` at the top of every page.
+7. **Check old advice** against current sources.
+8. **Do not write your own HTML sanitiser.**
+
+## Quick Checklist
+
+- [ ] My pages begin with `<!DOCTYPE html>`
+- [ ] My markup passes the validator, or I understand each message
+- [ ] I check content models for elements I am unsure about
+- [ ] I compare View Source with the Elements panel when something looks odd
+- [ ] I check browser support before using a new feature
+- [ ] I use no obsolete elements or attributes in new work
+
+## Security and Privacy Notes
+
+- **Parsing differences can be exploited.** Attackers sometimes rely on markup that two parsers read differently. Always sanitise with the same kind of parser the browser uses, or a maintained library. See [XSS Basics](/tutorials/html/security/xss-basics).
+- **Do not paste private markup into online tools.** A validator or playground that is a website receives what you send. Use made-up examples, or run a checker locally.
+- **A forgiving parser is not a safe parser.** Repairs help layout, not security.
+
+## Global Audience Notes
+
+- **The standard is written in English,** and most translations lag behind it. MDN has many translations, but they can be out of date, so check the date.
+- **Languages and scripts are part of HTML.** Attributes like `lang` and `dir`, covered in earlier lessons, are in the standard, and matter for screen readers, fonts, and right-to-left text.
+- **Older browsers and devices exist everywhere.** A living standard means different visitors have different features, so build a solid base.
+
+## Common Mistakes to Avoid
+
+1. **Treating "HTML5" as the latest version,** and waiting for HTML6.
+2. **Relying on the parser's repairs** instead of writing valid markup.
+3. **Trusting an old tutorial** without checking MDN.
+4. **Confusing View Source** with what the browser actually built.
+5. **Using obsolete elements** because they still work.
+6. **Skipping the doctype.**
+7. **Assuming a feature in the standard works everywhere.**
+8. **Writing a regular expression to clean HTML.**
+9. **Ignoring validator messages,** instead of reading the rule behind them.
+10. **Mixing up the standards,** and looking for CSS rules in the HTML Standard.
+
+## Practice Time
+
+1. In the Parser Lab, click each sample button. Which ones make the parser add elements? Which structural elements does it add?
+2. Type a paragraph with no closing tag followed by a `ul`. What does the parser do?
+3. Type `<p>One <div>Two</div></p>`. Where does the page end the `p`?
+4. Complete the Content Model Quiz. Which answer surprised you?
+5. Open the Nu Html Checker, and paste a small page of your own (without anything private). Read the first three messages.
+6. Compare View Source and the Elements panel on a page with a table. What differs?
+7. Look up the content model of `button` on MDN or in the standard. Write it in your own words.
+8. Bonus: find the oldest tutorial you can on a topic, and list what is out of date.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the HTML Living Standard?</summary>
+
+The single, continuously updated specification of HTML, maintained by the WHATWG with browser makers. It replaces numbered versions.
+
+</details>
+
+<details>
+<summary>2. Will there be an HTML6?</summary>
+
+No version is planned. HTML changes in small steps instead, and features arrive in browsers one at a time.
+
+</details>
+
+<details>
+<summary>3. How does a feature get into HTML?</summary>
+
+It is proposed and discussed in public, specified in detail, tested with shared tests, implemented by browsers, and then documented. A change normally needs interest from more than one browser engine.
+
+</details>
+
+<details>
+<summary>4. Why does broken markup look the same in every browser?</summary>
+
+The standard defines the parser's repair rules step by step, so every browser builds the same page from the same input.
+
+</details>
+
+<details>
+<summary>5. What is a content model?</summary>
+
+The rule that says what an element may contain. It settles whether a snippet is valid, such as whether a `p` may hold a `div`.
+
+</details>
+
+<details>
+<summary>6. When do you use MDN, the standard, and a validator?</summary>
+
+MDN to learn and check support, the standard to settle exact behaviour, and a validator to check your own pages.
+
+</details>
+
+## Key Takeaways
+
+- **HTML is one living standard,** edited continuously by the WHATWG with browser makers.
+- **There are no new numbered versions.** Features arrive and spread over time.
+- **The parser is forgiving and exactly defined.** Still, write valid markup.
+- **Content models explain** what each element may contain.
+- **MDN teaches, the standard decides, validators check.**
+- **Old features still work, but avoid them** in new pages.
+- **Never rely on your own regular expressions** to clean HTML.
+
+Next up: [Modern HTML Features](./modern-html-features), where you will take a guided tour of newer attributes and elements, and learn to judge which ones are ready for your site.

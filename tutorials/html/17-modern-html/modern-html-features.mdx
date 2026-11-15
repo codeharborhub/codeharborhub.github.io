@@ -1,0 +1,499 @@
+---
+id: html-modern-features
+title: "Modern HTML Features"
+sidebar_label: "Modern HTML Features"
+sidebar_position: 3
+slug: /html/modern-html/modern-html-features
+description: "A guided tour of newer HTML features that deserve a place in your toolbox: the search element, inputmode and enterkeyhint, fetchpriority and decoding, hidden until-found, translate and spellcheck, and module scripts with import maps. Plus a simple method for judging whether a feature is ready for your visitors. Includes a feature-matching quiz and a readiness judge."
+keywords:
+  - modern HTML features
+  - search element
+  - inputmode enterkeyhint
+  - fetchpriority
+  - hidden until-found
+  - translate no
+  - import maps
+  - script type module
+  - Baseline browser support
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, attributes, progressive-enhancement, baseline, frontend]
+---
+
+import {useState} from 'react';
+
+export const featureOptions = [
+  "translate=\"no\"",
+  "inputmode",
+  "enterkeyhint",
+  "hidden=\"until-found\"",
+  "fetchpriority=\"high\"",
+  "spellcheck=\"false\"",
+  "the search element",
+  "decoding=\"async\""
+];
+
+export const featureItems = [
+  {goal: "Stop a brand name or a snippet of code from being translated by a page translator", answer: "translate=\"no\""},
+  {goal: "Show a numeric keyboard on phones for a code field, without a number spinner", answer: "inputmode"},
+  {goal: "Change the label of the enter key on a phone keyboard to Search or Send", answer: "enterkeyhint"},
+  {goal: "Keep a section collapsed, but let find-in-page open it when the text matches", answer: "hidden=\"until-found\""},
+  {goal: "Tell the browser that the main hero image is more important than other images", answer: "fetchpriority=\"high\""},
+  {goal: "Stop the browser from underlining a username or a product code as a spelling mistake", answer: "spellcheck=\"false\""},
+  {goal: "Mark the part of the page that holds the site's search form as a landmark", answer: "the search element"},
+  {goal: "Let the browser decode an image away from the main flow of work so scrolling stays smooth", answer: "decoding=\"async\""}
+];
+
+export function FeatureMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = featureItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Match each goal to the feature that does it.</p>
+      {featureItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.goal} style={{margin: "0 0 0.7rem"}}>
+            <label htmlFor={"fm-" + i}>{it.goal}</label>
+            <br />
+            <select id={"fm-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {featureOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + featureItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+export const statusText = {
+  widely: "It works in all the major browsers, and has for a long time.",
+  newly: "It works in the latest versions of the major browsers, but older versions are still in use.",
+  limited: "Only some browsers support it."
+};
+
+export const audienceText = {
+  current: "Your visitors mostly use current phones and computers.",
+  mixed: "Your visitors include older or shared devices.",
+  old: "Some visitors must use very old browsers, such as a kiosk or an office computer that is not updated."
+};
+
+export function decideReadiness(status, degrades, audience) {
+  let verdict;
+  if (status === "widely") {
+    if (audience === "old") verdict = degrades ? "Use it as an enhancement" : "Use it only with a fallback";
+    else verdict = "Use it";
+  } else if (status === "newly") {
+    if (audience === "current") verdict = degrades ? "Use it as an enhancement" : "Use it only with a fallback";
+    else verdict = degrades ? "Use it as an enhancement" : "Wait";
+  } else {
+    if (degrades && audience !== "old") verdict = "Use it as an enhancement";
+    else verdict = "Wait";
+  }
+  const advice = {
+    "Use it": "Write it normally, and keep testing in more than one browser.",
+    "Use it as an enhancement": "Build a page that works without it, and let the feature improve things where it is available.",
+    "Use it only with a fallback": "The page needs the feature to work, so provide a fallback, such as a different element, a polyfill, or a simple alternative.",
+    "Wait": "The risk is higher than the benefit. Revisit it when support has spread, or choose a widely supported alternative."
+  };
+  return {verdict: verdict, advice: advice[verdict], reasons: [statusText[status], audienceText[audience], degrades ? "If the feature is missing, the page still works." : "If the feature is missing, part of the page stops working."]};
+}
+
+export function ReadinessJudge() {
+  const [status, setStatus] = useState("newly");
+  const [audience, setAudience] = useState("mixed");
+  const [degrades, setDegrades] = useState(true);
+  const r = decideReadiness(status, degrades, audience);
+  const colors = {"Use it": "#1e8449", "Use it as an enhancement": "#1e8449", "Use it only with a fallback": "#b9770e", "Wait": "#c0392b"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>What does the support table say?</legend>
+        {[["widely", "Widely available"], ["newly", "Newly available"], ["limited", "Only some browsers"]].map(function (o) {
+          return <label key={o[0]} style={{display: "block"}}><input type="radio" name="rj-status" checked={status === o[0]} onChange={function () { setStatus(o[0]); }} /> {o[1]}</label>;
+        })}
+      </fieldset>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Who are your visitors?</legend>
+        {[["current", "Mostly current devices"], ["mixed", "A mix, including older devices"], ["old", "Some must use very old browsers"]].map(function (o) {
+          return <label key={o[0]} style={{display: "block"}}><input type="radio" name="rj-audience" checked={audience === o[0]} onChange={function () { setAudience(o[0]); }} /> {o[1]}</label>;
+        })}
+      </fieldset>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={degrades} onChange={function (e) { setDegrades(e.target.checked); }} /> If the feature is missing, the page still works
+      </label>
+      <div aria-live="polite" style={{border: "1px solid rgba(128,128,128,0.5)", borderRadius: 6, padding: "0.75rem"}}>
+        <p style={{margin: "0 0 0.25rem", fontWeight: 700, fontSize: "1.1rem", color: colors[r.verdict]}}>{r.verdict}</p>
+        <p style={{margin: "0 0 0.5rem"}}>{r.advice}</p>
+        <ul style={{margin: 0}}>
+          {r.reasons.map(function (t) { return <li key={t}>{t}</li>; })}
+        </ul>
+      </div>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A rule of thumb, not a law. Your own visitor numbers and the cost of a failure should decide the final choice.
+      </p>
+    </div>
+  );
+}
+
+HTML keeps growing. Alongside big features such as `dialog` and `popover`, which have lessons of their own, there is a set of **small, practical additions** that make forms friendlier, pages faster, and content easier to use for a global audience. This lesson is a guided tour of them, followed by a method for judging whether any new feature is ready for **your** site.
+
+## What You Will Learn
+
+- The `search` element, a landmark for search forms
+- `inputmode` and `enterkeyhint`, which shape the phone keyboard
+- `fetchpriority` and `decoding`, hints for images and resources
+- `hidden="until-found"`, `translate`, and `spellcheck`
+- Module scripts and import maps
+- A simple way to decide whether a feature is ready
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Most modern features are **hints and improvements**, not new building blocks. If you add them to a solid page, browsers that understand them give visitors a better experience, and browsers that do not simply ignore them. That is the safest way to adopt new HTML.
+
+<Tabs>
+<TabItem value="code" label="A Page Using Them" default>
+
+```html title="index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bakery</title>
+  <!-- If you use a CSP, an inline import map needs a nonce or hash -->
+  <script type="importmap">
+    { "imports": { "confetti": "/js/vendor/confetti.js" } }
+  </script>
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <header>
+    <search>
+      <form action="/search" method="get">
+        <label for="q">Search recipes</label>
+        <input id="q" type="search" name="q" enterkeyhint="search" spellcheck="false">
+        <button type="submit">Search</button>
+      </form>
+    </search>
+  </header>
+
+  <main>
+    <img src="/img/hero.jpg" alt="Fresh loaves on a wooden table"
+         width="1200" height="600" fetchpriority="high" decoding="async">
+
+    <p>Our shop is called <span translate="no">DoughNation</span>.</p>
+
+    <label for="code">Six-digit code</label>
+    <input id="code" type="text" inputmode="numeric" pattern="[0-9]{6}"
+           autocomplete="one-time-code" enterkeyhint="done">
+  </main>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="match" label="Feature Matcher">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FeatureMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="judge" label="Readiness Judge">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ReadinessJudge />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+:::info
+Browser support changes over time. The notes in this lesson describe how each feature behaves, not a fixed support table. Before you rely on one, check its **Baseline** label and compatibility table on MDN, as explained in the [Modern HTML overview](/tutorials/html/modern-html).
+:::
+
+## The search Element
+
+The `search` element marks the part of a page that holds search or filtering controls. It gives assistive technology a **search landmark**, so screen reader users can jump straight to it.
+
+```html
+<search>
+  <form action="/search" method="get">
+    <label for="q">Search recipes</label>
+    <input id="q" type="search" name="q">
+    <button type="submit">Search</button>
+  </form>
+</search>
+```
+
+Before it existed, you wrote `<form role="search">`. That still works, and is a sensible choice if you must support older browsers, because they treat an unknown element such as `search` as a plain wrapper with no landmark meaning. A `search` element is not a form, so keep a `form` inside it.
+
+Use it for site search, and for filter panels on listing pages. Do not use it for anything that is not search.
+
+## inputmode and enterkeyhint
+
+On a phone, the keyboard that appears depends on the field. Two attributes let you fine-tune it:
+
+```html
+<input type="text" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code">
+<input type="search" enterkeyhint="search">
+```
+
+- **`inputmode`** suggests which keyboard to show. Common values are `numeric`, `decimal`, `tel`, `email`, `url`, and `search`.
+- **`enterkeyhint`** changes the label or icon of the enter key. Values include `enter`, `done`, `go`, `next`, `previous`, `search`, and `send`.
+
+Neither one validates anything, and both are only **hints**. A browser or keyboard may ignore them.
+
+### A good reason to use inputmode
+
+`type="number"` looks right for codes and card numbers, but it has problems: it adds spinner arrows, scrolling the mouse wheel can change the value, and it drops leading zeros. For a PIN or a postal code, use `type="text"` with `inputmode="numeric"` and a `pattern`, and validate on the server, as covered in [Secure Forms](/tutorials/html/security/secure-forms).
+
+For amounts with decimals, `inputmode="decimal"` shows a keyboard with a decimal key. Remember that some regions use a comma as the decimal mark, so accept both on the server.
+
+## fetchpriority and decoding
+
+Two attributes help the browser decide **what to load first** and **how to prepare an image**.
+
+```html
+<img src="/img/hero.jpg" alt="..." width="1200" height="600"
+     fetchpriority="high" decoding="async">
+```
+
+- **`fetchpriority`** accepts `high`, `low`, or `auto`. It nudges the browser's choice of when to download a resource. It works on `img`, `link`, and `script`. It is a hint, not a command.
+- **`decoding="async"`** lets the browser decode an image away from the main flow of work, so the page stays responsive. The default is `auto`.
+
+The best use of `fetchpriority="high"` is on the single image that is your Largest Contentful Paint element. Do not put it on many images, because then none of them stands out. See [Core Web Vitals](/tutorials/html/performance/core-web-vitals) and [Critical Resources](/tutorials/html/performance/critical-resources).
+
+## hidden="until-found"
+
+The ordinary `hidden` attribute removes content from the page and from find-in-page. A newer value changes that:
+
+```html
+<div hidden="until-found">
+  <p>Shipping takes two working days.</p>
+</div>
+```
+
+With `until-found`, the content stays hidden **until the visitor's find-in-page search or a link to a fragment matches it**. Then the browser reveals it. A `beforematch` event fires so your script can react.
+
+The catch is support: where it is missing, the content stays hidden and cannot be found. So use it only for content that is **not essential**, or consider `details` and `summary`, which have long been supported. See [Details and Summary](./details-summary).
+
+## translate, spellcheck, and autocapitalize
+
+These global attributes are small, but they matter for people around the world:
+
+```html
+<p>Our shop is called <span translate="no">DoughNation</span>.</p>
+<code translate="no">npm install</code>
+<input type="text" name="username" spellcheck="false" autocapitalize="none" autocomplete="username">
+```
+
+- **`translate="no"`** tells page translators to leave the text alone. Use it for brand names, code, and product codes, so a translator does not turn them into nonsense.
+- **`spellcheck="false"`** stops red underlines on usernames, codes, and other text that is not ordinary prose.
+- **`autocapitalize`** controls automatic capital letters on mobile keyboards. `none` is helpful for usernames and email addresses.
+
+They cost almost nothing to add, and they help most on pages that visitors translate or open on many kinds of devices.
+
+## Module Scripts and Import Maps
+
+Modern JavaScript is written in **modules**, which are files that import and export values.
+
+```html
+<script type="module" src="/js/app.js"></script>
+```
+
+What makes module scripts different from classic scripts:
+
+- They are **deferred** by default, so they run after the page is parsed, like `defer` in [Script Loading](/tutorials/html/performance/script-loading).
+- They run in **strict mode**, and keep their variables to themselves.
+- A browser loads each module once, even when several files import it.
+
+An **import map** lets you use short names instead of long paths:
+
+```html
+<script type="importmap">
+  { "imports": { "confetti": "/js/vendor/confetti.js" } }
+</script>
+<script type="module">
+  import { launch } from "confetti";
+  launch();
+</script>
+```
+
+The import map must come **before** the module scripts that use it.
+
+:::warning
+If your site has a Content Security Policy, an **inline** import map or inline module is blocked unless it carries a nonce or matches a hash, exactly like any inline script. See [Content Security Policy](/tutorials/html/security/content-security-policy). Scripts from other origins also need the right `crossorigin` handling, so read the details before you add them.
+:::
+
+## Other Small Elements Worth Knowing
+
+These are not new, but they are underused and worth a second look:
+
+| Element | What it is for |
+| :-- | :-- |
+| `time` | A date or time that machines can read, using `datetime` |
+| `progress` and `meter` | A task's progress, and a measurement within a known range |
+| `output` | The result of a calculation or an action |
+| `mark` | Text highlighted because it is relevant right now, such as a search match |
+| `data` | A human-readable value with a machine-readable `value` |
+
+## Coming Soon, or Only in Some Browsers
+
+New ideas often appear first in a single browser. When only one browser supports a feature, treat it as **experimental**:
+
+- Do not build important parts of a page on it.
+- Use it as a small enhancement, if it degrades gracefully.
+- Watch its support and Baseline label, and come back later.
+
+The **Readiness Judge** tab turns this into a simple decision tool. Try the combinations, and see how the advice changes.
+
+## A Quick Way to Learn Any New Feature
+
+1. **Read the top of its MDN page.** What does it do, in one sentence?
+2. **Open the compatibility table,** and find the Baseline label.
+3. **Build a tiny test page** with only that feature.
+4. **Test with the keyboard,** and in a second browser, and on a phone if you can.
+5. **Decide the fallback,** using the Readiness Judge.
+6. **Add a short comment** in your code with the feature name and the date you checked.
+7. **Re-check from time to time,** as support grows.
+
+## Checking Your Setup
+
+1. On MDN, open each feature you use, and check its **Baseline** label and compatibility table.
+2. Use DevTools' **device mode** to approximate a phone, and a real phone to see the real keyboard.
+3. Turn the feature off in your head: if it were missing, would the page still work?
+4. Open the **Console** for warnings about unknown attributes or blocked scripts.
+5. Test with a screen reader or at least the keyboard, for `search`, `hidden`, and any form changes.
+
+## Best Practices
+
+1. **Use new features as enhancements** on top of a working page.
+2. **Check support** on MDN or Baseline before relying on a feature.
+3. **Use `inputmode` for codes,** instead of `type="number"`.
+4. **Put `fetchpriority="high"` on one image,** the likely LCP element.
+5. **Mark brand names and code with `translate="no"`.**
+6. **Prefer `details`** over `hidden="until-found"` for important content.
+7. **Keep `form` inside `search`,** and add `role="search"` to forms for older browsers if needed.
+8. **Order import maps first,** and allow them in your CSP.
+9. **Comment the date** you checked support.
+10. **Re-check old decisions** when browsers update.
+
+## Quick Checklist
+
+- [ ] Each new feature is an enhancement, or has a fallback
+- [ ] I checked each feature's Baseline label and compatibility table
+- [ ] Code fields use `inputmode` and `pattern`, with server-side checks
+- [ ] At most one image has `fetchpriority="high"`
+- [ ] Brand names and code snippets have `translate="no"`
+- [ ] No important content depends on `hidden="until-found"`
+- [ ] Import maps come before the module scripts that use them, and fit my CSP
+- [ ] I tested the keyboard path and a second browser
+
+## Security and Privacy Notes
+
+- **`inputmode` and `pattern` are not validation.** A visitor can send anything. The server must check every value. See [Secure Forms](/tutorials/html/security/secure-forms).
+- **Module scripts follow the same rules as other scripts.** Only load them from places you trust, use `https`, and keep your CSP in mind.
+- **`hidden` hides, it does not protect.** Anything in the HTML is sent to every visitor and is readable in the page source. Never hide private information that way.
+- **`translate` and page translators:** a translator sends text to a translation service. Mark text such as personal data and codes with `translate="no"`, and do not paste private pages into online translators.
+
+## Global Audience Notes
+
+- **`translate="no"`** protects brand names and technical terms when visitors use their browser's translation, which is common worldwide.
+- **Keyboards and input methods differ.** Many people type with an input method editor for languages such as Chinese, Japanese, and Korean. Avoid code that breaks as people compose characters, and use `inputmode` only where it truly helps.
+- **Number formats differ.** Decimal marks, digit shapes, and grouping vary, so accept more than you display.
+- **Older and low-cost phones** are common. A feature that fails quietly is better than one that breaks the page.
+
+## Common Mistakes to Avoid
+
+1. **Adopting a feature without checking support.**
+2. **Building critical content** on something only one browser supports.
+3. **Using `type="number"`** for codes, instead of `inputmode`.
+4. **Giving `fetchpriority="high"` to many images.**
+5. **Hiding essential content** with `hidden="until-found"`.
+6. **Placing the import map after** the module that needs it.
+7. **Forgetting the CSP** for inline import maps and modules.
+8. **Using `search`** for anything that is not search.
+9. **Treating hints** as guarantees.
+10. **Never re-checking** after browsers change.
+
+## Practice Time
+
+1. Complete the Feature Matcher. Which ones did you already know?
+2. In the Readiness Judge, set "Only some browsers" and "A mix". What does it say with and without graceful fallback?
+3. Change the audience to "Some must use very old browsers", keep the same feature status, and compare.
+4. Pick a page of yours. Which of these features would help?
+5. Replace a `type="number"` field for a postal code with `type="text"` and `inputmode="numeric"`.
+6. Add `translate="no"` to your site's name, and test with your browser's translate feature.
+7. Pick your LCP image, and add `fetchpriority="high"` to it only. Measure the change if you can.
+8. Bonus: look up the Baseline label for `search` and `hidden="until-found"` on MDN.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the `search` element for?</summary>
+
+It marks a part of the page as a search landmark, so assistive technology can jump to it. Put a `form` inside it.
+
+</details>
+
+<details>
+<summary>2. Why use `inputmode` instead of `type="number"` for a code?</summary>
+
+`type="number"` adds spinners, can change on scroll, and drops leading zeros. `inputmode="numeric"` only shows a numeric keyboard.
+
+</details>
+
+<details>
+<summary>3. What does `fetchpriority="high"` do?</summary>
+
+It hints that a resource, usually your main image, should be fetched earlier than others. Use it on one important image.
+
+</details>
+
+<details>
+<summary>4. What is `hidden="until-found"` for, and what is its risk?</summary>
+
+It keeps content hidden until find-in-page or a link fragment matches it. Where it is not supported, the content stays hidden, so avoid it for essential content.
+
+</details>
+
+<details>
+<summary>5. Why use `translate="no"`?</summary>
+
+It stops page translators from changing brand names, code, and codes, which they would otherwise translate.
+
+</details>
+
+<details>
+<summary>6. How do you judge whether a feature is ready?</summary>
+
+Check its Baseline label and compatibility table, think about your visitors, and ask whether the page still works without it. If it does, use it as an enhancement.
+
+</details>
+
+## Key Takeaways
+
+- **Most modern features are hints and improvements.** Add them to a solid base.
+- **`search`, `inputmode`, `enterkeyhint`, `fetchpriority`, `decoding`, `translate`, and `spellcheck`** are small changes with real benefits.
+- **`hidden="until-found"` needs care,** because missing support hides content.
+- **Modules and import maps** are the modern way to organise scripts, and still obey your CSP.
+- **Check support, decide the fallback, and test.**
+- **Hints are not validation or security.** The server still checks everything.
+
+Next up: [Dialog](./dialog), where you will learn how the built-in modal dialog handles focus, layering, and the Escape key for you.

@@ -1,0 +1,517 @@
+---
+id: html-sec-sandbox-attribute
+title: "The sandbox Attribute"
+sidebar_label: "sandbox Attribute"
+sidebar_position: 5
+slug: /html/security/sandbox-attribute
+description: "Learn how the iframe sandbox attribute works: start with every power removed, add back only what an embed needs, and avoid the allow-scripts plus allow-same-origin trap. Includes a permission lab and a scenario picker."
+keywords:
+  - iframe sandbox
+  - sandbox attribute
+  - allow-scripts
+  - allow-same-origin
+  - allow-forms
+  - allow-popups
+  - allow-top-navigation
+  - sandbox CSP directive
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, iframe, sandbox, frontend]
+---
+
+import {useState} from 'react';
+
+export const sbTokens = [
+  {id: "allow-scripts", hint: "Lets the page run JavaScript."},
+  {id: "allow-same-origin", hint: "Keeps the page's real origin instead of an empty one."},
+  {id: "allow-forms", hint: "Lets forms submit."},
+  {id: "allow-popups", hint: "Lets the page open popups and new tabs."},
+  {id: "allow-popups-to-escape-sandbox", hint: "Popups it opens are not sandboxed."},
+  {id: "allow-modals", hint: "Allows alert, confirm and prompt boxes."},
+  {id: "allow-top-navigation", hint: "Lets the frame navigate the whole page."},
+  {id: "allow-top-navigation-by-user-activation", hint: "Same, but only right after a visitor click."},
+  {id: "allow-downloads", hint: "Lets the page start downloads."},
+  {id: "allow-pointer-lock", hint: "Lets the page lock the mouse pointer."}
+];
+
+export const sbCaps = [
+  {id: "js", label: "Run JavaScript", needs: ["allow-scripts"]},
+  {id: "origin", label: "Keep its real origin (its own cookies and storage)", needs: ["allow-same-origin"]},
+  {id: "forms", label: "Submit forms", needs: ["allow-forms"]},
+  {id: "popups", label: "Open popups and new tabs", needs: ["allow-popups"]},
+  {id: "modals", label: "Show alert, confirm and prompt boxes", needs: ["allow-modals", "allow-scripts"]},
+  {id: "top", label: "Send the whole page to another address", needs: ["allow-top-navigation"]},
+  {id: "dl", label: "Start downloads", needs: ["allow-downloads"]},
+  {id: "pointer", label: "Lock the mouse pointer", needs: ["allow-pointer-lock", "allow-scripts"]}
+];
+
+export function sandboxAttr(selected, enabled) {
+  if (!enabled) return "(no sandbox attribute)";
+  const list = sbTokens.map(function (t) { return t.id; }).filter(function (id) { return selected.indexOf(id) !== -1; });
+  if (list.length === 0) return "sandbox";
+  return 'sandbox="' + list.join(" ") + '"';
+}
+
+export function capStatus(cap, selected, enabled) {
+  if (!enabled) return "Allowed";
+  if (cap.id === "top") {
+    if (selected.indexOf("allow-top-navigation") !== -1) return "Allowed";
+    if (selected.indexOf("allow-top-navigation-by-user-activation") !== -1) return "After a click";
+    return "Blocked";
+  }
+  const ok = cap.needs.every(function (n) { return selected.indexOf(n) !== -1; });
+  return ok ? "Allowed" : "Blocked";
+}
+
+export function sandboxWarnings(selected, enabled, sameSite) {
+  const w = [];
+  const has = function (t) { return selected.indexOf(t) !== -1; };
+  if (!enabled) {
+    w.push({level: "problem", text: "No sandbox: the embedded page keeps all of its normal powers."});
+    return w;
+  }
+  if (has("allow-scripts") && has("allow-same-origin")) {
+    if (sameSite) w.push({level: "problem", text: "allow-scripts with allow-same-origin on a page from your own site: the page can remove its own sandbox attribute, so the sandbox protects nothing."});
+    else w.push({level: "tip", text: "allow-scripts with allow-same-origin on another site's page: it runs with that site's normal powers (not yours). Use this only when the embed truly needs its own storage."});
+  }
+  if (has("allow-top-navigation")) w.push({level: "problem", text: "allow-top-navigation: the frame can replace your whole page, for example with a fake login page. Prefer the by-user-activation version, or neither."});
+  if (has("allow-popups-to-escape-sandbox") && !has("allow-popups")) w.push({level: "tip", text: "allow-popups-to-escape-sandbox does nothing without allow-popups."});
+  if (has("allow-popups-to-escape-sandbox") && has("allow-popups")) w.push({level: "tip", text: "Popups it opens are not sandboxed. Use this only for trusted providers, such as a payment confirmation page."});
+  if (has("allow-top-navigation") && has("allow-top-navigation-by-user-activation")) w.push({level: "tip", text: "allow-top-navigation already covers the by-user-activation version."});
+  if (w.length === 0) w.push({level: "good", text: "No warnings. This is a tight set of permissions."});
+  return w;
+}
+
+export function SandboxLab() {
+  const [enabled, setEnabled] = useState(true);
+  const [selected, setSelected] = useState([]);
+  const [sameSite, setSameSite] = useState(false);
+  const toggle = function (id) {
+    setSelected(function (prev) {
+      return prev.indexOf(id) === -1 ? prev.concat([id]) : prev.filter(function (x) { return x !== id; });
+    });
+  };
+  const warnings = sandboxWarnings(selected, enabled, sameSite);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Note", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <label style={{display: "block", marginBottom: "0.5rem"}}>
+        <input type="checkbox" checked={enabled} onChange={function (e) { setEnabled(e.target.checked); }} /> Use the sandbox attribute
+      </label>
+      <label style={{display: "block", marginBottom: "0.75rem"}}>
+        <input type="checkbox" checked={sameSite} onChange={function (e) { setSameSite(e.target.checked); }} /> The embedded page comes from my own site
+      </label>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}} disabled={!enabled}>
+        <legend style={{fontWeight: 600}}>Permissions to add back</legend>
+        {sbTokens.map(function (t) {
+          return (
+            <label key={t.id} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="checkbox" checked={selected.indexOf(t.id) !== -1} onChange={function () { toggle(t.id); }} />{" "}
+              <code>{t.id}</code> <span style={{fontSize: "0.85rem", opacity: 0.8}}>{t.hint}</span>
+            </label>
+          );
+        })}
+      </fieldset>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{'<iframe src="https://widgets.example.net/page" title="Widget" ' + sandboxAttr(selected, enabled) + '></iframe>'}</code></pre>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>What the embedded page can do</th>
+            <th style={{textAlign: "left"}}>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sbCaps.map(function (cap) {
+            const s = capStatus(cap, selected, enabled);
+            return (
+              <tr key={cap.id}>
+                <td>{cap.label}</td>
+                <td style={{fontWeight: 600, color: s === "Blocked" ? "#1e8449" : (s === "Allowed" ? "#c0392b" : "#b9770e")}}>{s}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {warnings.map(function (x, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[x.level]}}>{labels[x.level]}: </strong>{x.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A simplified model of the main permissions. Green "Blocked" means a power the embed does not have. Real browsers have a few more tokens and details, listed in the MDN documentation.
+      </p>
+    </div>
+  );
+}
+
+export const scenarios = [
+  {
+    title: "A preview of a static HTML page a visitor wrote, served from your own domain",
+    answer: [],
+    why: "A static preview needs no JavaScript and no forms, so an empty sandbox is right. (Better still, serve visitor content from a separate domain.)"
+  },
+  {
+    title: "A calculator widget from another site. It runs JavaScript and stores nothing.",
+    answer: ["allow-scripts"],
+    why: "It needs scripts to work. Without allow-same-origin it gets an empty origin, so it cannot use cookies or storage, which is fine here."
+  },
+  {
+    title: "A video player from a video host. It needs scripts and its own settings and cookies.",
+    answer: ["allow-scripts", "allow-same-origin"],
+    why: "Scripts to play, and its real origin for its own storage. It comes from another site, so this does not let it touch your page. Fullscreen is granted separately with the allow attribute."
+  },
+  {
+    title: "A card-payment form from a provider. It runs scripts, submits forms, opens a confirmation popup, and uses its own storage.",
+    answer: ["allow-scripts", "allow-same-origin", "allow-forms", "allow-popups"],
+    why: "This is the typical set, but a provider's own documentation is the final word. Add allow-popups-to-escape-sandbox only if that documentation asks for it."
+  },
+  {
+    title: "A code playground that runs code visitors type, served from a separate throwaway domain",
+    answer: ["allow-scripts"],
+    why: "The code must run, so allow scripts. Never add allow-same-origin here, and keep the playground on its own domain."
+  }
+];
+
+export function SandboxPicker() {
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState([]);
+  const [checked, setChecked] = useState(false);
+  const sc = scenarios[idx];
+  const pool = ["allow-scripts", "allow-same-origin", "allow-forms", "allow-popups", "allow-top-navigation", "allow-downloads"];
+  const toggle = function (id) {
+    setChecked(false);
+    setPicked(function (prev) {
+      return prev.indexOf(id) === -1 ? prev.concat([id]) : prev.filter(function (x) { return x !== id; });
+    });
+  };
+  const go = function (n) {
+    setIdx(n);
+    setPicked([]);
+    setChecked(false);
+  };
+  const missing = sc.answer.filter(function (a) { return picked.indexOf(a) === -1; });
+  const extra = picked.filter(function (p) { return sc.answer.indexOf(p) === -1; });
+  const right = missing.length === 0 && extra.length === 0;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}><strong>Scenario {idx + 1} of {scenarios.length}:</strong> {sc.title}</p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Choose the smallest set that works</legend>
+        {pool.map(function (id) {
+          return (
+            <label key={id} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="checkbox" checked={picked.indexOf(id) !== -1} onChange={function () { toggle(id); }} /> <code>{id}</code>
+            </label>
+          );
+        })}
+      </fieldset>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+        <button type="button" onClick={function () { setChecked(true); }}>Check my answer</button>
+        <button type="button" onClick={function () { go((idx + 1) % scenarios.length); }}>Next scenario</button>
+      </div>
+      <div aria-live="polite">
+        {checked && (
+          <div style={{marginTop: "0.75rem"}}>
+            <p style={{fontWeight: 600, color: right ? "#1e8449" : "#c0392b", margin: "0 0 0.25rem"}}>
+              {right ? "Correct." : "Not quite."}
+            </p>
+            {missing.length > 0 && <p style={{margin: "0 0 0.25rem"}}>Missing: <code>{missing.join(", ")}</code></p>}
+            {extra.length > 0 && <p style={{margin: "0 0 0.25rem"}}>Not needed: <code>{extra.join(", ")}</code></p>}
+            <p style={{margin: 0}}>{sc.why}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+You have met `sandbox` briefly in earlier lessons. This one is the full story. The `sandbox` attribute puts an `iframe` in a **locked room**: by default the embedded page can do almost nothing, and you unlock only the specific powers it needs. It is one of the strongest tools HTML gives you, and it is only one attribute.
+
+## What You Will Learn
+
+- What an empty `sandbox` takes away
+- What each permission token adds back
+- The `allow-scripts` plus `allow-same-origin` trap
+- How to choose the smallest set of permissions
+- Where sandbox does and does not help
+- How to apply a sandbox with a header
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Most security settings say what to block. `sandbox` flips this: **everything is blocked until you allow it.** That is called a deny-by-default design, and it is why `sandbox` is safer than lists of rules you might forget to update.
+
+<Tabs>
+<TabItem value="code" label="The Code" default>
+
+```html title="index.html"
+<!-- Everything blocked -->
+<iframe src="preview.html" title="Preview" sandbox></iframe>
+
+<!-- Only scripts allowed -->
+<iframe src="https://widgets.example.net/calc" title="Calculator"
+        sandbox="allow-scripts"></iframe>
+
+<!-- Several permissions, space separated -->
+<iframe src="https://pay.example.net/form" title="Payment"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+```
+
+</TabItem>
+<TabItem value="lab" label="Permission Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SandboxLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="picker" label="Scenario Picker">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SandboxPicker />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What an Empty sandbox Does
+
+Adding the bare attribute `sandbox` (or `sandbox=""`) applies **all** restrictions. The embedded page:
+
+- **cannot run JavaScript,**
+- **cannot submit forms,**
+- **cannot open popups or new tabs,**
+- **cannot show `alert` and similar boxes,**
+- **cannot navigate your whole page** to another address,
+- **cannot start downloads,**
+- **cannot use plugins, or lock the pointer,**
+- and is treated as coming from a **unique, empty origin,** so it cannot use its own cookies or `localStorage`, and cannot be treated as the same site as anything else.
+
+It can still show HTML and CSS, load images, and play media. That is why an empty sandbox suits previews and static content.
+
+## The Permission Tokens
+
+You add powers back with space-separated tokens. Unknown tokens are ignored, so a typo silently does nothing. Always test.
+
+| Token | What it allows | Think twice when |
+| :-- | :-- | :-- |
+| `allow-scripts` | Running JavaScript | Combined with `allow-same-origin` (see below) |
+| `allow-same-origin` | Keeping its real origin, so its own cookies and storage work | Content is from your own site |
+| `allow-forms` | Submitting forms | The page could show a fake form |
+| `allow-popups` | `window.open` and links with `target="_blank"` | The popups are not trusted |
+| `allow-popups-to-escape-sandbox` | Popups open **without** the sandbox | Almost always; use only for trusted providers |
+| `allow-modals` | `alert`, `confirm`, `prompt` | They can be used to annoy or mislead |
+| `allow-top-navigation` | Navigating the **whole page** | Nearly always; it enables page hijacking |
+| `allow-top-navigation-by-user-activation` | The same, but only right after a click | A safer choice if you need top navigation |
+| `allow-downloads` | Starting downloads | The source is unknown |
+| `allow-pointer-lock` | Locking the pointer (games and 3D) | Rarely needed |
+
+Browsers add new tokens from time to time. The list on MDN is the complete, current reference.
+
+### Same origin, and an empty origin
+
+The word "origin" comes from [HTML Security Basics](./html-security-basics): scheme, host, and port. Without `allow-same-origin`, the framed page gets an **opaque origin** that matches nothing, so:
+
+- it cannot read its own cookies or `localStorage`, and many apps break,
+- requests from it to its own server count as cross-origin,
+- and, importantly, if it is **your** content, it is also cut off from your site's origin.
+
+For a page from another site, adding `allow-same-origin` returns **that site's** origin to it, not yours. It still cannot touch your page. That is why it is a common, reasonable choice for video and payment widgets.
+
+## The Trap: allow-scripts Plus allow-same-origin
+
+If the framed page comes from **your own origin**, and you add **both** `allow-scripts` and `allow-same-origin`, the page's script can reach its own `iframe` element in the parent, delete the `sandbox` attribute, and reload itself with no restrictions. The sandbox then protects nothing.
+
+```html
+<!-- Same-origin content: do not do this -->
+<iframe src="/uploads/page.html" sandbox="allow-scripts allow-same-origin"></iframe>
+```
+
+What to do instead:
+
+1. **Remove `allow-same-origin`** if the content only needs to run scripts.
+2. **Serve untrusted content from a separate domain,** so even its "real origin" cannot touch your site. This is how many code-playground and user-content platforms work.
+3. **Check the Permission Lab:** tick both tokens and switch between "my own site" and another site to see the warning change.
+
+## Choosing the Smallest Set
+
+1. Start with an empty `sandbox`.
+2. Load the page and read the **Console**. Browsers report blocked actions, such as "Blocked script execution" or "Blocked a frame from submitting a form".
+3. Add **one** token that fixes a real, needed feature.
+4. Repeat until the embed works. Stop there.
+5. Document why each token is there, with a short comment in your template.
+
+The Scenario Picker tab gives you five realistic embeds to practise this.
+
+## Sandbox and the allow Attribute
+
+These are separate controls that work together:
+
+| Attribute | Controls |
+| :-- | :-- |
+| `sandbox` | Broad page behaviours: scripts, forms, popups, navigation, origin |
+| `allow` | Browser features: camera, microphone, geolocation, fullscreen, payment |
+
+A sandboxed frame can still be refused a feature that `allow` does not grant. Use both. Features are also controlled by `Permissions-Policy` headers, as covered in [iFrame Security](./iframe-security).
+
+## Sandbox as a Header
+
+The same idea exists as a **Content Security Policy directive**, set by a server. It applies to any page it is sent with, even when that page is not in a frame:
+
+```text
+Content-Security-Policy: sandbox allow-scripts
+```
+
+This is useful for files that visitors upload, such as HTML or SVG. If the response carries this header, opening the file directly in a browser tab gets the same restrictions as a sandboxed frame. See [Content Security Policy](./content-security-policy).
+
+## Where Sandbox Helps, and Where It Does Not
+
+| It helps against | It does not |
+| :-- | :-- |
+| Untrusted or third-party pages running scripts | Stop a page from showing misleading content inside its rectangle |
+| Frames submitting forms or opening popups | Replace escaping and sanitising visitor input (see [XSS Basics](./xss-basics)) |
+| Frames hijacking the whole page | Hide the visitor's address from the embedded host (see `referrerpolicy`) |
+| Uploaded files being opened as full pages (header form) | Protect a page that is not in a frame, unless the CSP header is used |
+| Embedded code reaching your origin | Work in browsers too old to support it (very rare today) |
+
+:::info
+Sandbox settings apply when the frame **loads a page.** If you change the `sandbox` attribute with JavaScript afterwards, the new setting takes effect only the next time the frame navigates, not instantly. Set it in the HTML, before the frame loads.
+:::
+
+## A Note on srcdoc
+
+An `iframe` with `srcdoc` takes its HTML from the attribute instead of loading a URL. With `allow-same-origin`, a `srcdoc` page gets **your** origin, which is dangerous if the HTML is untrusted. Without `allow-same-origin`, it gets an empty origin. Combine `srcdoc` with `sandbox`, and never add `allow-same-origin` for untrusted content.
+
+## Checking Your Setup
+
+1. Open DevTools and the **Console**. Look for lines that begin "Blocked" or "Ignored", which show what the sandbox stopped. A typo in a token name may appear as an unrecognised value.
+2. Open **Elements**, and check that each third-party frame has a `sandbox` attribute. Hover it to see the exact string.
+3. Test every feature of the embed: playing, paying, logging in, resizing.
+4. For same-origin content, search your code for `allow-scripts allow-same-origin` together.
+
+## Best Practices
+
+1. **Sandbox every third-party and visitor-supplied frame.**
+2. **Start empty, then add one token at a time.**
+3. **Never combine `allow-scripts` and `allow-same-origin`** for content from your own origin.
+4. **Avoid `allow-top-navigation`.** If you need it, use the by-user-activation version.
+5. **Avoid `allow-popups-to-escape-sandbox`** unless a trusted provider requires it.
+6. **Serve untrusted content from a separate domain.**
+7. **Use `allow` and `Permissions-Policy` for browser features.**
+8. **Follow each provider's documentation,** and test after each provider update.
+9. **Keep a short comment** explaining each permission.
+
+## Quick Checklist
+
+- [ ] Every third-party frame has a `sandbox`
+- [ ] Each token is there for a reason you can state
+- [ ] No frame from your origin has `allow-scripts` and `allow-same-origin` together
+- [ ] No `allow-top-navigation` unless it is truly needed
+- [ ] Untrusted content is on a separate domain
+- [ ] The Console shows no unexpected blocked actions
+- [ ] Uploaded HTML and SVG are served with a `sandbox` CSP header, or from another domain
+
+## Security and Privacy Notes
+
+- **Sandbox limits actions, not what the embedded host learns.** The host still receives the request, the visitor's IP address, and a referrer unless you control that. Use `referrerpolicy` and click to load, as in [iFrame Security](./iframe-security).
+- **An empty origin can break consent and login tools** that rely on cookies. If an embed needs storage, you must grant `allow-same-origin`, and accept that trade-off.
+- **Do not treat sandbox as the only layer.** Keep browsers updated, and combine it with CSP and careful input handling.
+- **Test with permission.** Try these settings on your own pages and test pages, not other people's sites.
+
+## Global Audience Notes
+
+- **Payment and identity providers vary by country.** Check each provider's current documentation for the sandbox set it supports, as these change.
+- **Sandboxed embeds fail quietly.** Visitors on a weak connection see an empty box. Offer a link to open the content in a new tab, and write a clear `title` in the page's language.
+- **Older and uncommon browsers** may not support newer tokens. The embed should degrade to a link, not break the page.
+
+## Common Mistakes to Avoid
+
+1. **Leaving out `sandbox` on a third-party frame.**
+2. **Adding every token** "just in case".
+3. **Combining `allow-scripts` and `allow-same-origin`** on your own content.
+4. **Mistyping a token,** so it is silently ignored.
+5. **Using `allow-top-navigation`** for convenience.
+6. **Assuming sandbox hides the visitor's information** from the embedded host.
+7. **Changing `sandbox` with JavaScript** and expecting an instant effect.
+8. **Giving `srcdoc` content `allow-same-origin`** when it holds untrusted HTML.
+9. **Forgetting `allow` for camera,** microphone, or fullscreen features.
+10. **Never re-testing** after a provider changes its embed.
+
+## Practice Time
+
+1. In the Permission Lab, turn off the sandbox. Which warning appears?
+2. Turn it back on with nothing ticked. Which row, if any, is not "Blocked"?
+3. Tick `allow-scripts` and `allow-same-origin`. Switch between your own site and another site. How does the warning change?
+4. Tick `allow-top-navigation`, then swap it for the by-user-activation token. What changes in the table?
+5. Complete all five scenarios in the Scenario Picker.
+6. Add a sandboxed frame to a test page, then open the Console to see which actions are blocked.
+7. Write the CSP header you would send with a folder of visitor-uploaded HTML files.
+8. Bonus: find every `iframe` on one of your own pages, and write down what each token is for.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does an empty sandbox do?</summary>
+
+It blocks scripts, forms, popups, modals, top navigation, downloads, and plugins, and gives the page an empty origin.
+
+</details>
+
+<details>
+<summary>2. How do you allow a specific power?</summary>
+
+Add a token such as `allow-scripts` or `allow-forms` to the `sandbox` value, separated by spaces.
+
+</details>
+
+<details>
+<summary>3. Why is `allow-scripts` plus `allow-same-origin` dangerous?</summary>
+
+On content from your own origin, the page's script can remove its own `sandbox` attribute, so the sandbox is useless. For another site's content, it only gives that site its own origin back.
+
+</details>
+
+<details>
+<summary>4. How do you choose permissions?</summary>
+
+Start with an empty sandbox, read the Console's blocked messages, add one token for each needed feature, and stop when the embed works.
+
+</details>
+
+<details>
+<summary>5. What is the difference between `sandbox` and `allow`?</summary>
+
+`sandbox` controls broad page behaviours such as scripts, forms and navigation. `allow` controls browser features such as camera, microphone and fullscreen.
+
+</details>
+
+<details>
+<summary>6. How can a server apply a sandbox?</summary>
+
+With the `Content-Security-Policy: sandbox ...` header, which also protects uploaded files opened directly in a browser.
+
+</details>
+
+## Key Takeaways
+
+- **`sandbox` is deny by default.** Add back only what is needed.
+- **An empty origin** means no cookies or storage until `allow-same-origin` is added.
+- **Never pair `allow-scripts` with `allow-same-origin`** for your own content.
+- **Avoid `allow-top-navigation`** and `allow-popups-to-escape-sandbox`.
+- **Sandbox plus `allow`, CSP, and `referrerpolicy`** work as layers.
+- **Test in the Console,** and re-test when providers change.
+
+Next up: [noreferrer](./noreferrer), where you will learn what a link tells the next site about where the visitor came from, and how to control it.

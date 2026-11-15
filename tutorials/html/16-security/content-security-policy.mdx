@@ -1,0 +1,576 @@
+---
+id: html-sec-content-security-policy
+title: "Content Security Policy (CSP)"
+sidebar_label: "Content Security Policy"
+sidebar_position: 8
+slug: /html/security/content-security-policy
+description: "Learn how a Content Security Policy tells the browser which sources of scripts, styles, images, frames and forms to trust. Covers directives, source values, nonces, report-only rollout, and the meta tag's limits, with a live policy tester and a directive matcher."
+keywords:
+  - content security policy
+  - CSP header
+  - CSP meta tag
+  - script-src
+  - default-src
+  - nonce
+  - unsafe-inline
+  - frame-ancestors
+  - report-only
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, csp, xss, headers, frontend]
+---
+
+import {useState} from 'react';
+
+export const cspPage = "https://www.example.com/";
+
+export const cspResources = [
+  {id: "r1", label: "Inline script in the page", dir: "script-src", kind: "inline"},
+  {id: "r2", label: 'Inline script with nonce="r4nd0m"', dir: "script-src", kind: "inline", nonce: "r4nd0m"},
+  {id: "r3", label: "onclick attribute on a button", dir: "script-src", kind: "attr"},
+  {id: "r4", label: "Script from /app.js (your site)", dir: "script-src", kind: "url", url: "https://www.example.com/app.js"},
+  {id: "r5", label: "Script from cdn.example.net", dir: "script-src", kind: "url", url: "https://cdn.example.net/lib.js"},
+  {id: "r6", label: "Stylesheet from /site.css (your site)", dir: "style-src", kind: "url", url: "https://www.example.com/site.css"},
+  {id: "r7", label: "style attribute on an element", dir: "style-src", kind: "attr"},
+  {id: "r8", label: "Image from /logo.png (your site)", dir: "img-src", kind: "url", url: "https://www.example.com/logo.png"},
+  {id: "r9", label: "Image from images.example.org", dir: "img-src", kind: "url", url: "https://images.example.org/photo.jpg"},
+  {id: "r10", label: "Image as a data: address", dir: "img-src", kind: "url", url: "data:image/png;base64,AAAA"},
+  {id: "r11", label: "Font from fonts.example.com", dir: "font-src", kind: "url", url: "https://fonts.example.com/body.woff2"},
+  {id: "r12", label: "Frame from widgets.example.net", dir: "frame-src", kind: "url", url: "https://widgets.example.net/map"},
+  {id: "r13", label: "fetch() call to api.example.com", dir: "connect-src", kind: "url", url: "https://api.example.com/data"}
+];
+
+export const cspPresets = {
+  none: "",
+  starter: "default-src 'self'; img-src 'self' https://images.example.org data:; font-src https://fonts.example.com; frame-src https://widgets.example.net; connect-src 'self' https://api.example.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+  nonce: "default-src 'self'; script-src 'self' 'nonce-r4nd0m'; style-src 'self'; img-src 'self' https://images.example.org data:; font-src https://fonts.example.com; frame-src https://widgets.example.net; connect-src 'self' https://api.example.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+  loose: "default-src *; script-src * 'unsafe-inline' 'unsafe-eval' data:"
+};
+
+export function parseCsp(text) {
+  const map = Object.create(null);
+  text.split(";").forEach(function (part) {
+    const t = part.trim().split(/\s+/).filter(Boolean);
+    if (t.length === 0) return;
+    const name = t[0].toLowerCase();
+    if (!(name in map)) map[name] = t.slice(1);
+  });
+  return map;
+}
+
+export function sourceMatches(src, urlText, pageText) {
+  let u;
+  let page;
+  try {
+    u = new URL(urlText, pageText);
+    page = new URL(pageText);
+  } catch (e) {
+    return false;
+  }
+  const s = src.trim();
+  const low = s.toLowerCase();
+  if (low === "'none'") return false;
+  if (low === "*") return ["http:", "https:", "ws:", "wss:"].indexOf(u.protocol) !== -1;
+  if (low === "'self'") return u.origin === page.origin;
+  if (/^[a-z][a-z0-9+.-]*:$/.test(low)) return u.protocol === low || (low === "http:" && u.protocol === "https:");
+  if (low.charAt(0) === "'") return false;
+  let rest = low;
+  let scheme = null;
+  const sm = rest.match(/^([a-z][a-z0-9+.-]*):\/\//);
+  if (sm) {
+    scheme = sm[1] + ":";
+    rest = rest.slice(sm[0].length);
+  }
+  rest = rest.split("/")[0];
+  let port = null;
+  const pm = rest.match(/:(\d+|\*)$/);
+  if (pm) {
+    port = pm[1];
+    rest = rest.slice(0, rest.length - pm[0].length);
+  }
+  if (scheme) {
+    if (!(u.protocol === scheme || (scheme === "http:" && u.protocol === "https:"))) return false;
+  } else if (u.protocol !== page.protocol && u.protocol !== "https:") {
+    return false;
+  }
+  let hostOk;
+  if (rest === "*") hostOk = true;
+  else if (rest.indexOf("*.") === 0) hostOk = u.hostname.length > rest.length - 1 && u.hostname.slice(-(rest.length - 1)) === rest.slice(1);
+  else hostOk = u.hostname === rest;
+  if (!hostOk) return false;
+  if (port && port !== "*") return u.port === port;
+  return true;
+}
+
+export function resourceAllowed(res, sources) {
+  if (res.kind === "url") {
+    return sources.some(function (s) { return sourceMatches(s, res.url, cspPage); });
+  }
+  const lower = sources.map(function (s) { return s.toLowerCase(); });
+  const hasNonceOrHash = lower.some(function (s) { return /^'(nonce-|sha(256|384|512)-)/.test(s); });
+  if (res.kind === "inline" && res.nonce && lower.indexOf("'nonce-" + res.nonce.toLowerCase() + "'") !== -1) return true;
+  return lower.indexOf("'unsafe-inline'") !== -1 && !hasNonceOrHash;
+}
+
+export function evaluateCsp(text) {
+  const map = parseCsp(text);
+  return cspResources.map(function (res) {
+    let via = null;
+    let sources = null;
+    if (map[res.dir]) { via = res.dir; sources = map[res.dir]; }
+    else if (map["default-src"]) { via = "default-src"; sources = map["default-src"]; }
+    if (sources === null) return {res: res, allowed: true, via: "no rule"};
+    return {res: res, allowed: resourceAllowed(res, sources), via: via};
+  });
+}
+
+export function lintCsp(text) {
+  const map = parseCsp(text);
+  const out = [];
+  const scriptSources = (map["script-src"] || map["default-src"] || null);
+  const lower = (scriptSources || []).map(function (s) { return s.toLowerCase(); });
+  const hasNonce = lower.some(function (s) { return /^'(nonce-|sha(256|384|512)-)/.test(s); });
+  if (text.trim() === "") {
+    out.push({level: "problem", text: "No policy: the browser applies no restrictions."});
+    return out;
+  }
+  if (scriptSources === null) out.push({level: "problem", text: "No script-src or default-src, so scripts are unrestricted."});
+  if (lower.indexOf("'unsafe-inline'") !== -1 && !hasNonce) out.push({level: "problem", text: "'unsafe-inline' in the script rules lets injected inline scripts run, which removes most of CSP's protection against XSS."});
+  if (lower.indexOf("'unsafe-inline'") !== -1 && hasNonce) out.push({level: "tip", text: "Browsers ignore 'unsafe-inline' when a nonce or hash is present. It is only a fallback for very old browsers."});
+  if (/'unsafe-eval'/i.test(text)) out.push({level: "problem", text: "'unsafe-eval' allows eval and similar functions to turn text into code."});
+  if (lower.indexOf("*") !== -1 || lower.indexOf("https:") !== -1 || lower.indexOf("http:") !== -1) out.push({level: "problem", text: "A wildcard or a bare scheme in the script rules lets almost any site supply scripts."});
+  if (lower.indexOf("data:") !== -1) out.push({level: "problem", text: "data: in the script rules lets attackers run scripts written straight into an address."});
+  if (!map["object-src"] && !(map["default-src"] && map["default-src"].map(function (s) { return s.toLowerCase(); }).indexOf("'none'") !== -1)) out.push({level: "tip", text: "Add object-src 'none' to switch off old plugin content."});
+  if (!map["base-uri"]) out.push({level: "tip", text: "Add base-uri 'self' so an injected base tag cannot redirect your relative links."});
+  if (!map["frame-ancestors"]) out.push({level: "tip", text: "Add frame-ancestors (as a header) to control who may frame your pages."});
+  if (out.length === 0) out.push({level: "good", text: "No warnings from this simple check."});
+  return out;
+}
+
+export function CspTester() {
+  const [text, setText] = useState(cspPresets.starter);
+  const rows = evaluateCsp(text);
+  const lint = lintCsp(text);
+  const blocked = rows.filter(function (r) { return !r.allowed; }).length;
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Your page is <code>{cspPage}</code>. Edit the policy, or load an example.</p>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setText(cspPresets.none); }}>No policy</button>
+        <button type="button" onClick={function () { setText(cspPresets.starter); }}>Starter policy</button>
+        <button type="button" onClick={function () { setText(cspPresets.nonce); }}>Strict, with a nonce</button>
+        <button type="button" onClick={function () { setText(cspPresets.loose); }}>Too loose</button>
+      </div>
+      <label htmlFor="csp-text" style={{display: "block", fontWeight: 600}}>Content-Security-Policy value</label>
+      <textarea id="csp-text" value={text} onChange={function (e) { setText(e.target.value); }} rows={6} spellCheck={false} style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}} />
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>What the page tries to load</th>
+            <th style={{textAlign: "left"}}>Result</th>
+            <th style={{textAlign: "left"}}>Decided by</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(function (r) {
+            return (
+              <tr key={r.res.id}>
+                <td>{r.res.label}</td>
+                <td style={{fontWeight: 600, color: r.allowed ? "#1e8449" : "#c0392b"}}>{r.allowed ? "Allowed" : "Blocked"}</td>
+                <td><code>{r.via}</code></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p aria-live="polite" style={{fontWeight: 600}}>{blocked} of {rows.length} blocked.</p>
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {lint.map(function (f, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>{f.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A simplified model. It handles the common sources (self, none, hosts, schemes, nonces, unsafe-inline) and ignores paths, hashes, strict-dynamic and the more specific directives. Nothing here loads a real resource.
+      </p>
+    </div>
+  );
+}
+
+export const dirOptions = [
+  "script-src", "style-src", "img-src", "connect-src", "frame-src", "frame-ancestors", "base-uri", "form-action", "object-src", "upgrade-insecure-requests"
+];
+
+export const dirItems = [
+  {goal: "Which hosts my page may load scripts from", answer: "script-src"},
+  {goal: "Which hosts my page may put inside frames", answer: "frame-src"},
+  {goal: "Which sites may put MY page inside a frame", answer: "frame-ancestors"},
+  {goal: "Where fetch and XMLHttpRequest may send requests", answer: "connect-src"},
+  {goal: "Stop an injected base tag from changing relative links", answer: "base-uri"},
+  {goal: "Where my forms may submit to", answer: "form-action"},
+  {goal: "Ask the browser to load http subresources over https", answer: "upgrade-insecure-requests"},
+  {goal: "Switch off old plugin content such as object and embed", answer: "object-src"}
+];
+
+export function DirectiveMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = dirItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Match each goal to the directive that does it.</p>
+      {dirItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.goal} style={{margin: "0 0 0.6rem"}}>
+            <label htmlFor={"dm-" + i}>{it.goal}</label>
+            <br />
+            <select id={"dm-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {dirOptions.map(function (d) { return <option key={d} value={d}>{d}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + dirItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+Most of this section is about what **you** write in HTML. A **Content Security Policy** is different. It is a set of rules you give the browser, telling it **which sources it may trust** for scripts, styles, images, frames, and more. If an attacker manages to slip a script into your page, CSP can stop the browser from running it.
+
+CSP does not replace good habits like escaping, as taught in [XSS Basics](./xss-basics). It is a **second layer** that limits the damage when something goes wrong.
+
+## What You Will Learn
+
+- What a Content Security Policy is, and how a browser applies it
+- How to send one as a header, and what the `meta` tag can and cannot do
+- The main directives and source values
+- Why inline scripts are blocked, and how nonces fix that safely
+- How to roll out a policy without breaking your site
+- What CSP does not do
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Without CSP, the browser runs any script on the page, whoever put it there. With CSP, the browser first checks a **guest list**. A script, image, or frame is loaded only if its source is on the list for that kind of content.
+
+<Tabs>
+<TabItem value="code" label="The Code" default>
+
+```text title="Response header (recommended)"
+Content-Security-Policy: default-src 'self'; img-src 'self' https://images.example.org; frame-ancestors 'self'; object-src 'none'; base-uri 'self'
+```
+
+```html title="index.html (limited: the meta tag)"
+<head>
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' https://images.example.org">
+</head>
+```
+
+</TabItem>
+<TabItem value="tester" label="Policy Tester">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<CspTester />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="matcher" label="Directive Matcher">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DirectiveMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## Header or Meta Tag?
+
+The proper way is an **HTTP response header** set by your server or hosting service.
+
+You can also put a policy in a `meta` tag with `http-equiv="Content-Security-Policy"`, which is useful when you cannot set headers, such as on a simple static host. But a `meta` policy has real limits:
+
+| | Header | `meta` tag |
+| :-- | :-- | :-- |
+| Covers content loaded **before** the tag | Yes | No. It must appear early in the `head`, and it affects only what comes after |
+| `frame-ancestors` | Works | **Ignored** |
+| `sandbox` directive | Works | **Ignored** |
+| Reporting directives | Work | **Ignored** |
+| Report-only mode | Yes | No |
+
+If your host lets you set headers (many have a settings page or a headers file), prefer the header.
+
+## How a Policy Is Written
+
+A policy is a list of **directives** separated by semicolons. Each directive has a name and a list of allowed **sources**:
+
+```text
+script-src 'self' https://cdn.example.net; img-src *.example.org data:
+```
+
+### The most useful directives
+
+| Directive | Controls |
+| :-- | :-- |
+| `default-src` | A fallback for most fetch directives that you do not set yourself |
+| `script-src` | JavaScript, including inline scripts and event attributes |
+| `style-src` | Stylesheets, `style` elements, and `style` attributes |
+| `img-src`, `font-src`, `media-src` | Images, fonts, audio and video |
+| `connect-src` | `fetch`, `XMLHttpRequest`, WebSocket, and similar connections |
+| `frame-src` | Where **your** page may load frames from |
+| `frame-ancestors` | Who may put **your** page in a frame (replaces the old `X-Frame-Options` idea; see [iFrame Security](./iframe-security)) |
+| `object-src` | Plugin content (`object`, `embed`). Set to `'none'` |
+| `base-uri` | What a `base` tag may set. Use `'self'` |
+| `form-action` | Where forms may submit to (see [Secure Forms](./secure-forms)) |
+| `upgrade-insecure-requests` | Ask the browser to load `http` subresources over `https` (see [Mixed Content](./mixed-content)) |
+| `sandbox` | Applies sandbox rules to the page (see [Sandbox Attribute](./sandbox-attribute)) |
+
+:::info
+`default-src` is a **fallback** only for the fetch-type directives (scripts, styles, images, fonts, frames, connections, and so on). It does **not** cover `base-uri`, `form-action`, or `frame-ancestors`. Set those yourself.
+:::
+
+### Source values
+
+| Source | Meaning |
+| :-- | :-- |
+| `'self'` | Your own origin |
+| `'none'` | Nothing at all |
+| `https://cdn.example.net` | That exact host |
+| `*.example.org` | Any subdomain of that host (not the bare domain) |
+| `https:` | Any `https` address (very broad) |
+| `data:` | `data:` addresses (fine for small images, dangerous for scripts) |
+| `'nonce-...'` | An inline element carrying the matching `nonce` |
+| `'sha256-...'` | An inline script or style whose text hashes to this value |
+| `'unsafe-inline'` | Any inline code. Weakens protection |
+| `'unsafe-eval'` | `eval` and similar. Weakens protection |
+
+Note the **quotes**. Keywords such as `'self'` and `'none'` must be written with single quotes inside the policy, while hosts and schemes are not quoted.
+
+## Try It: The Policy Tester
+
+Open the **Policy Tester** tab. It lists thirteen things a page might try to load. Pick **Starter policy** and read the results:
+
+- Scripts from your own site are allowed, but the inline script and the `onclick` attribute are **blocked**. That is CSP doing its job.
+- A script from `cdn.example.net` is blocked, because it is not on the list.
+
+Now load **Strict, with a nonce**, and compare. Then load **Too loose**, and read the warnings.
+
+## Inline Scripts: Why They Are Blocked
+
+By default, a useful CSP blocks **inline scripts and event attributes**. This is deliberate, because injected XSS is usually an inline script. The cost is that you must move your own code into files, and replace `onclick="..."` attributes with `addEventListener`.
+
+```html
+<!-- Blocked by a strict CSP -->
+<button onclick="save()">Save</button>
+
+<!-- Allowed: the code lives in a file from your own origin -->
+<button id="save">Save</button>
+<script src="/app.js"></script>
+```
+
+If you must keep a specific inline script, use a **nonce** or a **hash**, never `'unsafe-inline'`.
+
+### Nonces
+
+A nonce is a random value that the server generates for **each response**. It appears in the header and on the trusted script:
+
+```text
+Content-Security-Policy: script-src 'self' 'nonce-r4nd0m'
+```
+
+```html
+<script nonce="r4nd0m">
+  // allowed, because the nonce matches
+</script>
+```
+
+An injected script has no way to know the nonce, so it is blocked. Three rules make this safe:
+
+1. **Generate a new, unpredictable value for every response,** on the server, with a secure random generator.
+2. **Never reuse a nonce,** and never use a fixed one. `r4nd0m` above is only a teaching placeholder.
+3. **A nonce needs a server** that builds the page. A fully static page cannot use one. For that case, use a hash, or move scripts to files.
+
+When a policy contains a nonce or a hash, browsers **ignore** `'unsafe-inline'` in that directive. The Policy Tester shows this in action.
+
+## Rolling Out a Policy Safely
+
+A strict policy can break pages in ways you do not expect. Roll it out in steps:
+
+1. **Start in report-only mode.** Send `Content-Security-Policy-Report-Only` with the same policy. The browser reports what **would** have been blocked, without blocking anything. Reports go to an endpoint you set up with a reporting directive (check your provider's current documentation for the exact setup).
+2. **Watch the Console.** Chrome, Firefox, and Safari show CSP violations in DevTools, naming the directive and the blocked source.
+3. **Fix the cause.** Move inline code into files, add the hosts you really use, and remove the ones you do not.
+4. **Switch to enforcing** by sending `Content-Security-Policy`. You can send both headers while you tune a stricter version.
+5. **Keep watching.** New scripts, new third-party tools, and new embeds all need a policy update.
+
+Several policies can be sent at once, and the browser applies **all** of them. A resource must pass every one.
+
+## A Starter Policy
+
+This is a reasonable starting point for a simple site that serves its own scripts and styles. Adjust the hosts to match what your page really uses:
+
+```text
+Content-Security-Policy:
+  default-src 'self';
+  img-src 'self' data: https://images.example.org;
+  frame-src https://widgets.example.net;
+  connect-src 'self';
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'self'
+```
+
+If your site uses inline `style` attributes or `style` elements, CSP will block them. Moving styles into a stylesheet is the best fix, and a nonce or hash for a specific `style` element is the next best. Avoid giving up with `'unsafe-inline'` in `style-src` unless you accept the trade-off.
+
+## What CSP Does Not Do
+
+- **It is not a replacement for escaping and sanitising.** It is a safety net. See [XSS Basics](./xss-basics).
+- **It cannot stop a script you allowed,** from a host you trust, from misbehaving. If a trusted host is hacked, your site is affected.
+- **It does not stop all attacks,** such as phishing links, or abuse of a legitimate feature of your own site.
+- **It does not hide anything from the visitor.** It restricts what the browser loads, and does not encrypt or conceal.
+- **Wide wildcards weaken it.** A policy that allows `https:` for scripts allows scripts from almost anywhere.
+
+:::warning
+Do not copy a long policy from the internet without understanding it. An overly loose policy gives a false sense of safety, and an overly strict one breaks your site. Start from your actual needs, test in report-only mode, and tighten step by step.
+:::
+
+## Checking Your Setup
+
+1. Open DevTools, then **Network**, click the page request, and read **Response Headers**. Is `Content-Security-Policy` there?
+2. Open the **Console** and reload. CSP violations appear as red messages naming the directive.
+3. Test every feature: menus, forms, embeds, analytics, fonts, and maps.
+4. Run your policy through a CSP evaluator tool from a reputable source, and treat its output as advice, not a verdict.
+5. Review the policy whenever you add a new third-party service.
+
+## Best Practices
+
+1. **Prefer a header** to a `meta` tag.
+2. **Start with `default-src 'self'`,** then add only what you need.
+3. **Set `object-src 'none'`, `base-uri 'self'`,** and `frame-ancestors`.
+4. **Move inline scripts to files,** or use nonces or hashes.
+5. **Avoid `'unsafe-inline'` and `'unsafe-eval'`** in script rules.
+6. **Do not allow `data:` or wildcards** for scripts.
+7. **Roll out in report-only mode** first.
+8. **List hosts as exactly as you can,** rather than whole schemes.
+9. **Review the policy** when your page changes.
+10. **Keep escaping and sanitising** as your main defence.
+
+## Quick Checklist
+
+- [ ] A policy is sent as a header (or a `meta` tag as a fallback)
+- [ ] `default-src` is set to something narrow
+- [ ] `script-src` has no `'unsafe-inline'`, `'unsafe-eval'`, wildcards, or `data:`
+- [ ] `object-src 'none'`, `base-uri`, and `frame-ancestors` are set
+- [ ] Inline code uses nonces or hashes, or lives in files
+- [ ] You tested in report-only mode first
+- [ ] The Console shows no unexpected violations
+
+## Security and Privacy Notes
+
+- **Reports can contain page addresses.** If you collect violation reports, they may include URLs that hold personal information. Store them carefully, and keep them only as long as needed.
+- **Third-party hosts you allow can see your visitors.** Each host in your policy is a company that receives requests from your visitors' browsers. Allow as few as possible.
+- **A nonce is only secret within one response.** Never put it in a place that is cached and shared between visitors.
+- **Test only your own site,** or sites you have permission to test.
+
+## Global Audience Notes
+
+- **Different regions use different services,** such as maps, payments, and fonts. A policy that works at home can block a service your visitors in another country use, so test with real flows.
+- **CDNs and fonts can be slow or blocked** in some places. Serving fonts and scripts from your own origin is simpler for a policy, and often faster.
+- **Error messages from CSP are in English** in DevTools. Make sure your team can read them, and that visitor-facing errors on your site remain in the page's own language.
+
+## Common Mistakes to Avoid
+
+1. **Adding `'unsafe-inline'`** to make a problem go away.
+2. **Forgetting the quotes** around `'self'` or `'none'`.
+3. **Assuming `default-src` covers `frame-ancestors`,** `base-uri`, and `form-action`.
+4. **Putting `frame-ancestors` in a `meta` tag,** where it is ignored.
+5. **Whitelisting whole schemes** such as `https:`.
+6. **Reusing or hard-coding a nonce.**
+7. **Skipping report-only mode** and breaking the live site.
+8. **Allowing a host and never reviewing** it again.
+9. **Treating CSP as a substitute** for escaping input and output.
+10. **Copying a policy** you do not understand.
+
+## Practice Time
+
+1. In the Policy Tester, load **No policy**. How many items are blocked? What does the warning say?
+2. Load **Starter policy**. Which scripts are blocked, and why?
+3. Add `https://cdn.example.net` to `script-src` in the Starter policy. What changes?
+4. Load **Strict, with a nonce**. Which inline script is now allowed? Is the `onclick` attribute?
+5. Add `'unsafe-inline'` to the nonce policy's `script-src`. Does the `onclick` attribute start working? Why not?
+6. Load **Too loose**, and list the warnings it gives.
+7. Complete the Directive Matcher.
+8. Bonus: open DevTools on a site you own, read its `Content-Security-Policy` header, and explain each directive in your own words.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a Content Security Policy?</summary>
+
+A set of rules, sent as a header (or a `meta` tag), that tells the browser which sources it may load scripts, styles, images, frames, and more from.
+
+</details>
+
+<details>
+<summary>2. Why is a header better than a `meta` tag?</summary>
+
+A `meta` policy only affects what follows it, and ignores `frame-ancestors`, `sandbox`, and reporting directives. A header covers the whole page and supports all directives.
+
+</details>
+
+<details>
+<summary>3. What does `default-src` do?</summary>
+
+It is a fallback for most fetch directives you do not set. It does not cover `base-uri`, `form-action`, or `frame-ancestors`.
+
+</details>
+
+<details>
+<summary>4. Why are inline scripts blocked?</summary>
+
+Injected XSS is usually an inline script. Blocking inline code stops it. Your own code goes in files, or uses a nonce or hash.
+
+</details>
+
+<details>
+<summary>5. What makes a nonce safe?</summary>
+
+It is unpredictable, generated by the server for each response, and never reused, so an attacker cannot guess it.
+
+</details>
+
+<details>
+<summary>6. How do you roll out a policy safely?</summary>
+
+Start in report-only mode, read the violations, fix their causes, then enforce. Keep monitoring as the site changes.
+
+</details>
+
+## Key Takeaways
+
+- **CSP is a guest list for the browser.** It limits where content may come from.
+- **Send it as a header.** The `meta` tag is a limited fallback.
+- **Start with `default-src 'self'`,** then add what you truly need.
+- **Avoid `'unsafe-inline'`, `'unsafe-eval'`, `data:`, and wildcards** for scripts.
+- **Use nonces or hashes** for the inline code you must keep.
+- **Roll out in report-only mode,** then enforce.
+- **CSP is a second layer.** Escaping and sanitising remain the first.
+
+Next up: [Mixed Content](./mixed-content), where you will learn what happens when a secure page loads something over plain `http`, and how browsers and policies deal with it.

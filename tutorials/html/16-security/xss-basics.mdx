@@ -1,0 +1,548 @@
+---
+id: html-sec-xss-basics
+title: "XSS Basics: Cross-Site Scripting"
+sidebar_label: "XSS Basics"
+sidebar_position: 3
+slug: /html/security/xss-basics
+description: "Learn what cross-site scripting (XSS) is, the three types, why it happens, and how to prevent it: escape output for the right context, use safe DOM methods, validate links, sanitise when HTML is allowed, and add a CSP. Includes a context escaping lab and a safe-or-unsafe quiz."
+keywords:
+  - XSS
+  - cross-site scripting
+  - XSS prevention
+  - escape output
+  - innerHTML vs textContent
+  - output encoding
+  - sanitize HTML
+  - safe DOM methods
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, xss, escaping, innerhtml, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function encodeForContexts(value) {
+  return {
+    html: escapeHtml(value),
+    attr: escapeHtml(value),
+    url: encodeURIComponent(value),
+    js: JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029")
+  };
+}
+
+export const contextTemplates = [
+  {id: "html", label: "Inside HTML text", build: function (v) { return "<p>" + v + "</p>"; }, how: "HTML-escape: & < > and quotes"},
+  {id: "attr", label: "Inside a quoted attribute", build: function (v) { return '<input value="' + v + '">'; }, how: "HTML-escape, and always quote the attribute"},
+  {id: "url", label: "Inside a URL parameter", build: function (v) { return '<a href="/search?q=' + v + '">Search</a>'; }, how: "URL-encode with encodeURIComponent"},
+  {id: "js", label: "Inside a script as data", build: function (v) { return "<script>var name = " + v + ";</script>"; }, how: "Write it as a JSON string, and escape < > &"}
+];
+
+export function riskFlags(markup) {
+  const doc = new DOMParser().parseFromString(markup, "text/html");
+  const flags = [];
+  Array.from(doc.documentElement.querySelectorAll("*")).forEach(function (el) {
+    const tag = el.tagName.toLowerCase();
+    if (["head", "body", "html"].indexOf(tag) !== -1) return;
+    if (["script", "iframe", "object", "embed"].indexOf(tag) !== -1) flags.push("a " + tag + " element appeared");
+    Array.from(el.attributes).forEach(function (a) {
+      const n = a.name.toLowerCase();
+      const v = a.value.trim().toLowerCase();
+      if (n.indexOf("on") === 0) flags.push("an event handler appeared: " + a.name);
+      if (["href", "src", "action"].indexOf(n) !== -1 && v.indexOf("javascript:") === 0) flags.push("a javascript: address appeared");
+    });
+  });
+  return flags;
+}
+
+export function checkUrl(value) {
+  let url;
+  try {
+    url = new URL(value, "https://www.example.com");
+  } catch (e) {
+    return {allowed: false, reason: "That is not a valid address."};
+  }
+  if (["http:", "https:", "mailto:"].indexOf(url.protocol) !== -1) {
+    return {allowed: true, reason: "The scheme " + url.protocol + " is on the allow-list."};
+  }
+  return {allowed: false, reason: "The scheme " + url.protocol + " is not on the allow-list (http, https, mailto), so the link is replaced."};
+}
+
+export function ContextLabInner() {
+  const [value, setValue] = useState("O'Brien \"the baker\" <b>& co");
+  const [link, setLink] = useState("javascript:alert(1)");
+  const enc = encodeForContexts(value);
+  const presets = [
+    ["A friendly name", "Priya"],
+    ["Quotes and brackets", "O'Brien \"the baker\" <b>& co"],
+    ["Attribute breakout", "\" onfocus=\"alert(1)\" x=\""],
+    ["Tag injection", "<img src=x onerror=alert(1)>"]
+  ];
+  const linkResult = checkUrl(link);
+  return (
+    <div style={{padding: "1rem"}}>
+      <label htmlFor="ctx-value" style={{display: "block", fontWeight: 600}}>A visitor's text</label>
+      <input id="ctx-value" type="text" value={value} onChange={function (e) { setValue(e.target.value); }} style={{width: "100%", boxSizing: "border-box", fontFamily: "monospace"}} />
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", margin: "0.5rem 0 1rem"}}>
+        {presets.map(function (p) {
+          return <button key={p[0]} type="button" onClick={function () { setValue(p[1]); }}>{p[0]}</button>;
+        })}
+      </div>
+      {contextTemplates.map(function (c) {
+        const naive = c.build(value);
+        const safe = c.build(enc[c.id]);
+        const naiveFlags = c.id === "js" ? [] : riskFlags(naive);
+        const safeFlags = c.id === "js" ? [] : riskFlags(safe);
+        return (
+          <div key={c.id} style={{marginBottom: "1.25rem"}}>
+            <p style={{fontWeight: 600, margin: "0 0 0.25rem"}}>{c.label}</p>
+            <p style={{margin: "0 0 0.25rem", fontSize: "0.9rem"}}>Right encoding: {c.how}</p>
+            <p style={{margin: "0 0 0.15rem", fontSize: "0.85rem"}}>Without encoding:</p>
+            <pre style={{whiteSpace: "pre-wrap", margin: 0}}><code>{naive}</code></pre>
+            <p aria-live="polite" style={{margin: "0.15rem 0 0.4rem", fontSize: "0.9rem", color: naiveFlags.length > 0 ? "#c0392b" : "inherit", fontWeight: naiveFlags.length > 0 ? 600 : 400}}>
+              {c.id === "js" ? "Quotes or brackets in the text can break the script, or let the visitor write code in it." : (naiveFlags.length > 0 ? "Risky: " + naiveFlags.join("; ") + "." : "Nothing risky built from this text.")}
+            </p>
+            <p style={{margin: "0 0 0.15rem", fontSize: "0.85rem"}}>With the right encoding:</p>
+            <pre style={{whiteSpace: "pre-wrap", margin: 0}}><code>{safe}</code></pre>
+            <p aria-live="polite" style={{margin: "0.15rem 0 0", fontSize: "0.9rem", color: "#1e8449", fontWeight: 600}}>
+              {c.id === "js" ? "The text stays a string, and cannot close the script early." : (safeFlags.length > 0 ? "Still risky: " + safeFlags.join("; ") + "." : "Nothing risky. The text stays data.")}
+            </p>
+          </div>
+        );
+      })}
+      <p style={{fontWeight: 600, margin: "0 0 0.25rem"}}>A link address supplied by a visitor</p>
+      <label htmlFor="ctx-link" style={{display: "block", fontSize: "0.9rem"}}>Address to use in href</label>
+      <input id="ctx-link" type="text" value={link} onChange={function (e) { setLink(e.target.value); }} style={{width: "100%", boxSizing: "border-box", fontFamily: "monospace"}} />
+      <p aria-live="polite" style={{fontWeight: 600, color: linkResult.allowed ? "#1e8449" : "#c0392b"}}>
+        {linkResult.allowed ? "Allowed. " : "Blocked. "}{linkResult.reason}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This lab never inserts your text into the page. It builds the markup as text and uses an inert parser, which runs no code, to list what would be created.
+      </p>
+    </div>
+  );
+}
+
+export function ContextLab() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the lab...</p>}>
+      {function () { return <ContextLabInner />; }}
+    </BrowserOnly>
+  );
+}
+
+export const sinkItems = [
+  {
+    code: 'el.textContent = comment;',
+    answer: "safe",
+    why: "textContent treats the value as plain text. Nothing is parsed as markup."
+  },
+  {
+    code: 'el.innerHTML = comment;',
+    answer: "unsafe",
+    why: "innerHTML parses the value as HTML. If the comment came from a visitor, it can create elements and handlers."
+  },
+  {
+    code: 'list.insertAdjacentHTML("beforeend", "<li>" + name + "</li>");',
+    answer: "unsafe",
+    why: "Building markup from strings that include visitor text is the classic cause of XSS. Create the element and set its textContent instead."
+  },
+  {
+    code: 'const li = document.createElement("li");\nli.textContent = name;\nlist.append(li);',
+    answer: "safe",
+    why: "The element is created by code, and the name is set as text. This is the pattern to prefer."
+  },
+  {
+    code: 'link.href = userUrl;',
+    answer: "unsafe",
+    why: "A javascript: address would be accepted. Check the scheme against an allow-list (http, https, mailto) first."
+  },
+  {
+    code: 'el.innerHTML = DOMPurify.sanitize(comment);',
+    answer: "safe",
+    why: "A well-maintained sanitising library, kept up to date and configured with an allow-list, is the right tool when you must allow some HTML. It is safe only as long as the library is current."
+  },
+  {
+    code: 'document.write(location.search);',
+    answer: "unsafe",
+    why: "The address bar can be written by anyone who links to your page, and document.write parses it as HTML. Avoid document.write."
+  },
+  {
+    code: 'img.alt = description;',
+    answer: "safe",
+    why: "Setting a plain property such as alt treats the value as text, and it cannot create elements or run code."
+  },
+  {
+    code: 'eval(userInput);',
+    answer: "unsafe",
+    why: "eval runs text as code. Never pass it anything a visitor can influence. There is almost always a safer way."
+  }
+];
+
+export function SinkQuiz() {
+  const [picked, setPicked] = useState({});
+  const done = Object.keys(picked).length;
+  const correct = sinkItems.filter(function (s, i) { return picked[i] === s.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p aria-live="polite" style={{marginTop: 0, fontWeight: 600}}>
+        Answered {done} of {sinkItems.length}. Correct: {correct}.
+      </p>
+      <p>Each line handles text that a visitor wrote. Is it safe?</p>
+      {sinkItems.map(function (s, i) {
+        const chosen = picked[i];
+        const answered = chosen !== undefined;
+        return (
+          <fieldset key={i} style={{border: "none", padding: 0, margin: "0 0 1.25rem"}}>
+            <legend>
+              <pre style={{margin: "0 0 0.4rem", whiteSpace: "pre-wrap"}}><code>{s.code}</code></pre>
+            </legend>
+            {[["safe", "Safe"], ["unsafe", "Unsafe"]].map(function (o) {
+              return (
+                <label key={o[0]} style={{marginRight: "1.25rem"}}>
+                  <input
+                    type="radio"
+                    name={"sink-" + i}
+                    disabled={answered}
+                    checked={chosen === o[0]}
+                    onChange={function () { setPicked(Object.assign({}, picked, {[i]: o[0]})); }}
+                  />{" "}
+                  {o[1]}
+                </label>
+              );
+            })}
+            {answered ? (
+              <p style={{margin: "0.4rem 0 0"}}>
+                <strong>{chosen === s.answer ? "Right. " : "Not quite. "}</strong>
+                {s.why}
+              </p>
+            ) : null}
+          </fieldset>
+        );
+      })}
+      {done > 0 ? <button type="button" onClick={function () { setPicked({}); }}>Start again</button> : null}
+    </div>
+  );
+}
+
+# XSS Basics: Cross-Site Scripting
+
+Imagine a guestbook page. A visitor types a message, and your page shows it to everyone. Now imagine the "message" is not words but a piece of code, and your page treats it as part of its own HTML. Every visitor who opens the guestbook now runs that code, with all the power of your site. That is **cross-site scripting**, or **XSS**, and it is one of the most common and most damaging web page problems.
+
+The good news is that the cause is simple and the cure is well understood: keep **data** and **code** apart. This lesson shows you how.
+
+## What You Will Learn
+
+- What XSS is, and what an attacker can do with it
+- The three types: stored, reflected, and DOM-based
+- Why it happens, in one sentence
+- How to escape output correctly for each context
+- Which DOM methods are safe, and which are not
+- How to handle links and addresses supplied by visitors
+- What to do when you must allow some HTML
+- Which extra layers reduce the damage if something slips through
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+XSS happens when **untrusted text is turned into markup or code.** The fix is to make sure untrusted text always stays text.
+
+<Tabs>
+<TabItem value="code" label="Unsafe and Safe Code" default>
+
+```js title="unsafe.js"
+// UNSAFE: the comment is parsed as HTML
+const out = document.querySelector("#comment");
+out.innerHTML = comment;
+```
+
+```js title="safe.js"
+// SAFE: the comment is only ever text
+const out = document.querySelector("#comment");
+out.textContent = comment;
+```
+
+```js title="safe-list.js"
+// SAFE: build elements with code, and set text on them
+const li = document.createElement("li");
+li.textContent = name;
+list.append(li);
+```
+
+</TabItem>
+<TabItem value="lab" label="Context Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ContextLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="quiz" label="Safe or Unsafe?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SinkQuiz />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the Context Lab, press the "Attribute breakout" and "Tag injection" presets. Look at how the same text is risky in one context and harmless once encoded, and how each context needs its own kind of encoding.
+
+## What an Attacker Can Do
+
+Injected code runs **as your page**, with your origin's full power ([HTML Security Basics](./html-security-basics) explains why). Depending on the site, that can mean:
+
+- Reading anything the page can read, including personal information on screen
+- Acting as the visitor, for example sending requests, changing settings, or posting messages
+- Changing what the page shows, for example adding a fake login form
+- Capturing what the visitor types
+- Reading cookies and storage that script can access, which is why sensitive cookies should be marked `HttpOnly`
+- Redirecting the visitor to another site
+
+You do not need to know how attacks are written to defend against them. You need to know that **any path that lets untrusted text become code is a vulnerability**, and to close those paths.
+
+## The Three Types
+
+| Type | How the text gets in | Where it is injected | Example |
+| :-- | :-- | :-- | :-- |
+| **Stored** | A visitor saves it (a comment, a profile) | Your server later sends it to other visitors | A malicious comment shown to everyone |
+| **Reflected** | It is in a link or request, such as a search term in the address | Your server echoes it straight back in the response | A crafted link that shows an unescaped search term |
+| **DOM-based** | It is in the address, or another browser-side source | Your own script inserts it into the page, with no server involved | A script that reads the address fragment and writes it with `innerHTML` |
+
+The cure is the same for all three: escape on output, and use safe methods. What changes is **where** you apply it: in the server's templates, or in your browser-side code.
+
+## Why It Happens
+
+Browsers cannot tell the difference between markup **you** wrote and markup that **a visitor** wrote, once they are mixed into the same string. If you build HTML by joining strings, the browser parses the result as one document, and everything in it is trusted.
+
+```js
+const html = "<p>Hello, " + name + "</p>";   // name is now part of the markup
+```
+
+If `name` contains something that looks like a tag, the parser creates a tag. The rule that prevents this is simple: **never build markup out of untrusted strings.** Build it with safe APIs, or escape the strings first.
+
+## Escape for the Context
+
+Escaping means replacing characters that have a special meaning with harmless ones. The right replacement depends on **where** the text is going, because each place has its own special characters:
+
+| Context | Example | What to do |
+| :-- | :-- | :-- |
+| HTML text | `<p>HERE</p>` | HTML-escape `&`, `<`, `>`, and quotes |
+| Quoted attribute | `<input value="HERE">` | HTML-escape, and always quote attributes |
+| URL parameter | `<a href="/search?q=HERE">` | URL-encode with `encodeURIComponent` |
+| URL as a whole | `<a href="HERE">` | Check the scheme against an allow-list |
+| JavaScript data | `<script>var x = HERE;</script>` | Avoid if possible. Otherwise write JSON and escape `<`, `>`, `&` |
+| CSS | `style="color: HERE"` | Avoid. Use a fixed list of allowed values |
+
+The Context Lab above shows the first four. Notice that there is no single "escape everything" function that works everywhere. HTML escaping does not protect a text placed inside a URL, and URL encoding does not protect text placed inside HTML.
+
+:::tip
+You rarely write escaping by hand. Modern template systems and front-end frameworks escape output **by default**. The danger is in the escape hatches: features with names like "raw", "safe", `dangerouslySetInnerHTML`, or `v-html`. Treat each use of one as a security review item.
+:::
+
+## Use Safe DOM Methods
+
+When you write browser-side code, prefer methods that treat values as text:
+
+| Safe (value stays text) | Unsafe (value is parsed as markup) |
+| :-- | :-- |
+| `textContent` | `innerHTML` |
+| `createElement` and `append` | `insertAdjacentHTML` |
+| `setAttribute("title", value)` with a fixed attribute name | `outerHTML` |
+| `element.alt`, `element.value` | `document.write` |
+| `new Option(text, value)` | `eval`, `new Function`, string timers |
+
+A habit to build: **if you ever write `innerHTML =`, stop and ask where the string came from.** If any part of it can be influenced by a visitor, use `textContent` or create elements instead. Try the quiz tab above to practise spotting each one.
+
+Do not let visitor text choose an attribute **name** either. `el.setAttribute(name, value)` with an attacker-controlled name could set an event handler.
+
+## Links and Addresses From Visitors
+
+Any address a visitor can supply, such as a "my website" field on a profile, must be checked before it goes into an `href` or `src`. A `javascript:` address runs code when the link is clicked. Allow only the schemes you expect:
+
+```js
+function safeHref(value) {
+  try {
+    const url = new URL(value, location.origin);
+    if (["http:", "https:", "mailto:"].indexOf(url.protocol) !== -1) return url.href;
+  } catch (e) {}
+  return "#";
+}
+
+link.href = safeHref(userUrl);
+```
+
+This is an **allow-list**: it names what is permitted and rejects everything else. That is much stronger than a block-list that tries to name every dangerous scheme. Try different addresses in the last section of the Context Lab. For links that open in a new tab, also see [noopener](./noopener).
+
+## When You Must Allow Some HTML
+
+Sometimes you do want visitors to use a little formatting, such as bold text in a comment or a rich-text editor. Then escaping everything is too strong, and you need **sanitising**: removing everything that is not on a list of allowed tags and attributes.
+
+- **Use a well-maintained sanitising library,** such as DOMPurify, rather than writing your own. Writing a safe HTML sanitiser is surprisingly hard, and home-made regular expressions fail.
+- **Keep it updated,** and configure an allow-list of tags and attributes as small as you can.
+- **Sanitise at the right time,** ideally when the content is shown (or on the server before it is stored and shown), and again if the content moves between systems.
+- **A simpler option is a safe markup format,** such as Markdown, converted by a trusted library that escapes raw HTML.
+- Browsers are also adding built-in sanitising features. Support varies, so check current documentation before relying on them.
+
+## More Layers
+
+No single defence is perfect, so add layers that limit the damage if a mistake slips through:
+
+- **Content Security Policy (CSP).** Tells the browser which sources of script are allowed, and can block inline scripts and handlers. Even if text gets injected, the browser may refuse to run it. See [Content Security Policy](./content-security-policy).
+- **`HttpOnly` cookies.** A cookie marked `HttpOnly` cannot be read by script, so injected code cannot steal it. This is set by the server.
+- **Trusted Types.** A newer browser feature, available in some browsers, that makes dangerous sinks such as `innerHTML` accept only values that have passed through code you approved. Support is not universal, so check before you rely on it.
+- **Short sessions and re-checks for sensitive actions.** If an attacker does run code, they should not be able to do everything.
+- **Server-side validation.** Reject input that is not shaped as you expect, but never rely on this alone. Validation reduces risk, and escaping prevents it.
+
+## Test Your Own Site Safely
+
+You can check whether your own pages escape output without using anything harmful.
+
+1. In a text field on **your own** site, enter a harmless marker such as `<b>test</b>` and submit.
+2. Look at where it is shown. If you see the literal characters `<b>test</b>`, the output is escaped. If you see **test** in bold, the text was treated as markup, and you have a gap to fix.
+3. Repeat in every place that shows visitor input: comments, names, search results, error messages, and URL parameters.
+4. Check the page source (not the DevTools element view) to see exactly what the server sent.
+5. Add a CSP in report-only mode first, to see what it would block (see the CSP lesson).
+6. Use an automated scanner on **your own** site if you have one, and treat it as a helper rather than proof.
+
+:::warning
+Only test sites you own or have written permission to test. Do not try injection strings on other people's sites.
+:::
+
+## Best Practices
+
+1. **Escape output by default,** using your template system or framework.
+2. **Never build HTML from strings** that include untrusted text.
+3. **Prefer `textContent` and `createElement`** over `innerHTML`.
+4. **Escape for the context:** HTML, attribute, URL, or script data.
+5. **Use an allow-list** for URL schemes and for any HTML you permit.
+6. **Sanitise with a maintained library** when you must allow markup.
+7. **Mark sensitive cookies `HttpOnly`,** and add a Content Security Policy.
+8. **Treat escape hatches** such as `v-html` and `dangerouslySetInnerHTML` as review items.
+9. **Remember data from your own database** may have started as visitor input.
+10. **Test your own pages** with harmless markers.
+
+## Quick Checklist
+
+- [ ] All visitor text is escaped where it is shown
+- [ ] No `innerHTML`, `insertAdjacentHTML`, or `document.write` with untrusted text
+- [ ] Attributes are always quoted
+- [ ] Visitor-supplied links are checked against a scheme allow-list
+- [ ] Any allowed HTML goes through a maintained sanitiser
+- [ ] No use of `eval` or `new Function` on visitor input
+- [ ] Sensitive cookies are `HttpOnly`
+- [ ] A Content Security Policy is in place, or planned
+- [ ] Every "raw" or "safe" escape hatch has been reviewed
+
+## Security and Privacy Notes
+
+- **Examples on this page are for defence.** Use the patterns to protect your own sites, and test only what you own or have permission to test.
+- **XSS exposes visitors' private information.** A single hole can leak personal data. Treat a fix as protecting people, not only the site.
+- **Do not log or store raw hostile input where it might be shown later** without escaping, such as in an admin dashboard. Internal tools are targets too.
+- **Report problems responsibly.** If you find an XSS hole on someone else's site, tell the owner privately, and do not exploit it. Many sites publish a contact at `/.well-known/security.txt`.
+- **Never paste real secrets or private data** into online tools while testing.
+
+## Global Audience Notes
+
+- **Text comes in every script and direction.** Names, searches, and comments can include accents, right-to-left text, and symbols. Escape on the characters that matter to HTML and let the rest through, and test with real multilingual input.
+- **Set the character encoding to UTF-8** with `<meta charset="utf-8">` as early as possible in the head, and send the matching header. A page and server that disagree about the encoding have historically caused escaping problems. See the [charset lesson](//tutorials/html/html-head/charset).
+- **Do not strip characters from names** to be "safe". Many real names contain apostrophes, hyphens, and non-Latin letters. Escape on output instead.
+- **Show error messages in the visitor's language,** and never echo raw input inside them without escaping.
+- **Look-alike characters** from different alphabets can make addresses and names misleading. Show the real destination of links where it matters.
+
+## Common Mistakes to Avoid
+
+1. **Using `innerHTML`** for text that includes visitor input.
+2. **Escaping for the wrong context,** such as HTML-escaping a value that is placed in a URL.
+3. **Leaving attributes unquoted.**
+4. **Trusting data from your own database** because "it came from us".
+5. **Stripping or blocking "bad" words** instead of escaping on output.
+6. **Writing your own sanitiser** with regular expressions.
+7. **Blocking `javascript:` only,** instead of allowing only known-good schemes.
+8. **Escaping only on input,** so the text is wrong for other contexts later. Escape on output.
+9. **Using framework escape hatches** without review.
+10. **Assuming a CSP means escaping is optional.** It is a second layer, not a replacement.
+
+## Practice Time
+
+1. In the Context Lab, press "Tag injection". Which contexts become risky without encoding?
+2. Press "Attribute breakout". Which context does it affect, and why?
+3. Check that the right encoding makes the risk disappear in each one.
+4. Try three different link addresses in the last section. Which are allowed?
+5. Take the safe-or-unsafe quiz. Which line surprised you?
+6. Search your own code for `innerHTML`. For each result, where does the string come from?
+7. Replace one with `textContent` or `createElement`.
+8. Bonus: add a comment with `<b>test</b>` to your own site. Does it show as literal text or as bold?
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is XSS?</summary>
+
+A vulnerability where untrusted text is treated as markup or code and runs in your page with your site's power.
+
+</details>
+
+<details>
+<summary>2. What are the three types?</summary>
+
+Stored (saved by a visitor and shown later), reflected (echoed straight from a request), and DOM-based (inserted by your own browser-side code).
+
+</details>
+
+<details>
+<summary>3. What is the core fix?</summary>
+
+Keep data and code apart: escape untrusted text on output for the context it is placed in, and use safe APIs that treat values as text.
+
+</details>
+
+<details>
+<summary>4. Why is there no single escaping function?</summary>
+
+Each context has different special characters. HTML text, attributes, URLs, and script data each need their own encoding.
+
+</details>
+
+<details>
+<summary>5. How do you handle a link address from a visitor?</summary>
+
+Check its scheme against an allow-list, such as `http`, `https`, and `mailto`, and replace anything else. Never allow `javascript:` addresses.
+
+</details>
+
+<details>
+<summary>6. What do you do if you must allow some HTML?</summary>
+
+Sanitise it with a well-maintained library using a small allow-list of tags and attributes, or use a safe format such as Markdown through a trusted converter.
+
+</details>
+
+## Key Takeaways
+
+- **XSS is untrusted text becoming code.** Keep data and code apart.
+- **Escape on output, for the context.** HTML, attribute, URL, and script data differ.
+- **Prefer `textContent` and `createElement`** to `innerHTML`.
+- **Allow-list URL schemes** and any HTML you permit.
+- **Use a maintained sanitiser,** never your own.
+- **Add layers:** a Content Security Policy and `HttpOnly` cookies.
+- **Test your own pages** with harmless markers, and only your own.
+
+Next up: [iFrame Security](./iframe-security), where you will learn how to embed other pages without giving them the keys.

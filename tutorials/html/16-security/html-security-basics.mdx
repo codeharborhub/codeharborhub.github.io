@@ -1,0 +1,551 @@
+---
+id: html-sec-basics
+title: "HTML Security Basics"
+sidebar_label: "HTML Security Basics"
+sidebar_position: 2
+slug: /html/security/html-security-basics
+description: "Learn the foundations of HTML security: what an origin is, what the same-origin policy protects, how to find the doors into your page, and why https and server-side checks matter. Includes an origin comparison lab and a page survey tool."
+keywords:
+  - HTML security basics
+  - same-origin policy
+  - what is an origin
+  - attack surface
+  - web security for beginners
+  - https
+  - third-party scripts
+  - client side vs server side security
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, same-origin-policy, https, attack-surface, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export function originOf(url) {
+  try {
+    const u = new URL(url);
+    const port = u.port || (u.protocol === "https:" ? "443" : u.protocol === "http:" ? "80" : "");
+    return {ok: true, scheme: u.protocol.replace(":", ""), host: u.hostname, port: port};
+  } catch (e) {
+    return {ok: false};
+  }
+}
+
+export function compareOrigins(a, b) {
+  const x = originOf(a);
+  const y = originOf(b);
+  if (!x.ok || !y.ok) return {ok: false};
+  const scheme = x.scheme === y.scheme;
+  const host = x.host === y.host;
+  const port = x.port === y.port;
+  return {ok: true, x: x, y: y, scheme: scheme, host: host, port: port, same: scheme && host && port};
+}
+
+export function OriginLab() {
+  const [a, setA] = useState("https://shop.example.com/menu");
+  const [b, setB] = useState("https://shop.example.com/cart");
+  const r = compareOrigins(a, b);
+  const presets = [
+    ["Different path", "https://shop.example.com/cart"],
+    ["Different scheme", "http://shop.example.com/menu"],
+    ["Different subdomain", "https://api.example.com/menu"],
+    ["Different port", "https://shop.example.com:8443/menu"],
+    ["Different domain", "https://example.org/menu"]
+  ];
+  const cell = function (match) {
+    return <td style={{color: match ? "#1e8449" : "#c0392b", fontWeight: 600}}>{match ? "Same" : "Different"}</td>;
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="org-a" style={{fontWeight: 600}}>Page A (your page)</label>
+        <br />
+        <input id="org-a" type="text" value={a} onChange={function (e) { setA(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="org-b" style={{fontWeight: 600}}>Page B (another address)</label>
+        <br />
+        <input id="org-b" type="text" value={b} onChange={function (e) { setB(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        {presets.map(function (p) {
+          return <button key={p[0]} type="button" onClick={function () { setB(p[1]); }}>{p[0]}</button>;
+        })}
+      </div>
+      {r.ok ? (
+        <div aria-live="polite">
+          <table>
+            <thead>
+              <tr>
+                <th style={{textAlign: "left"}}>Part</th>
+                <th style={{textAlign: "left"}}>Page A</th>
+                <th style={{textAlign: "left"}}>Page B</th>
+                <th style={{textAlign: "left"}}>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Scheme</td><td>{r.x.scheme}</td><td>{r.y.scheme}</td>{cell(r.scheme)}</tr>
+              <tr><td>Host</td><td>{r.x.host}</td><td>{r.y.host}</td>{cell(r.host)}</tr>
+              <tr><td>Port</td><td>{r.x.port}</td><td>{r.y.port}</td>{cell(r.port)}</tr>
+            </tbody>
+          </table>
+          <p style={{fontWeight: 600, color: r.same ? "#1e8449" : "#c0392b"}}>
+            {r.same
+              ? "Same origin. Scripts on one page can read the other page's content and responses."
+              : "Different origins. The browser stops scripts on one from reading the other, unless the other site explicitly allows it."}
+          </p>
+        </div>
+      ) : (
+        <p style={{color: "#c0392b"}}>Enter two full addresses, such as https://example.com/page.</p>
+      )}
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        An origin is the scheme, the host, and the port. The path never matters. When no port is written, https means 443 and http means 80.
+      </p>
+    </div>
+  );
+}
+
+export const surveySamples = {
+  messy: [
+    '<script src="https://cdn.example.net/lib.js"></script>',
+    '<script src="http://stats.example.org/t.js"></script>',
+    '<script>var theme = "light";</script>',
+    '<a href="https://partner.example.com" target="_blank">Our partner</a>',
+    '<a href="javascript:void(0)">Open</a>',
+    '<button onclick="openMenu()">Menu</button>',
+    '<iframe src="https://widgets.example.net/map" title="Map"></iframe>',
+    '<img src="http://www.example.com/img/logo.png" alt="Logo">',
+    '<form action="http://www.example.com/login" method="get">',
+    '  <input type="password" name="pw">',
+    '</form>'
+  ].join("\n"),
+  fixed: [
+    '<script src="https://cdn.example.net/lib.js" integrity="sha384-EXAMPLE" crossorigin="anonymous" defer></script>',
+    '<a href="https://partner.example.com" target="_blank" rel="noopener noreferrer">Our partner</a>',
+    '<button type="button" id="menu-button">Menu</button>',
+    '<iframe src="https://widgets.example.net/map" title="Map" sandbox="allow-scripts"></iframe>',
+    '<img src="https://www.example.com/img/logo.png" alt="Logo">',
+    '<form action="https://www.example.com/login" method="post">',
+    '  <input type="password" name="pw" autocomplete="current-password">',
+    '</form>'
+  ].join("\n")
+};
+
+export function surveyPage(html, pageOrigin) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  let base;
+  try {
+    base = new URL(pageOrigin);
+  } catch (e) {
+    return {ok: false};
+  }
+  const secure = base.protocol === "https:";
+  const abs = function (v) {
+    try { return new URL(v, base); } catch (e) { return null; }
+  };
+  const findings = [];
+  const add = function (level, text) { findings.push({level: level, text: text}); };
+  const scripts = Array.from(doc.querySelectorAll("script"));
+  const external = scripts.filter(function (s) { return s.hasAttribute("src"); });
+  const inlineScripts = scripts.length - external.length;
+  const thirdParty = external.filter(function (s) { const u = abs(s.getAttribute("src")); return u && u.origin !== base.origin; });
+  const noIntegrity = thirdParty.filter(function (s) { return !s.hasAttribute("integrity"); });
+  if (noIntegrity.length > 0) add("tip", noIntegrity.length + " third-party script(s) have no integrity hash. That is normal for files that change often, but you are trusting that host completely.");
+  else if (thirdParty.length > 0) add("good", "Every third-party script has an integrity hash.");
+  const handlers = Array.from(doc.querySelectorAll("*")).filter(function (el) {
+    return Array.from(el.attributes).some(function (a) { return a.name.toLowerCase().indexOf("on") === 0; });
+  });
+  if (handlers.length > 0) add("tip", handlers.length + " element(s) use inline event handlers such as onclick. They work, but they make a strict Content Security Policy harder. Use addEventListener instead.");
+  if (inlineScripts > 0) add("tip", inlineScripts + " inline script(s). A strict Content Security Policy needs these to be moved out, or marked with a nonce or hash.");
+  const insecure = Array.from(doc.querySelectorAll("[src], link[href]")).filter(function (el) {
+    const v = el.getAttribute("src") || el.getAttribute("href");
+    const u = abs(v);
+    return secure && u && u.protocol === "http:";
+  });
+  if (insecure.length > 0) add("problem", insecure.length + " file(s) load over http on an https page. This is mixed content. Use https for every file.");
+  const frames = Array.from(doc.querySelectorAll("iframe"));
+  const openFrames = frames.filter(function (f) { return !f.hasAttribute("sandbox"); });
+  if (openFrames.length > 0) add("tip", openFrames.length + " iframe(s) have no sandbox attribute, so the embedded page keeps all its normal powers.");
+  else if (frames.length > 0) add("good", "Every iframe is sandboxed.");
+  const blanks = Array.from(doc.querySelectorAll('a[target="_blank"]')).filter(function (a) {
+    const rel = (a.getAttribute("rel") || "").toLowerCase();
+    return rel.indexOf("noopener") === -1 && rel.indexOf("noreferrer") === -1;
+  });
+  if (blanks.length > 0) add("tip", blanks.length + " link(s) open a new tab with no rel. Current major browsers add noopener for you, but older ones do not, and it costs nothing to be explicit.");
+  const jsLinks = Array.from(doc.querySelectorAll("a[href]")).filter(function (a) { return a.getAttribute("href").trim().toLowerCase().indexOf("javascript:") === 0; });
+  if (jsLinks.length > 0) add("problem", jsLinks.length + " link(s) use a javascript: address. Use a button with an event listener instead.");
+  const forms = Array.from(doc.querySelectorAll("form"));
+  const insecureForms = forms.filter(function (f) { const u = abs(f.getAttribute("action") || ""); return secure && u && u.protocol === "http:"; });
+  if (insecureForms.length > 0) add("problem", insecureForms.length + " form(s) send data to an http address. Always send form data over https.");
+  const passwords = Array.from(doc.querySelectorAll('input[type="password"]'));
+  const getPassword = passwords.filter(function (p) { const f = p.closest("form"); return f && (f.getAttribute("method") || "get").toLowerCase() === "get"; });
+  if (getPassword.length > 0) add("problem", getPassword.length + " password field(s) are in a form that uses GET, which puts the values in the address. Use method=\"post\".");
+  const noAuto = passwords.filter(function (p) { return !p.hasAttribute("autocomplete"); });
+  if (noAuto.length > 0) add("tip", noAuto.length + " password field(s) have no autocomplete value. Use current-password or new-password so password managers work.");
+  if (findings.length === 0) add("good", "No doors worth flagging in this snippet.");
+  return {
+    ok: true,
+    counts: {scripts: external.length, thirdParty: thirdParty.length, inlineScripts: inlineScripts, iframes: frames.length, forms: forms.length, passwords: passwords.length},
+    findings: findings
+  };
+}
+
+export function SurveyInner() {
+  const [html, setHtml] = useState(surveySamples.messy);
+  const [origin, setOrigin] = useState("https://www.example.com");
+  const r = surveyPage(html, origin);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(surveySamples.messy); }}>Load the messy page</button>
+        <button type="button" onClick={function () { setHtml(surveySamples.fixed); }}>Load the fixed page</button>
+      </div>
+      <p style={{margin: "0 0 0.75rem"}}>
+        <label htmlFor="sv-origin" style={{fontWeight: 600}}>Your page's address</label>
+        <br />
+        <input id="sv-origin" type="text" value={origin} onChange={function (e) { setOrigin(e.target.value); }} style={{width: "100%", boxSizing: "border-box"}} />
+      </p>
+      <label htmlFor="sv-html" style={{display: "block", fontWeight: 600}}>Page HTML (edit it)</label>
+      <textarea
+        id="sv-html"
+        value={html}
+        onChange={function (e) { setHtml(e.target.value); }}
+        rows={11}
+        spellCheck={false}
+        style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}}
+      />
+      {r.ok ? (
+        <div aria-live="polite">
+          <p style={{fontWeight: 600, marginBottom: "0.25rem"}}>The doors in this page</p>
+          <ul>
+            <li>{r.counts.scripts} external script(s), {r.counts.thirdParty} from other origins, and {r.counts.inlineScripts} inline</li>
+            <li>{r.counts.iframes} iframe(s)</li>
+            <li>{r.counts.forms} form(s), with {r.counts.passwords} password field(s)</li>
+          </ul>
+          <ul style={{listStyle: "none", padding: 0}}>
+            {r.findings.map(function (f, i) {
+              return (
+                <li key={i} style={{marginBottom: "0.4rem"}}>
+                  <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>
+                  {f.text}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : (
+        <p style={{color: "#c0392b"}}>Enter your page's full address, such as https://www.example.com.</p>
+      )}
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a teaching survey. It reads markup only, so it cannot see your server, your headers, or what scripts do. A clean result does not mean a page is secure.
+      </p>
+    </div>
+  );
+}
+
+export function PageSurvey() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the survey...</p>}>
+      {function () { return <SurveyInner />; }}
+    </BrowserOnly>
+  );
+}
+
+Before learning the specific protections, you need a picture of what you are protecting and from whom. This lesson builds that picture. It explains the one rule that the browser enforces for you, the same-origin policy, and the many things it does not stop, then shows you how to find the doors into your own pages so you know where to look.
+
+## What You Will Learn
+
+- What an origin is, and what the same-origin policy protects
+- What the policy does **not** protect you from
+- How to think about threats in four simple questions
+- The "doors" into a web page: inputs, includes, links, outputs, and storage
+- Why `https` comes first
+- What the browser can enforce, and what only the server can
+- The main families of web vulnerabilities, in plain terms
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A web page is a small building with many doors. Some let visitors in (forms and links). Some let other people's code in (scripts, iframes, fonts). Some send information out (form submissions, requests). Security begins with knowing where all the doors are, and making sure each one has the right lock.
+
+<Tabs>
+<TabItem value="code" label="A Page and Its Doors" default>
+
+```html title="index.html"
+<!-- DOOR: other people's code runs with your page's power -->
+<script src="https://cdn.example.net/lib.js"></script>
+
+<!-- DOOR: a whole other page inside yours -->
+<iframe src="https://widgets.example.net/map" title="Map"></iframe>
+
+<!-- DOOR: a link that opens another site -->
+<a href="https://partner.example.com" target="_blank">Our partner</a>
+
+<!-- DOOR: visitors send you data -->
+<form action="/login" method="post">
+  <input type="text" name="user">
+  <input type="password" name="pw">
+</form>
+
+<!-- DOOR: visitor text shown back on the page (the output) -->
+<p id="comment"></p>
+
+<!-- DOOR: inline code, which a strict policy cannot easily tell from injected code -->
+<button onclick="openMenu()">Menu</button>
+```
+
+</TabItem>
+<TabItem value="origin" label="Origin Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OriginLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="survey" label="Page Survey">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PageSurvey />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+In the Origin Lab, press each preset and watch which part changes. In the Page Survey, load the messy page, read what it finds, and then load the fixed page to compare. You will meet every fix in the lessons that follow.
+
+## What Is an Origin?
+
+An **origin** is three things taken together: the **scheme** (`https`), the **host** (`shop.example.com`), and the **port** (`443`). Two addresses have the same origin only if all three match. The path (`/menu`, `/cart`) never matters.
+
+| Address | Same origin as `https://shop.example.com/menu`? | Why |
+| :-- | :-- | :-- |
+| `https://shop.example.com/cart` | Yes | Only the path differs |
+| `http://shop.example.com/menu` | No | Different scheme |
+| `https://api.example.com/menu` | No | Different host (a subdomain counts) |
+| `https://shop.example.com:8443/menu` | No | Different port |
+| `https://example.org/menu` | No | Different domain |
+
+## The Same-Origin Policy
+
+The **same-origin policy** is the browser's most important built-in protection. In simple terms: **a script running on one origin cannot read the pages or responses of another origin.**
+
+Without it, any site you visited could quietly read your email in another tab. With it, a page on `evil.example` cannot reach into `mail.example` just because you have both open. Storage such as `localStorage` is also kept separate for each origin. (Cookies follow slightly different rules, based on the host and their own settings, so they are covered in the server-side lessons.)
+
+The policy has a deliberate exception for **sending**: a page may freely *include* other origins' files and *send* requests to them. It cannot, by default, *read* what comes back. A server can choose to relax this using a mechanism called CORS, which is a topic for server-side learning.
+
+## What the Policy Does Not Protect You From
+
+This is the part most beginners miss. The same-origin policy protects origins **from each other**. It does not protect you from things you invite in yourself.
+
+- **A script you include runs as your page.** If you add `<script src="https://cdn.example.net/lib.js">`, that code gets the full power of your origin, even though it came from elsewhere. If that file is compromised, so is your page.
+- **Code injected into your page runs as your page.** If an attacker gets text into your page that the browser treats as markup, it runs with your origin's power. This is cross-site scripting, and it is the subject of [XSS Basics](./xss-basics).
+- **Forms and links can cross origins.** A page can submit a form to, or link to, another origin. That is how the web works, and it brings its own risks.
+- **Embeds keep their own powers.** An iframe from another origin is separated from your page, but it can still run its own scripts, show its own content, and navigate itself unless you limit it. See [iFrame Security](./iframe-security).
+
+## Think in Four Questions
+
+You do not need a formal method to think about security. For any page, ask:
+
+1. **What is worth protecting?** Visitors' accounts, personal data, payment details, your reputation, your server.
+2. **Who might want it?** Criminals after data or money, bots probing for weak sites, someone who dislikes you. Most attacks are automated and aimed at everyone.
+3. **How could they get to it?** Through the doors of your page: inputs, includes, links, outputs, and storage.
+4. **What would limit the damage?** Escaping, sandboxing, a Content Security Policy, `https`, least privilege, and server-side checks.
+
+Writing the answers down for a real page, even in a few lines, turns vague worry into a to-do list.
+
+## The Doors of a Page
+
+| Door | What it is | Example | Main risk |
+| :-- | :-- | :-- | :-- |
+| Inputs | Data coming in from visitors | Forms, URL parameters, cookies, uploaded files | Hostile or malformed data |
+| Outputs | Data shown back on the page | Comments, usernames, search terms | Text treated as code (XSS) |
+| Includes | Other people's code and files | Scripts, styles, fonts, iframes, images | A compromised or careless provider |
+| Links | Paths to other pages | `target="_blank"`, `javascript:` addresses | Hijacked tabs, leaked referrers, unsafe schemes |
+| Storage | Data kept in the browser | Cookies, `localStorage` | Theft if a script is injected, exposure on shared computers |
+| Transport | How data travels | `http` against `https` | Eavesdropping and tampering |
+
+The Page Survey above gives you a quick inventory of the first four. Run it on your own pages and see how many doors there are.
+
+## HTTPS Comes First
+
+`https` encrypts the connection between the visitor and your server, and lets the browser check it is talking to the real site. Without it, anyone on the network path, such as someone on public Wi-Fi, can read or change what is sent.
+
+- **Use `https` for every page,** not only login pages.
+- **Redirect `http` to `https`** on the server.
+- **Load every file over `https`.** An `http` file on an `https` page is called mixed content, and is the topic of [Mixed Content](./mixed-content).
+- Most hosts and platforms offer free certificates and make this a setting rather than a project.
+
+`https` protects the journey. It does not make the page itself safe. A page served over `https` can still have every other problem in this section.
+
+## What the Browser Enforces, and What Only the Server Can
+
+| The browser can | Only the server can |
+| :-- | :-- |
+| Keep origins separate | Check who the visitor is |
+| Block mixed content | Decide what the visitor may see or do |
+| Enforce a Content Security Policy you send | Validate and store data safely |
+| Apply `sandbox`, `rel`, and `integrity` | Set the security headers and cookie flags |
+| Warn about an invalid certificate | Keep secrets, keys, and databases safe |
+
+The browser is on the **visitor's** device, which means a hostile visitor controls it. Anything that matters must be enforced where the visitor cannot change it: on the server.
+
+## The Main Families of Vulnerabilities
+
+You will hear these names often. The detail comes in later lessons and in server-side study:
+
+- **Injection:** untrusted data is mixed into code or markup and treated as instructions. Cross-site scripting (XSS) is injection into a web page.
+- **Broken access control:** the server lets someone see or do something they should not, such as opening another person's account by changing a number in the address.
+- **Insecure configuration:** missing headers, open debug pages, default passwords, or files that should not be public.
+- **Vulnerable components:** outdated libraries and plugins with known problems.
+- **Sensitive data exposure:** secrets or personal data sent or stored without protection.
+
+A well-known public list, the OWASP Top 10, ranks the most common web risks. The list is updated now and then, so check the current edition when you read it.
+
+## Security Headers at a Glance
+
+Some protections are HTTP headers set by the server. You will learn the important ones in this section. For now, just know their names:
+
+| Header | What it controls | Lesson |
+| :-- | :-- | :-- |
+| `Content-Security-Policy` | Which sources of scripts, styles, and frames are allowed | [Content Security Policy](./content-security-policy) |
+| `Strict-Transport-Security` | Tells the browser to use only `https` for your site | Server setup |
+| `Referrer-Policy` | How much of the previous address is sent | [noreferrer](./noreferrer) |
+| `X-Content-Type-Options` | Stops the browser guessing file types | Server setup |
+| Cookie flags (`Secure`, `HttpOnly`, `SameSite`) | How cookies are sent and read | Server setup |
+
+## A Safe Starting Routine
+
+1. **List the doors** in your page, using the survey tool or by reading the source.
+2. **Move to `https`,** and fix any mixed content.
+3. **Escape output.** Show visitor text as text.
+4. **Limit what you include.** Fewer scripts, trusted sources, and sandboxed iframes.
+5. **Secure your links and forms.**
+6. **Add a Content Security Policy** as a second line of defence.
+7. **Check on the server** everything you check in the browser.
+8. **Test, and test again** after every change.
+
+## Best Practices
+
+1. **Know your doors.** A page you have not mapped is a page you cannot protect.
+2. **Use `https` everywhere,** with no exceptions.
+3. **Give every include the least power it needs.**
+4. **Escape output by default.**
+5. **Never rely on the browser to enforce your rules,** since the visitor controls it.
+6. **Keep secrets out of the page,** because anyone can read the source.
+7. **Keep libraries updated,** and remove what you do not use.
+8. **Layer your defences.** Assume any one of them can fail.
+
+## Quick Checklist
+
+- [ ] I know which origin my page is on
+- [ ] I have listed every script, iframe, form, and external link
+- [ ] Everything loads over `https`
+- [ ] Third-party code is trusted, minimal, and limited where possible
+- [ ] Visitor text is shown as text
+- [ ] No secrets appear in the source
+- [ ] Every rule that matters is checked on the server
+
+## Security and Privacy Notes
+
+- **Examine only what you own or may test.** Use the tools here on your own pages, or on pages you have permission to test. Probing other people's sites can be illegal.
+- **The survey tool reads text only.** It runs no code from the HTML you paste, but do not paste real secrets or private data into any online tool.
+- **A clean survey is not a safe site.** It cannot see your server, your headers, your database, or what your scripts do.
+- **Collect only what you need.** Data you never store cannot leak, and fewer doors means less to defend.
+
+## Global Audience Notes
+
+- **The same-origin policy and `https` work the same everywhere,** but the laws about data and breach reporting differ between countries. This is not legal advice, so check the rules that apply to the places your visitors live.
+- **Visitors may be on public or shared networks,** where unencrypted traffic is easily read. `https` matters most for them.
+- **Internationalised web addresses can hide look-alike characters.** A link to a site whose name uses similar letters from another script can trick visitors. Show the real destination where it matters.
+- **Older browsers and slow devices are common in many regions.** Do not depend on a single advanced feature for safety. Layer simple, widely supported protections.
+
+## Common Mistakes to Avoid
+
+1. **Thinking the same-origin policy protects you from your own scripts.**
+2. **Trusting browser-side checks** such as `required` or `maxlength`.
+3. **Mixing `http` and `https`.**
+4. **Adding third-party scripts** without asking what they can do.
+5. **Showing visitor text as HTML.**
+6. **Putting secrets, keys, or private notes** in the page or comments.
+7. **Using `javascript:` addresses** in links.
+8. **Forgetting storage:** treating `localStorage` as safe for secrets.
+9. **Assuming `https` makes the page safe.**
+10. **Fixing one door** and ignoring the rest.
+
+## Practice Time
+
+1. In the Origin Lab, press each preset. Which part of the address changed each time?
+2. Make up an address that has the same origin as `https://shop.example.com/menu` but a different path.
+3. Does `https://shop.example.com:443/menu` match `https://shop.example.com/menu`? Check in the lab.
+4. In the Page Survey, load the messy page and fix every problem one at a time.
+5. Paste the source of a page you built into the survey. How many doors does it have?
+6. Pick one third-party script on one of your pages. What would happen if its host were compromised?
+7. List the four questions from this lesson, and answer them for your own site.
+8. Bonus: open DevTools, then the Network panel, and look at the response headers of your home page. Which security headers are present?
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is an origin?</summary>
+
+The scheme, host, and port of an address, taken together. Two addresses share an origin only if all three match. The path does not matter.
+
+</details>
+
+<details>
+<summary>2. What does the same-origin policy do?</summary>
+
+It stops a script on one origin from reading the pages and responses of another origin, so a site you visit cannot read your data from other sites.
+
+</details>
+
+<details>
+<summary>3. What does it not protect you from?</summary>
+
+Scripts you include yourself, code injected into your page, and the powers of embeds you add. Those all run with, or alongside, your page's authority.
+
+</details>
+
+<details>
+<summary>4. Name five doors into a web page.</summary>
+
+Inputs, outputs, includes (scripts, iframes, fonts), links, and storage. Transport (`http` or `https`) is another.
+
+</details>
+
+<details>
+<summary>5. Why is browser-side checking not security?</summary>
+
+The browser runs on the visitor's device, so a hostile visitor controls it. Rules that matter must be enforced on the server.
+
+</details>
+
+<details>
+<summary>6. Does `https` make a page secure?</summary>
+
+No. It protects the connection from eavesdropping and tampering. The page can still have injection problems, unsafe embeds, and every other issue.
+
+</details>
+
+## Key Takeaways
+
+- **A page has many doors.** Find them all before you lock any.
+- **An origin is scheme, host, and port.** The same-origin policy keeps origins apart.
+- **It does not protect you from your own includes or injected code.**
+- **`https` first,** and for every file.
+- **The browser cannot enforce your rules against a hostile visitor.** The server must.
+- **Layer defences,** and keep secrets out of the page.
+- **Test only what you own,** and keep collecting less data.
+
+Next up: [XSS Basics](./xss-basics), where you will see how visitor text becomes running code, and how to stop it.

@@ -1,0 +1,540 @@
+---
+id: html-modern-dialog
+title: "Dialog in Practice"
+sidebar_label: "Dialog"
+sidebar_position: 4
+slug: /html/modern-html/dialog
+description: "Go beyond the basics of the dialog element: the top layer, validating a form before it closes, closing rules (Escape, click outside, closedby, requestClose), focus return, scroll locking, optional animation, and how to choose between a dialog, a popover, and details. Includes a live rename dialog lab and a decision picker."
+keywords:
+  - dialog element
+  - modal dialog
+  - dialog top layer
+  - dialog form validation
+  - closedby
+  - requestClose
+  - dialog click outside to close
+  - dialog focus return
+  - dialog animation starting-style
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, dialog, modal, focus, accessibility, frontend]
+---
+
+import {useState, useRef} from 'react';
+
+export function checkFileName(value) {
+  const v = value.trim();
+  if (v === "") return "Enter a file name.";
+  if (/[\\/]/.test(v)) return "A file name cannot contain slashes.";
+  if (v.length > 40) return "Use 40 characters or fewer.";
+  return "";
+}
+
+export function DialogLab() {
+  const dialogRef = useRef(null);
+  const openerRef = useRef(null);
+  const [saved, setSaved] = useState("report.txt");
+  const [draft, setDraft] = useState("report.txt");
+  const [error, setError] = useState("");
+  const [lightDismiss, setLightDismiss] = useState(true);
+  const [log, setLog] = useState([]);
+  const add = function (text) {
+    setLog(function (prev) { return [text].concat(prev).slice(0, 7); });
+  };
+  const open = function () {
+    setDraft(saved);
+    setError("");
+    dialogRef.current.returnValue = "";
+    dialogRef.current.showModal();
+    add("showModal(): matches :modal is " + dialogRef.current.matches(":modal"));
+  };
+  const onSubmit = function (e) {
+    const submitter = e.nativeEvent.submitter;
+    const action = submitter ? submitter.value : "";
+    if (action === "cancel") return;
+    const problem = checkFileName(draft);
+    if (problem !== "") {
+      e.preventDefault();
+      setError(problem);
+      add("submit stopped, the dialog stays open: " + problem);
+      return;
+    }
+    setSaved(draft.trim());
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <style>{".dpl-dialog { padding: 0; border: 1px solid rgba(128,128,128,0.5); border-radius: 8px; max-width: 22rem; width: 90%; } .dpl-dialog::backdrop { background: rgba(15, 23, 42, 0.55); }"}</style>
+      <p style={{marginTop: 0}}>Current file name: <strong>{saved}</strong></p>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={lightDismiss} onChange={function (e) { setLightDismiss(e.target.checked); }} /> Close when the visitor clicks outside the dialog
+      </label>
+      <button type="button" ref={openerRef} onClick={open}>Rename</button>
+      <dialog
+        ref={dialogRef}
+        className="dpl-dialog"
+        aria-labelledby="dpl-title"
+        onCancel={function () { add("cancel event (Escape was pressed)"); }}
+        onClose={function () {
+          const rv = dialogRef.current.returnValue;
+          add("close event, returnValue is " + (rv === "" ? "empty" : rv));
+          add(document.activeElement === openerRef.current ? "focus went back to the Rename button" : "focus is somewhere else");
+        }}
+        onClick={function (e) {
+          if (lightDismiss && e.target === dialogRef.current) {
+            add("click outside, so close('dismissed')");
+            dialogRef.current.close("dismissed");
+          }
+        }}
+      >
+        <form method="dialog" onSubmit={onSubmit} style={{padding: "1.25rem"}}>
+          <h2 id="dpl-title" style={{marginTop: 0, fontSize: "1.2rem"}}>Rename file</h2>
+          <label htmlFor="dpl-name">New name</label>
+          <br />
+          <input id="dpl-name" type="text" value={draft} onChange={function (e) { setDraft(e.target.value); }} aria-invalid={error !== ""} aria-describedby="dpl-error" style={{width: "100%", boxSizing: "border-box"}} />
+          <p id="dpl-error" role="alert" style={{color: "#c0392b", minHeight: "1.4em", margin: "0.4rem 0"}}>{error}</p>
+          <div style={{display: "flex", gap: "0.5rem", justifyContent: "flex-end"}}>
+            <button type="submit" value="cancel" formNoValidate>Cancel</button>
+            <button type="submit" value="save">Save</button>
+          </div>
+        </form>
+      </dialog>
+      <p style={{margin: "0.9rem 0 0.2rem", fontWeight: 600}}>Event log (newest first)</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", minHeight: "4rem"}} aria-live="polite"><code>{log.length === 0 ? "Open the dialog and try: an empty name, a name with a slash, Escape, a click outside, Cancel, and Save." : log.join("\n")}</code></pre>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a real dialog element. The checkbox adds the click-outside rule with a few lines of script. Nothing you type is stored or sent anywhere.
+      </p>
+    </div>
+  );
+}
+
+export const pickOptions = ["Modal dialog", "Non-modal dialog", "Popover", "Details and summary", "Plain element on the page"];
+
+export const pickScenarios = [
+  {text: "Confirm deleting an account. Nothing else on the page should work until the visitor answers.", ok: ["Modal dialog"], why: "The page must wait for an answer, so a modal dialog (showModal) is right. It makes the page behind inert and moves focus inside."},
+  {text: "A small menu that opens from a button and closes when the visitor clicks elsewhere.", ok: ["Popover"], why: "This is light-dismiss content. The popover attribute handles opening, closing, and Escape without a script."},
+  {text: "A list of frequently asked questions, where each answer expands in place.", ok: ["Details and summary"], why: "Disclosure in place is what details and summary are for, with no JavaScript."},
+  {text: "A sign-in form that appears above the page, and blocks the background until it is finished.", ok: ["Modal dialog"], why: "A task that needs attention before anything else is a modal dialog. Keep a clear way to cancel."},
+  {text: "A filter panel beside the results that visitors can keep open while they scroll and click results.", ok: ["Non-modal dialog", "Plain element on the page"], why: "The page must stay usable, so it should not be modal. A non-modal dialog (show) or an ordinary panel both work."},
+  {text: "A short 'Saved' message that fades away after a few seconds.", ok: ["Plain element on the page"], why: "It does not need the visitor's attention or a response. An ordinary element in a polite live region is enough."}
+];
+
+export function DialogPicker() {
+  const [idx, setIdx] = useState(0);
+  const [choice, setChoice] = useState("");
+  const [checked, setChecked] = useState(false);
+  const sc = pickScenarios[idx];
+  const good = sc.ok.indexOf(choice) !== -1;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}><strong>Scenario {idx + 1} of {pickScenarios.length}:</strong> {sc.text}</p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>What fits best?</legend>
+        {pickOptions.map(function (o) {
+          return (
+            <label key={o} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="dp-choice" checked={choice === o} onChange={function () { setChoice(o); setChecked(false); }} /> {o}
+            </label>
+          );
+        })}
+      </fieldset>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+        <button type="button" disabled={choice === ""} onClick={function () { setChecked(true); }}>Check my answer</button>
+        <button type="button" onClick={function () { setIdx((idx + 1) % pickScenarios.length); setChoice(""); setChecked(false); }}>Next scenario</button>
+      </div>
+      <div aria-live="polite">
+        {checked && (
+          <p style={{marginTop: "0.75rem"}}>
+            <strong style={{color: good ? "#1e8449" : "#c0392b"}}>{good ? "Correct. " : "Not quite. "}</strong>
+            {good ? "" : "A good answer here: " + sc.ok.join(" or ") + ". "}
+            {sc.why}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+The earlier lesson on [the Dialog element](/tutorials/html/semantic-html/dialog) showed you how to open and close one, how `method="dialog"` works, and how to style the backdrop. This lesson picks up from there. It is about what happens when you build **real** dialogs: forms that must be checked before they close, different ways to dismiss them, focus, scrolling, animation, and the question of when **not** to use a dialog.
+
+## What You Will Learn
+
+- What the "top layer" is, and why `z-index` does not matter
+- How to check a form inside a dialog **before** it closes
+- The ways a dialog can be dismissed, and how to control them
+- What happens to focus, and how to protect the page behind
+- How to add an optional, gentle animation
+- How to choose between a dialog, a popover, and details
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A dialog is a small **state machine**: it is closed, or open as modal, or open as non-modal, and it ends with a `returnValue`. Everything in this lesson is a way of hooking into those moments: before it closes, while it is open, and after it closes.
+
+<Tabs>
+<TabItem value="lab" label="Rename Dialog Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DialogLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="picker" label="Which One Fits?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DialogPicker />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<button type="button" id="rename">Rename</button>
+
+<dialog id="rename-dialog" aria-labelledby="rename-title">
+  <form method="dialog">
+    <h2 id="rename-title">Rename file</h2>
+    <label for="name">New name</label>
+    <input id="name" name="name" type="text">
+    <p id="name-error" role="alert"></p>
+    <button value="cancel" formnovalidate>Cancel</button>
+    <button value="save">Save</button>
+  </form>
+</dialog>
+```
+
+```js title="script.js"
+const dialog = document.getElementById("rename-dialog");
+const form = dialog.querySelector("form");
+const error = document.getElementById("name-error");
+
+document.getElementById("rename").addEventListener("click", () => {
+  error.textContent = "";
+  dialog.showModal();
+});
+
+// Check the value BEFORE the dialog closes
+form.addEventListener("submit", (event) => {
+  if (event.submitter && event.submitter.value === "cancel") return;
+  const value = form.elements.name.value.trim();
+  if (value === "") {
+    event.preventDefault();          // keeps the dialog open
+    error.textContent = "Enter a file name.";
+  }
+});
+
+// After it closes, read what happened
+dialog.addEventListener("close", () => {
+  if (dialog.returnValue === "save") {
+    console.log("New name:", form.elements.name.value.trim());
+  }
+});
+
+// Optional: click outside to close
+dialog.addEventListener("click", (event) => {
+  if (event.target === dialog) dialog.close("dismissed");
+});
+```
+
+</TabItem>
+</Tabs>
+
+## The Top Layer
+
+A modal dialog does not live in the normal stacking order of your page. It is placed in the browser's **top layer**, a special layer above everything else. That is why:
+
+- you never need a huge `z-index` to bring a dialog to the front, and a `z-index` on other elements cannot cover it,
+- the dialog is not clipped by a parent with `overflow: hidden`,
+- if you open a dialog from inside another dialog, the newer one is on top.
+
+You can ask whether a dialog is currently modal with `dialog.matches(":modal")`, and style it with the `:modal` pseudo-class. The lab above logs this when you open it.
+
+## Pattern 1: Check a Form Before It Closes
+
+A `form` with `method="dialog"` closes the dialog on submit, so a mistake would close the dialog and throw away the visitor's work. To keep it open while there is a problem:
+
+1. **Listen for `submit` on the form,** not for clicks on the Save button. Submit also fires when the visitor presses Enter.
+2. **Check `event.submitter`.** The Cancel button should always close, so let it through.
+3. **Call `event.preventDefault()`** when the value is not good. The dialog stays open.
+4. **Show the error inside the dialog,** in an element with `role="alert"`, and connect it to the field with `aria-describedby` and `aria-invalid`.
+5. **Keep focus on the field** that needs fixing.
+
+If you prefer, the browser's built-in checks work too: attributes such as `required` and `pattern` stop the submit and show the browser's message, and `formnovalidate` on the Cancel button lets it through. Whichever you pick, validate again on the server, as covered in [Secure Forms](/tutorials/html/security/secure-forms).
+
+Try it in the lab: leave the name empty, then add a slash, then press Cancel.
+
+## Pattern 2: How a Dialog Gets Dismissed
+
+A modal dialog can be closed in several ways. Know them, and decide which ones you allow.
+
+| Way to close | What happens | Your control |
+| :-- | :-- | :-- |
+| A `method="dialog"` submit | Closes with the button's `value` as `returnValue` | Check it first with a `submit` listener |
+| The **Escape** key (modal) | Fires `cancel`, then closes | You can stop the `cancel` event, but do this rarely |
+| A click on the backdrop | **Nothing by default** | Add a click handler, or use `closedby` |
+| `dialog.close(value)` | Closes straight away, with no `cancel` event | Call it from your own code |
+| `dialog.requestClose(value)` | Fires `cancel` first, then closes unless you stop it | Useful for "discard changes?" checks |
+
+### The closedby attribute
+
+Newer browsers let you declare the rules in HTML:
+
+```html
+<dialog closedby="any">...</dialog>          <!-- Escape and click outside -->
+<dialog closedby="closerequest">...</dialog> <!-- Escape only (the modal default) -->
+<dialog closedby="none">...</dialog>         <!-- only your own buttons -->
+```
+
+Support is still spreading, so check the Baseline label on MDN. Keep the click handler from the code above as a fallback, and make sure the two do not fight: if `closedby="any"` works, the extra handler just does the same thing again.
+
+### Asking before discarding work
+
+If a dialog holds unsaved changes, you can intercept the Escape key:
+
+```js
+dialog.addEventListener("cancel", (event) => {
+  if (hasUnsavedChanges()) {
+    event.preventDefault();      // stay open for now
+    showDiscardWarning();        // for example, an inline message with two buttons
+  }
+});
+```
+
+:::warning
+Do not trap people. If you stop Escape, the dialog must offer another clear way out, such as a Cancel button. Browsers may also limit how often a page can block Escape, to prevent abuse, so do not rely on blocking it.
+:::
+
+### Click outside: the padding trap
+
+The click-outside check is `event.target === dialog`. It works because a click on the backdrop reports the dialog itself as its target. But if the dialog element has **padding**, clicks on that padding also count as "outside". So set `padding: 0` on the dialog, and put the padding on an inner element, as the lab does.
+
+## Pattern 3: Focus, Scrolling, and the Page Behind
+
+Opening with `showModal()` already gives you a lot:
+
+- **Focus moves into the dialog,** to the first focusable element, or to the one with `autofocus`.
+- **The page behind becomes inert,** so keyboard users and screen readers cannot reach it. See [inert](./inert) for the attribute behind this idea.
+- **Focus returns** to the element that opened the dialog when it closes. The lab logs this.
+
+What you still decide:
+
+- **Where focus starts.** For a delete confirmation, put `autofocus` on the **safe** button.
+- **Long content.** Give the dialog a `max-height` and let its inner content scroll, so the buttons stay visible.
+- **Background scrolling.** In some browsers the page behind can still scroll under the backdrop. A small rule can stop that:
+
+```css
+html:has(dialog:modal) {
+  overflow: hidden;
+}
+```
+
+If a browser does not understand `:has()` here, nothing breaks. The page simply scrolls as before.
+
+## Pattern 4: A Gentle Animation (Optional)
+
+Dialogs appear and disappear instantly. Newer CSS features can animate that. This is a **progressive enhancement**: in a browser without them, the dialog just appears without animation, which is fine.
+
+```css
+dialog {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s,
+              overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+}
+dialog[open] {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  dialog[open] { opacity: 0; transform: translateY(8px); }
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0);
+  transition: background 0.2s, overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+}
+dialog[open]::backdrop { background: rgb(0 0 0 / 0.5); }
+@starting-style {
+  dialog[open]::backdrop { background: rgb(0 0 0 / 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog, dialog::backdrop { transition: none; }
+}
+```
+
+Always respect `prefers-reduced-motion`, as in the last rule. Check support for `@starting-style` and `allow-discrete` before you rely on the effect.
+
+## Pattern 5: Name It, and Describe It
+
+A dialog needs an **accessible name**, so screen readers announce what it is when it opens:
+
+```html
+<dialog aria-labelledby="rename-title" aria-describedby="rename-help">
+  <h2 id="rename-title">Rename file</h2>
+  <p id="rename-help">Choose a new name for this file.</p>
+</dialog>
+```
+
+For a confirmation that must interrupt, such as "Delete this account?", the role `alertdialog` fits. The earlier [Dialog lesson](/tutorials/html/semantic-html/dialog) covers when to use it.
+
+## Dialog, Popover, or Something Else?
+
+A dialog demands attention and, when modal, blocks the page. Many things that people build as dialogs do not need that.
+
+| Need | Better fit |
+| :-- | :-- |
+| An answer is required before anything else happens | Modal dialog |
+| A panel that should not block the page | Non-modal dialog, or a plain panel |
+| A menu or small card that closes when you click elsewhere | [Popover](./popover) |
+| Content that expands in place | [Details and Summary](./details-summary) |
+| A message such as "Saved" | A plain element in a polite live region |
+| A cookie or notice banner | A plain element, docked to an edge |
+
+Use the **Which One Fits?** tab to practise. A page full of pop-ups tires people out, so use modals sparingly.
+
+## Dialogs in Frameworks
+
+When you use a library, remember that the dialog's open state belongs to the browser:
+
+- Keep the `dialog` element in the DOM, and call `showModal()` from an event or an effect.
+- Do not control it with the `open` attribute, because that opens a non-modal dialog without a backdrop.
+- Listen for `close`, so your state follows what the browser does, including Escape.
+
+## Checking Your Setup
+
+1. Open the dialog with the **keyboard**, then Tab through it. Does focus stay inside?
+2. Press **Escape.** Does it close, and does focus return to the button that opened it?
+3. Open it with a **screen reader** if you can. Is the title announced?
+4. Try **every way out:** Cancel, Escape, click outside, and Save.
+5. Shrink the window and **zoom to 200%.** Can you still reach the buttons?
+6. Check **right-to-left** text and long translated labels.
+7. Look at the Console for errors when you open and close it quickly.
+
+## Best Practices
+
+1. **Use `showModal()`** for real pop-ups, never the `open` attribute.
+2. **Give every dialog a heading** and `aria-labelledby`.
+3. **Validate before closing,** and show errors inside the dialog.
+4. **Always provide a visible Cancel or Close.**
+5. **Put `autofocus` on the safe action** in confirmations.
+6. **Set `padding: 0`** on the dialog if you handle click-outside.
+7. **Keep long content scrollable** inside the dialog.
+8. **Animate only as an enhancement,** and respect reduced motion.
+9. **Choose a popover or details** when a dialog is more than you need.
+10. **Use dialogs sparingly.**
+
+## Quick Checklist
+
+- [ ] Opened with `showModal()`, not `open`
+- [ ] Has a heading and an accessible name
+- [ ] Focus starts in a sensible place and returns to the opener
+- [ ] There is a visible way to cancel
+- [ ] Errors are shown inside the dialog, and announced
+- [ ] The Escape key is not trapped
+- [ ] Works with the keyboard, at 200% zoom, and in right-to-left text
+- [ ] Animation (if any) honours `prefers-reduced-motion`
+- [ ] A dialog really is the right choice
+
+## Security and Privacy Notes
+
+- **A dialog is not a security boundary.** Its content is in the page source even when it is closed, so never place secrets in a hidden dialog.
+- **A confirmation dialog is a convenience, not protection.** The server must check permission for every sensitive action, whatever the visitor clicked. See [Secure Forms](/tutorials/html/security/secure-forms).
+- **Never build dialog content from visitor text with `innerHTML`.** Use `textContent`, as in [XSS Basics](/tutorials/html/security/xss-basics).
+- **Do not imitate system or browser dialogs.** A dialog that pretends to be an operating system warning or a browser prompt is a phishing technique, and erodes trust.
+- **Be careful with dialogs inside frames.** A form in a frame can be tricked with clickjacking. See [iFrame Security](/tutorials/html/security/iframe-security).
+
+## Global Audience Notes
+
+- **Translated text is often longer.** Do not fix the width of a dialog or its buttons. Use `max-width` and let content wrap.
+- **Right-to-left languages** mirror the layout. Use logical properties such as `margin-inline` and `inset-inline`, and test.
+- **Button order and wording differ by culture and platform.** Use clear, verb-based labels such as "Delete account" and "Keep account", not just "OK".
+- **Reduced motion and small screens** matter more than you may think. Many visitors use older phones, and some are sensitive to motion.
+- **Plain language** helps everyone, especially people reading in a second language.
+
+## Common Mistakes to Avoid
+
+1. **Using `open` to show a modal.**
+2. **Letting a form close the dialog** with an error still in it.
+3. **Blocking Escape** with no other way out.
+4. **Putting padding on the dialog** and breaking click-outside.
+5. **No accessible name.**
+6. **Starting focus on a destructive button.**
+7. **Using a modal** for a toast or a menu.
+8. **Opening a dialog on page load.**
+9. **Relying on `closedby` alone** where support is missing.
+10. **Animating without a reduced-motion rule.**
+
+## Practice Time
+
+1. Open the lab's dialog and press Cancel. What does the log say about `returnValue` and focus?
+2. Try an empty name, a name with a slash, and a name longer than forty characters. What happens each time?
+3. Press Escape. Which event is logged?
+4. Turn off "Close when the visitor clicks outside", and click the backdrop. What changes?
+5. Complete the **Which One Fits?** picker.
+6. Add a `required` input to a dialog of your own. Does the browser stop the submit?
+7. Add a `cancel` listener that stops Escape only when a flag is true. Always keep a Cancel button.
+8. Bonus: add the optional animation, then add the reduced-motion rule and test it.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is the top layer?</summary>
+
+A special browser layer above the normal page. Modal dialogs live there, so `z-index` and `overflow` on other elements cannot hide or cover them.
+
+</details>
+
+<details>
+<summary>2. How do you keep a form dialog open when the input is wrong?</summary>
+
+Listen for `submit` on the form, let the Cancel button through, and call `event.preventDefault()` for a bad value. Show the error inside the dialog.
+
+</details>
+
+<details>
+<summary>3. What is the difference between `close()` and `requestClose()`?</summary>
+
+`close()` closes immediately. `requestClose()` fires a `cancel` event first, so your code can stop the close, for example to ask about unsaved changes.
+
+</details>
+
+<details>
+<summary>4. Why can click-outside break if the dialog has padding?</summary>
+
+Clicks on the dialog's own padding report the dialog as the target, the same as clicks on the backdrop. Put padding on an inner element instead.
+
+</details>
+
+<details>
+<summary>5. What happens to focus with `showModal()`?</summary>
+
+Focus moves into the dialog, the page behind becomes inert, and focus returns to the opening element when the dialog closes.
+
+</details>
+
+<details>
+<summary>6. When should you not use a dialog?</summary>
+
+For menus, tooltips, messages, banners, and expanding content. A popover, details, or a plain element is a better fit.
+
+</details>
+
+## Key Takeaways
+
+- **A modal dialog lives in the top layer,** so you do not fight `z-index`.
+- **Validate on `submit`,** with `preventDefault()` to keep it open.
+- **Know every way out:** submit, Escape, click outside, `close()`, and `requestClose()`.
+- **`closedby`** declares dismissal rules, where supported.
+- **Focus, naming, and a visible Cancel** make a dialog accessible.
+- **Animation is optional,** and must respect reduced motion.
+- **Pick the lightest tool:** popover, details, or a plain element when you do not need a dialog.
+
+Next up: [Details and Summary](./details-summary), where you will build disclosure widgets and exclusive accordions without any JavaScript.

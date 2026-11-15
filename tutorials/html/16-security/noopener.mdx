@@ -1,0 +1,456 @@
+---
+id: html-sec-noopener
+title: "noopener and Reverse Tabnabbing"
+sidebar_label: "noopener"
+sidebar_position: 7
+slug: /html/security/noopener
+description: "Learn how window.opener lets a page you open reach back into yours, what reverse tabnabbing is, how rel=noopener and the Cross-Origin-Opener-Policy header close the door, and where browsers already help. Includes an opener lab and a link scanner."
+keywords:
+  - noopener
+  - rel noopener
+  - window.opener
+  - reverse tabnabbing
+  - target _blank security
+  - window.open noopener
+  - Cross-Origin-Opener-Policy
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, security, links, noopener, tabnabbing, frontend]
+---
+
+import {useState} from 'react';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import AdsComponent from '@site/src/components/AdsComponent';
+import BrowserWindow from '@site/src/components/BrowserWindow';
+
+export function hasOpener(how, token, browser) {
+  if (token === "noopener" || token === "noreferrer") return false;
+  if (how === "link") {
+    if (token === "opener") return true;
+    return browser === "older";
+  }
+  return true;
+}
+
+export function openerOutcome(has, sameOrigin) {
+  if (!has) {
+    return {level: "safe", text: "window.opener is null in the new page. It has no way to reach your tab."};
+  }
+  if (sameOrigin) {
+    return {level: "danger", text: "The new page is from your own origin, so it has full access to your tab: it can read and change your page, not just redirect it."};
+  }
+  return {level: "danger", text: "The new page can set window.opener.location, and your original tab silently becomes a page of the attacker's choosing, such as a fake sign-in page. It still cannot read your page's content."};
+}
+
+export function OpenerLab() {
+  const [how, setHow] = useState("link");
+  const [token, setToken] = useState("none");
+  const [browser, setBrowser] = useState("modern");
+  const [sameOrigin, setSameOrigin] = useState(false);
+  const [ran, setRan] = useState(false);
+  const has = hasOpener(how, token, browser);
+  const out = openerOutcome(has, sameOrigin);
+  const hijacked = ran && has;
+  const tokenWord = how === "link" ? 'rel="' + token + '"' : '"' + token + '" in the window features';
+  const code = how === "link"
+    ? '<a href="https://partner.example.net/" target="_blank"' + (token === "none" ? "" : ' rel="' + token + '"') + ">Partner</a>"
+    : 'window.open("https://partner.example.net/", "_blank"' + (token === "none" ? "" : ', "' + token + '"') + ");";
+  const reset = function () { setRan(false); };
+  return (
+    <div style={{padding: "1rem"}}>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.5rem"}}>
+        <legend style={{fontWeight: 600}}>How the new window is opened</legend>
+        <label style={{marginRight: "1rem"}}><input type="radio" name="ol-how" checked={how === "link"} onChange={function () { setHow("link"); reset(); }} /> A link with <code>target="_blank"</code></label>
+        <label><input type="radio" name="ol-how" checked={how === "script"} onChange={function () { setHow("script"); if (token === "opener") setToken("none"); reset(); }} /> <code>window.open()</code> in JavaScript</label>
+      </fieldset>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.5rem"}}>
+        <legend style={{fontWeight: 600}}>Protection you add</legend>
+        {["none", "noopener", "noreferrer"].concat(how === "link" ? ["opener"] : []).map(function (t) {
+          return (
+            <label key={t} style={{marginRight: "1rem"}}>
+              <input type="radio" name="ol-token" checked={token === t} onChange={function () { setToken(t); reset(); }} /> {t === "none" ? "nothing" : <code>{t}</code>}
+            </label>
+          );
+        })}
+      </fieldset>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label style={{marginRight: "1rem"}}>Visitor's browser:{" "}
+          <select value={browser} onChange={function (e) { setBrowser(e.target.value); reset(); }}>
+            <option value="modern">Modern (implies noopener on _blank links)</option>
+            <option value="older">Older (no implied noopener)</option>
+          </select>
+        </label>
+      </p>
+      <label style={{display: "block", marginBottom: "0.75rem"}}>
+        <input type="checkbox" checked={sameOrigin} onChange={function (e) { setSameOrigin(e.target.checked); reset(); }} /> The opened page is from my own origin
+      </label>
+      <pre style={{whiteSpace: "pre-wrap"}}><code>{code}</code></pre>
+      <div aria-hidden="true" style={{border: "1px solid rgba(128,128,128,0.5)", borderRadius: 6, padding: "0.75rem", marginBottom: "0.75rem", background: hijacked ? "rgba(192,57,43,0.12)" : "transparent"}}>
+        <div style={{fontSize: "0.8rem", opacity: 0.8}}>{hijacked ? "Your original tab: https://login-shop.example.net/signin" : "Your original tab: https://shop.example.com/orders"}</div>
+        <div style={{fontWeight: 700}}>{hijacked ? "Session expired. Please sign in again." : "Your orders"}</div>
+      </div>
+      <button type="button" onClick={function () { setRan(true); }}>Run window.opener.location = "https://login-shop.example.net/signin" in the new page</button>
+      <div aria-live="polite">
+        {ran && (
+          <p style={{fontWeight: 600, color: out.level === "safe" ? "#1e8449" : "#c0392b"}}>{out.text}</p>
+        )}
+      </div>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A simplified picture drawn with ordinary boxes. Nothing is opened. Setting: {tokenWord}.
+      </p>
+    </div>
+  );
+}
+
+export const scanSamples = {
+  messy: [
+    '<a href="https://partner.example.net/" target="_blank">Partner</a>',
+    '<a href="https://news.example.org/" target="_blank" rel="noopener">News</a>',
+    '<a href="https://dealer.example.net/" target="_blank" rel="opener">Dealer</a>',
+    '<a href="https://tools.example.net/" target="popup">Tools</a>',
+    '<a href="javascript:openWin()" target="_blank">Open</a>',
+    '<a href="/about">About us</a>'
+  ].join("\n"),
+  fixed: [
+    '<a href="https://partner.example.net/" target="_blank" rel="noopener noreferrer">Partner</a>',
+    '<a href="https://news.example.org/" target="_blank" rel="noopener">News</a>',
+    '<a href="/about">About us</a>'
+  ].join("\n")
+};
+
+export function scanLinks(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const els = Array.from(doc.querySelectorAll("a[target], area[target], form[target]"));
+  const out = [];
+  els.forEach(function (el, i) {
+    const tag = el.tagName.toLowerCase();
+    const target = (el.getAttribute("target") || "").toLowerCase();
+    const rel = (el.getAttribute("rel") || "").toLowerCase().split(/\s+/).filter(Boolean);
+    const where = tag + " " + (i + 1) + (el.getAttribute("href") ? " (" + el.getAttribute("href") + ")" : "");
+    const href = (el.getAttribute("href") || "").trim().toLowerCase();
+    if (/^(javascript|data|vbscript):/.test(href)) out.push({level: "problem", text: where + ": the address uses a dangerous scheme. Remove it."});
+    if (target === "_self" || target === "_parent" || target === "_top") return;
+    if (rel.indexOf("opener") !== -1) {
+      out.push({level: "problem", text: where + ': rel="opener" deliberately re-opens window.opener. Remove it unless you truly need it.'});
+      return;
+    }
+    const protectedLink = rel.indexOf("noopener") !== -1 || rel.indexOf("noreferrer") !== -1;
+    if (target === "_blank") {
+      if (!protectedLink) out.push({level: "tip", text: where + ": no noopener. Modern browsers add it for target=_blank, but older ones do not, so add rel=\"noopener\" to be explicit."});
+      else out.push({level: "good", text: where + ": protected."});
+    } else if (target !== "") {
+      if (!protectedLink) out.push({level: "tip", text: where + ': the named window "' + target + '" can be reused and does not get the implied protection that _blank gets. Add rel="noopener" if you do not need a link back.'});
+    }
+  });
+  if (els.length === 0) out.push({level: "good", text: "No links with a target attribute found."});
+  return out;
+}
+
+export function ScannerInner() {
+  const [html, setHtml] = useState(scanSamples.messy);
+  const findings = scanLinks(html);
+  const colors = {problem: "#c0392b", tip: "#b9770e", good: "#1e8449"};
+  const labels = {problem: "Problem", tip: "Tip", good: "Good"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { setHtml(scanSamples.messy); }}>Load the messy links</button>
+        <button type="button" onClick={function () { setHtml(scanSamples.fixed); }}>Load the fixed links</button>
+      </div>
+      <label htmlFor="ls-html" style={{display: "block", fontWeight: 600}}>Link HTML (edit it)</label>
+      <textarea id="ls-html" value={html} onChange={function (e) { setHtml(e.target.value); }} rows={8} spellCheck={false} style={{width: "100%", fontFamily: "monospace", fontSize: "0.8rem", boxSizing: "border-box"}} />
+      <ul aria-live="polite" style={{listStyle: "none", padding: 0}}>
+        {findings.map(function (f, i) {
+          return (
+            <li key={i} style={{marginBottom: "0.4rem"}}>
+              <strong style={{color: colors[f.level]}}>{labels[f.level]}: </strong>{f.text}
+            </li>
+          );
+        })}
+      </ul>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        A teaching checker. It reads the markup as text and never opens or loads any link.
+      </p>
+    </div>
+  );
+}
+
+export function LinkScanner() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Loading the checker...</p>}>
+      {function () { return <ScannerInner />; }}
+    </BrowserOnly>
+  );
+}
+
+  When your page opens a new tab, that new page can get a **handle back to yours**. Most of the time nothing bad happens. But when the new page is untrusted, that handle lets it quietly change what your original tab shows. The fix is a single small word, `noopener`.
+
+You met it briefly in [Link Security](/tutorials/html/links-and-navigation/link-security) and [External Links](/tutorials/html/links-and-navigation/external-links). This lesson explains **how the attack works**, what browsers now do for you, and the cases where the old advice still matters.
+
+## What You Will Learn
+
+- What `window.opener` is
+- What reverse tabnabbing is, and what an attacker can and cannot do
+- What `rel="noopener"` does
+- What browsers already do by default, and where that stops
+- How `window.open` and the `Cross-Origin-Opener-Policy` header fit in
+- When you do need the link back to the opener
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Opening a page with `target="_blank"` or `window.open()` is like handing someone a phone line back to your room. `noopener` cuts the line.
+
+<Tabs>
+<TabItem value="code" label="The Code" default>
+
+```html title="index.html"
+<!-- Safe and explicit -->
+<a href="https://partner.example.net/" target="_blank" rel="noopener">Partner</a>
+
+<!-- Also hides the referrer -->
+<a href="https://partner.example.net/" target="_blank" rel="noopener noreferrer">Partner</a>
+```
+
+```js title="script.js"
+// window.open does not get protection by default. Ask for it.
+window.open("https://partner.example.net/", "_blank", "noopener");
+```
+
+</TabItem>
+<TabItem value="lab" label="Opener Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<OpenerLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="scanner" label="Link Scanner">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LinkScanner />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## What Is window.opener?
+
+When one page opens another, the new page receives a reference to the page that opened it, called `window.opener`. It is useful for things like login popups that report back to the page that started them.
+
+If the new page was **not** opened this way (for example, the visitor typed the address), `window.opener` is `null`.
+
+## Reverse Tabnabbing
+
+"Tabnabbing" is a trick where a tab you are not looking at changes into something else. In **reverse** tabnabbing, the attack comes through the link the visitor clicked:
+
+1. A visitor is on your page, say an orders page, and clicks a link that opens a new tab to another site.
+2. That site (or a script on it, or a comment link posted by someone else) runs `window.opener.location = "https://login-shop.example.net/signin"`.
+3. The visitor finishes reading the new tab and goes back to your tab. It now shows a **fake sign-in page**, with an address that looks plausible.
+4. They type their password, and the attacker has it.
+
+Open the **Opener Lab** tab, choose the "Older" browser (keep "link" and "nothing"), and press the run button to see this unfold.
+
+### What the new page can and cannot do
+
+| If the opened page is... | It can... | It cannot... |
+| :-- | :-- | :-- |
+| **From another origin** | Set `window.opener.location` (redirect your tab), send `postMessage`, close or focus your tab, and count its frames | Read your page's content or run scripts inside it |
+| **From your own origin** | Everything, including reading and changing your page (see [HTML Security Basics](./html-security-basics)) | Nothing is out of reach |
+
+Even a redirect is serious. Visitors trust the tab they left open, and a convincing fake sign-in page can steal passwords.
+
+## The Fix: rel="noopener"
+
+`rel="noopener"` makes the new page's `window.opener` `null`, so the line back is cut.
+
+```html
+<a href="https://partner.example.net/" target="_blank" rel="noopener">Partner</a>
+```
+
+A few facts that surprise people:
+
+- **It has a speed benefit too.** With no link back, the browser can run the new page separately from yours, so a heavy or slow new page is less likely to drag your page down.
+- **`noreferrer` implies `noopener`.** Using `rel="noreferrer"` closes the line **and** removes the referrer (see [noreferrer](./noreferrer)). Use both words together if you want both effects clearly stated.
+- **It works on `a`, `area`, and `form` elements** that have a `target`.
+- **It has no effect without a new window.** A normal same-tab link does not create an opener.
+
+## What Browsers Already Do
+
+Modern browsers treat `target="_blank"` as if `rel="noopener"` were present. That means the classic attack above no longer works on a current browser for plain links. But you should still add the word, for these reasons:
+
+1. **Older browsers** and some embedded web views do not apply the default.
+2. **Being explicit** makes your intent obvious to the next developer, and to tools that scan your code.
+3. **The default is narrow.** It applies to `_blank`. A link with a custom name, such as `target="popup"`, can reuse an existing named window, and does not get the same automatic protection.
+4. **`window.open()` in JavaScript** does not get it automatically. You must pass `"noopener"` in the features string.
+5. **`rel="opener"` turns it off on purpose.** If you find that word in your code, ask why.
+
+The Opener Lab lets you flip between modern and older browsers and between a link and `window.open`, so you can see where protection depends on the browser.
+
+## window.open and noopener
+
+```js
+const win = window.open("https://partner.example.net/", "_blank", "noopener");
+console.log(win); // null, because the new window has no link to yours
+```
+
+When you pass `"noopener"`, the browser returns `null` instead of a window object. That is expected, so do not treat it as an error. If your code needs to talk to the opened window, you cannot use `noopener`.
+
+## The Header: Cross-Origin-Opener-Policy
+
+Everything above protects **your links**. But what about someone else's page that opens yours? A header can protect your page from that:
+
+```text
+Cross-Origin-Opener-Policy: same-origin
+```
+
+With this header, your page is placed in a separate group from pages of other origins, and any opener relationship across origins is cut, in both directions. Other values, such as `same-origin-allow-popups`, relax this to allow popups you open to keep a link to you.
+
+:::warning
+Some features depend on an opener link, such as certain login and payment popups. Strict settings can break them. Test sign-in and payment flows after you add this header, and read your provider's current guidance. See [Content Security Policy](./content-security-policy) for another header-based layer.
+:::
+
+## When You Do Need the Opener
+
+Sometimes a page really does need to talk to the window it opened, such as a sign-in popup that returns a result. If so:
+
+1. **Open only trusted pages** with `window.opener` intact.
+2. **Use `postMessage` instead of direct access,** and check `event.origin` against an exact value, as shown in [iFrame Security](./iframe-security).
+3. **Never rely on `window.opener` alone** to decide who the sender is.
+4. **Keep the link as short-lived as you can,** and close the popup when it is done.
+5. **Prefer a redirect-based sign-in flow** when your provider offers one, since it needs no opener at all.
+
+## User-Submitted Links
+
+If your site lets visitors post links, such as in comments or profiles, they are untrusted by definition. Make sure the link markup your code produces includes `rel="noopener noreferrer"` when it uses `target="_blank"`. Separately, the values `nofollow` and `ugc` tell search engines that the link was not editorially placed. They are about search, not security, so do not confuse them with `noopener`. Also check that only `http` and `https` addresses are allowed, as covered in [XSS Basics](./xss-basics).
+
+## Checking Your Setup
+
+1. In DevTools, open **Elements** and search for `target="_blank"`. Check each one has `rel="noopener"` or `rel="noreferrer"`.
+2. Search your JavaScript for `window.open(` and check each call passes `"noopener"` unless it truly needs the opener.
+3. Search for `rel="opener"`, and justify every match.
+4. Open a link in a new tab and type `window.opener` in the new tab's **Console**. It should be `null` for a protected link.
+5. Check the **Response Headers** of your page for `Cross-Origin-Opener-Policy`.
+6. Use the Link Scanner above on a few of your own links.
+
+## Best Practices
+
+1. **Add `rel="noopener"`** (or `noopener noreferrer`) to every `target="_blank"` link.
+2. **Pass `"noopener"` to `window.open`** unless you need the opener.
+3. **Do not use `rel="opener"`** without a clear reason.
+4. **Add the word even though modern browsers help,** for older browsers and clarity.
+5. **Scan user-generated links** and add protection automatically.
+6. **Use `postMessage` with an exact origin check** when a link back is needed.
+7. **Test login and payment popups** after any header change.
+8. **Warn visitors** when a link opens a new tab, for accessibility, as in [External Links](/tutorials/html/links-and-navigation/external-links).
+
+## Quick Checklist
+
+- [ ] Every `target="_blank"` link has `noopener` or `noreferrer`
+- [ ] `window.open` calls pass `"noopener"`
+- [ ] No `rel="opener"` without a comment explaining why
+- [ ] User-submitted links get protection added by your code
+- [ ] Any needed opener use relies on `postMessage` with origin checks
+- [ ] Sign-in and payment flows still work after header changes
+
+## Security and Privacy Notes
+
+- **The attack needs the visitor's trust in the old tab.** It depends on people returning to a tab they believe they know. A short, clear address and a habit of checking the address bar help visitors, but your code should not rely on that.
+- **Your own scripts can be the weak link.** A third-party script on your page can also call `window.open`. Review what you include, as covered in [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security).
+- **`noopener` does not hide the referrer.** That is `noreferrer`. It also does not stop the new page from tracking the visitor through its own scripts.
+- **Test only your own pages,** or those you have permission to test.
+
+## Global Audience Notes
+
+- **Older browsers and embedded web views are still common in some regions,** and on older phones. Protection that does not depend on the browser default is safer.
+- **Many visitors use shared or family devices** and keep many tabs open for days, which is the situation the attack relies on.
+- **Say in the page's language** that a link opens a new tab, using visible text or an icon with an accessible name.
+
+## Common Mistakes to Avoid
+
+1. **Leaving `rel` off** because "browsers fix it now".
+2. **Forgetting `window.open`.**
+3. **Using `noreferrer` and assuming that is the only job of `noopener`,** or the reverse. The words are related but separate.
+4. **Writing `rel="noopener"` on a link with no `target`,** and thinking it does something.
+5. **Using `rel="opener"` for convenience.**
+6. **Treating a `null` return from `window.open("...", "_blank", "noopener")` as a bug.**
+7. **Letting `window.opener` decide trust** instead of checking `event.origin`.
+8. **Not protecting links that visitors post.**
+9. **Adding a strict `Cross-Origin-Opener-Policy` without testing** login popups.
+10. **Never re-checking** links after a redesign or a CMS change.
+
+## Practice Time
+
+1. In the Opener Lab, choose the "Older" browser with a plain link and nothing added, then press the run button. What does the original tab turn into?
+2. Choose `noopener`, and run it again. What changes?
+3. Switch to a modern browser with "nothing" selected for a link. Is the page protected? Now switch to `window.open()`. What happens?
+4. Choose `opener` for a link in a modern browser. What does it do?
+5. Tick "my own origin" with an unprotected link. How does the message differ?
+6. Paste your own links into the Link Scanner, and fix every problem it reports.
+7. Open any link with `target="_blank"` on a site you own, and check `window.opener` in the new tab's Console.
+8. Bonus: write a small function that adds `rel="noopener noreferrer"` to every outbound link in a block of user comments (using `textContent` for the text, as in [XSS Basics](./xss-basics)).
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is `window.opener`?</summary>
+
+A reference, available to a page opened by another page, that points back to the page that opened it.
+
+</details>
+
+<details>
+<summary>2. What is reverse tabnabbing?</summary>
+
+A new page you opened uses `window.opener.location` to turn your original tab into something else, such as a fake sign-in page, while the visitor is not looking.
+
+</details>
+
+<details>
+<summary>3. Can a cross-origin opened page read your page?</summary>
+
+No. But it can redirect your tab, send messages, and close or focus it. A same-origin page has full access.
+
+</details>
+
+<details>
+<summary>4. What does `rel="noopener"` do?</summary>
+
+It makes `window.opener` `null` in the new page, so it has no link back to yours.
+
+</details>
+
+<details>
+<summary>5. Do modern browsers make it unnecessary?</summary>
+
+Not entirely. They apply `noopener` to `target="_blank"` links, but not to `window.open()`, custom-named targets, or older browsers. Being explicit is still best.
+
+</details>
+
+<details>
+<summary>6. What if you really need the opener?</summary>
+
+Open only trusted pages, communicate with `postMessage`, check `event.origin` exactly, and close the popup when it is finished.
+
+</details>
+
+## Key Takeaways
+
+- **`window.opener` is a link back to the page that opened a window.** Untrusted pages can use it to redirect your tab.
+- **`rel="noopener"` cuts the link.** `noreferrer` does that too, and also removes the referrer.
+- **Browsers help for `_blank` links,** but not for `window.open`, custom targets, or older browsers.
+- **`rel="opener"` and `Cross-Origin-Opener-Policy`** change this behaviour on purpose, so use them with care.
+- **When you need the link,** use `postMessage` with exact origin checks.
+- **Scan links regularly,** especially user-submitted ones.
+
+Next up: [Content Security Policy](./content-security-policy), where you will learn how a single header tells the browser which sources of scripts, styles, and frames to trust.
