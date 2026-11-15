@@ -1,14 +1,413 @@
+---
+id: modern-html-overview
+title: "Modern HTML: Built-In Features for Today's Web"
+sidebar_label: "Modern HTML"
+sidebar_position: 1
+slug: /html/modern-html
+description: "Start learning modern HTML: how the HTML Living Standard works, how to tell which new features are safe to use, and how dialog, details, popover, template, slot, inert, lazy loading and web components replace code you used to write yourself. Includes a live browser feature check and an old-way-or-new-way matcher."
+keywords:
+  - modern HTML
+  - HTML living standard
+  - HTML dialog popover
+  - HTML template slot
+  - inert attribute
+  - web components
+  - progressive enhancement
+  - feature detection
+  - Baseline browser support
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, dialog, popover, web-components, progressive-enhancement, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import Link from '@docusaurus/Link';
+
+export const featureTests = [
+  {id: "dialog", label: "The dialog element (showModal)", lesson: "Dialog", href: "/html/modern-html/dialog", code: "typeof HTMLDialogElement === 'function'",
+    test: function () { return typeof HTMLDialogElement === "function" && typeof HTMLDialogElement.prototype.showModal === "function"; }},
+  {id: "details", label: "Exclusive details groups (the name attribute)", lesson: "Details and Summary", href: "/html/modern-html/details-summary", code: "'name' in document.createElement('details')",
+    test: function () { return "name" in document.createElement("details"); }},
+  {id: "popover", label: "The popover attribute", lesson: "Popover", href: "/html/modern-html/popover", code: "'popover' in HTMLElement.prototype",
+    test: function () { return "popover" in HTMLElement.prototype; }},
+  {id: "inert", label: "The inert attribute", lesson: "inert", href: "/html/modern-html/inert", code: "'inert' in HTMLElement.prototype",
+    test: function () { return "inert" in HTMLElement.prototype; }},
+  {id: "template", label: "The template element", lesson: "template", href: "/html/modern-html/template", code: "'content' in document.createElement('template')",
+    test: function () { return "content" in document.createElement("template"); }},
+  {id: "slot", label: "The slot element", lesson: "slot", href: "/html/modern-html/slot", code: "typeof HTMLSlotElement === 'function'",
+    test: function () { return typeof HTMLSlotElement === "function"; }},
+  {id: "custom", label: "Custom elements", lesson: "Web Components in HTML", href: "/html/modern-html/web-components-html", code: "typeof customElements.define === 'function'",
+    test: function () { return "customElements" in window && typeof window.customElements.define === "function"; }},
+  {id: "shadow", label: "Shadow DOM", lesson: "Web Components in HTML", href: "/html/modern-html/web-components-html", code: "typeof Element.prototype.attachShadow === 'function'",
+    test: function () { return typeof Element.prototype.attachShadow === "function"; }},
+  {id: "lazyimg", label: "Native lazy loading for images", lesson: "Lazy Loading", href: "/html/modern-html/lazy-loading", code: "'loading' in HTMLImageElement.prototype",
+    test: function () { return "loading" in HTMLImageElement.prototype; }},
+  {id: "lazyframe", label: "Native lazy loading for iframes", lesson: "Lazy Loading", href: "/html/modern-html/lazy-loading", code: "'loading' in HTMLIFrameElement.prototype",
+    test: function () { return "loading" in HTMLIFrameElement.prototype; }}
+];
+
+export function runFeatureTests() {
+  return featureTests.map(function (f) {
+    let ok = false;
+    try {
+      ok = Boolean(f.test());
+    } catch (e) {
+      ok = false;
+    }
+    return {id: f.id, label: f.label, lesson: f.lesson, href: f.href, code: f.code, ok: ok};
+  });
+}
+
+export function FeatureCheckInner() {
+  const [results, setResults] = useState(function () { return runFeatureTests(); });
+  const count = results.filter(function (r) { return r.ok; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>
+        These are real checks, run by <strong>your</strong> browser right now. Each one is the kind of test you can put in your own code.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th style={{textAlign: "left"}}>Feature</th>
+            <th style={{textAlign: "left"}}>Supported here?</th>
+            <th style={{textAlign: "left"}}>The check</th>
+          </tr>
+        </thead>
+        <tbody>
+          {results.map(function (r) {
+            return (
+              <tr key={r.id}>
+                <td>{r.label}<br /><span style={{fontSize: "0.8rem"}}>Lesson: <Link to={r.href}>{r.lesson}</Link></span></td>
+                <td style={{fontWeight: 600, color: r.ok ? "#1e8449" : "#c0392b"}}>{r.ok ? "Yes" : "No"}</td>
+                <td><code style={{fontSize: "0.75rem"}}>{r.code}</code></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p aria-live="polite" style={{fontWeight: 600}}>Your browser supports {count} of {results.length} of these features.</p>
+      <button type="button" onClick={function () { setResults(runFeatureTests()); }}>Run the checks again</button>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        Nothing is sent anywhere. Having a property does not prove every detail works, so treat a check as a first test and read the lesson for the details. Visitors with older browsers will see "No" for some rows, and your page should still work for them.
+      </p>
+    </div>
+  );
+}
+
+export function FeatureCheck() {
+  return (
+    <BrowserOnly fallback={<p style={{padding: "1rem"}}>Checking your browser...</p>}>
+      {function () { return <FeatureCheckInner />; }}
+    </BrowserOnly>
+  );
+}
+
+export const modernOptions = [
+  "dialog", "details and summary", "popover", "template", "slot", "inert", "loading=\"lazy\"", "custom elements and shadow DOM"
+];
+
+export const modernItems = [
+  {job: "A pop-up window built from a div, a dark overlay, and your own code to trap the keyboard focus", answer: "dialog"},
+  {job: "A show-and-hide section driven by a click handler that toggles a class", answer: "details and summary"},
+  {job: "A tooltip or menu that you open with a script and close when the visitor clicks elsewhere", answer: "popover"},
+  {job: "A block of markup you copy many times by gluing together strings and setting innerHTML", answer: "template"},
+  {job: "Letting the page author put their own content inside named places in a component", answer: "slot"},
+  {job: "Making everything behind an open panel unreachable by keyboard and screen reader", answer: "inert"},
+  {job: "A scroll listener that swaps in image addresses as pictures come near the screen", answer: "loading=\"lazy\""},
+  {job: "A reusable user-card tag with its own markup and styles that the rest of the page cannot disturb", answer: "custom elements and shadow DOM"}
+];
+
+export function ModernMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = modernItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>For each job people used to code by hand, pick the built-in feature that now helps.</p>
+      {modernItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.job} style={{margin: "0 0 0.7rem"}}>
+            <label htmlFor={"mm-" + i}>{it.job}</label>
+            <br />
+            <select id={"mm-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {modernOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + modernItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+Ten years ago, a pop-up window, a tooltip, or a reusable widget meant a JavaScript library, a pile of extra code, and a lot of accessibility bugs. Today HTML itself can do much of this work. The browser handles focus, the Escape key, layering, and screen reader announcements, and you write a few lines of markup.
+
+This section shows you those features: what each one does, how to use it safely, and what to do for visitors whose browsers do not have it yet.
+
+## What You Will Learn
+
+- Why HTML is now a "living standard", and what that means for you
+- How to tell whether a new feature is safe to use
+- What `dialog`, `details`, `popover`, `inert`, `template`, `slot`, native lazy loading, and web components are for
+- How to build on a solid base and add modern features on top
+- How to check support in your own code
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A rule of thumb for the modern web: **if HTML or CSS can do it, let them.** Built-in features are usually shorter, faster, and more accessible than a hand-written version. They are also tested by browser makers, on more devices than you will ever own.
+
+<Tabs>
+<TabItem value="code" label="A Taste of It" default>
+
+```html title="index.html"
+<!-- A modal dialog, with focus handling and Escape built in -->
+<button type="button" id="open">Open settings</button>
+<dialog id="settings">
+  <h2>Settings</h2>
+  <form method="dialog">
+    <button>Close</button>
+  </form>
+</dialog>
+
+<!-- A show-and-hide section with no JavaScript -->
+<details>
+  <summary>Delivery information</summary>
+  <p>Orders ship within two working days.</p>
+</details>
+
+<!-- A popover opened by a button, also with no JavaScript -->
+<button type="button" popovertarget="tips">Tips</button>
+<div id="tips" popover>Press Escape to close this.</div>
+
+<script>
+  document.getElementById("open").addEventListener("click", function () {
+    document.getElementById("settings").showModal();
+  });
+</script>
 ```
-        ├── 17-modern-html/
-        │   ├── index.mdx
-        │   ├── html-living-standard.mdx
-        │   ├── modern-html-features.mdx
-        │   ├── dialog.mdx
-        │   ├── details-summary.mdx
-        │   ├── popover.mdx
-        │   ├── template.mdx
-        │   ├── slot.mdx
-        │   ├── inert.mdx
-        │   ├── lazy-loading.mdx
-        │   └── web-components-html.mdx
+
+</TabItem>
+<TabItem value="check" label="What Can Your Browser Do?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FeatureCheck />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="matcher" label="Old Way or New Way?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ModernMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+</Tabs>
+
+## HTML Is a Living Standard
+
+You may have heard of HTML5. It was a big milestone, around 2014, but it was not the end of the story. Today, HTML is maintained as a **living standard** by an open group called the WHATWG, together with browser makers. There is no "HTML6" to wait for. Instead, the specification changes continuously, small features are added, and browsers ship them one by one.
+
+That changes how you work:
+
+- **Features arrive at different times in different browsers.** A feature can work in one browser this year and in another next year.
+- **"What version of HTML?" is the wrong question.** The right one is "do my visitors' browsers support this feature?"
+- **Learning never finishes,** but the base is stable. Elements you learned years ago still work.
+
+The next lesson, [The HTML Living Standard](./modern-html/html-living-standard), explains how this works in practice and where to read the real specification.
+
+## Can I Use This Feature?
+
+Before you rely on any new feature, check support. A few reliable places are:
+
+- **MDN Web Docs.** Each page has a browser compatibility table at the bottom.
+- **Baseline.** A shared label from browser makers that tells you how widely a feature works. **Newly available** means it works in the latest versions of all the major browsers. **Widely available** means it has worked in all of them for at least about two and a half years, so it is safe for most sites.
+- **Can I use.** A site that shows support by browser version and usage share.
+
+Then decide what fits **your** visitors. A site for a tech-savvy audience on current phones can use newer features sooner. A site for people on older, shared, or low-cost devices should wait for wider support, or provide a fallback.
+
+## From Old Way to Modern Way
+
+| The job | The old way | The modern way | Lesson |
+| :-- | :-- | :-- | :-- |
+| A modal pop-up | A `div`, an overlay, a focus trap, many bugs | `dialog` with `showModal()` | [Dialog](./modern-html/dialog) |
+| A show and hide section | A click handler and a class | `details` and `summary` | [Details and Summary](./modern-html/details-summary) |
+| A tooltip, menu, or card that opens on demand | A script, positioning code, click-outside handling | The `popover` attribute | [Popover](./modern-html/popover) |
+| A block of markup used many times | Strings and `innerHTML` | `template` | [template](./modern-html/template) |
+| Content placed inside a component | Custom code to move nodes around | `slot` | [slot](./modern-html/slot) |
+| Blocking the background while a panel is open | Many `tabindex` and `aria-hidden` changes | The `inert` attribute | [inert](./modern-html/inert) |
+| Loading images and frames late | Scroll listeners and observers | `loading="lazy"` | [Lazy Loading](./modern-html/lazy-loading) |
+| A reusable custom tag | A framework, or copying and pasting | Custom elements and shadow DOM | [Web Components in HTML](./modern-html/web-components-html) |
+
+Open the **Old Way or New Way?** tab and test yourself on this table.
+
+## What Is in This Section
+
+<DocCardList />
+
+## Progressive Enhancement
+
+The most useful habit for modern HTML is **progressive enhancement**: build a page that works with plain, widely supported HTML, then add newer features on top. If a feature is missing, the visitor gets the simple version, not a broken page.
+
+A good example is `details`, which works as a heading and its content even if nothing else is available. Another is a link that goes to a full page, which a script upgrades into a pop-up when `dialog` is supported.
+
+```html
+<!-- Works everywhere: a normal link to a full settings page -->
+<a href="/settings" id="settings-link">Settings</a>
 ```
+
+```js
+// Enhance it only where dialog is supported
+const link = document.getElementById("settings-link");
+if (typeof HTMLDialogElement === "function") {
+  link.addEventListener("click", function (event) {
+    event.preventDefault();
+    // open a dialog with the settings form here
+  });
+}
+```
+
+### Detecting features
+
+Check for the **feature**, not for the browser name. Browser names change, and visitors can disguise them. These are typical checks:
+
+```js
+// Is the dialog element available?
+const hasDialog = typeof HTMLDialogElement === "function";
+
+// Is the popover attribute available?
+const hasPopover = "popover" in HTMLElement.prototype;
+
+// Does CSS understand a selector?
+const hasPopoverOpen = CSS.supports("selector(:popover-open)");
+```
+
+The **What Can Your Browser Do?** tab above runs checks like these in your own browser. Compare the results with a friend's phone or an older device, if you can.
+
+## Using New Features Safely
+
+1. **Check support,** on MDN or Baseline, and note the fallbacks.
+2. **Start with a working base.** Plain HTML first, features second.
+3. **Test in more than one browser,** and on a real phone, if you can.
+4. **Use a polyfill only when you need it.** A polyfill is a script that adds a missing feature. It adds weight, so weigh the cost.
+5. **Check accessibility.** Test with the keyboard alone, and with a screen reader if you can.
+6. **Re-check from time to time.** A feature that was not ready last year may be today.
+
+## Modern Does Not Mean Safe
+
+Built-in features save work, but they do **not** remove the need for the habits in the [HTML Security](/tutorials/html/security) section:
+
+- `template` and web components still need escaping when you put visitor text inside them. See [XSS Basics](/tutorials/html/security/xss-basics).
+- A `dialog` or `popover` is not a security boundary. It only changes what is shown.
+- Shadow DOM is an organising tool, not a way to hide anything from scripts or attackers.
+- A new feature can have its own pitfalls, so read each lesson's security notes.
+
+## Accessibility at a Glance
+
+Built-in features come with **keyboard and screen reader behaviour** that you would otherwise have to rebuild:
+
+- `dialog` moves focus into the dialog, keeps it there when opened with `showModal()`, and closes with Escape.
+- `details` and `summary` can be opened with the keyboard, and announce their state.
+- `popover` handles light dismiss and the Escape key, and `inert` keeps hidden areas out of reach.
+
+Your job is to use them as intended: add a heading and a way to close, write clear labels, and test with the keyboard. The existing lessons on [Dialog](/tutorials/html/semantic-html/dialog) and [Details](/tutorials/html/semantic-html/details) in the Semantic HTML section introduce those elements. The lessons here go further, with a modern focus and different examples.
+
+## Global Audience Notes
+
+- **Browser versions vary.** Many visitors use older phones, shared computers, or devices that no longer get updates. Fallbacks protect them.
+- **Data costs matter.** A native feature usually costs fewer bytes than a library that does the same job.
+- **Languages and writing directions differ.** Test dialogs, popovers, and components with long words and right-to-left text, and avoid fixed widths.
+- **Cultures differ in expectations.** For example, a pop-up that blocks the page may be more irritating in some places than others. Use dialogs sparingly, and never trap people.
+
+## Common Mistakes to Avoid
+
+1. **Using a new feature without checking support.**
+2. **Replacing a working base** with a feature-only version, so older browsers see nothing.
+3. **Detecting the browser name** instead of the feature.
+4. **Adding a polyfill by habit,** and paying for code you do not need.
+5. **Rebuilding by hand** something HTML already does.
+6. **Skipping the keyboard test.**
+7. **Treating `dialog`, `popover`, or shadow DOM as security.**
+8. **Not re-checking support** as browsers improve.
+9. **Copying code** that mixes old and new patterns without understanding it.
+10. **Using modals for everything.**
+
+## Practice Time
+
+1. Open the **What Can Your Browser Do?** tab. How many features does your browser support? Which, if any, are missing?
+2. Open the same page in a second browser, and compare.
+3. Complete the **Old Way or New Way?** matcher.
+4. Choose one feature from the table, and look it up on MDN. What does its browser compatibility table say?
+5. Write the feature check you would use for `inert`.
+6. Pick a page of yours, and find one thing built by hand that a modern feature could replace.
+7. Write one sentence about a fallback for that feature.
+8. Bonus: find the Baseline label for `popover` on MDN.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does "living standard" mean?</summary>
+
+HTML is no longer released in numbered versions. The specification is updated continuously, and browsers add features one by one.
+
+</details>
+
+<details>
+<summary>2. How do you know a feature is safe to use?</summary>
+
+Check browser support on MDN, Baseline, or Can I use, and think about which browsers your visitors really use.
+
+</details>
+
+<details>
+<summary>3. What is progressive enhancement?</summary>
+
+Building a page that works with plain, widely supported HTML, then adding newer features on top, so visitors without them still get a working page.
+
+</details>
+
+<details>
+<summary>4. Why detect a feature instead of a browser?</summary>
+
+Feature checks answer the question you care about, and they stay correct as browsers change. Browser names can be wrong or disguised.
+
+</details>
+
+<details>
+<summary>5. Do modern features remove the need for security habits?</summary>
+
+No. `template`, components, `dialog`, and `popover` still need escaping of visitor text, and none of them is a security boundary.
+
+</details>
+
+<details>
+<summary>6. Why prefer a built-in feature to hand-written code?</summary>
+
+It is usually shorter, faster, tested by browser makers, and brings keyboard and screen reader behaviour with it.
+
+</details>
+
+## Key Takeaways
+
+- **HTML is a living standard.** Features arrive over time, and support varies by browser.
+- **Check support** on MDN, Baseline, or Can I use, and think about your visitors.
+- **Let HTML do what it can:** dialogs, disclosure, popovers, templates, slots, inert regions, lazy loading, and components.
+- **Build a working base first,** then enhance it.
+- **Detect features, not browsers.**
+- **Modern does not mean safe.** Keep escaping, and keep testing with the keyboard.
+
+Next up: [The HTML Living Standard](./modern-html/html-living-standard), where you will learn how HTML is specified, where to read it, and how a feature travels from an idea to your browser.
