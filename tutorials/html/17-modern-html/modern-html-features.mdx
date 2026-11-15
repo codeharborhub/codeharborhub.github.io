@@ -21,10 +21,6 @@ tags: [html, web-development, beginner, modern-html, attributes, progressive-enh
 ---
 
 import {useState} from 'react';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import AdsComponent from '@site/src/components/AdsComponent';
-import BrowserWindow from '@site/src/components/BrowserWindow';
 
 export const featureOptions = [
   "translate=\"no\"",
@@ -145,8 +141,6 @@ export function ReadinessJudge() {
   );
 }
 
-# Modern HTML Features
-
 HTML keeps growing. Alongside big features such as `dialog` and `popover`, which have lessons of their own, there is a set of **small, practical additions** that make forms friendlier, pages faster, and content easier to use for a global audience. This lesson is a guided tour of them, followed by a method for judging whether any new feature is ready for **your** site.
 
 ## What You Will Learn
@@ -228,7 +222,7 @@ Most modern features are **hints and improvements**, not new building blocks. If
 </Tabs>
 
 :::info
-Browser support changes over time. The notes in this lesson describe how each feature behaves, not a fixed support table. Before you rely on one, check its **Baseline** label and compatibility table on MDN, as explained in the [Modern HTML overview](/html/modern-html).
+Browser support changes over time. The notes in this lesson describe how each feature behaves, not a fixed support table. Before you rely on one, check its **Baseline** label and compatibility table on MDN, as explained in the [Modern HTML overview](/tutorials/html/modern-html).
 :::
 
 ## The search Element
@@ -265,7 +259,7 @@ Neither one validates anything, and both are only **hints**. A browser or keyboa
 
 ### A good reason to use inputmode
 
-`type="number"` looks right for codes and card numbers, but it has problems: it adds spinner arrows, scrolling the mouse wheel can change the value, and it drops leading zeros. For a PIN or a postal code, use `type="text"` with `inputmode="numeric"` and a `pattern`, and validate on the server, as covered in [Secure Forms](/html/security/secure-forms).
+`type="number"` looks right for codes and card numbers, but it has problems: it adds spinner arrows, scrolling the mouse wheel can change the value, and it drops leading zeros. For a PIN or a postal code, use `type="text"` with `inputmode="numeric"` and a `pattern`, and validate on the server, as covered in [Secure Forms](/tutorials/html/security/secure-forms).
 
 For amounts with decimals, `inputmode="decimal"` shows a keyboard with a decimal key. Remember that some regions use a comma as the decimal mark, so accept both on the server.
 
@@ -281,7 +275,7 @@ Two attributes help the browser decide **what to load first** and **how to prepa
 - **`fetchpriority`** accepts `high`, `low`, or `auto`. It nudges the browser's choice of when to download a resource. It works on `img`, `link`, and `script`. It is a hint, not a command.
 - **`decoding="async"`** lets the browser decode an image away from the main flow of work, so the page stays responsive. The default is `auto`.
 
-The best use of `fetchpriority="high"` is on the single image that is your Largest Contentful Paint element. Do not put it on many images, because then none of them stands out. See [Core Web Vitals](/html/performance/core-web-vitals) and [Critical Resources](/html/performance/critical-resources).
+The best use of `fetchpriority="high"` is on the single image that is your Largest Contentful Paint element. Do not put it on many images, because then none of them stands out. See [Core Web Vitals](/tutorials/html/performance/core-web-vitals) and [Critical Resources](/tutorials/html/performance/critical-resources).
 
 ## hidden="until-found"
 
@@ -323,7 +317,7 @@ Modern JavaScript is written in **modules**, which are files that import and exp
 
 What makes module scripts different from classic scripts:
 
-- They are **deferred** by default, so they run after the page is parsed, like `defer` in [Script Loading](/html/performance/script-loading).
+- They are **deferred** by default, so they run after the page is parsed, like `defer` in [Script Loading](/tutorials/html/performance/script-loading).
 - They run in **strict mode**, and keep their variables to themselves.
 - A browser loads each module once, even when several files import it.
 
@@ -342,7 +336,7 @@ An **import map** lets you use short names instead of long paths:
 The import map must come **before** the module scripts that use it.
 
 :::warning
-If your site has a Content Security Policy, an **inline** import map or inline module is blocked unless it carries a nonce or matches a hash, exactly like any inline script. See [Content Security Policy](/html/security/content-security-policy). Scripts from other origins also need the right `crossorigin` handling, so read the details before you add them.
+If your site has a Content Security Policy, an **inline** import map or inline module is blocked unless it carries a nonce or matches a hash, exactly like any inline script. See [Content Security Policy](/tutorials/html/security/content-security-policy). Scripts from other origins also need the right `crossorigin` handling, so read the details before you add them.
 :::
 
 ## Other Small Elements Worth Knowing
@@ -411,7 +405,7 @@ The **Readiness Judge** tab turns this into a simple decision tool. Try the comb
 
 ## Security and Privacy Notes
 
-- **`inputmode` and `pattern` are not validation.** A visitor can send anything. The server must check every value. See [Secure Forms](/html/security/secure-forms).
+- **`inputmode` and `pattern` are not validation.** A visitor can send anything. The server must check every value. See [Secure Forms](/tutorials/html/security/secure-forms).
 - **Module scripts follow the same rules as other scripts.** Only load them from places you trust, use `https`, and keep your CSP in mind.
 - **`hidden` hides, it does not protect.** Anything in the HTML is sent to every visitor and is readable in the page source. Never hide private information that way.
 - **`translate` and page translators:** a translator sends text to a translation service. Mark text such as personal data and codes with `translate="no"`, and do not paste private pages into online translators.
