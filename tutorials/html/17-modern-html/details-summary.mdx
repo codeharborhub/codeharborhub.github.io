@@ -1,0 +1,507 @@
+---
+id: html-modern-details-summary
+title: "Details and Summary in Practice"
+sidebar_label: "Details and Summary"
+sidebar_position: 5
+slug: /html/modern-html/details-summary
+description: "Go beyond the basics of details and summary: forms inside collapsed sections, deep links into nested details, structuring summaries, optional open and close animation, loading heavy content late, tracking toggles responsibly, and when another pattern fits better. Includes a form-in-details lab, a deep-link lab, and a true-or-false quiz."
+keywords:
+  - details summary
+  - details element accordion
+  - details form validation
+  - details deep link
+  - nested details
+  - details animation details-content
+  - disclosure widget
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, details, summary, accordion, forms, frontend]
+---
+
+import {useState} from 'react';
+
+export function FormInDetailsLab() {
+  const [autoOpen, setAutoOpen] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [round, setRound] = useState(0);
+  const onInvalid = function (e) {
+    const d = e.target.closest("details");
+    const hidden = d !== null && !d.open;
+    if (autoOpen && d) d.open = true;
+    setMsg(hidden && !autoOpen
+      ? "A field is invalid, but it is inside a closed section. The visitor may see nothing happen, and the form will not send."
+      : (hidden ? "A field inside a closed section was invalid, so the section was opened for the visitor." : "A visible field is invalid. The browser shows its message."));
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={autoOpen} onChange={function (e) { setAutoOpen(e.target.checked); setMsg(""); }} /> Open a section automatically when a field inside it is invalid
+      </label>
+      <form key={round} onSubmit={function (e) { e.preventDefault(); setMsg("Submitted: every field was valid. (Nothing was sent anywhere.)"); }}>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="fd-name">Name</label>{" "}
+          <input id="fd-name" type="text" defaultValue="Ada" required onInvalid={onInvalid} />
+        </p>
+        <details style={{margin: "0 0 0.75rem", border: "1px solid rgba(128,128,128,0.5)", borderRadius: 6, padding: "0.5rem 0.75rem"}}>
+          <summary>Delivery details (phone is required)</summary>
+          <p style={{margin: "0.5rem 0 0"}}>
+            <label htmlFor="fd-phone">Phone number</label>{" "}
+            <input id="fd-phone" type="tel" required onInvalid={onInvalid} />
+          </p>
+        </details>
+        <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+          <button type="submit">Send</button>
+          <button type="button" onClick={function () { setRound(round + 1); setMsg(""); }}>Reset the form</button>
+        </div>
+      </form>
+      <p aria-live="polite" style={{fontWeight: 600}}>{msg}</p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        Press Send with the phone field empty and the section closed. Then tick the box, reset, and try again. How browsers handle an invalid field inside a closed section differs, which is why the extra line of script is worth adding.
+      </p>
+    </div>
+  );
+}
+
+export function revealAncestors(target) {
+  const opened = [];
+  let el = target.closest("details");
+  while (el) {
+    if (!el.open) {
+      el.open = true;
+      const s = el.querySelector(":scope > summary");
+      opened.push(s ? s.textContent.trim() : el.id);
+    }
+    el = el.parentElement ? el.parentElement.closest("details") : null;
+  }
+  return opened;
+}
+
+export function DeepLinkLab() {
+  const [msg, setMsg] = useState("");
+  const jump = function (id) {
+    const t = document.getElementById(id);
+    if (!t) return;
+    const opened = revealAncestors(t);
+    const s = t.matches("details") ? t.querySelector(":scope > summary") : null;
+    if (s) s.focus();
+    else t.scrollIntoView({block: "nearest"});
+    setMsg(opened.length === 0 ? "Everything on the way was already open." : "Opened: " + opened.join(" > "));
+  };
+  const closeAll = function () {
+    Array.from(document.querySelectorAll("#dl-root details")).forEach(function (d) { d.open = false; });
+    setMsg("Everything is closed.");
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={function () { jump("dl-payments"); }}>Jump to Payments</button>
+        <button type="button" onClick={function () { jump("dl-late"); }}>Jump to Late refunds</button>
+        <button type="button" onClick={closeAll}>Close everything</button>
+      </div>
+      <div id="dl-root">
+        <details id="dl-help">
+          <summary>Help centre</summary>
+          <details id="dl-payments" style={{marginLeft: "1rem"}}>
+            <summary>Payments</summary>
+            <p>We accept cards and bank transfers.</p>
+          </details>
+          <details id="dl-refunds" style={{marginLeft: "1rem"}}>
+            <summary>Refunds</summary>
+            <p>Refunds go back to the original payment method.</p>
+            <details id="dl-late" style={{marginLeft: "1rem"}}>
+              <summary>Late refunds</summary>
+              <p>If a refund takes longer than ten working days, contact support.</p>
+            </details>
+          </details>
+        </details>
+      </div>
+      <p aria-live="polite" style={{fontWeight: 600}}>{msg}</p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        The same idea is used to open the right sections when a visitor follows a link such as the address of a question in an FAQ.
+      </p>
+    </div>
+  );
+}
+
+export const tfItems = [
+  {text: "A link placed inside a summary is a good way to make the heading clickable.", answer: false, why: "Links and buttons inside a summary fight with the toggle. Keep the summary to text, and put links in the content."},
+  {text: "Content inside a closed details element is still in the page source, and its form fields still belong to the form.", answer: true, why: "Closed does not mean removed. The content is in the HTML, and its fields are submitted and validated."},
+  {text: "A details element closes by itself when the visitor clicks somewhere else on the page.", answer: false, why: "It does not. That behaviour belongs to a popover. A details element stays open until the visitor closes it."},
+  {text: "You may nest one details element inside another.", answer: true, why: "Nesting is allowed. Keep the depth small, so the page stays easy to scan."},
+  {text: "Following a link to an item inside a closed details always opens it, with no code from you.", answer: false, why: "Behaviour varies between browsers. A few lines of script that open the ancestors make it reliable."},
+  {text: "Animating the opening of a details element is an optional enhancement.", answer: true, why: "It is a nice touch where supported, and the element works fine without it."}
+];
+
+export function DetailsQuiz() {
+  const [answers, setAnswers] = useState({});
+  const answered = Object.keys(answers).length;
+  const correct = tfItems.filter(function (it, i) { return answers[i] === it.answer; }).length;
+  const set = function (i, v) {
+    setAnswers(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; });
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>True or false?</p>
+      {tfItems.map(function (it, i) {
+        const a = answers[i];
+        const right = a === it.answer;
+        return (
+          <div key={it.text} style={{margin: "0 0 0.9rem"}}>
+            <p style={{margin: "0 0 0.25rem"}}>{it.text}</p>
+            <button type="button" onClick={function () { set(i, true); }} aria-pressed={a === true} style={{marginRight: "0.5rem"}}>True</button>
+            <button type="button" onClick={function () { set(i, false); }} aria-pressed={a === false}>False</button>
+            <div aria-live="polite">
+              {a !== undefined && (
+                <p style={{margin: "0.25rem 0 0"}}>
+                  <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Correct. " : "Not quite. "}</strong>{it.why}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <p aria-live="polite" style={{fontWeight: 600}}>{answered === 0 ? "" : "Score so far: " + correct + " of " + answered + " answered."}</p>
+    </div>
+  );
+}
+
+The earlier lesson on [the Details element](/tutorials/html/semantic-html/details) showed how `details` and `summary` make an expandable section with no JavaScript, how `open` works, how `name` builds an exclusive accordion, and how to style the marker. This lesson is about what happens in **real pages**: forms inside collapsed sections, links that point into them, nesting, animation, and knowing when something else fits better.
+
+## What You Will Learn
+
+- Why a required field inside a closed section can quietly block a form
+- How to open the right sections for a deep link
+- How to structure a good summary
+- How to add an optional animation
+- How to load heavy content only when needed
+- When not to use `details`
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+`details` is the simplest way to hide and reveal content, and it works without any script. Real pages add small needs on top: "show the error", "open the section I linked to", "do not load that video yet". A few lines of script cover those, and the element keeps doing the heavy lifting.
+
+<Tabs>
+<TabItem value="form" label="Form in a Section" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FormInDetailsLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="deeplink" label="Deep Link Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DeepLinkLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="quiz" label="True or False?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<DetailsQuiz />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<form id="order">
+  <label for="name">Name</label>
+  <input id="name" name="name" required>
+
+  <details id="delivery">
+    <summary>Delivery details</summary>
+    <label for="phone">Phone number</label>
+    <input id="phone" name="phone" type="tel" required>
+  </details>
+
+  <button type="submit">Send</button>
+</form>
+```
+
+```js title="script.js"
+// 1. Open a section when a field inside it is invalid.
+// The invalid event does not bubble, so listen in the capture phase.
+document.getElementById("order").addEventListener("invalid", (event) => {
+  const section = event.target.closest("details");
+  if (section) section.open = true;
+}, true);
+
+// 2. Open every section around a link target.
+function revealFromHash() {
+  let id;
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch (e) { return; }
+  const target = id ? document.getElementById(id) : null;
+  if (!target) return;
+  let el = target.closest("details");
+  while (el) {
+    el.open = true;
+    el = el.parentElement ? el.parentElement.closest("details") : null;
+  }
+  target.scrollIntoView();
+}
+window.addEventListener("hashchange", revealFromHash);
+revealFromHash();
+```
+
+</TabItem>
+</Tabs>
+
+## Pattern 1: Forms Inside a Collapsed Section
+
+Content in a closed `details` is **still in the page, and still part of the form.** Its fields are sent when the form is submitted, and checked when the browser validates the form.
+
+That causes a classic trap. If a `required` field sits inside a closed section and is empty, the browser cannot show a message next to a field that is not displayed. Depending on the browser and version, the visitor may see an error in the Console, a section that quietly opens, or nothing at all. The form simply **does not send**, and they cannot tell why.
+
+Try it in the first tab: press Send with the section closed, then turn on the checkbox, reset, and try again.
+
+The fix is a few lines:
+
+```js
+form.addEventListener("invalid", (event) => {
+  const section = event.target.closest("details");
+  if (section) section.open = true;
+}, true);
+```
+
+- The `invalid` event fires on each field that fails validation, but it **does not bubble**, so you listen in the capture phase (the final `true`).
+- Opening the section lets the browser focus the field and show its message.
+- It is just as important to validate on the server, as covered in [Secure Forms](/tutorials/html/security/secure-forms).
+
+A simpler rule also helps: **do not hide required fields.** Keep optional fields in a collapsed section, and required ones in the open.
+
+## Pattern 2: Deep Links and Nested Sections
+
+A common request is "link to that exact question in our FAQ". The link is easy: give the `details` an `id`, and link to `#that-id`. But the visitor may arrive with the section closed, or with a closed section around it.
+
+Some browsers open a closed section when the address points inside it, and some do not, or only in certain cases. To be consistent, open the ancestors yourself, as in the code above. The **Deep Link Lab** does the same for a nested help centre: jump to "Late refunds" and watch every section on the way open.
+
+Notes on nesting:
+
+- **It is allowed,** but keep it shallow. Two levels are usually plenty.
+- **Give the sections that you link to an `id`,** and keep ids stable. Changing one breaks old links.
+- **Move focus to the summary** of the target, so keyboard and screen reader users land in the right place.
+
+## Pattern 3: A Good Summary
+
+The `summary` is the visitor's only clue to what is inside, so it needs to work on its own.
+
+- **Write it as a clear label or a question,** such as "Can I return an item?", not "More".
+- **Keep it short,** so it does not wrap into a block of text.
+- **Use text and simple inline elements.** A heading can go inside a summary, but screen reader support for headings inside a summary varies, so test it if you rely on headings for navigation.
+- **Do not put links or buttons inside a summary.** They compete with the toggle, and the result is confusing for everyone.
+- **Make it easy to tap.** Give the summary generous padding, so it is a comfortable target on a phone.
+
+## Pattern 4: An Optional Animation
+
+By default, a section jumps open. In browsers that support newer CSS, you can animate the height:
+
+```css
+:root {
+  interpolate-size: allow-keywords;
+}
+
+details::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition: block-size 0.25s ease, content-visibility 0.25s allow-discrete;
+}
+
+details[open]::details-content {
+  block-size: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details::details-content {
+    transition: none;
+  }
+}
+```
+
+This is a **progressive enhancement**: where the features are not supported, the section simply jumps open, as before. Always include the reduced-motion rule, and check the support of `::details-content` and `interpolate-size` on MDN before relying on it.
+
+## Pattern 5: Load Heavy Content Late
+
+Content in a closed `details` is not displayed, so you can save work by keeping heavy things out of the first load. For a video, a map, or other embed:
+
+```html
+<details>
+  <summary>Watch the video</summary>
+  <iframe src="https://video.example.net/embed/123" title="Product tour"
+          loading="lazy" width="560" height="315"></iframe>
+</details>
+```
+
+With `loading="lazy"`, the browser usually waits until the frame is near view, so a closed section does not pay for it. The same goes for lazy images. Check this in the Network panel for your browser, because behaviour can vary. If a third party is involved, see [iFrame Security](/tutorials/html/security/iframe-security) for `sandbox` and privacy points.
+
+## Pattern 6: Accordions
+
+You can build an exclusive accordion by giving several `details` the same `name`, as the earlier lesson explained. A few extra points from practice:
+
+- **Open at most one** at the start, and consider opening none on small screens, to keep the page short.
+- **Do not hide essential information** such as prices, warnings, or errors.
+- **Browsers without `name` support** just let several stay open, which is fine.
+
+## Tracking Toggles (Carefully)
+
+The `toggle` event fires after a section opens or closes. Some sites use it to learn which FAQ questions are read most.
+
+```js
+document.querySelectorAll("details").forEach((d) => {
+  d.addEventListener("toggle", () => {
+    if (d.open) console.log("opened:", d.id);
+  });
+});
+```
+
+If you send this data anywhere, record **aggregate** counts, avoid personal data, and follow the privacy rules and consent requirements that apply where you operate. This is not legal advice.
+
+## When Not to Use details
+
+| You need | A better fit |
+| :-- | :-- |
+| A menu or card that opens above the page and closes when you click away | [Popover](./popover) |
+| A pop-up that blocks the page until answered | [Dialog](./dialog) |
+| A set of views where exactly one is always showing | Tabs, with the tab roles and keyboard handling |
+| Site navigation with sub-menus | A button with `aria-expanded` that controls a list, which gives you full control of closing and keyboard use |
+| Important content everyone must see | Plain content, in the open |
+
+## Checking Your Setup
+
+1. Submit a form that has an empty required field **inside a closed section.** Can the visitor tell what is wrong?
+2. Link to a question **inside a nested section,** and follow the link in a new tab.
+3. Use the **keyboard:** Tab to a summary, then press Enter or Space.
+4. Test with a **screen reader** if you can, and listen to the summary text and the open or closed state.
+5. Check the **Network** panel to see whether a closed section loads its heavy content.
+6. Turn on **reduced motion** in your system settings, and check that the animation stops.
+7. Look at the page in **right-to-left** text and at 200% zoom.
+
+## Best Practices
+
+1. **Keep required fields out of closed sections,** or open the section on `invalid`.
+2. **Give linkable sections an `id`,** and open their ancestors for deep links.
+3. **Write clear, short summaries,** and keep links and buttons out of them.
+4. **Keep nesting shallow.**
+5. **Use `loading="lazy"`** for heavy embeds inside closed sections.
+6. **Animate only as an enhancement,** with a reduced-motion rule.
+7. **Do not hide essential information.**
+8. **Choose a popover, dialog, or button** when `details` does not fit.
+9. **Track toggles only in aggregate,** and respect privacy.
+10. **Validate on the server.**
+
+## Quick Checklist
+
+- [ ] Required fields are visible, or their section opens on `invalid`
+- [ ] Linkable sections have stable `id`s, and ancestors open for deep links
+- [ ] Each summary is a short, clear label with no links or buttons inside
+- [ ] Nesting is no more than two levels
+- [ ] Heavy embeds inside are lazy
+- [ ] Any animation respects `prefers-reduced-motion`
+- [ ] Nothing essential is hidden
+- [ ] I tested with the keyboard and at 200% zoom
+
+## Security and Privacy Notes
+
+- **Hidden is not secret.** Content in a closed `details` is in the page source and in the form. Never put private data or secrets there. See [HTML Security Basics](/tutorials/html/security/html-security-basics).
+- **Build summaries and content safely.** If visitor text is shown inside a section, set it with `textContent`, not `innerHTML`. See [XSS Basics](/tutorials/html/security/xss-basics).
+- **Third-party embeds in a section still carry risk.** Use `sandbox`, `referrerpolicy`, and a trusted source. See [iFrame Security](/tutorials/html/security/iframe-security).
+- **Toggle tracking is behaviour data.** Collect as little as you need, and tell visitors what you collect.
+
+## Global Audience Notes
+
+- **Translated labels are longer.** Let summaries wrap, and do not fix their width.
+- **Right-to-left languages** move the marker to the other side. Use logical properties, such as `padding-inline-start`, and test.
+- **Touch targets matter on phones,** where many visitors browse. Make summaries comfortable to tap.
+- **Slow connections** benefit from lazy loading and from keeping long text collapsed until wanted.
+- **Write clear, plain questions,** especially for FAQs read in a second language.
+
+## Common Mistakes to Avoid
+
+1. **Hiding a required field** in a closed section, and leaving visitors guessing.
+2. **Putting links or buttons inside a summary.**
+3. **Expecting a deep link to open** the right section in every browser.
+4. **Nesting five levels deep.**
+5. **Writing vague summaries** such as "More" or "Click here".
+6. **Hiding essential information.**
+7. **Loading a heavy embed** in a closed section without `loading="lazy"`.
+8. **Animating without a reduced-motion rule.**
+9. **Using `details` for a menu,** and expecting it to close on outside clicks.
+10. **Putting secrets in hidden sections.**
+
+## Practice Time
+
+1. In the first tab, press Send with the phone empty and the section closed. What happens? Then tick the checkbox, reset, and try again.
+2. In the Deep Link Lab, click "Jump to Late refunds". Which sections open?
+3. Click "Close everything", then "Jump to Payments". What is different?
+4. Complete the True or False quiz.
+5. Add a required field inside a `details` on a test page, and add the `invalid` listener.
+6. Write a `details` for a video embed with `loading="lazy"`, and check the Network panel.
+7. Rewrite three vague summaries from a page of yours as clear questions.
+8. Bonus: add the animation, then test it with reduced motion turned on.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. Why can a closed details element break a form?</summary>
+
+Its fields are still part of the form. A required field that is empty and hidden cannot show its message, so the form may refuse to send without the visitor seeing why.
+
+</details>
+
+<details>
+<summary>2. How do you fix it?</summary>
+
+Listen for the `invalid` event in the capture phase, and open the closest `details` of the failing field. Better still, keep required fields visible.
+
+</details>
+
+<details>
+<summary>3. How do you make deep links reliable?</summary>
+
+Give the target an `id`, and with a small script open every `details` around it, then scroll or focus to the target.
+
+</details>
+
+<details>
+<summary>4. What belongs in a summary?</summary>
+
+A short, clear label or question. Do not put links or buttons in it.
+
+</details>
+
+<details>
+<summary>5. How can you avoid loading heavy content in a closed section?</summary>
+
+Use `loading="lazy"` on images and frames inside it, and check the Network panel.
+
+</details>
+
+<details>
+<summary>6. When is `details` not the right choice?</summary>
+
+For menus that close on outside clicks, pop-ups that block the page, tabs, and important content. Use a popover, dialog, tabs, or plain content.
+
+</details>
+
+## Key Takeaways
+
+- **A closed `details` still belongs to the page and the form.**
+- **Open the section on `invalid`,** or keep required fields visible.
+- **Open ancestors for deep links,** and give linkable sections stable `id`s.
+- **Short, clear summaries,** with no links or buttons inside.
+- **Animation and lazy loading** are optional improvements.
+- **Pick the right tool:** popover, dialog, tabs, or a plain element when `details` does not fit.
+- **Hidden is not secret.**
+
+Next up: [Popover](./popover), where you will learn how the `popover` attribute opens menus, cards, and tooltips with no JavaScript, and closes them when the visitor clicks away.

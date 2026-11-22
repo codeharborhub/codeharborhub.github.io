@@ -1,0 +1,381 @@
+---
+id: html-modern-lazy-loading
+title: "Native Lazy Loading in Modern HTML"
+sidebar_label: "Lazy Loading"
+sidebar_position: 11
+slug: /html/modern-html/lazy-loading
+description: "Learn native lazy loading as part of modern HTML: the loading attribute on images and iframes, what it can and cannot do, why you should never lazy-load your main image, how to avoid layout shift, and how to check your markup. Includes a live markup checker and a lazy or eager matcher."
+keywords:
+  - lazy loading
+  - loading lazy
+  - loading eager
+  - lazy load images
+  - lazy load iframe
+  - LCP
+  - layout shift
+  - fetchpriority
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, lazy-loading, performance, images, iframe, frontend]
+---
+
+import {useState} from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
+
+export const lazyPresets = {
+  good: '<img src="hero.jpg" alt="Mountain at sunrise" width="1200" height="600" fetchpriority="high">\n<img src="photo-2.jpg" alt="Lake" width="600" height="400" loading="lazy">\n<iframe src="https://example.com/map" title="Office map" width="600" height="400" loading="lazy"></iframe>',
+  bad: '<img src="hero.jpg" alt="Mountain at sunrise" loading="lazy">\n<img src="photo-2.jpg" loading="lazy" width="600" height="400">\n<iframe src="https://example.com/video" title="Video" width="600" height="400"></iframe>\n<img src="photo-3.jpg" alt="Hills" width="600" height="400" loading="soon">'
+};
+
+export function checkLazy(html) {
+  if (typeof DOMParser === "undefined") return [];
+  // DOMParser builds an inert document: nothing loads and no script runs.
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const items = Array.from(doc.querySelectorAll("img, iframe"));
+  const out = [];
+  items.forEach(function (el, i) {
+    const tag = el.tagName.toLowerCase();
+    const name = tag + " " + (i + 1);
+    const loading = el.getAttribute("loading");
+    if (loading !== null && loading !== "lazy" && loading !== "eager") {
+      out.push({level: "error", text: name + ': loading="' + loading + '" is not a valid value. Use lazy or eager.'});
+    }
+    if (tag === "img" && !el.hasAttribute("alt")) {
+      out.push({level: "error", text: name + " has no alt attribute."});
+    }
+    if (!el.hasAttribute("width") || !el.hasAttribute("height")) {
+      out.push({level: "warn", text: name + " has no width and height, so the page can jump when it loads."});
+    }
+    if (tag === "iframe" && !el.hasAttribute("title")) {
+      out.push({level: "error", text: name + " has no title."});
+    }
+    if (i === 0 && tag === "img" && loading === "lazy") {
+      out.push({level: "error", text: name + " is the first image and is lazy-loaded. If it is visible on arrival, it will load later than it should."});
+    }
+    if (i > 0 && loading !== "lazy") {
+      out.push({level: "info", text: name + " is not lazy. If it is below the first screen, add loading=\"lazy\"."});
+    }
+  });
+  if (items.length === 0) out.push({level: "info", text: "No images or iframes found."});
+  else if (out.filter(function (o) { return o.level !== "info"; }).length === 0) out.push({level: "ok", text: "No problems found in these " + items.length + " element(s)."});
+  return out;
+}
+
+export function LazyChecker() {
+  const [code, setCode] = useState(lazyPresets.bad);
+  const results = checkLazy(code);
+  const mark = {error: "Error", warn: "Warning", info: "Tip", ok: "OK"};
+  return (
+    <div style={{padding: "1rem"}}>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem"}}>
+        <button type="button" onClick={function () { setCode(lazyPresets.good); }}>Load a good example</button>
+        <button type="button" onClick={function () { setCode(lazyPresets.bad); }}>Load a flawed example</button>
+      </div>
+      <label htmlFor="lz-code" style={{fontWeight: 600}}>Your HTML (images and iframes are checked)</label>
+      <textarea id="lz-code" rows={8} value={code} onChange={function (e) { setCode(e.target.value); }} style={{width: "100%", fontFamily: "monospace", boxSizing: "border-box"}} />
+      <BrowserOnly fallback={<p>Loading checker...</p>}>
+        {function () {
+          return (
+            <ul aria-live="polite" style={{marginTop: "0.5rem"}}>
+              {checkLazy(code).map(function (r, i) {
+                return <li key={i}><strong>{mark[r.level]}:</strong> {r.text}</li>;
+              })}
+            </ul>
+          );
+        }}
+      </BrowserOnly>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        Your text is only parsed into an inert document, so nothing is loaded or run. It is never sent anywhere or inserted into this page.
+      </p>
+    </div>
+  );
+}
+
+export const lazyOptions = ["lazy", "eager (default)", "eager, and add fetchpriority high"];
+
+export const lazyItems = [
+  {job: "A photo in the middle of a long article, well below the first screen", answer: "lazy"},
+  {job: "The large banner image at the very top of the home page", answer: "eager, and add fetchpriority high"},
+  {job: "A map iframe in the page footer", answer: "lazy"},
+  {job: "A small logo in the header", answer: "eager (default)"},
+  {job: "A gallery of 40 thumbnails below the first row", answer: "lazy"},
+  {job: "A YouTube embed lower down the page", answer: "lazy"}
+];
+
+export function LazyMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = lazyItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Choose the right loading choice for each image or frame.</p>
+      {lazyItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.job} style={{margin: "0 0 0.7rem"}}>
+            <label htmlFor={"lm-" + i}>{it.job}</label>
+            <br />
+            <select id={"lm-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {lazyOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + lazyItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+A page can hold dozens of images and several frames, but a visitor only sees the first screen at first. **Lazy loading** tells the browser to wait on the rest until the visitor scrolls near them. Today it is a single HTML attribute, `loading="lazy"`, with no JavaScript library.
+
+You may already have met lazy loading in the [Images](/tutorials/html/images/lazy-loading) and [Performance](/tutorials/html/performance/lazy-loading) sections. This lesson looks at it as part of the **modern HTML toolbox**: what the attribute does, where it stops, and how to avoid its two classic mistakes.
+
+## What You Will Learn
+
+- How `loading="lazy"` works on `img` and `iframe`
+- Which elements to lazy-load, and which to leave alone
+- Why the main image must never be lazy
+- How to prevent the page from jumping
+- What lazy loading cannot do, and how to check your markup
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+By default, a browser starts downloading every image and frame it finds, even ones far below the screen. That wastes data and slows the content people actually came to see. With `loading="lazy"`, the browser **delays** a resource until it is near the visible area.
+
+<Tabs>
+<TabItem value="checker" label="Markup Checker" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LazyChecker />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="matcher" label="Lazy or Eager?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<LazyMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<!-- The main image: load it right away, and ask for priority -->
+<img src="hero.jpg" alt="Mountain at sunrise"
+     width="1200" height="600" fetchpriority="high">
+
+<!-- Images below the first screen: load them later -->
+<img src="photo-2.jpg" alt="A quiet lake"
+     width="600" height="400" loading="lazy" decoding="async">
+
+<!-- Frames work too -->
+<iframe src="https://example.com/map" title="Office map"
+        width="600" height="400" loading="lazy"></iframe>
+```
+
+</TabItem>
+</Tabs>
+
+## The Attribute
+
+| Value | Meaning |
+| :-- | :-- |
+| `lazy` | Wait until the element is near the visible area |
+| `eager` | Load straight away. This is the default, so you rarely write it |
+
+It works on `img` and `iframe`. Any other value is invalid and treated as the default.
+
+### How "near" is decided
+
+The browser chooses the distance, and it varies between browsers and even between connection speeds. Roughly, it starts loading **a little before** the element scrolls into view, so most visitors never see an empty gap. You cannot set that distance in HTML.
+
+## Rule One: Never Lazy-Load What Is Visible on Arrival
+
+The most important rule: do **not** put `loading="lazy"` on images that appear on the first screen, especially your **main image** (often the Largest Contentful Paint element). Lazy loading holds it back until the browser has done its layout work, so the most important picture loads **later**, not sooner.
+
+For the main image, do the opposite:
+
+```html
+<img src="hero.jpg" alt="..." width="1200" height="600" fetchpriority="high">
+```
+
+`fetchpriority="high"` is covered in [Modern HTML Features](./modern-html-features).
+
+## Rule Two: Always Give a Size
+
+A lazy image has not loaded yet, so the browser does not know how big it is. Without `width` and `height`, the space is zero, and when the image finally arrives the page **jumps**. Always set both, and let CSS scale the image:
+
+```css
+img { max-width: 100%; height: auto; }
+```
+
+The browser uses the two attributes to work out the **aspect ratio** and reserves the right space. The [markup checker](#the-big-idea) above warns when they are missing.
+
+## Frames Too
+
+An `iframe` is often much heavier than an image: it loads a whole page, with its scripts. A map or video lower down is a great candidate:
+
+```html
+<iframe src="https://example.com/video" title="Product tour"
+        width="560" height="315" loading="lazy"></iframe>
+```
+
+Remember to keep the `title`, and see [iframe security](/tutorials/html/security/iframe-security) for `sandbox` and other safety attributes.
+
+## What Lazy Loading Cannot Do
+
+- **It needs JavaScript to be on.** If scripting is disabled, browsers may load these resources normally, so images still show. Check MDN for details.
+- **It does not shrink files.** A 5 MB photo is still 5 MB when it loads. Use proper formats and sizes with `srcset`.
+- **It does not work for CSS background images.** Only `img` and `iframe` have the attribute.
+- **It cannot be tuned in HTML.** You cannot pick the distance. If you need that control, you need JavaScript, such as an observer.
+- **Hidden and off-screen items may load early.** Layout decides what counts as "near", so a carousel with many slides can load more than you expect.
+
+## Lazy Loading and Search
+
+Search engines can generally find native lazy-loaded images, because the `src` is in the HTML. Avoid older tricks that put the real address in `data-src` and rely on scripts, since a crawler may not run them. Native lazy loading is simpler, and safer for search.
+
+## Accessibility
+
+Lazy loading does not change meaning, but keep the basics:
+
+- Every image still needs `alt`, and every frame a `title`.
+- Reserve space with `width` and `height`, so people with a screen magnifier or low vision are not thrown by a jumping page.
+- Do not lazy-load content that must be reachable by **find in page** or by a skip link target, if its absence would confuse people. Test.
+- Respect users on slow connections, who benefit most. Provide a readable layout while images arrive.
+
+## Checking Your Setup
+
+1. Open DevTools **Network**, reload, and look at which images load at once. Below-the-fold ones should wait.
+2. Scroll slowly, and watch them load just before they appear.
+3. Check the **main image** loads early and is not marked lazy.
+4. Throttle the connection to a slow setting, and look for jumps in the layout.
+5. Turn off images, or test with a slow network, to check the `alt` text.
+6. Run a performance audit, and compare before and after.
+7. Check the **Console** for warnings.
+
+## Best Practices
+
+1. **Lazy-load images and frames below the first screen.**
+2. **Never lazy-load the main image.** Use `fetchpriority="high"` instead.
+3. **Always set `width` and `height`.**
+4. **Keep `alt` and `title`** in place.
+5. **Combine with `srcset` and modern formats** to cut file size.
+6. **Use `decoding="async"`** for large images that are not critical.
+7. **Prefer the native attribute** to a script library.
+8. **Measure,** instead of lazy-loading everything by habit.
+
+## Quick Checklist
+
+- [ ] The first-screen images are not lazy
+- [ ] The main image has `fetchpriority="high"`
+- [ ] Below-the-fold images and frames have `loading="lazy"`
+- [ ] Every image has `width`, `height` and `alt`
+- [ ] Every iframe has a `title`
+- [ ] The layout does not jump while loading
+- [ ] The real address is in `src`, not hidden in a script-only attribute
+
+## Security and Privacy Notes
+
+- **Lazy loading is not a privacy feature.** Delayed requests are still requests. A third-party image or frame contacts its server when it loads, and shares the visitor's address and possibly cookies. See [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security).
+- **Frames carry risk.** Lazy-loaded iframes still need `sandbox` where suitable, a clear `title`, and a trusted source. See [iframe security](/tutorials/html/security/iframe-security).
+- **Never build `src` from visitor input.** A user-controlled address can load unwanted content. Allow only known sources, and see [XSS Basics](/tutorials/html/security/xss-basics).
+- **Your Content Security Policy still applies** to lazy-loaded resources. `img-src` and `frame-src` decide what may load.
+- **Loading later can reveal behaviour.** A server can see which images were requested, so it can tell roughly how far someone scrolled. Keep this in mind for sensitive pages.
+
+## Global Audience Notes
+
+- **Slow and metered connections** are common worldwide. Not downloading what a visitor never scrolls to saves real money and time.
+- **Phones with small screens** show fewer images at once, so lazy loading often helps most there.
+- **Right-to-left and vertical layouts** change what is "near", but the attribute works the same. Test.
+- **Alt text and titles** should be in the page's language, and are the fallback when an image is slow to arrive.
+- **Do not assume fast networks** when you test. Throttle.
+
+## Common Mistakes to Avoid
+
+1. **Lazy-loading the main image.**
+2. **Leaving out `width` and `height`,** causing layout jumps.
+3. **Lazy-loading everything,** including small first-screen icons.
+4. **Hiding the real address in `data-src`** with a script.
+5. **Expecting it to work on CSS backgrounds.**
+6. **Writing `loading="true"`** or another invalid value.
+7. **Forgetting `alt` and `title`.**
+8. **Using lazy loading instead of resizing large files.**
+9. **Not testing on a slow connection.**
+10. **Loading third-party frames without checking their privacy cost.**
+
+## Practice Time
+
+1. In the checker, load the **flawed example**. List every problem it finds.
+2. Fix each one in the text box, until you see **OK**.
+3. Load the **good example**. Which image has no `loading` attribute, and why?
+4. Complete the **Lazy or Eager?** matcher.
+5. Open a page of your own, and find the main image. Is it lazy?
+6. In DevTools Network, throttle to a slow connection, and scroll. When does each image load?
+7. Bonus: add `width` and `height` to an image that has none, and compare the layout while loading.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `loading="lazy"` do?</summary>
+
+It tells the browser to delay an image or iframe until it is near the visible area.
+
+</details>
+
+<details>
+<summary>2. Which elements support it?</summary>
+
+`img` and `iframe`. It does nothing for CSS background images.
+
+</details>
+
+<details>
+<summary>3. Why should the main image not be lazy?</summary>
+
+Lazy loading delays it, but it is the first thing people need to see. Load it right away, and add `fetchpriority="high"`.
+
+</details>
+
+<details>
+<summary>4. Why set `width` and `height` on lazy images?</summary>
+
+The browser reserves the right space, so the page does not jump when the image arrives.
+
+</details>
+
+<details>
+<summary>5. Does lazy loading make a large file smaller?</summary>
+
+No. It only changes when the file loads. Use proper sizes, formats and `srcset` to cut the size.
+
+</details>
+
+<details>
+<summary>6. Is lazy loading a privacy measure?</summary>
+
+No. The request still happens later, and still tells the server about the visitor.
+
+</details>
+
+## Key Takeaways
+
+- **`loading="lazy"` is one attribute** that saves data and speeds up the first screen.
+- **Use it below the fold,** never on the main image.
+- **Always give `width` and `height`** to prevent jumps.
+- **It works on images and iframes,** not on CSS backgrounds.
+- **It is not smaller files, and not privacy.**
+- **Measure on a slow connection.**
+
+That completes the Modern HTML section. You can now use the platform's own tools, from `dialog`, `popover` and `inert` to templates, slots, web components and lazy loading, and know when each one fits. Return to the [section overview](/tutorials/html/modern-html) to review any lesson.

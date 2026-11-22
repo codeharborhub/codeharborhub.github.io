@@ -292,6 +292,16 @@ const config = {
                 label: "⚡ Live Code Editor",
                 to: "/LiveEditor/",
               },
+              // Editor
+              {
+                label: "📝 Code Editor",
+                to: "/editor/",
+              },
+              // Playground
+              {
+                label: "🎮 Code Playground",
+                to: "/playground/",
+              },
               // {
               //   label: "🏆 Coding Challenges",
               //   to: "/challenges/",

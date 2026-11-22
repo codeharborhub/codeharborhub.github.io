@@ -1,0 +1,589 @@
+---
+id: html-modern-web-components
+title: "Web Components in HTML"
+sidebar_label: "Web Components"
+sidebar_position: 10
+slug: /html/modern-html/web-components-html
+description: "Learn web components from the HTML side: build your own tags with custom elements, keep markup and styles private with shadow DOM, reuse templates and slots, send events across the shadow boundary, and enhance progressively. Covers naming, lifecycle callbacks, attributes and properties, ::part and custom properties, accessibility, security, and when to choose something else. Includes a live custom element lab and a which-technology matcher."
+keywords:
+  - web components
+  - custom elements
+  - customElements.define
+  - shadow DOM
+  - attachShadow
+  - connectedCallback attributeChangedCallback
+  - CSS part
+  - composed events
+  - declarative shadow DOM
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, web-components, custom-elements, shadow-dom, accessibility, frontend]
+---
+
+import {useState, useEffect, useRef} from 'react';
+
+export const ratingShadowHtml = '<style>:host { display: inline-block; } .stars { display: inline-flex; gap: 0.15rem; } button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0.1rem 0.2rem; color: var(--star-color, #b9770e); }</style><div class="stars" role="group"></div>';
+
+export function defineRatingStars() {
+  if (typeof customElements === "undefined" || customElements.get("rating-stars")) return;
+  class RatingStars extends HTMLElement {
+    static get observedAttributes() { return ["value", "max", "label"]; }
+    constructor() {
+      super();
+      // A fixed string written by the author, with no visitor data in it.
+      this._root = this.attachShadow({mode: "open"});
+      this._root.innerHTML = ratingShadowHtml;
+    }
+    connectedCallback() { this._render(); }
+    attributeChangedCallback() { this._render(); }
+    get value() { return Number(this.getAttribute("value")) || 0; }
+    set value(v) { this.setAttribute("value", String(v)); }
+    get max() {
+      const m = Math.floor(Number(this.getAttribute("max")));
+      return m >= 1 && m <= 10 ? m : 5;
+    }
+    _render() {
+      const box = this._root.querySelector(".stars");
+      if (!box) return;
+      box.setAttribute("aria-label", this.getAttribute("label") || "Rating");
+      box.replaceChildren();
+      const current = Math.min(this.value, this.max);
+      for (let i = 1; i <= this.max; i += 1) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("part", "star");
+        b.setAttribute("aria-label", i + " of " + this.max + " stars");
+        b.setAttribute("aria-pressed", String(i === current));
+        b.textContent = i <= current ? "★" : "☆";
+        b.addEventListener("click", () => {
+          b.dispatchEvent(new CustomEvent("rating-change", {detail: {value: i}, bubbles: true, composed: true}));
+          this.value = i;
+        });
+        box.append(b);
+      }
+    }
+  }
+  customElements.define("rating-stars", RatingStars);
+}
+
+export function WebComponentLab() {
+  const ref = useRef(null);
+  const [defined, setDefined] = useState(false);
+  const [log, setLog] = useState([]);
+  const [attr, setAttr] = useState("3");
+  const [max, setMax] = useState("5");
+  const [big, setBig] = useState(false);
+  const [color, setColor] = useState("#b9770e");
+  useEffect(function () {
+    setDefined(typeof customElements !== "undefined" && Boolean(customElements.get("rating-stars")));
+  }, []);
+  useEffect(function () {
+    const el = ref.current;
+    if (!el) return undefined;
+    const handler = function (e) {
+      const first = e.composedPath()[0];
+      setAttr(el.getAttribute("value"));
+      setLog(function (prev) {
+        return ["rating-change, value " + e.detail.value + ". event.target is <" + e.target.tagName.toLowerCase() + ">, the real source was <" + first.tagName.toLowerCase() + ">."].concat(prev).slice(0, 5);
+      });
+    };
+    el.addEventListener("rating-change", handler);
+    return function () { el.removeEventListener("rating-change", handler); };
+  }, []);
+  useEffect(function () {
+    if (ref.current) ref.current.classList.toggle("wc-big", big);
+  }, [big]);
+  useEffect(function () {
+    if (ref.current) ref.current.style.setProperty("--star-color", color);
+  }, [color]);
+  const define = function () {
+    defineRatingStars();
+    setDefined(true);
+    setLog(function (prev) { return ["customElements.define('rating-stars', ...) ran, and the element on the page was upgraded."].concat(prev).slice(0, 5); });
+  };
+  const changeMax = function (v) {
+    setMax(v);
+    if (ref.current) ref.current.setAttribute("max", v);
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <style>{"rating-stars.wc-big::part(star) { font-size: 1.9rem; }"}</style>
+      <p style={{margin: "0 0 0.5rem"}}>
+        {defined ? "The element is defined. The stars below are drawn by its shadow DOM." : "The element is not defined yet. The browser shows the plain text between the tags."}
+      </p>
+      <div style={{border: "1px solid rgba(128,128,128,0.5)", borderRadius: 6, padding: "0.75rem", marginBottom: "0.75rem"}}>
+        <rating-stars ref={ref} value="3" max="5" label="Recipe rating">Rating: 3 out of 5 (plain text fallback)</rating-stars>
+      </div>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={define} disabled={defined}>Define rating-stars</button>
+      </div>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}} disabled={!defined}>
+        <legend style={{fontWeight: 600}}>Change it from outside</legend>
+        <label style={{marginRight: "1rem"}}>Number of stars{" "}
+          <select value={max} onChange={function (e) { changeMax(e.target.value); }}>
+            {["3", "5", "7"].map(function (m) { return <option key={m} value={m}>{m}</option>; })}
+          </select>
+        </label>
+        <label style={{marginRight: "1rem"}}>Star colour (a CSS custom property){" "}
+          <select value={color} onChange={function (e) { setColor(e.target.value); }}>
+            <option value="#b9770e">Gold</option>
+            <option value="#c0392b">Red</option>
+            <option value="#117a8b">Teal</option>
+          </select>
+        </label>
+        <label style={{display: "block", marginTop: "0.4rem"}}>
+          <input type="checkbox" checked={big} onChange={function (e) { setBig(e.target.checked); }} /> Page CSS enlarges the stars through <code>::part(star)</code>
+        </label>
+      </fieldset>
+      <p style={{margin: "0 0 0.25rem"}}>The <code>value</code> attribute on the element: <strong>{attr}</strong> (click a star to change it)</p>
+      <p style={{margin: "0.75rem 0 0.2rem", fontWeight: 600}}>Event log (newest first)</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", minHeight: "4rem"}} aria-live="polite"><code>{log.length === 0 ? "Press Define, then click a star." : log.join("\n")}</code></pre>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        This is a real custom element with a real shadow root, defined by a button press so you can watch the upgrade. Once defined, it stays defined until the page reloads. Nothing is stored or sent anywhere.
+      </p>
+    </div>
+  );
+}
+
+export const techOptions = ["custom elements", "shadow DOM", "template", "slot", "ES modules", "part and custom properties"];
+
+export const techItems = [
+  {job: "Give your tag a name with a hyphen, and run code when it appears in the page", answer: "custom elements"},
+  {job: "Keep the component's styles from leaking out, and the page's styles from leaking in", answer: "shadow DOM"},
+  {job: "Keep an inert blueprint of markup that you clone when needed", answer: "template"},
+  {job: "Let the page author supply their own title inside the component", answer: "slot"},
+  {job: "Load the component's code once, with a script type of module", answer: "ES modules"},
+  {job: "Let page authors restyle chosen parts of the inside, or change a colour, safely", answer: "part and custom properties"}
+];
+
+export function TechMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = techItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Match each job to the part of the web components toolkit that does it.</p>
+      {techItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.job} style={{margin: "0 0 0.7rem"}}>
+            <label htmlFor={"tc-" + i}>{it.job}</label>
+            <br />
+            <select id={"tc-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {techOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + techItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+You have met `template`, which keeps a blueprint, and `slot`, which leaves openings for content. **Web components** put these together with two more pieces, **custom elements** and **shadow DOM**, so you can invent your **own HTML tags**: `<rating-stars>`, `<site-header>`, `<user-card>`. They are plain browser features, with no library required, and they work in every modern browser.
+
+## What You Will Learn
+
+- The four building blocks of a web component
+- How to define a custom element, and the rules for its name
+- Lifecycle callbacks, attributes, and properties
+- How shadow DOM keeps styles and markup private, and what can still get through
+- How components talk to the page with events
+- How to load components and enhance pages progressively
+- Accessibility and security points, and when to choose something else
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A web component is a **reusable tag** that brings its own markup, its own styles, and its own behaviour, and works anywhere HTML works. The page author writes one line of HTML. The component takes care of the rest.
+
+<Tabs>
+<!--
+<TabItem value="lab" label="Custom Element Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<WebComponentLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+-->
+<TabItem value="matcher" label="Which Part?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TechMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<!-- The page author writes plain HTML, with fallback text inside -->
+<rating-stars value="3" max="5" label="Recipe rating">
+  Rating: 3 out of 5
+</rating-stars>
+
+<script type="module" src="/js/rating-stars.js"></script>
+```
+
+```js title="rating-stars.js"
+const template = document.createElement("template");
+template.innerHTML = `
+  <style>
+    :host { display: inline-block; }
+    button { background: none; border: none; cursor: pointer;
+             font-size: 1.2rem; color: var(--star-color, goldenrod); }
+  </style>
+  <div class="stars" role="group"></div>`;
+
+class RatingStars extends HTMLElement {
+  static get observedAttributes() { return ["value", "max"]; }
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" }).append(template.content.cloneNode(true));
+  }
+
+  connectedCallback() { this.render(); }
+  attributeChangedCallback() { this.render(); }
+
+  get value() { return Number(this.getAttribute("value")) || 0; }
+  set value(v) { this.setAttribute("value", String(v)); }
+
+  render() {
+    const box = this.shadowRoot.querySelector(".stars");
+    const max = Number(this.getAttribute("max")) || 5;
+    box.setAttribute("aria-label", this.getAttribute("label") || "Rating");
+    box.replaceChildren();
+    for (let i = 1; i <= max; i += 1) {
+      const star = document.createElement("button");
+      star.type = "button";
+      star.setAttribute("part", "star");
+      star.setAttribute("aria-label", i + " of " + max + " stars");
+      star.textContent = i <= this.value ? "★" : "☆";
+      star.addEventListener("click", () => {
+        // Dispatch first: setting value re-renders and removes this button
+        star.dispatchEvent(new CustomEvent("rating-change", {
+          detail: { value: i }, bubbles: true, composed: true
+        }));
+        this.value = i;
+      });
+      box.append(star);
+    }
+  }
+}
+
+customElements.define("rating-stars", RatingStars);
+```
+
+```css title="styles.css"
+/* The page can change a colour through a custom property... */
+rating-stars { --star-color: crimson; }
+
+/* ...and restyle the parts the component chose to expose */
+rating-stars::part(star) { font-size: 1.8rem; }
+
+/* Style the not-yet-defined state */
+rating-stars:not(:defined) { display: inline-block; }
+```
+
+</TabItem>
+</Tabs>
+
+## The Four Building Blocks
+
+| Block | What it gives you | Where you met it |
+| :-- | :-- | :-- |
+| **Custom elements** | Your own tag name, and code that runs when it is used | This lesson |
+| **Shadow DOM** | Private markup and styles inside the element | This lesson |
+| **Templates and slots** | Reusable markup, and openings for the page author's content | [template](./template), [slot](./slot) |
+| **ES modules** | A clean way to load the component's code | [Modern HTML Features](./modern-html-features) |
+
+You can use any of these on its own. A component usually uses all four.
+
+## Step 1: Custom Elements
+
+### Naming
+
+A custom element name must:
+
+- contain a **hyphen**, such as `rating-stars`, so it can never clash with a future built-in tag,
+- be **lowercase**, and start with a letter,
+- not be one of the few reserved names that contain a hyphen already, such as `font-face`.
+
+Always write a **closing tag.** Custom elements cannot be self-closing, so `<rating-stars />` does not work the way you expect.
+
+### Defining
+
+A custom element is a JavaScript class that extends `HTMLElement`, registered with `customElements.define`. The first thing the constructor does is call `super()`.
+
+```js
+class RatingStars extends HTMLElement { /* ... */ }
+customElements.define("rating-stars", RatingStars);
+```
+
+Until `define` runs, the browser treats the tag as an unknown element. When it runs, every matching element **already on the page is upgraded**. Open the **Custom Element Lab** and watch this: the element starts as plain text, and turns into stars when you press the button.
+
+### Lifecycle callbacks
+
+| Callback | When it runs |
+| :-- | :-- |
+| `constructor()` | The element is created. Keep it light: set up the shadow root, and nothing else |
+| `connectedCallback()` | The element is added to the page. A good place to render |
+| `disconnectedCallback()` | The element is removed. Clean up timers and listeners here |
+| `attributeChangedCallback(name, old, new)` | A watched attribute changes |
+| `adoptedCallback()` | The element is moved to another document (rare) |
+
+In the constructor, **do not read attributes or children, and do not add attributes or children** to the element itself. At that moment, they may not exist yet. Do that work in `connectedCallback`.
+
+### Attributes and properties
+
+- **Attributes** are what the page author writes in HTML. List the ones you watch in `static get observedAttributes()`, and `attributeChangedCallback` will run when they change.
+- **Properties** are what JavaScript uses, such as `element.value`. A neat habit is to **reflect** a property to an attribute, as the `value` getter and setter do, so HTML and JavaScript stay in sync.
+- Attributes are always **strings.** Convert them yourself, and **validate them**, as the lab's `max` getter does.
+
+### Useful extras
+
+- **`:defined`** is a CSS pseudo-class that matches once an element is upgraded. `:not(:defined)` styles the waiting state.
+- **`customElements.whenDefined("rating-stars")`** returns a promise that resolves once the tag is defined.
+
+## Step 2: Shadow DOM
+
+`attachShadow({ mode: "open" })` gives the element a **shadow root**, a private tree for its markup and styles.
+
+```js
+const root = this.attachShadow({ mode: "open" });
+```
+
+- **Styles inside do not leak out,** and **the page's rules do not reach in.** A `button` rule in your component only affects the component's buttons.
+- **`open`** means `element.shadowRoot` returns the root. **`closed`** hides it from casual access, but this is **not security**. See below.
+
+### What can still cross the boundary
+
+Encapsulation is not a wall. A few things are meant to cross, and they are how you make components flexible:
+
+| Way in | How it works |
+| :-- | :-- |
+| **Inherited properties** | Things like `color`, `font-family`, and `line-height` flow into the shadow DOM from the host's parents |
+| **CSS custom properties** | `--star-color` set on the page is readable inside, through `var(--star-color, goldenrod)` |
+| **`::part()`** | The component marks elements with `part="star"`, and the page styles them with `rating-stars::part(star)` |
+| **`::slotted()`** | The component styles top-level slotted elements. See [slot](./slot) |
+| **`:host`** | The component styles its own host, such as `:host { display: inline-block; }` |
+
+Custom elements are `display: inline` by default, so one of the first rules most components need is `:host { display: block; }` or `inline-block`.
+
+In the lab, the colour list sets a custom property on the element, and the checkbox uses `::part(star)` from the page's CSS. Both reach inside the shadow root, and nothing else does.
+
+## Step 3: Templates and Slots Inside
+
+A tidy component keeps its markup in a `template` and clones it into the shadow root, as in the code above. Add `slot` elements where the page author's content should appear, so authors can write `<user-card><h3 slot="name">Ada</h3></user-card>`. The two earlier lessons cover the details.
+
+## Step 4: Talking to the Page With Events
+
+A component should send information to the page the same way built-in elements do: **with events.**
+
+```js
+// dispatched from an element inside the shadow root
+button.dispatchEvent(new CustomEvent("rating-change", {
+  detail: { value: 4 },
+  bubbles: true,
+  composed: true
+}));
+```
+
+- **`detail`** carries your data.
+- **`bubbles`** lets the event travel up through the page, so a listener on a parent can catch it.
+- **`composed`** lets it **cross the shadow boundary.** Without it, the event stays inside the shadow root.
+
+The rule of thumb is **data down, events up:** the page sets attributes and properties to give the component data, and the component sends events to tell the page what happened.
+
+### Retargeting
+
+When an event from inside a shadow root reaches the page, the browser **retargets** it: `event.target` shows the **host element**, not the button inside. The real source is available with `event.composedPath()[0]` (for open roots). The lab's log shows both.
+
+## Step 5: Loading and Progressive Enhancement
+
+Load component code with a module script, which is deferred by default:
+
+```html
+<script type="module" src="/js/rating-stars.js"></script>
+```
+
+Then design for the **time before** the component is ready, and for visitors where it never runs:
+
+1. **Put useful content between the tags.** "Rating: 3 out of 5" shows until the component takes over. After the upgrade, light DOM content with no slot is simply not drawn.
+2. **Reserve space** with CSS on `:not(:defined)`, so the page does not jump when the component appears.
+3. **Do not hide the content** until JavaScript arrives, if the content matters.
+
+### Declarative shadow DOM
+
+You can also ship a shadow root in the HTML itself, with `<template shadowrootmode="open">`, so a component can have its structure and styles before any script runs. This is useful for server-rendered pages. It works when the HTML parser reads the page, and support is newer, so check MDN.
+
+## Accessibility
+
+A custom element has **no built-in meaning.** To the browser it is a generic element, with no role and no keyboard behaviour. You supply those.
+
+- **Use real elements inside:** a `button` for a button, an `input` for a field, a heading for a heading. They bring roles, focus, and keyboard support for free. The lab's stars are real `button` elements.
+- **Give things names.** Take labels from attributes (such as `label`), and set them with `setAttribute` and `textContent`, not `innerHTML`.
+- **Remember the boundary.** IDs inside the shadow root and in the page are separate, so `label for` and `aria-labelledby` do not cross it. See [slot](./slot).
+- **Focus.** `attachShadow({ mode: "open", delegatesFocus: true })` helps when clicking the host should focus an inner control.
+- **Form fields.** A field hidden in a shadow root does not submit with the page's form. For a custom form control, look up "form-associated custom elements", or slot a real `input`.
+- **Test** with the keyboard, a screen reader, and at 200% zoom.
+
+:::warning
+Avoid **customized built-in elements**, written as `<button is="fancy-button">`. They extend a real element like a button, which would give free accessibility, but not every major browser supports them. Prefer an autonomous element that uses a real `button` inside.
+:::
+
+## When to Use Web Components
+
+| Good fit | Weaker fit |
+| :-- | :-- |
+| Widgets and design-system pieces shared between teams, sites, or frameworks | A large app with lots of changing state and routing, where a framework helps |
+| Small, self-contained features, such as a rating, a tabs widget, or a video player | A one-off piece of markup that appears once |
+| Enhancing static or server-rendered pages | Anything that must work with no JavaScript at all |
+| Embeddable widgets that must not clash with the host page's CSS | Simple repeated markup, where a `template` or plain HTML is enough |
+
+Web components and frameworks also mix well. Most frameworks can use custom elements, and many can produce them.
+
+## Checking Your Setup
+
+1. In DevTools **Elements,** find `#shadow-root`. Expand it to see the component's private markup.
+2. In the **Console,** run `customElements.get("rating-stars")` to confirm the tag is defined.
+3. Check `document.querySelector("rating-stars").shadowRoot` for an open root.
+4. Click inside the component, and look at the event in a page-level listener. What is `event.target`?
+5. Remove JavaScript or the script, and look at the fallback.
+6. Test every control with the **keyboard.**
+7. Try right-to-left text, long labels, and 200% zoom.
+8. Check the **Console** for errors on page load, and for CSP messages.
+
+## Best Practices
+
+1. **Name tags with a hyphen,** and a clear prefix for your project.
+2. **Keep the constructor light,** and render in `connectedCallback`.
+3. **Use `observedAttributes`** and reflect properties to attributes.
+4. **Validate every attribute.**
+5. **Use real elements inside,** for accessibility.
+6. **Expose a small, documented surface:** attributes, events, slots, `part`s, and custom properties.
+7. **Send events with `composed: true`** when the page needs them.
+8. **Put useful content in the light DOM** as a fallback.
+9. **Clean up** in `disconnectedCallback`.
+10. **Document your component,** so others can use it.
+
+## Quick Checklist
+
+- [ ] The tag name has a hyphen and a closing tag
+- [ ] The constructor only sets up the shadow root
+- [ ] Attributes are validated, and watched through `observedAttributes`
+- [ ] Inside the shadow DOM are real, accessible elements
+- [ ] Events cross the boundary with `composed: true`, where needed
+- [ ] The page's CSS can restyle through custom properties and `::part`
+- [ ] Something sensible shows before the component loads
+- [ ] No visitor data goes into `innerHTML`
+- [ ] The component works with the keyboard and a screen reader
+
+## Security and Privacy Notes
+
+- **Shadow DOM is not a security boundary.** Scripts on the page can reach into an open root, and `closed` mode only makes casual access harder. Never keep secrets inside a component.
+- **Attributes and slot content are untrusted input.** If a `label` attribute holds markup and you put it into `innerHTML`, you have created cross-site scripting. Use `textContent` and `setAttribute`. See [XSS Basics](/tutorials/html/security/xss-basics).
+- **Use a fixed string or a `template` for the component's markup.** Never build it from visitor text.
+- **Third-party components run with the full power of your page.** Treat a component like any script: trust the source, use `https`, pin versions, and consider `integrity`. See [Third-Party Content Security](/tutorials/html/embedded-content/third-party-content-security).
+- **Your Content Security Policy still applies.** Inline `style` elements inside a shadow root follow the same style rules as the page. Check how your policy treats them. See [Content Security Policy](/tutorials/html/security/content-security-policy).
+- **Events carry data.** Do not put sensitive information in `detail`, because any listener on the page can read it.
+
+## Global Audience Notes
+
+- **Take every visible word from outside the component** (attributes or slots), so each page can supply its own language. Avoid hard-coding English in the shadow DOM.
+- **Right-to-left languages:** use logical properties such as `margin-inline-start`, and test. Newer CSS also offers a `:dir()` selector for direction-specific rules.
+- **Fonts and sizes inherit,** so users' language and zoom settings carry through.
+- **Components make good shared widgets across regions,** but each region's text, numbers, and dates need to be formatted with `Intl`, not by hand.
+- **Weak devices and networks:** keep components small, load them with `type="module"`, and give a readable fallback.
+
+## Common Mistakes to Avoid
+
+1. **Forgetting the hyphen** in the tag name.
+2. **Writing a self-closing tag.**
+3. **Reading attributes or adding children in the constructor.**
+4. **Forgetting `observedAttributes`,** so changes are ignored.
+5. **Using `innerHTML` with attribute or visitor text.**
+6. **Not setting `display`** on `:host`, and wondering about layout.
+7. **Expecting page CSS to reach inside,** instead of exposing `::part` or custom properties.
+8. **Forgetting `composed: true`,** so the page never hears the event.
+9. **Building controls from `div`s,** with no roles or keyboard support.
+10. **Showing nothing until the script loads.**
+
+## Practice Time
+
+1. In the lab, read the line above the stars. What does the page show before the element is defined?
+2. Press **Define.** What happens to the text you saw?
+3. Click a star. What does the log say about `event.target` and the real source?
+4. Change the number of stars, then the colour. Which attribute and which CSS property are you changing?
+5. Tick the `::part` box. What does the page's CSS reach?
+6. Complete the **Which Part?** matcher.
+7. Write a `user-card` component with a default slot and a `name` slot, and a fallback for each.
+8. Bonus: add `disconnectedCallback` to a component that uses a timer, and make sure it stops.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What are the four building blocks of web components?</summary>
+
+Custom elements, shadow DOM, templates and slots, and ES modules.
+
+</details>
+
+<details>
+<summary>2. What are the rules for a custom element name?</summary>
+
+It must contain a hyphen, be lowercase, start with a letter, and avoid a few reserved names. Always write a closing tag.
+
+</details>
+
+<details>
+<summary>3. What should the constructor and `connectedCallback` each do?</summary>
+
+The constructor stays light, setting up the shadow root. `connectedCallback` runs when the element joins the page, and is the place to render and read attributes.
+
+</details>
+
+<details>
+<summary>4. What can cross the shadow boundary?</summary>
+
+Inherited CSS properties, CSS custom properties, `::part` styling, slotted content, and composed events.
+
+</details>
+
+<details>
+<summary>5. Why use `composed: true` on an event?</summary>
+
+Without it, a custom event stays inside the shadow root. With it, the event crosses the boundary, so the page can listen for it.
+
+</details>
+
+<details>
+<summary>6. Is shadow DOM a security feature?</summary>
+
+No. Scripts can reach into an open root, and `closed` mode is not protection. Treat attributes and slotted content as untrusted, and never put secrets in a component.
+
+</details>
+
+## Key Takeaways
+
+- **Web components are your own HTML tags:** custom elements, shadow DOM, templates and slots, and modules.
+- **Name with a hyphen,** define with `customElements.define`, and render in `connectedCallback`.
+- **Shadow DOM keeps markup and styles private.** Custom properties, `::part`, and slots are the controlled ways in.
+- **Data down, events up,** with `composed: true` events.
+- **Use real elements inside,** for accessibility.
+- **Put useful content in the light DOM,** for fallback and progressive enhancement.
+- **Treat attributes as untrusted,** and never use shadow DOM for secrets.
+
+You have now covered every building block of modern HTML in this section. One lesson remains: [Lazy Loading](./lazy-loading), which looks at native lazy loading for images and frames as part of the modern toolbox.

@@ -1,0 +1,508 @@
+---
+id: html-modern-popover
+title: "The popover Attribute"
+sidebar_label: "Popover"
+sidebar_position: 6
+slug: /html/modern-html/popover
+description: "Learn the popover attribute: build menus, help cards, and panels that open from a button, close on Escape or an outside click, and sit above the page with no JavaScript. Covers auto and manual popovers, popovertarget, the JavaScript API, positioning, fallbacks, accessibility, and when to choose a dialog or details instead. Includes a live popover lab and an auto-or-manual picker."
+keywords:
+  - popover attribute
+  - popovertarget
+  - HTML popover API
+  - showPopover hidePopover
+  - popover auto manual
+  - light dismiss
+  - beforetoggle toggle event
+  - anchor positioning popover
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, popover, top-layer, accessibility, frontend]
+---
+
+import {useState, useEffect} from 'react';
+
+export const labPopovers = [
+  {id: "po-a", kind: "auto", name: "Help card A"},
+  {id: "po-b", kind: "auto", name: "Help card B"},
+  {id: "po-m", kind: "manual", name: "Status banner"}
+];
+
+export function placeBelow(pop, invoker) {
+  const r = invoker.getBoundingClientRect();
+  pop.style.inset = "auto";
+  pop.style.margin = "0";
+  pop.style.top = Math.round(r.bottom + 6) + "px";
+  pop.style.left = Math.round(Math.max(8, r.left)) + "px";
+}
+
+export function countOpen() {
+  try {
+    return document.querySelectorAll(":popover-open").length;
+  } catch (e) {
+    return -1;
+  }
+}
+
+export function PopoverLab() {
+  const [supported, setSupported] = useState(null);
+  const [log, setLog] = useState([]);
+  useEffect(function () {
+    const ok = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
+    setSupported(ok);
+    if (!ok) return undefined;
+    const cleanups = labPopovers.map(function (p) {
+      const el = document.getElementById(p.id);
+      const inv = document.getElementById(p.id + "-btn");
+      if (!el) return function () {};
+      const before = function (e) { if (e.newState === "open" && inv) placeBelow(el, inv); };
+      const after = function (e) {
+        setLog(function (prev) { return [p.name + " is now " + e.newState + " (" + countOpen() + " open in total)"].concat(prev).slice(0, 7); });
+      };
+      el.addEventListener("beforetoggle", before);
+      el.addEventListener("toggle", after);
+      return function () {
+        el.removeEventListener("beforetoggle", before);
+        el.removeEventListener("toggle", after);
+      };
+    });
+    return function () { cleanups.forEach(function (f) { f(); }); };
+  }, []);
+  return (
+    <div style={{padding: "1rem"}}>
+      <style>{".po-box { padding: 0.9rem 1rem; border: 1px solid rgba(128,128,128,0.6); border-radius: 8px; max-width: 16rem; }"}</style>
+      {supported === false && (
+        <p style={{color: "#c0392b", fontWeight: 600}}>This browser does not support the popover attribute, so the cards below simply show as ordinary text. That is what a visitor with an older browser would see.</p>
+      )}
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.5rem"}}>
+        {labPopovers.map(function (p) {
+          return <button key={p.id} type="button" id={p.id + "-btn"} popovertarget={p.id}>{p.name} ({p.kind})</button>;
+        })}
+      </div>
+      <div id="po-a" popover="auto" className="po-box">
+        <strong>Help card A</strong>
+        <p style={{margin: "0.4rem 0 0"}}>An auto popover. Press Escape, or click outside it, to close it.</p>
+      </div>
+      <div id="po-b" popover="auto" className="po-box">
+        <strong>Help card B</strong>
+        <p style={{margin: "0.4rem 0 0"}}>Opening this one closes card A, because only one auto popover stays open.</p>
+      </div>
+      <div id="po-m" popover="manual" className="po-box">
+        <strong>Status banner</strong>
+        <p style={{margin: "0.4rem 0"}}>A manual popover. Escape and outside clicks do nothing. It closes only with its own button.</p>
+        <button type="button" popovertarget="po-m" popovertargetaction="hide">Close</button>
+      </div>
+      <p style={{margin: "0.75rem 0 0.2rem", fontWeight: 600}}>Event log (newest first)</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap", minHeight: "4rem"}} aria-live="polite"><code>{log.length === 0 ? "Open A, then B. Then open the banner and click outside it, and press Escape." : log.join("\n")}</code></pre>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        These are real popovers. The few lines of script place each one under its button when it opens. Nothing here is stored or sent.
+      </p>
+    </div>
+  );
+}
+
+export const kindOptions = ["auto", "manual", "neither (use a dialog or details)"];
+
+export const kindScenarios = [
+  {text: "A help card that should close when the visitor clicks elsewhere or presses Escape.", ok: "auto", why: "Light dismiss, meaning an outside click or Escape, is what auto popovers do for you."},
+  {text: "A status banner that must stay until the visitor presses its own Close button.", ok: "manual", why: "A manual popover ignores outside clicks and Escape, so only your own controls close it."},
+  {text: "Several menus, where opening one should close the others.", ok: "auto", why: "Auto popovers close each other. Only one unrelated auto popover stays open."},
+  {text: "A message that your own script opens and closes at set moments, such as when an upload finishes.", ok: "manual", why: "Your script is in control, so manual fits, using showPopover() and hidePopover()."},
+  {text: "A question the visitor must answer before anything else on the page works.", ok: "neither (use a dialog or details)", why: "A popover is not modal and does not block the page. A modal dialog does."},
+  {text: "Extra text that expands in place, inside the flow of the page.", ok: "neither (use a dialog or details)", why: "Expanding in place is what details and summary are for."}
+];
+
+export function KindPicker() {
+  const [idx, setIdx] = useState(0);
+  const [choice, setChoice] = useState("");
+  const [checked, setChecked] = useState(false);
+  const sc = kindScenarios[idx];
+  const good = choice === sc.ok;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}><strong>Scenario {idx + 1} of {kindScenarios.length}:</strong> {sc.text}</p>
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Which fits?</legend>
+        {kindOptions.map(function (o) {
+          return (
+            <label key={o} style={{display: "block", margin: "0.2rem 0"}}>
+              <input type="radio" name="kp-choice" checked={choice === o} onChange={function () { setChoice(o); setChecked(false); }} /> {o}
+            </label>
+          );
+        })}
+      </fieldset>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap"}}>
+        <button type="button" disabled={choice === ""} onClick={function () { setChecked(true); }}>Check my answer</button>
+        <button type="button" onClick={function () { setIdx((idx + 1) % kindScenarios.length); setChoice(""); setChecked(false); }}>Next scenario</button>
+      </div>
+      <div aria-live="polite">
+        {checked && (
+          <p style={{marginTop: "0.75rem"}}>
+            <strong style={{color: good ? "#1e8449" : "#c0392b"}}>{good ? "Correct. " : "Not quite. "}</strong>
+            {good ? "" : "A good answer here: " + sc.ok + ". "}
+            {sc.why}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Think of every small panel that opens above a page: a help card, a share menu, a list of filters, a notification. For years, each one needed JavaScript to open it, a lot of CSS to place it, and more code to close it when the visitor clicked elsewhere or pressed Escape. The **`popover` attribute** does all of that for you, in a few lines of HTML.
+
+## What You Will Learn
+
+- The three pieces of a popover: the attribute, the button, and the content
+- The difference between `auto` and `manual` popovers
+- What the browser handles for you
+- Why a popover appears in the middle of the screen, and how to place it
+- The JavaScript API and its events
+- What happens in browsers without support
+- When a dialog or `details` is a better choice
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A popover is content that sits in the **top layer**, above the page, until the visitor dismisses it. Unlike a [modal dialog](./dialog), it does **not** block the rest of the page. It is a light, temporary layer, not an interruption.
+
+<Tabs>
+<TabItem value="lab" label="Popover Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PopoverLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="picker" label="Auto or Manual?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<KindPicker />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<!-- 1. The button that opens it -->
+<button type="button" popovertarget="tips">Tips</button>
+
+<!-- 2. The content: the popover attribute hides it until opened -->
+<div id="tips" popover>
+  <h2>Quick tips</h2>
+  <p>Press Escape or click outside to close this.</p>
+</div>
+
+<!-- A manual popover with its own close button -->
+<button type="button" popovertarget="banner">Show status</button>
+<div id="banner" popover="manual">
+  <p>Upload finished.</p>
+  <button type="button" popovertarget="banner" popovertargetaction="hide">Close</button>
+</div>
+```
+
+```css title="styles.css"
+[popover] {
+  margin: 0;                 /* the default centres it, so reset this */
+  padding: 1rem;
+  border: 1px solid #888;
+  border-radius: 8px;
+  max-width: 20rem;
+}
+```
+
+</TabItem>
+</Tabs>
+
+## The Three Pieces
+
+1. **The content:** any element with the `popover` attribute and an `id`. It is hidden until opened.
+2. **The invoker:** a `button` with `popovertarget` set to that `id`. Clicking it toggles the popover.
+3. **The behaviour:** chosen by the attribute's value, `auto` (the default) or `manual`.
+
+Add `popovertargetaction` to a button to say what it does: `show`, `hide`, or `toggle` (the default). A "Close" button inside the popover usually uses `hide`.
+
+## What the Browser Does for You
+
+For an `auto` popover, with no JavaScript:
+
+| Behaviour | Details |
+| :-- | :-- |
+| **Hidden until opened** | Without the open state, the popover is not displayed at all |
+| **Top layer** | It is shown above everything, with no `z-index` games, and is not clipped by parent boxes |
+| **Light dismiss** | A click outside it, or the Escape key, closes it |
+| **One at a time** | Opening one auto popover closes other unrelated ones. A popover opened from inside another stays with its parent |
+| **Toggle button** | The invoker button opens and closes it, and browsers expose its expanded state to assistive technology |
+| **Focus handling** | Closing returns focus sensibly, and `autofocus` inside the popover is respected |
+
+Try it in the lab: open Help card A, then Help card B, and read the log.
+
+## auto or manual?
+
+| | `popover` (auto) | `popover="manual"` |
+| :-- | :-- | :-- |
+| Outside click closes it | Yes | No |
+| Escape closes it | Yes | No |
+| Closes other popovers | Yes, unrelated ones | No |
+| Who closes it | The browser, or the visitor | Only your buttons or script |
+| Good for | Menus, help cards, filters | Status messages, persistent panels, script-driven panels |
+
+When in doubt, start with `auto`. Choose `manual` only when you want the panel to stay.
+
+## Why Is It in the Middle of the Screen?
+
+A surprise for most beginners: by default a popover is shown **centred** in the viewport, with its own border and padding. That is the browser's default style, and it is not attached to the button.
+
+To change it:
+
+1. **Reset the defaults,** with `margin: 0`, and set your own padding and border, as in the code above.
+2. **Place it near the button.** You have two options.
+
+### Option 1: CSS anchor positioning (newer)
+
+Newer browsers can tie a popover to the button with CSS:
+
+```css
+.menu-button { anchor-name: --menu; }
+
+#menu {
+  position-anchor: --menu;
+  position-area: block-end span-inline-end;
+  inset: auto;
+  margin: 0;
+}
+```
+
+Support is still spreading, and the syntax has changed over time, so check MDN before you rely on it. Where it is missing, the popover falls back to its default position, so build the rest to cope with that.
+
+### Option 2: A few lines of script
+
+On the `beforetoggle` event, read the button's position and set the popover's `top` and `left`. This is what the lab does:
+
+```js
+popover.addEventListener("beforetoggle", (event) => {
+  if (event.newState !== "open") return;
+  const box = button.getBoundingClientRect();
+  popover.style.inset = "auto";
+  popover.style.margin = "0";
+  popover.style.top = box.bottom + 6 + "px";
+  popover.style.left = Math.max(8, box.left) + "px";
+});
+```
+
+This works in every browser that supports popovers. For a popover that must stay glued to a button during scrolling or resizing, anchor positioning is better, or a small positioning library.
+
+## The JavaScript API
+
+You rarely need it, but it is there:
+
+```js
+const panel = document.getElementById("tips");
+
+panel.showPopover();      // open
+panel.hidePopover();      // close
+panel.togglePopover();    // switch
+
+panel.addEventListener("beforetoggle", (event) => {
+  console.log("about to become", event.newState);  // "open" or "closed"
+});
+panel.addEventListener("toggle", (event) => {
+  console.log("is now", event.newState);
+});
+
+panel.matches(":popover-open");   // is it open right now?
+```
+
+- **`beforetoggle`** fires before the change. When a popover is about to open, you can cancel the event to stop it, and it is a good place to prepare content or position the popover.
+- **`toggle`** fires after the change. Use it to update labels or analytics.
+- **`:popover-open`** is a CSS pseudo-class for styling the open state.
+- **`::backdrop`** exists for popovers too, if you want to dim the page, but popovers are usually used without one.
+
+## Nested Popovers
+
+A popover opened by a button **inside another auto popover** counts as its child. Opening it does not close the parent, so you can build a menu with a sub-menu. Closing the parent closes the children.
+
+## Menus and Tooltips
+
+A few honest notes about two popular uses:
+
+- **Menus.** A popover does not give you menu behaviour. A list of links inside a popover works well, and is a good, simple "disclosure" pattern. If you want arrow-key navigation like an application menu, you must add the roles and keyboard handling yourself. See the accessibility section.
+- **Tooltips.** A tooltip that opens on hover is difficult, because touch screens have no hover, and keyboard users need an equivalent. Prefer visible text, or a button that opens a small help card. Newer features for hover-style popovers are still being rolled out, so check support before relying on them.
+
+## Accessibility
+
+A popover adds **no meaning** by itself. It is only a container that shows and hides, so you must supply the meaning.
+
+- **Use real buttons** as invokers, with clear text such as "Open filters", not just an icon. If it is an icon, give it an accessible name with `aria-label`.
+- **Give the content a heading or a name,** so people know what opened. Use `aria-labelledby` or a heading.
+- **Keep it reachable by keyboard.** Make sure Tab moves into the popover after the button, and that every control inside works.
+- **Move focus when it helps,** for example with `autofocus` on the first field of a small form.
+- **Do not hide essential information** in a popover. Anything the visitor needs, such as an error, should be visible in the page.
+- **Test Escape and outside clicks,** and with a screen reader if you can.
+- **Make touch targets large enough,** because popovers are used a lot on phones.
+
+## Support and Fallbacks
+
+The `popover` attribute is supported in current versions of the major browsers, but older versions do not have it. Check its Baseline label and compatibility table on MDN.
+
+In a browser without support:
+
+- the **content shows as ordinary text** on the page, because the browser ignores the attribute,
+- and the **button does nothing.**
+
+That is a reasonable result if the content is harmless when visible, such as a help note. Plan for it:
+
+```js
+if (!("popover" in HTMLElement.prototype)) {
+  // Give older browsers a simple alternative, such as a link to a help page,
+  // or a tiny script that toggles a class.
+}
+```
+
+A polyfill, which is a script that adds the feature, exists for popovers, but it adds weight. Use one only if you truly need the behaviour in older browsers.
+
+## Popover, Dialog, or Details?
+
+| Need | Best fit |
+| :-- | :-- |
+| An answer is required, and the page must wait | [Modal dialog](./dialog) |
+| A temporary panel that does not block the page, and closes on outside click | **Popover (auto)** |
+| A panel that stays until a button is pressed | **Popover (manual)** |
+| Content that expands in place | [Details and Summary](./details-summary) |
+| A message that needs no interaction | A plain element in a live region |
+
+## Checking Your Setup
+
+1. Open the popover with the **mouse and the keyboard.** Is the button reachable, and does Enter or Space work?
+2. Press **Escape,** and **click outside.** Does an auto popover close, and a manual one stay?
+3. Open a **second** popover. Does the first close, as you expect?
+4. Check where focus goes when it opens and when it closes.
+5. In DevTools, look for the `popover` attribute, and check `:popover-open` in the styles panel.
+6. Test in a **second browser,** and with the feature unavailable, if you can.
+7. Test on a **phone** and at 200% zoom, and in right-to-left text.
+
+## Best Practices
+
+1. **Start with `popover` (auto),** and use `manual` only when needed.
+2. **Use a real `button` with `popovertarget`.**
+3. **Reset the default margin and style,** and position the popover on purpose.
+4. **Give each popover a heading or an accessible name.**
+5. **Do not hide essential information.**
+6. **Keep the content small and focused.**
+7. **Plan for browsers without support.**
+8. **Use a dialog for tasks that need an answer,** and `details` for in-place expansion.
+9. **Respect reduced motion** if you animate.
+10. **Test with the keyboard, a phone, and a screen reader.**
+
+## Quick Checklist
+
+- [ ] The invoker is a real button with `popovertarget`
+- [ ] The content has an `id`, a heading or name, and a clear purpose
+- [ ] The default margin is reset, and placement is deliberate
+- [ ] Escape and outside click behave as I intended (auto or manual)
+- [ ] Nothing essential is hidden inside
+- [ ] The page still makes sense where the feature is missing
+- [ ] It works with the keyboard and on a phone
+- [ ] A popover is really the right choice
+
+## Security and Privacy Notes
+
+- **A popover is not a security boundary.** Its content is in the page source even when it is closed. Never put secrets there.
+- **Build content safely.** If visitor text goes inside a popover, set it with `textContent`, not `innerHTML`. See [XSS Basics](/tutorials/html/security/xss-basics).
+- **The top layer can cover the whole page.** That is what makes popovers useful, and it is also why a script that you did not intend to run could use one to imitate a sign-in prompt. A strict [Content Security Policy](/tutorials/html/security/content-security-policy) and careful use of third-party scripts reduce the risk.
+- **Do not imitate browser or system messages** in a popover. It confuses visitors, and is a common phishing trick.
+- **Third-party content inside a popover** still needs `sandbox` and a trusted source. See [iFrame Security](/tutorials/html/security/iframe-security).
+
+## Global Audience Notes
+
+- **Placement should follow the writing direction.** Use logical properties such as `inset-inline-start`, and test right-to-left languages, so a popover does not open off the screen.
+- **Translated text is longer.** Use `max-width`, and let content wrap and scroll, instead of fixing a width.
+- **Touch is the main input for many visitors.** Make buttons comfortable to tap, and avoid anything that needs hover.
+- **Older and low-cost devices** may lack the feature. A page that still works without it serves everyone.
+- **Clear, plain wording** in the button and the content helps people reading in a second language.
+
+## Common Mistakes to Avoid
+
+1. **Wondering why the popover is centred,** and not resetting the default margin.
+2. **Using `manual` when `auto` was enough,** then adding script to close it.
+3. **Hiding essential information** in a popover.
+4. **No accessible name** for an icon-only invoker.
+5. **Using a popover for a task** that needs an answer, instead of a dialog.
+6. **Expecting menu keyboard behaviour** for free.
+7. **Building hover-only tooltips** that fail on touch screens.
+8. **Ignoring browsers without support,** so the content appears inline by surprise.
+9. **Relying on anchor positioning alone** without a fallback.
+10. **Putting secrets in a closed popover.**
+
+## Practice Time
+
+1. In the lab, open Help card A, then Help card B. What does the log say about A?
+2. Open the Status banner, click outside it, and press Escape. What happens?
+3. Close the banner with its own button. What is logged?
+4. Complete the **Auto or Manual?** picker.
+5. Build a popover with a button and three links, and reset its margin.
+6. Place it under the button with the script above.
+7. Add an `autofocus` element inside it, and test the keyboard.
+8. Bonus: view your page with the popover feature unavailable, and decide what visitors should see.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What do you need to build a popover?</summary>
+
+An element with the `popover` attribute and an `id`, and a `button` with `popovertarget` pointing to that `id`.
+
+</details>
+
+<details>
+<summary>2. What is the difference between `auto` and `manual`?</summary>
+
+An `auto` popover closes on Escape, on an outside click, and when another unrelated auto popover opens. A `manual` popover closes only through your own buttons or script.
+
+</details>
+
+<details>
+<summary>3. Why does a popover appear in the middle of the screen?</summary>
+
+That is the browser's default style. Reset the margin, and place it near the button with CSS anchor positioning or a little script.
+
+</details>
+
+<details>
+<summary>4. Is a popover modal?</summary>
+
+No. It does not block the rest of the page. A modal dialog does.
+
+</details>
+
+<details>
+<summary>5. What happens in a browser without popover support?</summary>
+
+The content shows as ordinary text, and the button does nothing. Plan the content so that is acceptable, or provide a simple alternative.
+
+</details>
+
+<details>
+<summary>6. When should you use a dialog or details instead?</summary>
+
+A dialog when the visitor must answer before continuing. `details` when content expands in place.
+
+</details>
+
+## Key Takeaways
+
+- **A popover is a light, temporary layer** in the top layer, opened by a button with `popovertarget`.
+- **`auto` gives you light dismiss and one-at-a-time behaviour.** `manual` leaves control to you.
+- **Reset the default margin,** and place it on purpose.
+- **The JavaScript API and events** let you prepare, position, and react.
+- **A popover adds no meaning.** Supply names, labels, and keyboard access.
+- **Plan for missing support,** and never hide essential information.
+- **Choose a dialog or `details`** when they fit better.
+
+Next up: [inert](./inert), where you will learn how one attribute switches off part of a page for the mouse, the keyboard, and screen readers.
