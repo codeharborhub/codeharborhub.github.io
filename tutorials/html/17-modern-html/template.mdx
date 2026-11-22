@@ -1,0 +1,517 @@
+---
+id: html-modern-template
+title: "The template Element"
+sidebar_label: "template"
+sidebar_position: 8
+slug: /html/modern-html/template
+description: "Learn the template element: keep reusable chunks of HTML in your page without showing, loading, or running them, then clone and fill them with JavaScript. Covers template.content, cloneNode and importNode, safe filling with textContent, table rows, common bugs like forgetting to clone and duplicate ids, and a preview of declarative shadow DOM. Includes a live card builder lab and a true-or-false quiz."
+keywords:
+  - HTML template element
+  - template content cloneNode
+  - template importNode
+  - clone template JavaScript
+  - template textContent XSS
+  - DocumentFragment
+  - declarative shadow DOM
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, template, dom, javascript, security, frontend]
+---
+
+import {useState, useEffect, useRef} from 'react';
+
+export const cardTemplateHtml = '<template id="tl-card"><li class="tl-card"><strong data-field="name"></strong> <span data-field="role"></span></li></template>';
+
+export function addCardTo(list, tpl, data, skipClone) {
+  const source = skipClone ? tpl.content : tpl.content.cloneNode(true);
+  const nameEl = source.querySelector('[data-field="name"]');
+  const roleEl = source.querySelector('[data-field="role"]');
+  if (!nameEl || !roleEl) return "The template is empty now, so nothing was added.";
+  nameEl.textContent = data.name;
+  roleEl.textContent = data.role;
+  list.append(source);
+  return skipClone
+    ? "Added a card, but the original content was moved out of the template. It is empty now."
+    : "Added a card from a fresh copy. The template is unchanged.";
+}
+
+export function readFacts(tpl, list) {
+  return {
+    inTree: tpl.querySelectorAll("*").length,
+    inContent: tpl.content.querySelectorAll("*").length,
+    cards: list.children.length
+  };
+}
+
+export function TemplateLab() {
+  const listRef = useRef(null);
+  const [name, setName] = useState("Ada");
+  const [role, setRole] = useState("Engineer");
+  const [skipClone, setSkipClone] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [facts, setFacts] = useState(null);
+  const [version, setVersion] = useState(0);
+  const getTpl = function () { return document.getElementById("tl-card"); };
+  useEffect(function () {
+    const tpl = getTpl();
+    if (tpl && listRef.current) setFacts(readFacts(tpl, listRef.current));
+  }, [version]);
+  const add = function () {
+    const tpl = getTpl();
+    if (!tpl || !listRef.current) return;
+    setMsg(addCardTo(listRef.current, tpl, {name: name, role: role}, skipClone));
+    setFacts(readFacts(tpl, listRef.current));
+  };
+  const reset = function () {
+    if (listRef.current) listRef.current.replaceChildren();
+    setMsg("Reset. The template is back to its original content.");
+    setVersion(version + 1);
+  };
+  const looksLikeMarkup = /[<>]/.test(name + role);
+  return (
+    <div style={{padding: "1rem"}}>
+      <style>{".tl-card { padding: 0.4rem 0.6rem; margin: 0 0 0.3rem; border: 1px solid rgba(128,128,128,0.5); border-radius: 6px; list-style: none; }"}</style>
+      {/* The markup below is a fixed string written by the author, with no visitor data in it. */}
+      <div key={version} dangerouslySetInnerHTML={{__html: cardTemplateHtml}} />
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tl-name">Name</label>{" "}
+        <input id="tl-name" type="text" value={name} onChange={function (e) { setName(e.target.value); }} />
+      </p>
+      <p style={{margin: "0 0 0.5rem"}}>
+        <label htmlFor="tl-role">Role</label>{" "}
+        <input id="tl-role" type="text" value={role} onChange={function (e) { setRole(e.target.value); }} />
+      </p>
+      <label style={{display: "block", margin: "0 0 0.75rem"}}>
+        <input type="checkbox" checked={skipClone} onChange={function (e) { setSkipClone(e.target.checked); }} /> Skip cloneNode (the classic mistake)
+      </label>
+      <div style={{display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem"}}>
+        <button type="button" onClick={add}>Add a card</button>
+        <button type="button" onClick={reset}>Reset the lab</button>
+      </div>
+      <ul ref={listRef} aria-label="Cards" style={{padding: 0, margin: "0 0 0.5rem"}} />
+      <p aria-live="polite" style={{fontWeight: 600, minHeight: "1.4em"}}>{msg}</p>
+      {facts !== null && (
+        <ul style={{margin: "0 0 0.75rem"}}>
+          <li>Elements the page sees inside the template: <strong>{facts.inTree}</strong></li>
+          <li>Elements stored in <code>template.content</code>: <strong>{facts.inContent}</strong></li>
+          <li>Cards in the list: <strong>{facts.cards}</strong></li>
+        </ul>
+      )}
+      <p style={{margin: "0 0 0.25rem", fontWeight: 600}}>What building a string by hand would have made (shown as text, never inserted):</p>
+      <pre style={{margin: 0, whiteSpace: "pre-wrap"}}><code>{"'<li>' + name + ' - ' + role + '</li>'  =>  <li>" + name + " - " + role + "</li>"}</code></pre>
+      <p aria-live="polite" style={{fontWeight: 600, color: looksLikeMarkup ? "#c0392b" : "inherit"}}>
+        {looksLikeMarkup ? "Your text contains angle brackets. Put in a string and inserted as HTML, it could become real markup. With textContent, it is always shown as plain text." : ""}
+      </p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        The template here is a real template element. Try typing a name with angle brackets, then add a card: it appears as plain text. Nothing is stored or sent anywhere.
+      </p>
+    </div>
+  );
+}
+
+export const tplItems = [
+  {text: "Images inside a template start downloading when the page loads.", answer: false, why: "Template content is parsed but not part of the page, so images do not load until you clone the content into the page."},
+  {text: "Scripts inside a template run when the page loads.", answer: false, why: "They stay inert. Even after cloning, a script inside cloned content does not run in the usual way, so keep your code outside the template."},
+  {text: "document.getElementById can find an element that sits inside a template's content.", answer: false, why: "The content lives in a separate fragment. Search it with template.content.querySelector instead."},
+  {text: "You must clone the content each time you want a fresh copy.", answer: true, why: "Appending template.content itself moves its children out, leaving the template empty. Clone it with cloneNode(true) every time."},
+  {text: "Setting innerHTML to a visitor's text is a safe way to fill a cloned template.", answer: false, why: "innerHTML turns text into markup. Use textContent for text, which never becomes markup."},
+  {text: "Cloning content that contains id attributes can create duplicate ids on the page.", answer: true, why: "Each clone carries the same ids. Avoid ids inside templates, or change them after cloning."}
+];
+
+export function TemplateQuiz() {
+  const [answers, setAnswers] = useState({});
+  const answered = Object.keys(answers).length;
+  const correct = tplItems.filter(function (it, i) { return answers[i] === it.answer; }).length;
+  const set = function (i, v) {
+    setAnswers(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; });
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>True or false?</p>
+      {tplItems.map(function (it, i) {
+        const a = answers[i];
+        const right = a === it.answer;
+        return (
+          <div key={it.text} style={{margin: "0 0 0.9rem"}}>
+            <p style={{margin: "0 0 0.25rem"}}>{it.text}</p>
+            <button type="button" onClick={function () { set(i, true); }} aria-pressed={a === true} style={{marginRight: "0.5rem"}}>True</button>
+            <button type="button" onClick={function () { set(i, false); }} aria-pressed={a === false}>False</button>
+            <div aria-live="polite">
+              {a !== undefined && (
+                <p style={{margin: "0.25rem 0 0"}}>
+                  <strong style={{color: right ? "#1e8449" : "#c0392b"}}>{right ? "Correct. " : "Not quite. "}</strong>{it.why}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <p aria-live="polite" style={{fontWeight: 600}}>{answered === 0 ? "" : "Score so far: " + correct + " of " + answered + " answered."}</p>
+    </div>
+  );
+}
+
+You have a block of HTML that you need many times: a product card, a table row, a comment, a message. The old way is to build it from strings in JavaScript, gluing text and tags together. That is hard to read, hard to maintain, and a common source of security bugs.
+
+The **`template` element** lets you write that block as ordinary HTML, keep it in your page, and copy it whenever you need it.
+
+## What You Will Learn
+
+- What a `template` is, and why nothing inside it runs or loads
+- How to clone and fill a template, step by step
+- How to fill it safely, without opening a security hole
+- How to use templates for lists and table rows
+- The bugs that catch beginners, and how to avoid them
+- How templates relate to slots and web components
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+A `template` is a **blueprint**, not a building. The browser reads it and remembers its structure, but it does not display it, load its images, or run its scripts. When you need a copy, you clone the blueprint and put the copy on the page.
+
+<Tabs>
+<TabItem value="lab" label="Card Builder Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TemplateLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="quiz" label="True or False?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<TemplateQuiz />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<ul id="cards"></ul>
+
+<template id="card-template">
+  <li class="card">
+    <h3 data-field="name"></h3>
+    <p data-field="role"></p>
+    <a data-field="link">Profile</a>
+  </li>
+</template>
+```
+
+```js title="script.js"
+const template = document.getElementById("card-template");
+const list = document.getElementById("cards");
+
+function httpsUrl(text) {
+  try {
+    const url = new URL(text, location.href);
+    return url.protocol === "https:" ? url.href : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function addCard(person) {
+  // 1. Clone: a fresh copy every time
+  const card = template.content.cloneNode(true);
+
+  // 2. Fill: textContent keeps visitor text as plain text
+  card.querySelector('[data-field="name"]').textContent = person.name;
+  card.querySelector('[data-field="role"]').textContent = person.role;
+
+  // 3. Check addresses before using them
+  const link = card.querySelector('[data-field="link"]');
+  const safe = httpsUrl(person.profile);
+  if (safe) link.href = safe;
+  else link.remove();
+
+  // 4. Insert
+  list.append(card);
+}
+
+addCard({ name: "Ada", role: "Engineer", profile: "https://example.com/ada" });
+```
+
+</TabItem>
+</Tabs>
+
+## What Makes a Template Special
+
+The browser parses everything inside a `template`, but treats it as **inert**:
+
+- It is **never displayed.** The element itself has no visual box.
+- **Images and other resources do not load.** Nothing is fetched until you use the content.
+- **Scripts do not run,** and styles inside do not apply to the page.
+- **Its elements are not part of the page.** `document.getElementById` and `document.querySelector` do not find them.
+
+The content is stored in a separate **document fragment**, available as `template.content`. Open the lab and look at the two numbers: the page sees **0** elements inside the template, while `template.content` holds the blueprint.
+
+Compare this with hiding a `div`:
+
+| | A hidden `div` | A `template` |
+| :-- | :-- | :-- |
+| Content is in the page's DOM | Yes | No, it is in `template.content` |
+| Images load | Often yes | No |
+| Scripts run | Yes | No |
+| Its `id`s can clash with others | Yes | No, until cloned |
+| Found by `querySelector` | Yes | Only through `template.content` |
+
+## Using a Template: Four Steps
+
+1. **Find it.** Give the `template` an `id`, and look it up. The `id` goes on the `template` element itself, not on things inside.
+2. **Clone it.** `template.content.cloneNode(true)` makes a fresh copy. The `true` means "copy everything inside".
+3. **Fill it.** Find the parts you need in the clone, and set their text and attributes.
+4. **Insert it.** Add the clone to the page with `append`, `appendChild`, or `prepend`.
+
+`document.importNode(template.content, true)` also works, and is a good habit when your template contains custom elements, because it makes the copy part of the main document straight away. For ordinary markup, `cloneNode(true)` is fine.
+
+### Find parts with data attributes
+
+Inside the clone, use something stable to find each part. Attributes such as `data-field="name"` are a good choice. They say what each part is for, and they do not mix with styling classes or with `id`s. (A `slot` is a different thing, and belongs to the next lesson.)
+
+## Filling It Safely
+
+This is the most important section of the lesson.
+
+**Use `textContent` for text,** and `setAttribute` or properties for attributes:
+
+```js
+card.querySelector('[data-field="name"]').textContent = person.name;
+```
+
+`textContent` always treats the value as **plain text**, even if it contains angle brackets. Try it in the lab: type `<b>hello</b>` as the name and add a card. It shows exactly as typed, tags and all.
+
+Compare that with building a string:
+
+```js
+// Dangerous if name comes from a visitor
+list.innerHTML += "<li>" + person.name + "</li>";
+```
+
+If `name` holds markup, `innerHTML` turns it into **real elements**, and that is how cross-site scripting (XSS) happens. See [XSS Basics](/tutorials/html/security/xss-basics). The lab shows what the string would have contained, but never inserts it.
+
+For addresses, **check the scheme** before using one from data:
+
+- Accept only `https:` (or `http:` if you must), as the `httpsUrl` helper in the code does.
+- Never place a visitor's text straight into `href` or `src`. A `javascript:` address is a classic attack.
+
+## Lists and Table Rows
+
+To show many items, loop over your data. Build everything in a fragment, then insert once:
+
+```js
+const fragment = document.createDocumentFragment();
+for (const row of rows) {
+  const copy = rowTemplate.content.cloneNode(true);
+  copy.querySelector('[data-field="item"]').textContent = row.item;
+  copy.querySelector('[data-field="price"]').textContent = row.price;
+  fragment.append(copy);
+}
+tbody.append(fragment);
+```
+
+Adding to the page once, rather than many times, keeps the browser from re-doing its layout work again and again.
+
+A `template` can hold table rows, which a normal `div` cannot:
+
+```html
+<table>
+  <tbody id="rows"></tbody>
+</table>
+
+<template id="row-template">
+  <tr>
+    <td data-field="item"></td>
+    <td data-field="price"></td>
+  </tr>
+</template>
+```
+
+## Bugs That Catch Beginners
+
+### Forgetting to clone
+
+If you append `template.content` itself, the browser **moves** its children out of the template and into the page. The first time works. The second time, the template is empty, and nothing is added. In the lab, tick "Skip cloneNode" and press Add twice to see it, then press Reset.
+
+### Duplicate ids and broken labels
+
+Every clone carries the same attributes. If a template contains `id="name"`, each clone repeats it, and that breaks `label for`, anchors, and ARIA links. Avoid `id` inside templates:
+
+- Wrap inputs in their `label`, so no `for` is needed.
+- Or generate a unique `id` for each clone, such as `"name-" + counter`, and set `for` to match.
+
+### The script runs too early
+
+If your script runs before the browser has read the `template`, `getElementById` returns `null`. Put the script at the end of the page, or use `defer`, as in [Script Loading](/tutorials/html/performance/script-loading).
+
+### Inline event handlers
+
+Handlers written in the markup, such as `onclick="..."`, are blocked by a strict Content Security Policy. Attach handlers in JavaScript after cloning. See [Content Security Policy](/tutorials/html/security/content-security-policy).
+
+### Nothing shows if scripts fail
+
+A template only produces something when JavaScript runs. If the content matters, provide a version that works without scripts, such as server-rendered HTML, and let the template handle later additions.
+
+## Template or Something Else?
+
+| Approach | Good for | Weakness |
+| :-- | :-- | :-- |
+| **`template`** | Reusable chunks you write as real HTML | Needs JavaScript to use |
+| String concatenation with `innerHTML` | Almost nothing | Hard to read, and unsafe with visitor data |
+| `document.createElement` | Small, simple pieces | Verbose for bigger markup |
+| A framework's templates | Large apps with lots of changing data | Extra code and tooling |
+| [Web components](./web-components-html) | Reusable elements with their own styles and behaviour | More to learn |
+
+## A Peek Ahead: Declarative Shadow DOM
+
+A `template` with a `shadowrootmode` attribute does something special: when the HTML is read, it **builds a shadow root** on its parent element instead of staying a blueprint.
+
+```html
+<user-card>
+  <template shadowrootmode="open">
+    <style>p { color: teal; }</style>
+    <p><slot></slot></p>
+  </template>
+  Ada
+</user-card>
+```
+
+This lets a component ship with its structure and styles directly in HTML, with no JavaScript. It works when the browser's HTML parser reads the page, and support is newer, so check MDN. You will meet slots in the [next lesson](./slot), and the whole picture in [Web Components in HTML](./web-components-html).
+
+## Checking Your Setup
+
+1. In DevTools, open **Elements.** The `template` shows a `#document-fragment` inside, which is its content.
+2. In the **Console,** try `document.querySelector("#card-template h3")`. It should be `null`.
+3. Try `document.getElementById("card-template").content.querySelector("h3")`. It should find the heading.
+4. Open **Network.** Images inside a template should not load until cloned.
+5. Add the same card twice, and check that ids are unique with `document.querySelectorAll("[id]")`.
+6. Type markup as a name, and check it appears as text.
+7. Turn off JavaScript, and see what visitors get.
+
+## Best Practices
+
+1. **Write repeated markup as a `template`,** not as strings.
+2. **Always clone** with `cloneNode(true)`, or use `importNode`.
+3. **Fill with `textContent`,** never `innerHTML`, for visitor data.
+4. **Check URL schemes** before setting `href` or `src`.
+5. **Find parts with `data-` attributes.**
+6. **Avoid `id` inside templates.**
+7. **Build lists in a fragment,** and insert once.
+8. **Attach event handlers in JavaScript.**
+9. **Load your script after the template,** or use `defer`.
+10. **Provide content that works without JavaScript** when it matters.
+
+## Quick Checklist
+
+- [ ] The template has an `id`, and the markup inside is valid HTML
+- [ ] Each use starts with a clone, not the original content
+- [ ] Text is set with `textContent`
+- [ ] Addresses from data are checked before use
+- [ ] No `id` clashes after cloning
+- [ ] Event handlers are attached in script, not in the markup
+- [ ] The script runs after the template exists
+- [ ] The page still makes sense without JavaScript
+
+## Security and Privacy Notes
+
+- **`innerHTML` with visitor text is the classic XSS bug.** Templates exist partly to avoid it, but only if you fill them with `textContent`. See [XSS Basics](/tutorials/html/security/xss-basics).
+- **Template content is still in the page source.** Do not put secrets or private data in a template.
+- **Never trust data from the network** just because it arrived as JSON. Treat names, comments, and addresses as untrusted.
+- **A template is not a sanitiser.** If you must show visitor-written HTML, run it through a maintained sanitising library first.
+- **Do not build `href`, `src`, or `srcdoc` from raw text.** Check the scheme, as in the example above.
+
+## Global Audience Notes
+
+- **Do not build sentences by joining pieces.** Word order differs by language, so "Hello, " + name + "!" breaks in many languages. Keep whole phrases, with placeholders, in your translation files.
+- **Plural rules differ.** "1 item" and "2 items" are not enough for languages with several plural forms. Use a library or `Intl.PluralRules`.
+- **Dates, numbers, and currencies** should be formatted with `Intl`, using the visitor's locale, not by hand.
+- **Names vary widely.** Do not assume a first name and a last name, and test with long names and right-to-left scripts.
+- **Right-to-left layouts** need logical properties in the CSS you apply to cloned cards.
+
+## Common Mistakes to Avoid
+
+1. **Appending `template.content` without cloning.**
+2. **Filling visitor data with `innerHTML`.**
+3. **Placing a visitor's text straight into `href`.**
+4. **Using `id` inside a template,** then cloning it many times.
+5. **Running the script before the template exists.**
+6. **Searching the page** for elements that are inside `template.content`.
+7. **Writing `onclick` in the template markup.**
+8. **Hiding a `div` instead of using a template,** and loading unwanted images.
+9. **Building sentences by concatenation,** which breaks translations.
+10. **Relying on JavaScript** for content that must always show.
+
+## Practice Time
+
+1. In the lab, add three cards. What do the three numbers say?
+2. Type `<b>bold</b>` as a name, and add a card. How does it appear?
+3. Tick "Skip cloneNode", and add two cards. What happens on the second?
+4. Press Reset. What changed?
+5. Complete the True or False quiz.
+6. Write a template for a table row, and fill five rows from an array.
+7. Add a "link" field, and only set `href` when the address is `https:`.
+8. Bonus: add a button to each card that removes it, using an event listener you attach after cloning.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a `template`?</summary>
+
+An element that holds HTML you can reuse. The browser parses it but does not display it, load its images, or run its scripts. Its content is stored in `template.content`.
+
+</details>
+
+<details>
+<summary>2. How do you use one?</summary>
+
+Find it, clone `template.content` with `cloneNode(true)`, fill the copy, and insert it into the page.
+
+</details>
+
+<details>
+<summary>3. Why clone every time?</summary>
+
+Appending `template.content` itself moves its children into the page, leaving the template empty. A clone leaves the blueprint unchanged.
+
+</details>
+
+<details>
+<summary>4. How do you fill it safely?</summary>
+
+Use `textContent` for text, and check the scheme of any address before setting `href` or `src`. Never put visitor text in `innerHTML`.
+
+</details>
+
+<details>
+<summary>5. Why avoid `id` inside a template?</summary>
+
+Each clone repeats the same `id`, which causes duplicates and breaks labels and ARIA links.
+
+</details>
+
+<details>
+<summary>6. What does `shadowrootmode` on a template do?</summary>
+
+When the HTML is parsed, it builds a shadow root on the parent element, so a component can ship its structure and styles in HTML.
+
+</details>
+
+## Key Takeaways
+
+- **A `template` is an inert blueprint:** not shown, not loaded, not run.
+- **Clone, fill, insert.** Clone every time.
+- **Fill with `textContent`,** and check addresses.
+- **Use `data-` attributes** to find parts, and avoid `id`.
+- **Build lists in a fragment,** and insert once.
+- **Keep scripts outside, load them after,** and attach events in code.
+- **Templates are the base** for slots and web components.
+
+Next up: [slot](./slot), where you will learn how a component can leave named places for a page author's own content.

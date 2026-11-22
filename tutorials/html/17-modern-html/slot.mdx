@@ -1,0 +1,489 @@
+---
+id: html-modern-slot
+title: "The slot Element"
+sidebar_label: "slot"
+sidebar_position: 9
+slug: /html/modern-html/slot
+description: "Learn the slot element: how a component built with shadow DOM leaves named places for a page author's own content. Covers default and named slots, fallback content, which nodes get assigned where, styling slotted content with ::slotted, the slotchange event, accessibility across the shadow boundary, and security notes. Includes a live slot lab and a which-slot matcher."
+keywords:
+  - HTML slot element
+  - named slots
+  - default slot
+  - slot fallback content
+  - slotted
+  - slotchange assignedNodes
+  - light DOM shadow DOM
+  - web components slot
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, slot, shadow-dom, web-components, frontend]
+---
+
+import {useState, useEffect, useRef} from 'react';
+
+export const slotShadowHtml = '<style>.card { border: 1px solid #888; border-radius: 8px; padding: 0.75rem; } header { font-weight: 700; } .body { margin: 0.4rem 0; } footer { font-size: 0.85rem; opacity: 0.85; }</style><div class="card"><header><slot name="title">Untitled (fallback)</slot></header><div class="body"><slot>No content yet (fallback)</slot></div><footer><slot name="footer">No footer (fallback)</slot></footer></div>';
+
+export function reportSlots(host) {
+  const root = host.shadowRoot;
+  if (!root) return null;
+  const defs = [["title", 'slot[name="title"]'], ["default", "slot:not([name])"], ["footer", 'slot[name="footer"]']];
+  const rows = defs.map(function (d) {
+    const s = root.querySelector(d[1]);
+    const count = s ? s.assignedNodes().length : 0;
+    return {slot: d[0], count: count};
+  });
+  const unassigned = Array.from(host.children).filter(function (el) { return el.assignedSlot === null; }).map(function (el) {
+    return "<" + el.tagName.toLowerCase() + ' slot="' + el.getAttribute("slot") + '">';
+  });
+  return {rows: rows, unassigned: unassigned};
+}
+
+export function SlotLab() {
+  const hostRef = useRef(null);
+  const [opts, setOpts] = useState({title: true, body: true, twoParas: false, footer: false, stray: false, redTitle: false});
+  const [report, setReport] = useState(null);
+  const [supported, setSupported] = useState(null);
+  useEffect(function () {
+    const host = hostRef.current;
+    const ok = typeof Element !== "undefined" && typeof Element.prototype.attachShadow === "function";
+    setSupported(ok);
+    if (!host || !ok) return;
+    if (!host.shadowRoot) {
+      // A fixed string written by the author, with no visitor data in it.
+      host.attachShadow({mode: "open"}).innerHTML = slotShadowHtml;
+    }
+    setReport(reportSlots(host));
+  }, [opts]);
+  const toggle = function (key) {
+    setOpts(function (prev) { const n = Object.assign({}, prev); n[key] = !prev[key]; return n; });
+  };
+  const choices = [
+    ["title", "A title for the title slot"],
+    ["body", "A paragraph with no slot attribute (default slot)"],
+    ["twoParas", "A second paragraph for the default slot"],
+    ["footer", "A footer note for the footer slot"],
+    ["stray", "An element with slot=\"subtitle\" (no such slot exists)"],
+    ["redTitle", "Page CSS: colour the title red"]
+  ];
+  return (
+    <div style={{padding: "1rem"}}>
+      {supported === false && (
+        <p style={{color: "#c0392b", fontWeight: 600}}>This browser does not support shadow DOM, so the content below shows as ordinary markup, without the card around it.</p>
+      )}
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>What the page author puts inside the component</legend>
+        {choices.map(function (c) {
+          return <label key={c[0]} style={{display: "block", margin: "0.15rem 0"}}><input type="checkbox" checked={opts[c[0]]} onChange={function () { toggle(c[0]); }} /> {c[1]}</label>;
+        })}
+      </fieldset>
+      <div ref={hostRef} style={{marginBottom: "0.75rem"}}>
+        {opts.title && <h3 slot="title" style={{margin: 0, color: opts.redTitle ? "#c0392b" : "inherit"}}>Tomato pasta</h3>}
+        {opts.body && <p style={{margin: 0}}>Boil the pasta, then stir in the sauce.</p>}
+        {opts.twoParas && <p style={{margin: "0.4rem 0 0"}}>Serve with fresh basil.</p>}
+        {opts.footer && <small slot="footer">By Ada</small>}
+        {opts.stray && <span slot="subtitle">Easy</span>}
+      </div>
+      {report !== null && (
+        <div aria-live="polite">
+          <table>
+            <thead>
+              <tr>
+                <th style={{textAlign: "left"}}>Slot</th>
+                <th style={{textAlign: "left"}}>Nodes assigned</th>
+                <th style={{textAlign: "left"}}>What the card shows</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.rows.map(function (r) {
+                return (
+                  <tr key={r.slot}>
+                    <td><code>{r.slot}</code></td>
+                    <td>{r.count}</td>
+                    <td style={{fontWeight: 600, color: r.count === 0 ? "#b9770e" : "#1e8449"}}>{r.count === 0 ? "Its fallback content" : "The page author's content"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p style={{margin: "0.5rem 0 0", fontWeight: 600}}>
+            {report.unassigned.length === 0 ? "Every element has a place." : "Not shown anywhere, because no slot matches: " + report.unassigned.join(", ")}
+          </p>
+        </div>
+      )}
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        The card is a real shadow root with three slots. The page author's elements stay in the normal page, and the browser only draws them inside the slots. Nothing is stored or sent.
+      </p>
+    </div>
+  );
+}
+
+export const placeOptions = ["title slot", "default slot", "footer slot", "nowhere (not shown)"];
+
+export const placeItems = [
+  {code: '<h2 slot="title">Pasta</h2>', answer: "title slot", why: "The slot attribute matches the slot named title."},
+  {code: "<p>Boil the water.</p>", answer: "default slot", why: "No slot attribute, so it goes to the default (unnamed) slot."},
+  {code: '<small slot="footer">By Ada</small>', answer: "footer slot", why: "The slot attribute matches the slot named footer."},
+  {code: '<span slot="subtitle">Easy</span>', answer: "nowhere (not shown)", why: "The component has no slot named subtitle, so this element is assigned nowhere and is not drawn."},
+  {code: '<div><p slot="footer">Hi</p></div>', answer: "default slot", why: "Only direct children of the host are assigned. The div has no slot attribute, so the whole div goes to the default slot, and the slot attribute on the p inside it is ignored."},
+  {code: "Serves four (plain text, directly inside the component)", answer: "default slot", why: "Text placed directly inside the host, with no element around it, is assigned to the default slot too."}
+];
+
+export function PlaceMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = placeItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>The component has three slots: <code>title</code>, a default one, and <code>footer</code>. Where does each piece of content end up?</p>
+      {placeItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <div key={it.code} style={{margin: "0 0 0.8rem"}}>
+            <pre style={{margin: "0 0 0.25rem", whiteSpace: "pre-wrap"}}><code>{it.code}</code></pre>
+            <select aria-label={"Where does this go: " + it.code} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {placeOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && (
+              <p style={{margin: "0.25rem 0 0"}}>
+                <strong style={{color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct. " : "Not quite. "}</strong>{it.why}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + placeItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+# The slot Element
+
+A `template` gives you a blueprint you can copy. But what if the people using your blueprint want to **put their own content inside it**: their own title, their own text, their own button? Filling in every field from JavaScript gets clumsy. The **`slot` element** solves this in a more HTML-like way. A component leaves **openings**, and the page author drops content into them with plain markup.
+
+## What You Will Learn
+
+- What a slot is, and where it works
+- The words you will meet: host, shadow root, light DOM, and slotted content
+- Default slots, named slots, and fallback content
+- How content is assigned, and what happens when nothing matches
+- How to style and observe slotted content
+- Accessibility and security points that come with slots
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Think of a picture frame. The frame has its own look, and an opening in the middle. Whoever hangs it chooses the picture. A component is the frame, a slot is the opening, and the **slotted content** is the picture.
+
+<Tabs>
+<TabItem value="lab" label="Slot Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<SlotLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="matcher" label="Which Slot?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<PlaceMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<recipe-card>
+  <h3 slot="title">Tomato pasta</h3>
+  <p>Boil the pasta, then stir in the sauce.</p>
+  <small slot="footer">By Ada</small>
+</recipe-card>
+```
+
+```js title="script.js"
+class RecipeCard extends HTMLElement {
+  constructor() {
+    super();
+    const root = this.attachShadow({ mode: "open" });
+    // A fixed string written by you, with no visitor data in it
+    root.innerHTML = `
+      <style>
+        article { border: 1px solid #888; border-radius: 8px; padding: 0.75rem; }
+        header { font-weight: 700; }
+      </style>
+      <article>
+        <header><slot name="title">Untitled</slot></header>
+        <div><slot></slot></div>
+        <footer><slot name="footer"></slot></footer>
+      </article>`;
+  }
+}
+customElements.define("recipe-card", RecipeCard);
+```
+
+```css title="styles.css"
+/* In the page: slotted content is ordinary page content */
+recipe-card h3 { color: darkred; }
+
+/* Inside the component's own styles: style top-level slotted elements */
+/* ::slotted(small) { opacity: 0.8; } */
+```
+
+</TabItem>
+</Tabs>
+
+## Where Slots Work
+
+A `slot` only does something **inside a shadow root.** A shadow root is a private, separate bit of DOM attached to an element, which lets a component keep its own markup and styles apart from the page. You will build one properly in [Web Components in HTML](./web-components-html). For now, you only need the vocabulary:
+
+| Word | Meaning |
+| :-- | :-- |
+| **Host** | The element the shadow root is attached to, such as `recipe-card` |
+| **Shadow root / shadow DOM** | The component's private markup, where its `slot` elements live |
+| **Light DOM** | The ordinary children the page author wrote inside the host |
+| **Slotted content** | Light DOM nodes that the browser assigned to a slot |
+| **Flat tree** | What the browser actually draws: the shadow DOM, with slotted content placed in its slots |
+
+A `slot` written in an ordinary page, with no shadow root around it, does nothing special.
+
+The key idea: **slotted content stays in the light DOM.** It is still part of the page. You can find it with `document.querySelector`, style it from the page's CSS, and it is part of any form it sits in. The browser only **draws** it in the slot's position.
+
+## Default and Named Slots
+
+- A `slot` **without a name** is the **default slot.** It receives every direct child of the host that has no `slot` attribute, including plain text.
+- A `slot` **with a `name`** receives the direct children whose `slot` attribute matches that name.
+
+```html
+<!-- Inside the component's shadow root -->
+<slot name="title"></slot>   <!-- gets slot="title" -->
+<slot></slot>                <!-- gets everything else -->
+<slot name="footer"></slot>  <!-- gets slot="footer" -->
+```
+
+Rules that explain most surprises:
+
+1. **Only direct children of the host are assigned.** A `slot` attribute on a deeper element is ignored. The whole direct child goes to a slot, with its descendants.
+2. **Several elements can share one slot.** They appear in the order they were written.
+3. **An element with a `slot` attribute that matches no slot is not drawn.** It stays in the page's DOM, but nowhere visible.
+4. **Text counts.** Loose text directly inside the host goes to the default slot.
+
+Open the **Slot Lab** and try these. Tick the "second paragraph" box, then the "subtitle" box, and read the table. Then try the **Which Slot?** tab.
+
+## Fallback Content
+
+Whatever you place **inside** a `slot` is shown only when nothing is assigned to it:
+
+```html
+<slot name="title">Untitled</slot>
+```
+
+If the page author provides no title, the card shows "Untitled". Good fallbacks make a component work with little or no content. Untick the title in the lab, and you see it.
+
+Keep fallbacks short and neutral, because they appear in whatever language the page uses. See the global notes below.
+
+## Styling Slotted Content
+
+Because slotted nodes live in the light DOM, **the page's CSS applies to them** as usual. The component can also style them from inside, using the `::slotted()` pseudo-element:
+
+```css
+/* In the component's shadow styles */
+::slotted(h3) { margin: 0; }
+::slotted(*) { max-width: 100%; }
+```
+
+Know its limits:
+
+- `::slotted()` reaches only the **top-level** slotted elements, not their children.
+- If the page's own CSS and a `::slotted()` rule disagree, **the page's CSS wins.** That lets page authors always override a component.
+- For anything deeper, a component can expose **CSS custom properties** (such as `--card-border`) or **parts** (the `part` attribute), which you will meet in the next lesson.
+
+Check "Page CSS: colour the title red" in the lab. The page reaches into the slotted title with no special tools.
+
+## Watching and Reading Slots
+
+Slots have a small API:
+
+```js
+const slot = root.querySelector('slot[name="title"]');
+
+slot.assignedNodes();                    // nodes assigned, including text
+slot.assignedElements();                 // elements only
+slot.assignedNodes({ flatten: true });   // also follows slots nested in slots
+someElement.assignedSlot;                // which slot an element ended up in, or null
+
+slot.addEventListener("slotchange", () => {
+  console.log("Title now has", slot.assignedElements().length, "element(s)");
+});
+```
+
+- **`slotchange`** fires when the **assignment** changes: nodes added, removed, or given a different `slot` name. It does not fire when the text inside a slotted element changes.
+- **`assignedSlot`** is how the lab tells which elements ended up nowhere. It returns `null` for those.
+
+## Accessibility
+
+Slots help accessibility when used well, and cause trouble when used carelessly.
+
+- **Let the page author choose the heading level.** A component that hard-codes an `h2` inside its shadow DOM can break the page's outline. Slotting the heading, as in `<h3 slot="title">`, lets each page use the right level.
+- **Slotted content keeps its meaning.** A real heading, link, or button in the light DOM is announced as such.
+- **IDs do not cross the shadow boundary.** Attributes that point at an `id`, such as `for` on a `label` and `aria-labelledby`, work only within the same tree. A label in the shadow DOM cannot point at an input in the light DOM, and the reverse. Keep related elements together on one side, or build the component to expose what it needs.
+- **Form fields are best slotted.** An `input` in the light DOM belongs to the page's form and submits normally. An `input` hidden inside a shadow root does not take part in the surrounding form unless the component is built specially for it.
+- **Check the reading order.** The flat tree decides what is read and tabbed through. Test with the keyboard.
+
+## Before and Without the Component
+
+Because slotted content is ordinary light DOM, a good component **degrades gracefully**:
+
+- Until JavaScript defines the component, or in a browser without support, the children simply show as normal markup. A heading, a paragraph, and a note are still readable.
+- You can style the not-yet-ready state with `:not(:defined)` in your page CSS.
+
+So write the light DOM as **real, meaningful HTML first**, such as headings, paragraphs, and links, and treat the component as an upgrade.
+
+## Slots or Templates and Data Fields?
+
+| | Slots | A template filled from JavaScript |
+| :-- | :-- | :-- |
+| Content written as | Plain HTML, by the page author | Data, filled by your script |
+| Works without JavaScript | Content is still there | Nothing appears |
+| Best for | Reusable layouts that authors fill in | Lists built from data, such as rows from a server |
+| Needs a shadow root | Yes | No |
+
+They also work well together: a component clones a template into its shadow root, and that template contains the slots.
+
+## Checking Your Setup
+
+1. In DevTools, open **Elements.** Under the host you see `#shadow-root`, and the slots inside it. Slotted elements show a small **slot** badge that links to their slot.
+2. Select a slotted element, and check where it appears in the **Accessibility** panel.
+3. In the **Console,** run `host.shadowRoot.querySelector("slot").assignedNodes()` to see the assignment.
+4. Remove each piece of content in turn, and make sure the fallbacks look right.
+5. Add an element with a `slot` name you did not define, and confirm it does not show.
+6. Tab through the component with the keyboard.
+7. Turn off JavaScript, and see what the page author's markup looks like alone.
+
+## Best Practices
+
+1. **Name slots after their purpose,** such as `title` and `footer`.
+2. **Provide short, neutral fallback content.**
+3. **Slot headings,** so page authors control the outline.
+4. **Slot form controls,** so they stay in the page's form.
+5. **Write the light DOM as real, meaningful HTML.**
+6. **Keep the page's CSS able to override the component.**
+7. **Use `slotchange`** when your component must react to changes.
+8. **Document your slots,** so authors know the names.
+9. **Test with missing content, and with extra content.**
+10. **Test with the keyboard and a screen reader.**
+
+## Quick Checklist
+
+- [ ] Each slot has a clear name, or is the one default slot
+- [ ] Each slot has sensible fallback content, or is meant to be empty
+- [ ] Headings and form controls are slotted, not hard-coded
+- [ ] The light DOM makes sense without the component
+- [ ] Unmatched `slot` names are not relied on
+- [ ] Ids and ARIA references stay within one tree
+- [ ] The component works with the keyboard and a screen reader
+- [ ] Slot names are documented
+
+## Security and Privacy Notes
+
+- **Shadow DOM is not a security boundary.** An open shadow root can be read by any script on the page, and scripts can reach inside it. Never keep secrets in a component's markup.
+- **Slotted content is page content.** It is subject to the page's Content Security Policy, and anything inserted there is as dangerous as any other markup. If visitor text is shown in a slot, set it with `textContent`. See [XSS Basics](/tutorials/html/security/xss-basics).
+- **Strip `slot` attributes from untrusted HTML.** If you accept visitor-written HTML (after sanitising), a `slot` attribute on it could place content into a part of your component, such as a footer or a banner, that you meant to be trusted. This is a layout-spoofing trick, so remove the attribute when you sanitise.
+- **Do not build the shadow template from visitor text.** Use a fixed string, or a `template`, and fill values with `textContent`.
+- **Slots can reveal content.** Anything in the light DOM is in the page source, even if the component hides it.
+
+## Global Audience Notes
+
+- **Writing direction is inherited.** Slotted content follows the page's `dir` and `lang`, and a card or other component should use logical properties such as `padding-inline-start`.
+- **Fallback text is visible to everyone,** so it must be translatable. Pass it through your translation system, or use an `aria-label` and icons that work in any language.
+- **Long and short text vary** across languages. Do not set a fixed height on slotted regions.
+- **Let authors supply content in their own language.** Slots are good for this, because the component does not impose any words.
+- **Headings and labels in the page's language** help screen readers choose the right voice.
+
+## Common Mistakes to Avoid
+
+1. **Expecting a slot to work without a shadow root.**
+2. **Putting the `slot` attribute on a deeper element** than a direct child.
+3. **Misspelling a slot name,** so the content vanishes.
+4. **Hard-coding headings** inside the component.
+5. **Expecting `label for` or `aria-labelledby`** to cross the shadow boundary.
+6. **Hiding form controls** inside shadow DOM and expecting them to submit.
+7. **Forgetting fallback content,** and showing empty boxes.
+8. **Trying to style deep slotted content** with `::slotted()`.
+9. **Believing shadow DOM keeps secrets.**
+10. **Leaving `slot` attributes in sanitised visitor HTML.**
+
+## Practice Time
+
+1. In the Slot Lab, untick every box. What does the table say, and what does the card show?
+2. Tick only the body paragraph. Which fallbacks remain?
+3. Tick the "subtitle" box. What does the line under the table say?
+4. Tick both paragraphs. In which slot do they appear, and in what order?
+5. Tick "Page CSS: colour the title red". Why can the page style slotted content?
+6. Complete the **Which Slot?** matcher.
+7. Open DevTools on the lab, find the `#shadow-root`, and look for the slot badge on the title.
+8. Bonus: write a component with a `header` slot, a default slot, and an `actions` slot, with a fallback for each.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What is a slot?</summary>
+
+An opening inside a component's shadow DOM where the page author's own content is displayed.
+
+</details>
+
+<details>
+<summary>2. What is the difference between a default slot and a named slot?</summary>
+
+A named slot receives direct children whose `slot` attribute matches its name. The default slot receives all other direct children, including text.
+
+</details>
+
+<details>
+<summary>3. What happens to an element whose slot name matches nothing?</summary>
+
+It is not assigned anywhere, and so it is not drawn, though it remains in the page's DOM.
+
+</details>
+
+<details>
+<summary>4. What is fallback content?</summary>
+
+Content inside a `slot` that is shown only when nothing is assigned to that slot.
+
+</details>
+
+<details>
+<summary>5. Where does slotted content live, and why does it matter?</summary>
+
+In the light DOM, as part of the page. So the page's CSS and scripts reach it, and form controls inside it submit with the page's form.
+
+</details>
+
+<details>
+<summary>6. Why strip `slot` attributes from untrusted HTML?</summary>
+
+They could place visitor content into a part of your component that is supposed to be trusted, such as a banner or footer.
+
+</details>
+
+## Key Takeaways
+
+- **A slot is an opening in a component** where the page author's content appears.
+- **Default slot for the rest, named slots for the parts.** Only direct children are assigned.
+- **Fallback content** shows when nothing is assigned.
+- **Slotted content stays in the light DOM,** so the page can style and query it.
+- **IDs and ARIA references do not cross the shadow boundary.** Slot headings and form controls.
+- **Shadow DOM is not security.** Use `textContent`, and strip `slot` attributes from untrusted HTML.
+- **Write meaningful light DOM first.** The component is an upgrade.
+
+Next up: [Web Components in HTML](./web-components-html), where you will combine templates, slots, shadow DOM, and custom elements into your own reusable tags.

@@ -1,0 +1,503 @@
+---
+id: html-modern-inert
+title: "The inert Attribute"
+sidebar_label: "inert"
+sidebar_position: 7
+slug: /html/modern-html/inert
+description: "Learn the inert attribute: one attribute that makes part of a page unreachable by mouse, keyboard, and screen reader. Covers what inert changes, how it differs from disabled, hidden, and aria-hidden, patterns such as off-canvas menus and saving states, fallbacks, accessibility, and security notes. Includes a focus lab, an off-canvas menu lab, and a which-tool quiz."
+keywords:
+  - inert attribute
+  - HTML inert
+  - inert vs aria-hidden
+  - inert vs disabled
+  - off-canvas menu focus
+  - element.inert
+  - keyboard focus trap
+  - learn HTML
+  - CodeHarborHub HTML
+tags: [html, web-development, beginner, modern-html, inert, accessibility, focus, frontend]
+---
+
+import {useState, useEffect, useRef} from 'react';
+
+export function probeFocus(root) {
+  const items = Array.from(root.querySelectorAll("[data-probe]"));
+  const results = items.map(function (el) {
+    el.focus();
+    return {label: el.getAttribute("data-probe"), reached: document.activeElement === el};
+  });
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  return results;
+}
+
+export function ProbeList(props) {
+  if (props.results === null) return null;
+  return (
+    <ul aria-live="polite" style={{margin: "0.5rem 0"}}>
+      {props.results.map(function (r) {
+        return (
+          <li key={r.label} style={{color: r.reached ? "#c0392b" : "#1e8449"}}>
+            <strong>{r.label}:</strong> {r.reached ? "accepted keyboard focus" : "refused keyboard focus"}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function FocusLab() {
+  const areaRef = useRef(null);
+  const [mode, setMode] = useState("normal");
+  const [clicks, setClicks] = useState(0);
+  const [probe, setProbe] = useState(null);
+  const [supported, setSupported] = useState(null);
+  useEffect(function () {
+    setSupported(typeof HTMLElement !== "undefined" && "inert" in HTMLElement.prototype);
+  }, []);
+  useEffect(function () {
+    const el = areaRef.current;
+    if (!el) return;
+    if ("inert" in el) el.inert = mode === "inert";
+    if (mode === "aria") el.setAttribute("aria-hidden", "true");
+    else el.removeAttribute("aria-hidden");
+    setProbe(null);
+  }, [mode]);
+  const notes = {
+    normal: "Nothing is switched off. Every control accepts focus.",
+    inert: "The whole area refuses focus and clicks, and is hidden from screen readers.",
+    aria: "Screen readers are told to skip the area, but the keyboard can still land inside it. That mismatch is the trap."
+  };
+  return (
+    <div style={{padding: "1rem"}}>
+      {supported === false && (
+        <p style={{color: "#c0392b", fontWeight: 600}}>This browser does not support inert, so the inert option will have no effect here. That is what a visitor with an older browser would get.</p>
+      )}
+      <fieldset style={{border: "none", padding: 0, margin: "0 0 0.75rem"}}>
+        <legend style={{fontWeight: 600}}>Switch the area</legend>
+        {[["normal", "Normal"], ["inert", "inert"], ["aria", "aria-hidden=\"true\" only"]].map(function (o) {
+          return <label key={o[0]} style={{marginRight: "1rem"}}><input type="radio" name="fl-mode" checked={mode === o[0]} onChange={function () { setMode(o[0]); }} /> {o[1]}</label>;
+        })}
+      </fieldset>
+      <div ref={areaRef} style={{border: "1px solid rgba(128,128,128,0.6)", borderRadius: 6, padding: "0.75rem", opacity: mode === "inert" ? 0.5 : 1}}>
+        <p style={{margin: "0 0 0.5rem", fontWeight: 600}}>Shop area</p>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <button type="button" data-probe="Buy button" onClick={function () { setClicks(clicks + 1); }}>Buy now</button>{" "}
+          <a href="#help-demo" data-probe="Help link" onClick={function (e) { e.preventDefault(); }}>Help</a>
+        </p>
+        <p style={{margin: "0 0 0.5rem"}}>
+          <label htmlFor="fl-name">Name</label>{" "}
+          <input id="fl-name" type="text" data-probe="Name field" />
+        </p>
+        <label><input type="checkbox" data-probe="Newsletter checkbox" /> Send me the newsletter</label>
+      </div>
+      <p style={{margin: "0.75rem 0 0.25rem"}}>Clicks received by the Buy button: <strong>{clicks}</strong> (try clicking it in each mode)</p>
+      <button type="button" onClick={function () { setProbe(probeFocus(areaRef.current)); }}>Test keyboard focus on every control</button>
+      <ProbeList results={probe} />
+      <p aria-live="polite" style={{fontWeight: 600}}>{notes[mode]}</p>
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        The test calls focus() on each control and checks whether the browser accepted it, which is the same thing the Tab key does. Nothing is stored or sent.
+      </p>
+    </div>
+  );
+}
+
+export function MenuLab() {
+  const menuRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [useInert, setUseInert] = useState(false);
+  const [probe, setProbe] = useState(null);
+  useEffect(function () {
+    const el = menuRef.current;
+    if (el && "inert" in el) el.inert = useInert && !open;
+    setProbe(null);
+  }, [open, useInert]);
+  return (
+    <div style={{padding: "1rem"}}>
+      <label style={{display: "block", margin: "0 0 0.5rem"}}>
+        <input type="checkbox" checked={useInert} onChange={function (e) { setUseInert(e.target.checked); }} /> Set inert on the menu while it is closed
+      </label>
+      <button type="button" aria-expanded={open} onClick={function () { setOpen(!open); }}>{open ? "Close menu" : "Open menu"}</button>
+      <div style={{position: "relative", overflow: "hidden", height: "8.5rem", marginTop: "0.5rem", border: "1px solid rgba(128,128,128,0.6)", borderRadius: 6}}>
+        <nav ref={menuRef} aria-label="Demo menu" style={{position: "absolute", top: 0, left: 0, bottom: 0, width: "50%", boxSizing: "border-box", padding: "0.75rem", background: "rgba(52,120,200,0.18)", transform: open ? "translateX(0)" : "translateX(-100%)"}}>
+          <p style={{margin: "0 0 0.4rem", fontWeight: 600}}>Menu</p>
+          <p style={{margin: "0 0 0.3rem"}}><a href="#menu-demo" data-probe="Menu link 1" onClick={function (e) { e.preventDefault(); }}>Home</a></p>
+          <p style={{margin: "0 0 0.3rem"}}><a href="#menu-demo" data-probe="Menu link 2" onClick={function (e) { e.preventDefault(); }}>Recipes</a></p>
+          <p style={{margin: 0}}><a href="#menu-demo" data-probe="Menu link 3" onClick={function (e) { e.preventDefault(); }}>Contact</a></p>
+        </nav>
+        <p style={{margin: 0, padding: "0.75rem", textAlign: "right"}}>Page content</p>
+      </div>
+      <p style={{margin: "0.75rem 0 0.25rem"}}>The menu is {open ? "open and visible." : "closed and off screen."}</p>
+      <button type="button" onClick={function () { setProbe(probeFocus(menuRef.current)); }}>Test keyboard focus on the menu links</button>
+      <ProbeList results={probe} />
+      <p style={{fontSize: "0.85rem", opacity: 0.8}}>
+        With the menu closed and the box unticked, the links are invisible but still accept focus, so a keyboard user would tab into links they cannot see. Tick the box and test again.
+      </p>
+    </div>
+  );
+}
+
+export const toolOptions = ["inert", "disabled", "hidden", "aria-hidden", "native dialog (showModal)"];
+
+export const toolItems = [
+  {job: "Stop one text field from being edited, and keep it out of the form submission", answer: "disabled"},
+  {job: "Make a whole sidebar unreachable while it is off screen, for mouse, keyboard, and screen reader", answer: "inert"},
+  {job: "Remove a section from the page completely, including the space it takes up", answer: "hidden"},
+  {job: "Block the entire page behind a pop-up that needs an answer first", answer: "native dialog (showModal)"},
+  {job: "Freeze a large form section while it saves, without changing every field", answer: "inert"},
+  {job: "Hide a purely decorative icon, which cannot be focused, from screen readers", answer: "aria-hidden"}
+];
+
+export function ToolMatcher() {
+  const [picked, setPicked] = useState({});
+  const [checked, setChecked] = useState(false);
+  const correct = toolItems.filter(function (it, i) { return picked[i] === it.answer; }).length;
+  return (
+    <div style={{padding: "1rem"}}>
+      <p style={{marginTop: 0}}>Pick the right tool for each job.</p>
+      {toolItems.map(function (it, i) {
+        const ok = picked[i] === it.answer;
+        return (
+          <p key={it.job} style={{margin: "0 0 0.7rem"}}>
+            <label htmlFor={"tm-" + i}>{it.job}</label>
+            <br />
+            <select id={"tm-" + i} value={picked[i] || ""} onChange={function (e) { const v = e.target.value; setChecked(false); setPicked(function (prev) { const n = Object.assign({}, prev); n[i] = v; return n; }); }}>
+              <option value="">Choose...</option>
+              {toolOptions.map(function (o) { return <option key={o} value={o}>{o}</option>; })}
+            </select>
+            {checked && <strong style={{marginLeft: "0.5rem", color: ok ? "#1e8449" : "#c0392b"}}>{ok ? "Correct" : "Not quite"}</strong>}
+          </p>
+        );
+      })}
+      <button type="button" onClick={function () { setChecked(true); }}>Check my answers</button>
+      <p aria-live="polite" style={{fontWeight: 600}}>{checked ? correct + " of " + toolItems.length + " correct." : ""}</p>
+    </div>
+  );
+}
+
+Sometimes part of a page should be **out of reach**: a menu that has slid off screen, a section that is saving, the page behind a pop-up. Before `inert`, you switched these off by hand, with `tabindex="-1"` on every link, `aria-hidden` on containers, `pointer-events: none` in CSS, and a lot of luck. The **`inert` attribute** does the whole job with one word.
+
+## What You Will Learn
+
+- What `inert` changes, and what it leaves alone
+- How it differs from `disabled`, `hidden`, and `aria-hidden`
+- Patterns that use it: off-canvas menus, saving states, carousels, and overlays
+- How to set it from JavaScript, and what to do without support
+- Accessibility and security notes
+
+<AdsComponent />
+<br />
+
+## The Big Idea
+
+Putting `inert` on an element says: "**this part of the page is not available right now.**" The element and everything inside it stop taking part in the page, for **every** kind of visitor: mouse, touch, keyboard, and screen reader.
+
+<Tabs>
+<TabItem value="focus" label="Focus Lab" default>
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<FocusLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="menu" label="Off-Canvas Menu Lab">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<MenuLab />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="tool" label="Which Tool?">
+
+<BrowserWindow url="http://127.0.0.1:5500/index.html">
+<>
+<ToolMatcher />
+</>
+</BrowserWindow>
+
+</TabItem>
+<TabItem value="code" label="The Code">
+
+```html title="index.html"
+<!-- One word switches the whole area off -->
+<section id="shop" inert>
+  <button>Buy now</button>
+  <a href="/help">Help</a>
+  <input type="text" aria-label="Name">
+</section>
+
+<!-- An off-canvas menu: unreachable while closed -->
+<button id="toggle" aria-expanded="false" aria-controls="menu">Menu</button>
+<nav id="menu" aria-label="Main" inert>
+  <a href="/">Home</a>
+  <a href="/recipes">Recipes</a>
+</nav>
+```
+
+```js title="script.js"
+const toggle = document.getElementById("toggle");
+const menu = document.getElementById("menu");
+
+toggle.addEventListener("click", () => {
+  const opening = menu.inert;          // inert now means "closed"
+  menu.inert = !opening;               // reflects the attribute
+  toggle.setAttribute("aria-expanded", String(opening));
+});
+```
+
+```css title="styles.css"
+/* inert changes behaviour, not looks, so show it yourself */
+[inert] {
+  opacity: 0.5;
+}
+```
+
+</TabItem>
+</Tabs>
+
+## What inert Does
+
+For an inert element and **all of its descendants**:
+
+| Part of the experience | What happens |
+| :-- | :-- |
+| **Pointer** | Clicks and taps do nothing, because the element is skipped when the browser works out what was pressed |
+| **Keyboard** | Nothing inside can take focus, so Tab skips it |
+| **Screen readers** | The content is removed from the accessibility tree, as if it were hidden |
+| **Text selection** | Text cannot be selected |
+| **Find in page** | Text inside is generally not found |
+| **Looks** | **Nothing changes.** It still shows, exactly as before |
+
+That last row matters: `inert` is about **behaviour**, not appearance. If a section is switched off, show that with your own CSS, such as lower opacity, and say so in text.
+
+Open the **Focus Lab** and try the buttons in each mode. In the plain mode, every control accepts focus. In the `inert` mode, every control refuses it, and clicking the Buy button does nothing.
+
+## inert, disabled, hidden, and aria-hidden
+
+These four are easy to mix up:
+
+| Tool | Where it works | Looks | Focus and clicks | Screen reader | Form data |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| `inert` | Any element, with its whole subtree | Unchanged | Blocked | Hidden | Not what it is for |
+| `disabled` | Form controls (and `fieldset`) | Usually greyed out | Blocked | Announced as unavailable | The control is **left out** of the submission |
+| `hidden` | Any element | Not displayed, no space used | Not reachable | Hidden | Not rendered |
+| `aria-hidden="true"` | Any element | Unchanged | **Not blocked** | Hidden | Unchanged |
+
+### The aria-hidden trap
+
+`aria-hidden="true"` only tells **screen readers** to ignore something. A keyboard user can still Tab into it. So a link inside an `aria-hidden` area can take focus, while a screen reader says nothing about it. That is a real accessibility failure.
+
+Switch the Focus Lab to `aria-hidden="true" only` and run the focus test: every control still accepts focus. `inert` fixes both problems at once. Keep `aria-hidden` for things that **cannot** be focused, such as a purely decorative icon.
+
+:::info
+`inert` is about interaction, not form data. If you need a control left out of a submission, use `disabled` on that control. Do not depend on `inert` for that.
+:::
+
+## Pattern 1: Off-Canvas Menus
+
+A menu that slides off screen with CSS is **invisible, but not gone.** Its links are still in the tab order, so a keyboard user tabs into links they cannot see, and a screen reader reads a menu that looks closed.
+
+The fix: set `inert` while the menu is closed, and remove it when the menu opens, as in the code above. Open the **Off-Canvas Menu Lab**, leave the box unticked, and run the focus test on the closed menu. Then tick the box and run it again.
+
+## Pattern 2: A Section That Is Saving
+
+When a large part of a form is saving, you want it frozen so no one edits it half-way. Instead of disabling every field, make the whole section inert and tell people what is going on:
+
+```html
+<p id="status" role="status"></p>
+<fieldset id="details">...many fields...</fieldset>
+```
+
+```js
+details.inert = true;
+status.textContent = "Saving your changes...";
+// ...when done...
+details.inert = false;
+status.textContent = "Saved.";
+```
+
+Notice that the status message sits **outside** the inert area. An inert area is hidden from screen readers, so anything you want announced must live somewhere else.
+
+## Pattern 3: Slides and Hidden Panels
+
+In a carousel, the slides that are off screen are still in the page. Make every slide except the current one `inert`, so Tab does not wander into slides nobody can see. The same idea fits stacked panels, such as the earlier steps of a wizard that you keep in the page but not in view.
+
+If you do not need to keep an area in the layout at all, `hidden` is simpler.
+
+## Pattern 4: Behind a Custom Overlay
+
+A native `dialog` opened with `showModal()` already makes the rest of the page behave as if it were inert, as the [Dialog lesson](./dialog) explains. If you cannot use a `dialog` and build your own overlay, set `inert` on the page regions behind it (not on the overlay itself), and remove it when the overlay closes. Use the native dialog whenever you can, because it also handles focus and the Escape key.
+
+## Setting inert From JavaScript
+
+`inert` is a boolean attribute, and it has a matching JavaScript property that stays in sync:
+
+```js
+panel.inert = true;     // adds the attribute
+panel.inert = false;    // removes it
+console.log(panel.inert);
+```
+
+A few rules to remember:
+
+- **It is inherited and cannot be undone below.** If a parent is inert, a child cannot opt out, even with `inert="false"`. Remove it from the parent.
+- **Move focus first.** If the element that currently has focus becomes inert, focus is lost and falls back to the page. Move focus somewhere sensible before you switch a region off, for example to the control that opened it.
+- **Explain the state.** Use text, a live region outside the inert area, and your own styling.
+
+## Support and Fallbacks
+
+`inert` works in current versions of the major browsers, but older versions ignore it. Check its Baseline label on MDN. In a browser without support:
+
+- the area simply **stays interactive**,
+- and nothing breaks, but you lose the protection.
+
+For a low-stakes case, such as an off-screen menu, that is acceptable, and you can detect support if you want a backup:
+
+```js
+if (!("inert" in HTMLElement.prototype)) {
+  // optional: add tabindex="-1" to focusable children while the area is off
+}
+```
+
+For high-stakes cases, such as blocking the page behind a pop-up, prefer the native `dialog`, or a maintained polyfill.
+
+## Accessibility Notes
+
+- **Do not make visible, important content inert** without a clear reason and a visible explanation. People who use screen readers cannot reach it, and nobody can select or copy its text.
+- **Tell visitors why.** A greyed-out area with no explanation is confusing. Add a visible message such as "Saving...", in a live region **outside** the inert area.
+- **Manage focus on purpose** when you add or remove `inert`, as above.
+- **Do not use `inert` to hide content** from screen readers when it should be hidden from everyone. Use `hidden`.
+- **Test it:** press Tab through the page, click the area, and look at the browser's accessibility panel, if it has one, to confirm the area is gone from the tree.
+
+## Checking Your Setup
+
+1. Press **Tab** repeatedly. Does focus ever land on something you cannot see?
+2. **Click** inside the area you switched off. Does anything respond?
+3. In DevTools, open the **Accessibility** panel and check that the inert area is not listed.
+4. Switch the state on and off, and watch where **focus** goes.
+5. Test with a **screen reader** if you can, and listen for your status message.
+6. Look for `aria-hidden` on containers that hold links or buttons. They are the likely bugs.
+7. Test in a **second browser**, and think about what happens without support.
+
+## Best Practices
+
+1. **Use `inert`** for areas that are temporarily unavailable.
+2. **Prefer it to `aria-hidden`** on anything that can take focus.
+3. **Use `disabled`** for individual form controls, and `hidden` to remove things entirely.
+4. **Show the state** with CSS and text.
+5. **Put announcements outside** the inert area.
+6. **Move focus** before inerting the region that has it.
+7. **Use a native `dialog`** for modal pop-ups.
+8. **Plan for browsers without support.**
+9. **Keep the area small and temporary.**
+10. **Test with the keyboard and a screen reader.**
+
+## Quick Checklist
+
+- [ ] Off-screen menus, slides, and panels are inert while out of view
+- [ ] No focusable controls sit inside `aria-hidden` areas
+- [ ] An inert area has a visible explanation and a status message outside it
+- [ ] Focus is moved before a region is made inert
+- [ ] I used `disabled` for single controls, and `hidden` to remove content
+- [ ] Modal pop-ups use a native `dialog`
+- [ ] The page still works where `inert` is not supported
+- [ ] I tested with Tab, the mouse, and a screen reader
+
+## Security and Privacy Notes
+
+- **`inert` is not security.** It is a client-side setting that any visitor can remove in DevTools. Never use it to protect information or actions. The server must decide who may do what.
+- **Inert content is still in the page.** It is in the source, and it may still be sent in a form. Do not hide private data in an inert area.
+- **Do not rely on it to prevent double submissions** or double payments. Disable buttons, and make the server ignore repeats. See [Secure Forms](/tutorials/html/security/secure-forms).
+- **Inert does not stop scripts.** A script can still read or change an inert area.
+
+## Global Audience Notes
+
+- **Keyboard and screen reader use is common** among many visitors, including people who cannot use a mouse. Hidden-but-focusable content hurts them the most.
+- **Explain states in plain, translatable text.** "Saving..." and "Unavailable" are easier to translate than icons alone.
+- **Slow connections make saving states long.** A clear message and a way to tell when it ends are especially helpful.
+- **Older and low-cost devices** may lack support. Keep the page usable without it.
+
+## Common Mistakes to Avoid
+
+1. **Hiding a menu with CSS only,** so its links still take focus.
+2. **Using `aria-hidden`** on areas with links or buttons.
+3. **Making important content inert** with no explanation.
+4. **Putting the status message inside** the inert area.
+5. **Forgetting to move focus** before switching the area off.
+6. **Expecting `inert` to change how the area looks.**
+7. **Using `inert` instead of `disabled`** to keep a field out of a submission.
+8. **Trying to un-inert a child** of an inert parent.
+9. **Building a custom pop-up** when a native `dialog` would do.
+10. **Treating `inert` as protection.**
+
+## Practice Time
+
+1. In the Focus Lab, run the focus test in all three modes. Which controls accept focus each time?
+2. In `inert` mode, click the Buy button several times. What is the counter?
+3. Switch to `aria-hidden` only, and press the Buy button again. What is the difference?
+4. In the Menu Lab, with the menu closed and the box unticked, run the test. What does it say about invisible links?
+5. Tick the box and test again.
+6. Complete the **Which Tool?** quiz.
+7. Add `inert` to an off-screen menu on a test page, and check it with the Tab key.
+8. Bonus: write the three lines of script that freeze a form section while it saves, and announce the change.
+
+## Quick Recap
+
+Click a question to check your answer.
+
+<details>
+<summary>1. What does `inert` do?</summary>
+
+It makes an element and all its descendants unavailable: no clicks, no keyboard focus, no screen reader access, and no text selection. It does not change how the element looks.
+
+</details>
+
+<details>
+<summary>2. How is `inert` different from `aria-hidden`?</summary>
+
+`aria-hidden` only hides content from screen readers, so keyboard users can still focus it. `inert` blocks pointer, keyboard, and screen reader access together.
+
+</details>
+
+<details>
+<summary>3. How is `inert` different from `disabled`?</summary>
+
+`disabled` applies to form controls, greys them out, and leaves them out of form submission. `inert` applies to any element and its whole subtree, and changes behaviour only.
+
+</details>
+
+<details>
+<summary>4. Why set `inert` on a closed off-canvas menu?</summary>
+
+A menu hidden only by CSS still takes keyboard focus and is read by screen readers. `inert` removes it from both.
+
+</details>
+
+<details>
+<summary>5. What should you do before making a region inert?</summary>
+
+Move focus out of it, if it holds the focused element, and prepare a visible explanation and a status message outside the region.
+
+</details>
+
+<details>
+<summary>6. Is `inert` a security feature?</summary>
+
+No. It is a client-side setting that visitors can remove, so the server must always enforce permissions.
+
+</details>
+
+## Key Takeaways
+
+- **`inert` switches off an area for pointer, keyboard, and screen reader,** with one attribute.
+- **It changes behaviour, not looks.** Show the state yourself.
+- **Prefer it to `aria-hidden`** whenever the content can take focus.
+- **Use `disabled` for single controls and `hidden` to remove content.**
+- **Great for off-canvas menus, saving states, and carousels.**
+- **Move focus first, and announce outside the area.**
+- **Never treat it as security.**
+
+Next up: [template](./template), where you will learn how to keep reusable chunks of HTML in your page without showing them, and copy them when you need them.
